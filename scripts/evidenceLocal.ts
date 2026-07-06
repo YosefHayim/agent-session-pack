@@ -10,6 +10,11 @@ import {
   writeVerifiedArchive,
 } from '../src/core/index.js';
 import {
+  formatHumanEvidenceReport,
+  formatJsonEvidenceReport,
+  type LocalEvidenceEntry,
+} from '../src/output/index.js';
+import {
   claudeCodeProvider,
   codexProvider,
   devinProvider,
@@ -24,7 +29,7 @@ const maxTitlePreviewLength = 96;
 /**
  * Runs opt-in local evidence against copied provider sessions.
  *
- * @returns Effect that prints local evidence as JSON.
+ * @returns Effect that prints local evidence.
  */
 export const runEvidenceLocal = (): Effect.Effect<
   void,
@@ -41,7 +46,7 @@ export const runEvidenceLocal = (): Effect.Effect<
 
     const workRoot = join(process.cwd(), '.vault-test', 'evidence-local');
     const compression = createZstdCompression();
-    const evidence = [];
+    const evidence: LocalEvidenceEntry[] = [];
 
     for (const provider of evidenceProviders) {
       const roots = provider.defaultRoots(home);
@@ -117,7 +122,14 @@ export const runEvidenceLocal = (): Effect.Effect<
       });
     }
 
-    process.stdout.write(`${JSON.stringify({ workRoot, evidence }, null, 2)}\n`);
+    const report = { workRoot, evidence };
+
+    if (process.argv.includes('--json')) {
+      process.stdout.write(formatJsonEvidenceReport(report));
+      return;
+    }
+
+    process.stdout.write(`${formatHumanEvidenceReport(report)}\n`);
   });
 
 const formatTitlePreview = (title: string): string => {

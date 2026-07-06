@@ -8,22 +8,7 @@ import {
   scanStores,
 } from '../../core/index.js';
 import { renderHumanScan, renderJsonScan } from '../../output/index.js';
-import {
-  claudeCodeProvider,
-  codexProvider,
-  cursorProvider,
-  devinProvider,
-  kiroProvider,
-  ProviderIdSchema,
-} from '../../providers/index.js';
-
-const scanProviders: ReadonlyArray<ProviderAdapter> = [
-  codexProvider,
-  claudeCodeProvider,
-  kiroProvider,
-  cursorProvider,
-  devinProvider,
-];
+import { allProviders, ProviderIdSchema } from '../../providers/index.js';
 
 export const ScanArgsSchema = Schema.Struct({
   provider: Schema.optional(Schema.String),
@@ -92,7 +77,7 @@ export const scanCommand = defineCommand({
 
 const normalizeProviders = (provider: string | undefined): ReadonlyArray<ProviderAdapter> => {
   if (provider === undefined) {
-    return scanProviders;
+    return allProviders;
   }
 
   const decoded = Schema.decodeUnknownEither(ProviderIdSchema)(provider);
@@ -103,5 +88,5 @@ const normalizeProviders = (provider: string | undefined): ReadonlyArray<Provide
     return [];
   }
 
-  return scanProviders.filter((adapter) => adapter.id === (provider as ProviderId));
+  return allProviders.filter((adapter) => adapter.id === (provider as ProviderId));
 };

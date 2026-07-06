@@ -8,6 +8,7 @@ import {
   restoreCommand,
   scanCommand,
 } from './commands/index.js';
+import { normalizeCliArgv } from './mainArgs.js';
 
 export const mainCommand = defineCommand({
   meta: {
@@ -30,5 +31,6 @@ const entrypointPath = process.argv[1];
 const modulePath = fileURLToPath(import.meta.url);
 
 if (entrypointPath === modulePath) {
+  process.argv.splice(0, process.argv.length, ...normalizeCliArgv(process.argv));
   await runMain(mainCommand);
 }

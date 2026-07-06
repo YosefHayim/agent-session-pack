@@ -16,6 +16,10 @@
   ],
   "scripts": {
     "dev": "tsx src/cli/main.ts",
+    "health": "tsx src/cli/main.ts doctor",
+    "scan": "tsx src/cli/main.ts scan",
+    "pack:dry-run": "tsx src/cli/main.ts pack --dry-run",
+    "evidence": "tsx scripts/evidenceLocal.ts",
     "build": "tsup",
     "check:ci": "biome ci . && eslint .",
     "test": "vitest run",

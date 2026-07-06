@@ -10,6 +10,7 @@ Agent Recall is a CLI-only TypeScript tool for reducing local disk usage from AI
 - Centralize destructive behavior in core archive/restore workflows.
 - Preserve exact source bytes before any original file is removed.
 - Treat Cursor and Devin as backup-only providers until their stores are safe to mutate.
+- Keep `pack --apply` blocked until restore/list indexing is complete enough for safe recovery.
 
 ## Conventions
 

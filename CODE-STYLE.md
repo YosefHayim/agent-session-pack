@@ -120,6 +120,16 @@ agent-recall doctor [--json]
 agent-recall prune [--quarantine] [--dry-run|--apply]
 ```
 
+Local package scripts should cover the common human paths:
+
+```bash
+pnpm health
+pnpm dev --doctor
+pnpm dev --scan --provider devin
+pnpm pack:dry-run
+pnpm evidence:local
+```
+
 ## Output Contract
 
 Human output starts with a compact summary, then tables. Scan output includes provider, session count, current size, archived size, savings, and location path. Per-session output includes ID, provider, date, size, savings, status, name, and path.
@@ -165,6 +175,7 @@ Avoid `memory` in code identifiers because it confuses RAM with disk.
 - `pnpm test`: synthetic fixtures only.
 - `pnpm test:integration`: temp HOME and temp provider roots only.
 - `pnpm evidence:local`: explicit local machine proof against real sessions.
+- `pnpm pack:dry-run`: non-destructive all-provider cleanup summary.
 - Round-trip tests assert SHA-256 byte-exact restore.
 - Dry-run tests assert originals are not touched.
 - Selector tests cover ID, exact name, slug, fuzzy query, provider-prefixed selector, and ambiguity.

@@ -6,11 +6,27 @@ It packs cold local sessions into verified zstd archives, stores restore metadat
 
 ```bash
 pnpm install
-pnpm build
-pnpm dev -- scan
+pnpm health
+pnpm dev --scan --provider devin
+pnpm pack:dry-run
+pnpm evidence:local
 ```
 
 ## Commands
+
+For local development, prefer the package scripts:
+
+```bash
+pnpm health
+pnpm dev --doctor
+pnpm dev --scan [--provider codex|claude|kiro|cursor|devin] [--json]
+pnpm pack:dry-run [--provider codex|claude|kiro|cursor|devin] [--older-than 7d] [--json]
+pnpm evidence:local [--json]
+```
+
+`pnpm doctor` is pnpm's own built-in command, so Agent Recall uses `pnpm health` for the local prerequisite check.
+
+The raw CLI keeps the same command shape:
 
 ```bash
 agent-recall init [--apply] [--json]
@@ -28,7 +44,7 @@ agent-recall prune [--quarantine] [--dry-run|--apply]
 
 Agent Recall is dry-run first.
 
-On `pack --apply`, it archives exact bytes first, verifies restore hash, writes a manifest, and only then removes the original file. Normal tests use fixtures only. Real local evidence is opt-in through `pnpm evidence:local`. `agent-recall doctor` checks the required `zstd` and `sqlite3` binaries.
+`pack --dry-run` scans all providers and prints a before/after dry-run table without changing files. In the current CLI build, `pack --apply` is intentionally blocked until restore/list indexing is complete enough to safely remove real provider files. Normal tests use fixtures only. Real local evidence is opt-in through `pnpm evidence:local`. `agent-recall doctor` checks the required `zstd` and `sqlite3` binaries.
 
 Full archive/remove/restore support targets Codex, Claude Code user-level sessions, and Kiro. Cursor and Devin are backup-only until their storage models are safer to mutate. Devin discovery reads `~/.local/share/devin/cli/sessions.db` as SQLite metadata and never reads credentials.
 
@@ -46,7 +62,7 @@ This is one local machine example, not a universal benchmark.
 
 ## Round-Trip Proof
 
-Local proof runs copied real sessions into repo-local fixtures, compressed those copies, restored them, and compared SHA-256 hashes. Originals were not touched.
+Local proof runs copied real sessions into repo-local fixtures, compressed those copies, restored them, and compared SHA-256 hashes. Originals were not touched. `pnpm evidence:local` prints a human table by default; use `pnpm evidence:local --json` for the full machine-readable report.
 
 | Provider | Source | Archive | Saved | Lines | Byte exact | Original touched |
 | --- | ---: | ---: | ---: | ---: | --- | --- |

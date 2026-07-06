@@ -1,0 +1,45 @@
+{
+  "name": "agent-recall",
+  "version": "0.1.0",
+  "description": "Compress cold local AI coding-agent sessions while preserving byte-exact restore.",
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@10.12.1",
+  "bin": {
+    "agent-recall": "./dist/cli/main.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "examples"
+  ],
+  "scripts": {
+    "dev": "tsx src/cli/main.ts",
+    "build": "tsup",
+    "check:ci": "biome ci . && eslint .",
+    "test": "vitest run",
+    "test:integration": "vitest run tests/*.integration.test.ts",
+    "typecheck": "tsc --noEmit",
+    "evidence:local": "tsx scripts/evidenceLocal.ts"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.2",
+    "@types/node": "^24.0.0",
+    "eslint": "^10.6.0",
+    "eslint-plugin-tsdoc": "^0.5.2",
+    "tsup": "^8.5.1",
+    "tsx": "^4.20.0",
+    "typescript": "^5.8.0",
+    "typescript-eslint": "^8.62.1",
+    "vitest": "^3.2.0"
+  },
+  "dependencies": {
+    "@clack/prompts": "^1.7.0",
+    "citty": "^0.2.2",
+    "effect": "^3.21.4"
+  }
+}

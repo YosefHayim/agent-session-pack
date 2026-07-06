@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  biome:
+    uses: ./.github/workflows/biome.yml
+
+  typecheck:
+    uses: ./.github/workflows/typecheck.yml
+
+  test:
+    uses: ./.github/workflows/test.yml
+
+  build:
+    uses: ./.github/workflows/build.yml
+
+  ciGate:
+    name: CI Gate
+    runs-on: ubuntu-latest
+    needs: [biome, typecheck, test, build]
+    if: always()
+    steps:
+      - name: Check required jobs
+        run: |
+          if [ "${{ needs.biome.result }}" != "success" ]; then exit 1; fi
+          if [ "${{ needs.typecheck.result }}" != "success" ]; then exit 1; fi
+          if [ "${{ needs.test.result }}" != "success" ]; then exit 1; fi
+          if [ "${{ needs.build.result }}" != "success" ]; then exit 1; fi
+
+  reportFailure:
+    needs: [ciGate]
+    if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      issues: write
+    uses: ./.github/workflows/reportFailure.yml

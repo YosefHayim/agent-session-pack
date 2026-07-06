@@ -1,0 +1,37 @@
+import { intro, outro } from '@clack/prompts';
+import { defineCommand } from 'citty';
+
+export const initCommand = defineCommand({
+  meta: {
+    name: 'init',
+    description: 'Show default vault policy and dry-run setup.',
+  },
+  args: {
+    apply: {
+      type: 'boolean',
+      description: 'Write config after review.',
+    },
+    json: {
+      type: 'boolean',
+      description: 'Write stable JSON output.',
+    },
+  },
+  run: ({ args }) => {
+    if (args.json === true) {
+      process.stdout.write(
+        `${JSON.stringify({
+          vaultPath: '~/.agent-recall',
+          coldAfter: '7d',
+          restoreCacheAfter: '7d',
+          apply: args.apply === true,
+        })}\n`,
+      );
+      return;
+    }
+
+    intro('Agent Recall init');
+    process.stdout.write('Defaults: vault ~/.agent-recall, coldAfter 7d, restoreCacheAfter 7d.\n');
+    process.stdout.write('Dry run only. Re-run with --apply to write config.\n');
+    outro('No files changed.');
+  },
+});

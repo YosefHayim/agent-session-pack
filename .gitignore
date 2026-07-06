@@ -1,0 +1,8 @@
+node_modules/
+dist/
+coverage/
+.vault-test/
+.agent-recall/
+scripts/dev/
+*.log
+.DS_Store

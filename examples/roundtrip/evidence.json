@@ -1,0 +1,45 @@
+{
+  "description": "Synthetic round-trip examples. Hashes prove before and after JSONL bytes match.",
+  "generatedWith": "zstd -9",
+  "sessions": [
+    {
+      "provider": "codex",
+      "beforePath": "examples/roundtrip/before/codex-session.jsonl",
+      "archivePath": "examples/roundtrip/archives/codex-session.jsonl.zst",
+      "afterPath": "examples/roundtrip/after/codex-session.jsonl",
+      "beforeBytes": 133,
+      "archiveBytes": 114,
+      "afterBytes": 133,
+      "savedPercent": 14.3,
+      "beforeSha256": "c823bda2b436e9a43de769142cd80cbfbeb56e0004ebc1540d19139f3bcdeb20",
+      "afterSha256": "c823bda2b436e9a43de769142cd80cbfbeb56e0004ebc1540d19139f3bcdeb20",
+      "byteExact": true
+    },
+    {
+      "provider": "claude",
+      "beforePath": "examples/roundtrip/before/claude-session.jsonl",
+      "archivePath": "examples/roundtrip/archives/claude-session.jsonl.zst",
+      "afterPath": "examples/roundtrip/after/claude-session.jsonl",
+      "beforeBytes": 166,
+      "archiveBytes": 123,
+      "afterBytes": 166,
+      "savedPercent": 25.9,
+      "beforeSha256": "5c92fa2e541c2a791b384bee25e32c52072ba878267a254395e9ac48e1778961",
+      "afterSha256": "5c92fa2e541c2a791b384bee25e32c52072ba878267a254395e9ac48e1778961",
+      "byteExact": true
+    },
+    {
+      "provider": "kiro",
+      "beforePath": "examples/roundtrip/before/kiro-session.jsonl",
+      "archivePath": "examples/roundtrip/archives/kiro-session.jsonl.zst",
+      "afterPath": "examples/roundtrip/after/kiro-session.jsonl",
+      "beforeBytes": 138,
+      "archiveBytes": 119,
+      "afterBytes": 138,
+      "savedPercent": 13.8,
+      "beforeSha256": "5bdc51cede5e9d34b46efec7ab2472e3313c08caba95e0451d34616555160556",
+      "afterSha256": "5bdc51cede5e9d34b46efec7ab2472e3313c08caba95e0451d34616555160556",
+      "byteExact": true
+    }
+  ]
+}

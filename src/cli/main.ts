@@ -11,6 +11,7 @@ import {
   scanCommand,
   unpackCommand,
 } from './commands/index.js';
+import { runInteractiveCli, shouldRunInteractiveCli } from './interactiveCli.js';
 import { normalizeCliArgv } from './mainArgs.js';
 import { isCliEntrypoint } from './mainEntrypoint.js';
 
@@ -39,5 +40,16 @@ const modulePath = fileURLToPath(import.meta.url);
 
 if (isCliEntrypoint(entrypointPath, modulePath)) {
   process.argv.splice(0, process.argv.length, ...normalizeCliArgv(process.argv));
-  await runMain(mainCommand);
+
+  if (
+    shouldRunInteractiveCli({
+      argv: process.argv,
+      stdinIsTty: process.stdin.isTTY === true,
+      stdoutIsTty: process.stdout.isTTY === true,
+    })
+  ) {
+    await runInteractiveCli();
+  } else {
+    await runMain(mainCommand);
+  }
 }

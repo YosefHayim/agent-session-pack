@@ -1,5 +1,6 @@
 import { intro, outro } from '@clack/prompts';
 import { defineCommand } from 'citty';
+import { runFirstSetup } from '../interactiveCli.js';
 
 export const initCommand = defineCommand({
   meta: {
@@ -16,7 +17,7 @@ export const initCommand = defineCommand({
       description: 'Write stable JSON output.',
     },
   },
-  run: ({ args }) => {
+  run: async ({ args }) => {
     if (args.json === true) {
       process.stdout.write(
         `${JSON.stringify({
@@ -28,6 +29,11 @@ export const initCommand = defineCommand({
           apply: args.apply === true,
         })}\n`,
       );
+      return;
+    }
+
+    if (process.stdin.isTTY === true && process.stdout.isTTY === true) {
+      await runFirstSetup();
       return;
     }
 

@@ -9,6 +9,29 @@ type CommandCheck = {
   readonly version?: string;
 };
 
+export type DoctorArgs = {
+  readonly json?: boolean | undefined;
+};
+
+/**
+ * Runs local prerequisite checks.
+ *
+ * @param args - Output mode.
+ * @returns Promise that resolves after output is written.
+ */
+export const runDoctorCommand = async (args: DoctorArgs): Promise<void> => {
+  const zstd = await checkCommand('zstd', ['--version']);
+  const sqlite3 = await checkCommand('sqlite3', ['--version']);
+
+  if (args.json === true) {
+    process.stdout.write(`${JSON.stringify({ sqlite3, zstd })}\n`);
+    return;
+  }
+
+  process.stdout.write(`zstd: ${zstd.available ? zstd.version : 'missing'}\n`);
+  process.stdout.write(`sqlite3: ${sqlite3.available ? sqlite3.version : 'missing'}\n`);
+};
+
 export const doctorCommand = defineCommand({
   meta: {
     name: 'doctor',
@@ -21,16 +44,9 @@ export const doctorCommand = defineCommand({
     },
   },
   run: async ({ args }) => {
-    const zstd = await checkCommand('zstd', ['--version']);
-    const sqlite3 = await checkCommand('sqlite3', ['--version']);
-
-    if (args.json === true) {
-      process.stdout.write(`${JSON.stringify({ sqlite3, zstd })}\n`);
-      return;
-    }
-
-    process.stdout.write(`zstd: ${zstd.available ? zstd.version : 'missing'}\n`);
-    process.stdout.write(`sqlite3: ${sqlite3.available ? sqlite3.version : 'missing'}\n`);
+    await runDoctorCommand({
+      json: args.json,
+    });
   },
 });
 

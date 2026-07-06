@@ -9,7 +9,7 @@ import { devinProvider } from '../src/providers/index.js';
 
 const execFileAsync = promisify(execFile);
 
-const createWorkspace = (): Promise<string> => mkdtemp(join(tmpdir(), 'agent-recall-devin-'));
+const createWorkspace = (): Promise<string> => mkdtemp(join(tmpdir(), 'agent-stash-devin-'));
 
 describe('Devin provider discovery', () => {
   it('discovers sessions from the Devin SQLite store without reading credentials', async () => {

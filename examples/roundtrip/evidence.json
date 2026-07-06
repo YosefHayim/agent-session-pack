@@ -7,12 +7,12 @@
       "beforePath": "examples/roundtrip/before/codex-session.jsonl",
       "archivePath": "examples/roundtrip/archives/codex-session.jsonl.zst",
       "afterPath": "examples/roundtrip/after/codex-session.jsonl",
-      "beforeBytes": 133,
+      "beforeBytes": 132,
       "archiveBytes": 114,
-      "afterBytes": 133,
-      "savedPercent": 14.3,
-      "beforeSha256": "c823bda2b436e9a43de769142cd80cbfbeb56e0004ebc1540d19139f3bcdeb20",
-      "afterSha256": "c823bda2b436e9a43de769142cd80cbfbeb56e0004ebc1540d19139f3bcdeb20",
+      "afterBytes": 132,
+      "savedPercent": 13.6,
+      "beforeSha256": "1ff5920bbc6545809986fc14e1e5e95e35e2cecd14d35749aac7d04603754ba3",
+      "afterSha256": "1ff5920bbc6545809986fc14e1e5e95e35e2cecd14d35749aac7d04603754ba3",
       "byteExact": true
     },
     {

@@ -22,7 +22,7 @@ const corruptCompression: CompressionAdapter = {
   decompress: ({ restoredPath }) => Effect.promise(() => writeFile(restoredPath, 'corrupt')),
 };
 
-const createWorkspace = (): Promise<string> => mkdtemp(join(tmpdir(), 'agent-recall-archive-'));
+const createWorkspace = (): Promise<string> => mkdtemp(join(tmpdir(), 'agent-stash-archive-'));
 
 describe('archive round trip', () => {
   it('writes an archive, verifies exact restore bytes, and keeps the original on dry run', async () => {

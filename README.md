@@ -1,56 +1,97 @@
-# Agent Recall
+# Agent Stash
 
-Agent Recall reduces local disk usage from AI coding-agent session history without breaking resume.
+Cold storage for local AI coding-agent sessions.
 
-It packs cold local sessions into verified zstd archives, stores restore metadata in a local vault, and restores the provider-native files when you need to continue a session.
+AI coding tools are useful, but their local session history grows quietly: JSONL logs, SQLite stores, browser state, copied context, and provider caches. Agent Stash helps you see what is there, prove what can be compressed, and move toward byte-exact restore without breaking resume.
+
+Current build status: dry-run and proof-first. It does not remove real provider session files yet.
+
+## Five-Minute Check
+
+From this repo:
 
 ```bash
 pnpm install
 pnpm health
-pnpm dev --scan --provider devin
+pnpm savings
 pnpm pack:dry-run
-pnpm evidence:local
 ```
+
+After npm publish:
+
+```bash
+npx agent-stash doctor
+npx agent-stash savings
+npx agent-stash pack --dry-run
+```
+
+Or install the CLI:
+
+```bash
+npm install -g agent-stash
+agent-stash doctor
+agent-stash savings
+```
+
+## What You Get
+
+`savings` copies one eligible local session per provider, compresses the copy, restores it, compares SHA-256 hashes, and prints a human table. Originals are not modified.
+
+Example from this machine:
+
+```text
+Provider   Sessions  Mode         Before     After      Saved    Exact   Touched
+codex      547       archive      8.5 MB     1.6 MB     80.7%    yes     no
+claude     176       archive      34.8 KB    10.4 KB    70.0%    yes     no
+kiro       227       archive      1.1 MB     129 KB     88.6%    yes     no
+devin      8         backup-only  92.6 MB    12.8 MB    86.2%    yes     no
+total      958                    102 MB     14.6 MB    85.7%            no
+```
+
+`pack --dry-run` scans all providers and prints the cleanup plan without changing files.
 
 ## Commands
 
-For local development, prefer the package scripts:
+```bash
+agent-stash doctor [--json]
+agent-stash scan [--provider codex|claude|kiro|cursor|devin] [--json]
+agent-stash savings [--provider codex|claude|kiro|cursor|devin] [--json]
+agent-stash pack [--provider codex|claude|kiro|cursor|devin] [--older-than 7d] [--dry-run|--apply] [--json]
+agent-stash list [--provider codex|claude|kiro|cursor|devin] [--json]
+agent-stash restore <selector> [--to original|<path>] [--json]
+agent-stash pin <selector>
+agent-stash unpin <selector>
+agent-stash prune [--quarantine] [--dry-run|--apply]
+```
+
+Local development aliases:
 
 ```bash
 pnpm health
 pnpm dev --doctor
-pnpm dev --scan [--provider codex|claude|kiro|cursor|devin] [--json]
-pnpm pack:dry-run [--provider codex|claude|kiro|cursor|devin] [--older-than 7d] [--json]
-pnpm evidence:local [--json]
+pnpm dev --scan --provider devin
+pnpm savings --provider devin
+pnpm evidence:local --provider devin
+pnpm pack:dry-run
 ```
 
-`pnpm doctor` is pnpm's own built-in command, so Agent Recall uses `pnpm health` for the local prerequisite check.
-
-The raw CLI keeps the same command shape:
-
-```bash
-agent-recall init [--apply] [--json]
-agent-recall scan [--provider codex|claude|kiro|cursor|devin] [--json]
-agent-recall pack [--provider codex|claude|kiro|cursor|devin] [--older-than 7d] [--dry-run|--apply] [--json]
-agent-recall list [--provider codex|claude|kiro|cursor|devin] [--json]
-agent-recall restore <selector> [--to original|<path>] [--json]
-agent-recall pin <selector>
-agent-recall unpin <selector>
-agent-recall doctor [--json]
-agent-recall prune [--quarantine] [--dry-run|--apply]
-```
+`pnpm doctor` is pnpm's own built-in command, so this repo uses `pnpm health`. `pnpm evidence:local` is kept as an alias for older proof notes; `pnpm savings` is the preferred human command.
 
 ## Safety Model
 
-Agent Recall is dry-run first.
+Agent Stash is built around byte-exact restore, not best-effort compression.
 
-`pack --dry-run` scans all providers and prints a before/after dry-run table without changing files. In the current CLI build, `pack --apply` is intentionally blocked until restore/list indexing is complete enough to safely remove real provider files. Normal tests use fixtures only. Real local evidence is opt-in through `pnpm evidence:local`. `agent-recall doctor` checks the required `zstd` and `sqlite3` binaries.
+- Normal tests use fixtures only.
+- `savings` works on copied session files and reports `Original sessions touched: no`.
+- `pack --dry-run` does not mutate provider stores.
+- `pack --apply` is intentionally blocked until restore/list indexing is complete enough for safe recovery.
+- Cursor and Devin are backup-only until their storage models are safer to mutate.
 
-Full archive/remove/restore support targets Codex, Claude Code user-level sessions, and Kiro. Cursor and Devin are backup-only until their storage models are safer to mutate. Devin discovery reads `~/.local/share/devin/cli/sessions.db` as SQLite metadata and never reads credentials.
+Archive/remove/restore support targets Codex, Claude Code user-level sessions, and Kiro first. Devin discovery reads `~/.local/share/devin/cli/sessions.db` as SQLite metadata and never reads credentials.
 
-## Local Machine Impact
+## Local Impact
 
-This is one local machine example, not a universal benchmark.
+This is one machine's evidence, not a universal benchmark.
 
 | Provider | Before | After | Saved |
 | --- | ---: | ---: | ---: |
@@ -60,9 +101,9 @@ This is one local machine example, not a universal benchmark.
 | Cursor backup | 7.27 GB | 957 MB | 87.1% |
 | Total | 13.5 GB | 2.3 GB | about 83% |
 
-## Round-Trip Proof
+## Proof
 
-Local proof runs copied real sessions into repo-local fixtures, compressed those copies, restored them, and compared SHA-256 hashes. Originals were not touched. `pnpm evidence:local` prints a human table by default; use `pnpm evidence:local --json` for the full machine-readable report.
+Committed fixtures in `examples/roundtrip/` show before/archive/after files for small sessions. Local proof with real sessions is generated by `pnpm savings` because real provider stores should not be committed.
 
 | Provider | Source | Archive | Saved | Lines | Byte exact | Original touched |
 | --- | ---: | ---: | ---: | ---: | --- | --- |
@@ -71,4 +112,14 @@ Local proof runs copied real sessions into repo-local fixtures, compressed those
 | Codex oldest | 104,229 B | 25,422 B | 75.6% | 24 | yes | no |
 | Devin local DB | 97,058,816 B | 13,425,614 B | 86.2% | n/a | yes | no |
 
-See `examples/roundtrip/` for committed before/archive/after fixture proof. Devin proof is generated locally with `pnpm evidence:local` because the SQLite session database is backup-only and should not be committed.
+## Development
+
+```bash
+pnpm check:ci
+pnpm typecheck
+pnpm test
+pnpm build
+npm publish --dry-run
+```
+
+Agent editing rules live in `AGENTS.md`; code style and command contracts live in `CODE-STYLE.md`.

@@ -20,7 +20,7 @@ export const initCommand = defineCommand({
     if (args.json === true) {
       process.stdout.write(
         `${JSON.stringify({
-          vaultPath: '~/.agent-recall',
+          vaultPath: '~/.agent-stash',
           coldAfter: '7d',
           restoreCacheAfter: '7d',
           apply: args.apply === true,
@@ -29,8 +29,8 @@ export const initCommand = defineCommand({
       return;
     }
 
-    intro('Agent Recall init');
-    process.stdout.write('Defaults: vault ~/.agent-recall, coldAfter 7d, restoreCacheAfter 7d.\n');
+    intro('Agent Stash init');
+    process.stdout.write('Defaults: vault ~/.agent-stash, coldAfter 7d, restoreCacheAfter 7d.\n');
     process.stdout.write('Dry run only. Re-run with --apply to write config.\n');
     outro('No files changed.');
   },

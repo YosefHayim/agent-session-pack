@@ -1,11 +1,11 @@
 # AGENTS.md
 
-Agent Recall is a CLI-only TypeScript tool for reducing local disk usage from AI coding-agent session history while preserving byte-exact restore.
+Agent Stash is a CLI-only TypeScript tool for reducing local disk usage from AI coding-agent session history while preserving byte-exact restore.
 
 ## Working Rules
 
 - Do not touch real AI session directories in normal tests.
-- Real local evidence runs must be explicit through `pnpm evidence:local`.
+- Real local evidence runs must be explicit through `pnpm savings` or `pnpm evidence:local`.
 - Keep provider modules read-only.
 - Centralize destructive behavior in core archive/restore workflows.
 - Preserve exact source bytes before any original file is removed.

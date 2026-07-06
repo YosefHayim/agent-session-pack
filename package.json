@@ -1,12 +1,28 @@
 {
-  "name": "agent-recall",
+  "name": "agent-stash",
   "version": "0.1.0",
-  "description": "Compress cold local AI coding-agent sessions while preserving byte-exact restore.",
+  "description": "Stash cold local AI coding-agent sessions with byte-exact restore.",
   "license": "MIT",
+  "keywords": [
+    "ai-agents",
+    "coding-agents",
+    "sessions",
+    "compression",
+    "cli",
+    "developer-tools"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YosefHayim/agent-recall.git"
+  },
+  "bugs": {
+    "url": "https://github.com/YosefHayim/agent-recall/issues"
+  },
+  "homepage": "https://github.com/YosefHayim/agent-recall#readme",
   "type": "module",
   "packageManager": "pnpm@10.12.1",
   "bin": {
-    "agent-recall": "./dist/cli/main.js"
+    "agent-stash": "dist/cli/main.js"
   },
   "files": [
     "dist",
@@ -14,18 +30,22 @@
     "LICENSE",
     "examples"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "dev": "tsx src/cli/main.ts",
     "health": "tsx src/cli/main.ts doctor",
     "scan": "tsx src/cli/main.ts scan",
+    "savings": "tsx src/cli/main.ts savings",
     "pack:dry-run": "tsx src/cli/main.ts pack --dry-run",
-    "evidence": "tsx scripts/evidenceLocal.ts",
+    "evidence": "tsx src/cli/main.ts savings",
     "build": "tsup",
     "check:ci": "biome ci . && eslint .",
     "test": "vitest run",
     "test:integration": "vitest run tests/*.integration.test.ts",
     "typecheck": "tsc --noEmit",
-    "evidence:local": "tsx scripts/evidenceLocal.ts"
+    "evidence:local": "tsx src/cli/main.ts savings"
   },
   "engines": {
     "node": ">=20.0.0"

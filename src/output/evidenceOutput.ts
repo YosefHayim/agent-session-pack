@@ -1,29 +1,5 @@
-import type { ProviderId, ProviderMode } from '../core/index.js';
+import type { LocalEvidenceEntry, LocalEvidenceReport } from '../core/index.js';
 import { formatBytes } from './byteFormat.js';
-
-export type LocalEvidenceEntry = {
-  readonly provider: ProviderId;
-  readonly mode: ProviderMode;
-  readonly sourceBytes: number;
-  readonly archiveBytes: number;
-  readonly savedPercent: number;
-  readonly byteExact: boolean;
-  readonly originalTouched: boolean;
-  readonly titlePreview?: string;
-  readonly originalPath?: string;
-  readonly fixturePath?: string;
-  readonly archivePath?: string;
-  readonly restoredPath?: string;
-  readonly originalSha256?: string;
-  readonly fixtureSha256?: string;
-  readonly restoredSha256?: string;
-  readonly maxEvidenceSourceBytes?: number;
-};
-
-export type LocalEvidenceReport = {
-  readonly workRoot: string;
-  readonly evidence: ReadonlyArray<LocalEvidenceEntry>;
-};
 
 /**
  * Formats local evidence output for terminal users.
@@ -43,6 +19,10 @@ export const formatHumanEvidenceReport = (report: LocalEvidenceReport): string =
 
   const totalSourceBytes = sumEvidenceBytes(report.evidence, 'sourceBytes');
   const totalArchiveBytes = sumEvidenceBytes(report.evidence, 'archiveBytes');
+  const totalFoundSessions = report.evidence.reduce(
+    (totalSessions, entry) => totalSessions + entry.foundSessions,
+    0,
+  );
   const touchedOriginals = report.evidence.some((entry) => entry.originalTouched);
   const totalSavedPercent = savedPercent(totalSourceBytes, totalArchiveBytes);
 
@@ -51,10 +31,10 @@ export const formatHumanEvidenceReport = (report: LocalEvidenceReport): string =
     '',
     'Copies only. Real session files are not modified.',
     '',
-    'Provider   Mode         Before     After      Saved    Exact   Touched',
+    'Provider   Sessions  Mode         Before     After      Saved    Exact   Touched',
     ...report.evidence.map(formatEvidenceRow),
-    '--------   ----         ------     -----      -----    -----   -------',
-    `${'total'.padEnd(10)} ${''.padEnd(12)} ${formatBytes(totalSourceBytes).padEnd(10)} ${formatBytes(totalArchiveBytes).padEnd(10)} ${formatPercent(totalSavedPercent).padEnd(8)} ${''.padEnd(7)} ${touchedOriginals ? 'yes' : 'no'}`,
+    '--------   --------  ----         ------     -----      -----    -----   -------',
+    `${'total'.padEnd(10)} ${String(totalFoundSessions).padEnd(9)} ${''.padEnd(12)} ${formatBytes(totalSourceBytes).padEnd(10)} ${formatBytes(totalArchiveBytes).padEnd(10)} ${formatPercent(totalSavedPercent).padEnd(8)} ${''.padEnd(7)} ${touchedOriginals ? 'yes' : 'no'}`,
     '',
     `Original sessions touched: ${touchedOriginals ? 'yes' : 'no'}`,
     `Work root: ${report.workRoot}`,
@@ -72,6 +52,7 @@ export const formatJsonEvidenceReport = (report: LocalEvidenceReport): string =>
 
 const formatEvidenceRow = (entry: LocalEvidenceEntry): string => {
   const provider = entry.provider.padEnd(10);
+  const foundSessions = String(entry.foundSessions).padEnd(9);
   const mode = entry.mode.padEnd(12);
   const before = formatBytes(entry.sourceBytes).padEnd(10);
   const after = formatBytes(entry.archiveBytes).padEnd(10);
@@ -79,7 +60,7 @@ const formatEvidenceRow = (entry: LocalEvidenceEntry): string => {
   const exact = (entry.byteExact ? 'yes' : 'no').padEnd(7);
   const touched = entry.originalTouched ? 'yes' : 'no';
 
-  return `${provider} ${mode} ${before} ${after} ${saved} ${exact} ${touched}`;
+  return `${provider} ${foundSessions} ${mode} ${before} ${after} ${saved} ${exact} ${touched}`;
 };
 
 const sumEvidenceBytes = (

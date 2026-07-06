@@ -6,7 +6,7 @@ import { Effect } from 'effect';
 import { describe, expect, it } from 'vitest';
 import { claudeCodeProvider, codexProvider } from '../src/providers/index.js';
 
-const createWorkspace = (): Promise<string> => mkdtemp(join(tmpdir(), 'agent-recall-provider-'));
+const createWorkspace = (): Promise<string> => mkdtemp(join(tmpdir(), 'agent-stash-provider-'));
 
 describe('provider discovery', () => {
   it('discovers Codex JSONL sessions under the store root', async () => {
@@ -17,7 +17,7 @@ describe('provider discovery', () => {
       'rollout-2026-05-04T03-05-27-019df04d-dc23-7751-bcd1-d03b60116746.jsonl',
     );
     await mkdir(nested, { recursive: true });
-    await writeFile(sessionPath, '{"type":"user","text":"Build Agent Recall"}\n');
+    await writeFile(sessionPath, '{"type":"user","text":"Build Agent Stash"}\n');
     await writeFile(join(nested, 'notes.txt'), 'ignore me');
 
     const sessions = await Effect.runPromise(
@@ -31,9 +31,9 @@ describe('provider discovery', () => {
     expect(sessions[0]).toMatchObject({
       id: '019df04d-dc23-7751-bcd1-d03b60116746',
       provider: 'codex',
-      title: 'Build Agent Recall',
+      title: 'Build Agent Stash',
       originalPath: sessionPath,
-      slug: 'build-agent-recall',
+      slug: 'build-agent-stash',
     });
     expect(sessions[0].sizeBytes).toBeGreaterThan(0);
     expect(sessions[0].modifiedAt).toBeInstanceOf(Date);
@@ -41,7 +41,7 @@ describe('provider discovery', () => {
 
   it('discovers Claude Code user-level sessions and excludes subagents', async () => {
     const workspace = await createWorkspace();
-    const project = join(workspace, '-Users-yosefhayimsabag-Desktop-Code-Agent-Recall');
+    const project = join(workspace, '-Users-yosefhayimsabag-Desktop-Code-Agent-Stash');
     const subagents = join(project, 'subagents');
     const sessionPath = join(project, '8bb71f3d-6036-4460-9852-376ec2676000.jsonl');
     await mkdir(subagents, { recursive: true });

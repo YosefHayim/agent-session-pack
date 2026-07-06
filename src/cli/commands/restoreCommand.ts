@@ -21,7 +21,7 @@ export const restoreCommand = defineCommand({
   },
   run: ({ args }) => {
     if (args.selector === undefined) {
-      process.stderr.write('Missing selector. Use agent-recall restore <selector>.\n');
+      process.stderr.write('Missing selector. Use agent-stash restore <selector>.\n');
       process.exitCode = 2;
       return;
     }

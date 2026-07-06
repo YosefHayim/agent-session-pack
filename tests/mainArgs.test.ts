@@ -15,6 +15,11 @@ describe('CLI argument aliases', () => {
       '--provider',
       'devin',
     ]);
+    expect(normalizeCliArgv(['node', 'main.js', '--savings'])).toEqual([
+      'node',
+      'main.js',
+      'savings',
+    ]);
   });
 
   it('removes a standalone pnpm separator before a subcommand', () => {

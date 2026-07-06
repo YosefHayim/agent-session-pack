@@ -16,6 +16,6 @@ export const listCommand = defineCommand({
     },
   },
   run: () => {
-    process.stdout.write('No indexed sessions yet. Run agent-recall scan first.\n');
+    process.stdout.write('No indexed sessions yet. Run agent-stash scan first.\n');
   },
 });

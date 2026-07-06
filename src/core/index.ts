@@ -4,6 +4,7 @@ export * from './evidenceWorkRoot.js';
 export * from './localEvidence.js';
 export * from './manifestStore.js';
 export * from './packPlan.js';
+export * from './providerInventory.js';
 export * from './sessionArchive.js';
 export * from './sessionIndex.js';
 export * from './sessionSelection.js';

@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="assets/hero.svg" alt="Agent Session Pack — compress and restore AI coding-agent sessions safely" width="100%" />
-</p>
-
 # Agent Session Pack
 
 Cold storage for local AI coding-agent sessions.

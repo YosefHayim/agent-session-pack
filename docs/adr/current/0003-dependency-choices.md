@@ -15,7 +15,6 @@ Runtime dependencies:
 - `effect`
 - `citty`
 - `@clack/prompts`
-- `better-sqlite3`
 
 Dev dependencies:
 
@@ -31,8 +30,9 @@ Dev dependencies:
 
 External binary:
 
-- `zstd`, checked by `agent-recall doctor`.
+- `zstd`, checked by `agent-stash doctor`.
+- `sqlite3`, checked by `agent-stash doctor` for Devin session discovery.
 
 ## Consequences
 
-Agent Recall keeps compression native and transparent while using TypeScript libraries for command and data contracts.
+Agent Stash keeps compression native and transparent while using TypeScript libraries for command and data contracts.

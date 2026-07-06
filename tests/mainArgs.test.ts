@@ -3,6 +3,7 @@ import { normalizeCliArgv } from '../src/cli/mainArgs.js';
 
 describe('CLI argument aliases', () => {
   it('maps pnpm-friendly flag aliases to subcommands', () => {
+    expect(normalizeCliArgv(['node', 'main.js', '--check'])).toEqual(['node', 'main.js', 'check']);
     expect(normalizeCliArgv(['node', 'main.js', '--doctor'])).toEqual([
       'node',
       'main.js',

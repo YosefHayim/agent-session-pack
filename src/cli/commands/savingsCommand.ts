@@ -77,6 +77,32 @@ export const savingsCommand = defineCommand({
   },
 });
 
+export const checkCommand = defineCommand({
+  meta: {
+    name: 'check',
+    description: 'Run the no-install local savings proof.',
+  },
+  args: {
+    provider: {
+      type: 'string',
+      description: 'Provider id: codex, claude, kiro, cursor, or devin.',
+      valueHint: 'provider',
+    },
+    json: {
+      type: 'boolean',
+      description: 'Write stable JSON output.',
+    },
+  },
+  run: async ({ args }) => {
+    await Effect.runPromise(
+      runSavingsCommand({
+        provider: args.provider,
+        json: args.json,
+      }),
+    );
+  },
+});
+
 const normalizeProviders = (provider: string | undefined): ReadonlyArray<ProviderAdapter> => {
   if (provider === undefined) {
     return allProviders;

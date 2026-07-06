@@ -1,6 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import { defineCommand, runMain } from 'citty';
 import {
+  checkCommand,
   doctorCommand,
   initCommand,
   listCommand,
@@ -19,6 +20,7 @@ export const mainCommand = defineCommand({
     description: 'Stash cold local AI coding-agent sessions with byte-exact restore.',
   },
   subCommands: {
+    check: checkCommand,
     init: initCommand,
     scan: scanCommand,
     pack: packCommand,

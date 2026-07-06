@@ -23,6 +23,8 @@ export const initCommand = defineCommand({
           vaultPath: '~/.agent-stash',
           coldAfter: '7d',
           restoreCacheAfter: '7d',
+          lifecycle: 'manual-proof-only',
+          plannedLifecycle: 'restore-on-launch-pack-on-close',
           apply: args.apply === true,
         })}\n`,
       );
@@ -31,6 +33,12 @@ export const initCommand = defineCommand({
 
     intro('Agent Stash init');
     process.stdout.write('Defaults: vault ~/.agent-stash, coldAfter 7d, restoreCacheAfter 7d.\n');
+    process.stdout.write(
+      'Lifecycle target: restore selected provider sessions on relaunch, then pack cold sessions after close.\n',
+    );
+    process.stdout.write(
+      'Provider selection will be explicit before lifecycle hooks are written.\n',
+    );
     process.stdout.write('Dry run only. Re-run with --apply to write config.\n');
     outro('No files changed.');
   },

@@ -109,6 +109,7 @@ Agent Stash is CLI-only.
 Commands:
 
 ```bash
+agent-stash check [--provider codex|claude|kiro|cursor|devin] [--json]
 agent-stash init [--apply] [--json]
 agent-stash scan [--provider codex|claude|kiro|cursor|devin] [--json]
 agent-stash pack [--provider codex|claude|kiro|cursor|devin] [--older-than 7d] [--dry-run|--apply] [--json]
@@ -125,6 +126,7 @@ Local package scripts should cover the common human paths:
 
 ```bash
 pnpm health
+pnpm dev --check
 pnpm dev --doctor
 pnpm dev --scan --provider devin
 pnpm savings
@@ -176,6 +178,7 @@ Avoid `memory` in code identifiers because it confuses RAM with disk.
 
 - `pnpm test`: synthetic fixtures only.
 - `pnpm test:integration`: temp HOME and temp provider roots only.
+- `npx agent-stash check`: no-install copy-only local proof after publish.
 - `pnpm savings`: explicit local machine proof against copied real sessions.
 - `pnpm evidence:local`: alias kept for existing proof notes.
 - `pnpm pack:dry-run`: non-destructive all-provider cleanup summary.

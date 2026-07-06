@@ -8,11 +8,20 @@ Current build status: dry-run and proof-first. It does not remove real provider 
 
 ## Five-Minute Check
 
+No repo clone, pnpm install, or global install is needed after publish:
+
+```bash
+npx --yes agent-stash check
+```
+
+That command scans supported local AI agents, copies one eligible session per provider into a temp proof workspace, compresses it, restores it, compares hashes, and prints the before/after savings table. Real session files stay untouched.
+
 From this repo:
 
 ```bash
 pnpm install
 pnpm health
+pnpm dev --check
 pnpm savings
 pnpm pack:dry-run
 ```
@@ -21,6 +30,7 @@ After npm publish:
 
 ```bash
 npx agent-stash doctor
+npx agent-stash check
 npx agent-stash savings
 npx agent-stash pack --dry-run
 ```
@@ -30,12 +40,13 @@ Or install the CLI:
 ```bash
 npm install -g agent-stash
 agent-stash doctor
+agent-stash check
 agent-stash savings
 ```
 
 ## What You Get
 
-`savings` copies one eligible local session per provider, compresses the copy, restores it, compares SHA-256 hashes, and prints a human table. Originals are not modified.
+`check` and `savings` copy one eligible local session per provider, compress the copy, restore it, compare SHA-256 hashes, and print a human table. Originals are not modified.
 
 Example from this machine:
 
@@ -50,9 +61,51 @@ total      958                    102 MB     14.6 MB    85.7%            no
 
 `pack --dry-run` scans all providers and prints the cleanup plan without changing files.
 
+## Architecture Flow
+
+Current safe check:
+
+```text
++------------------+      +------------------+      +------------------+
+| AI agent stores  | ---> | proof workspace  | ---> | savings table    |
+| read-only scan   |      | copy + compress  |      | before / after   |
+| codex, claude,   |      | restore copy     |      | exact / touched  |
+| kiro, cursor,    |      | SHA-256 compare  |      | sessions found   |
+| devin            |      |                  |      |                  |
++------------------+      +------------------+      +------------------+
+```
+
+Target lifecycle after one-time setup:
+
+```text
++-----------------------+
+| agent-stash init      |
+| choose providers      |
+| confirm 7d default    |
+| confirm vault path    |
++-----------+-----------+
+            |
+            v
++-----------------------+      relaunch/resume       +-----------------------+
+| ~/.agent-stash config | -------------------------> | restore native file   |
+| provider policy       |                            | from verified archive |
+| lifecycle hooks       | <------------------------- | run the agent session |
++-----------+-----------+      session closes        +-----------+-----------+
+            |                                                    |
+            v                                                    v
++-----------------------+      verify before remove  +-----------------------+
+| pack cold sessions    | -------------------------> | compressed vault      |
+| copy, archive, hash   |                            | manifest + tombstone  |
+| restore check         |                            | byte-exact recovery   |
++-----------------------+                            +-----------------------+
+```
+
+The first row exists today through `check`, `savings`, and `pack --dry-run`. The lifecycle hook row is the next feature: `init` should make the developer explicitly choose providers and acknowledge that selected agents will restore on relaunch and pack again after close.
+
 ## Commands
 
 ```bash
+agent-stash check [--provider codex|claude|kiro|cursor|devin] [--json]
 agent-stash doctor [--json]
 agent-stash scan [--provider codex|claude|kiro|cursor|devin] [--json]
 agent-stash savings [--provider codex|claude|kiro|cursor|devin] [--json]
@@ -68,6 +121,7 @@ Local development aliases:
 
 ```bash
 pnpm health
+pnpm dev --check
 pnpm dev --doctor
 pnpm dev --scan --provider devin
 pnpm savings --provider devin

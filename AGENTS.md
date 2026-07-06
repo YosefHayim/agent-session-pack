@@ -5,12 +5,13 @@ Agent Stash is a CLI-only TypeScript tool for reducing local disk usage from AI 
 ## Working Rules
 
 - Do not touch real AI session directories in normal tests.
-- Real local evidence runs must be explicit through `pnpm savings` or `pnpm evidence:local`.
+- Real local evidence runs must be explicit through `pnpm savings`, `pnpm evidence:local`, or `agent-stash check`.
 - Keep provider modules read-only.
 - Centralize destructive behavior in core archive/restore workflows.
 - Preserve exact source bytes before any original file is removed.
 - Treat Cursor and Devin as backup-only providers until their stores are safe to mutate.
 - Keep `pack --apply` blocked until restore/list indexing is complete enough for safe recovery.
+- Make lifecycle setup explicit: provider choice, vault path, cold threshold, and pack-on-close behavior must be shown before any hook writes happen.
 
 ## Conventions
 

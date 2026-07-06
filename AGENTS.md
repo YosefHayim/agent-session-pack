@@ -1,11 +1,11 @@
 # AGENTS.md
 
-Agent Stash is a CLI-only TypeScript tool for reducing local disk usage from AI coding-agent session history while preserving byte-exact restore.
+Agent Session Pack is a CLI-only TypeScript tool for reducing local disk usage from AI coding-agent session history while preserving byte-exact restore.
 
 ## Working Rules
 
 - Do not touch real AI session directories in normal tests.
-- Real local evidence runs must be explicit through `pnpm savings`, `pnpm evidence:local`, or `agent-stash check`.
+- Real local evidence runs must be explicit through `pnpm savings`, `pnpm evidence:local`, or `agent-session-pack check`.
 - Keep provider modules read-only.
 - Centralize destructive behavior in core archive/restore workflows.
 - Preserve exact source bytes before any original file is removed.

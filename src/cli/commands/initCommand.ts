@@ -20,7 +20,7 @@ export const initCommand = defineCommand({
     if (args.json === true) {
       process.stdout.write(
         `${JSON.stringify({
-          vaultPath: '~/.agent-stash',
+          vaultPath: '~/.agent-session-pack',
           coldAfter: '7d',
           restoreCacheAfter: '7d',
           lifecycle: 'manual-proof-only',
@@ -31,8 +31,10 @@ export const initCommand = defineCommand({
       return;
     }
 
-    intro('Agent Stash init');
-    process.stdout.write('Defaults: vault ~/.agent-stash, coldAfter 7d, restoreCacheAfter 7d.\n');
+    intro('Agent Session Pack init');
+    process.stdout.write(
+      'Defaults: vault ~/.agent-session-pack, coldAfter 7d, restoreCacheAfter 7d.\n',
+    );
     process.stdout.write(
       'Lifecycle target: restore selected provider sessions on relaunch, then pack cold sessions after close.\n',
     );

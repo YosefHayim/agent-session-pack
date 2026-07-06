@@ -6,7 +6,7 @@ Accepted.
 
 ## Context
 
-Agent Stash must work for humans in a terminal and for agents in scripts. It cannot hang in non-TTY mode.
+Agent Session Pack must work for humans in a terminal and for agents in scripts. It cannot hang in non-TTY mode.
 
 ## Decision
 
@@ -18,4 +18,4 @@ Bare TTY invocation opens a menu. Commands with flags or non-TTY input never pro
 
 The CLI boundary stays thin. Human and JSON routes call the same Effect workflows.
 
-`agent-stash check` is the no-install-friendly proof command after npm publish. It aliases the copy-only savings workflow and must stay safe against real provider stores.
+`agent-session-pack check` is the no-install-friendly proof command after npm publish. It aliases the copy-only savings workflow and must stay safe against real provider stores.

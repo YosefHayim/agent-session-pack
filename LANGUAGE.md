@@ -2,7 +2,7 @@
 
 | Term | Definition | Avoid |
 | --- | --- | --- |
-| vault | Agent Recall storage under `~/.agent-recall`. | cache, memory |
+| vault | Agent Session Pack storage under `~/.agent-session-pack`. | cache, memory |
 | store | Provider local session root, such as `~/.codex/sessions`. | folder, source |
 | session | One provider conversation or log file. | conversation in code paths |
 | archive | Compressed content-addressed `.zst` object. | backup except Cursor mode |

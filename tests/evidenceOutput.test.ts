@@ -4,7 +4,7 @@ import { formatHumanEvidenceReport } from '../src/output/evidenceOutput.js';
 describe('human evidence output', () => {
   it('renders local proof as a compact before and after table', () => {
     const output = formatHumanEvidenceReport({
-      workRoot: '/tmp/agent-stash/evidence',
+      workRoot: '/tmp/agent-session-pack/evidence',
       evidence: [
         {
           provider: 'codex',
@@ -42,6 +42,6 @@ describe('human evidence output', () => {
     expect(output).toContain('86.2%');
     expect(output).toContain('50');
     expect(output).toContain('Original sessions touched: no');
-    expect(output).toContain('/tmp/agent-stash/evidence');
+    expect(output).toContain('/tmp/agent-session-pack/evidence');
   });
 });

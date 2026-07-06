@@ -15,9 +15,9 @@ import { isCliEntrypoint } from './mainEntrypoint.js';
 
 export const mainCommand = defineCommand({
   meta: {
-    name: 'agent-stash',
+    name: 'agent-session-pack',
     version: '0.1.0',
-    description: 'Stash cold local AI coding-agent sessions with byte-exact restore.',
+    description: 'Pack cold local AI coding-agent sessions with byte-exact restore.',
   },
   subCommands: {
     check: checkCommand,

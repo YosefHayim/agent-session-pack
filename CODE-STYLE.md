@@ -1,10 +1,10 @@
-# Agent Stash Code Style
+# Agent Session Pack Code Style
 
-This guide is the source of truth for how Agent Stash code is written. Existing proof-spike code is evidence, not precedent.
+This guide is the source of truth for how Agent Session Pack code is written. Existing proof-spike code is evidence, not precedent.
 
 ## Purpose
 
-Agent Stash is a CLI-only tool that reduces local disk usage from AI coding-agent session history without breaking resume, restore, or conversation quality.
+Agent Session Pack is a CLI-only tool that reduces local disk usage from AI coding-agent session history without breaking resume, restore, or conversation quality.
 
 ## Formatting
 
@@ -96,7 +96,7 @@ No `utils.ts`, `helpers.ts`, or `common.ts` dumping grounds.
 
 ## CLI Contract
 
-Agent Stash is CLI-only.
+Agent Session Pack is CLI-only.
 
 - Bare TTY invocation opens a Clack menu.
 - TTY commands with missing interactive input use Clack prompts or pickers.
@@ -109,17 +109,17 @@ Agent Stash is CLI-only.
 Commands:
 
 ```bash
-agent-stash check [--provider codex|claude|kiro|cursor|devin] [--json]
-agent-stash init [--apply] [--json]
-agent-stash scan [--provider codex|claude|kiro|cursor|devin] [--json]
-agent-stash pack [--provider codex|claude|kiro|cursor|devin] [--older-than 7d] [--dry-run|--apply] [--json]
-agent-stash savings [--provider codex|claude|kiro|cursor|devin] [--json]
-agent-stash list [--provider codex|claude|kiro|cursor|devin] [--json]
-agent-stash restore <selector> [--to original|<path>] [--json]
-agent-stash pin <selector>
-agent-stash unpin <selector>
-agent-stash doctor [--json]
-agent-stash prune [--quarantine] [--dry-run|--apply]
+agent-session-pack check [--provider codex|claude|kiro|cursor|devin] [--json]
+agent-session-pack init [--apply] [--json]
+agent-session-pack scan [--provider codex|claude|kiro|cursor|devin] [--json]
+agent-session-pack pack [--provider codex|claude|kiro|cursor|devin] [--older-than 7d] [--dry-run|--apply] [--json]
+agent-session-pack savings [--provider codex|claude|kiro|cursor|devin] [--json]
+agent-session-pack list [--provider codex|claude|kiro|cursor|devin] [--json]
+agent-session-pack restore <selector> [--to original|<path>] [--json]
+agent-session-pack pin <selector>
+agent-session-pack unpin <selector>
+agent-session-pack doctor [--json]
+agent-session-pack prune [--quarantine] [--dry-run|--apply]
 ```
 
 Local package scripts should cover the common human paths:
@@ -142,7 +142,7 @@ JSON output has a stable object shape, machine-readable errors, no ANSI, and no 
 
 ## Vocabulary
 
-- `vault`: `~/.agent-stash`.
+- `vault`: `~/.agent-session-pack`.
 - `store`: provider local session root, such as `~/.codex/sessions`.
 - `session`: one conversation/log.
 - `archive`: compressed content-addressed `.zst` object.
@@ -178,7 +178,7 @@ Avoid `memory` in code identifiers because it confuses RAM with disk.
 
 - `pnpm test`: synthetic fixtures only.
 - `pnpm test:integration`: temp HOME and temp provider roots only.
-- `npx agent-stash check`: no-install copy-only local proof after publish.
+- `npx agent-session-pack check`: no-install copy-only local proof after publish.
 - `pnpm savings`: explicit local machine proof against copied real sessions.
 - `pnpm evidence:local`: alias kept for existing proof notes.
 - `pnpm pack:dry-run`: non-destructive all-provider cleanup summary.
@@ -216,5 +216,5 @@ Dev:
 
 External binary:
 
-- `zstd`, checked by `agent-stash doctor`.
-- `sqlite3`, checked by `agent-stash doctor` for Devin session discovery.
+- `zstd`, checked by `agent-session-pack doctor`.
+- `sqlite3`, checked by `agent-session-pack doctor` for Devin session discovery.

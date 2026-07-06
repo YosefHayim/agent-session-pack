@@ -30,9 +30,9 @@ Dev dependencies:
 
 External binary:
 
-- `zstd`, checked by `agent-stash doctor`.
-- `sqlite3`, checked by `agent-stash doctor` for Devin session discovery.
+- `zstd`, checked by `agent-session-pack doctor`.
+- `sqlite3`, checked by `agent-session-pack doctor` for Devin session discovery.
 
 ## Consequences
 
-Agent Stash keeps compression native and transparent while using TypeScript libraries for command and data contracts.
+Agent Session Pack keeps compression native and transparent while using TypeScript libraries for command and data contracts.

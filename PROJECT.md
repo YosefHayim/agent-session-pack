@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Agent Recall reduces local disk usage from AI coding-agent session history while preserving byte-exact restore into provider-native formats.
+Agent Session Pack reduces local disk usage from AI coding-agent session history while preserving byte-exact restore into provider-native formats.
 
 ## Direction
 
@@ -24,7 +24,7 @@ The project is a CLI-only tool for developers and coding agents. It should make 
 
 ## Success
 
-- `agent-recall scan` shows savings, locations, and cold candidates.
-- `agent-recall pack --apply` removes originals only after verified byte-exact restore.
-- `agent-recall restore <selector>` restores native files by ID, name, slug, or picker.
+- `agent-session-pack scan` shows savings, locations, and cold candidates.
+- `agent-session-pack pack --apply` removes originals only after verified byte-exact restore.
+- `agent-session-pack restore <selector>` restores native files by ID, name, slug, or picker.
 - Normal tests never read or mutate real home AI session directories.

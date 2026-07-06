@@ -1,8 +1,8 @@
-# Agent Stash
+# Agent Session Pack
 
 Cold storage for local AI coding-agent sessions.
 
-AI coding tools are useful, but their local session history grows quietly: JSONL logs, SQLite stores, browser state, copied context, and provider caches. Agent Stash helps you see what is there, prove what can be compressed, and move toward byte-exact restore without breaking resume.
+AI coding tools are useful, but their local session history grows quietly: JSONL logs, SQLite stores, browser state, copied context, and provider caches. Agent Session Pack helps you see what is there, prove what can be compressed, and move toward byte-exact restore without breaking resume.
 
 Current build status: dry-run and proof-first. It does not remove real provider session files yet.
 
@@ -11,7 +11,7 @@ Current build status: dry-run and proof-first. It does not remove real provider 
 No repo clone, pnpm install, or global install is needed after publish:
 
 ```bash
-npx --yes agent-stash check
+npx --yes agent-session-pack check
 ```
 
 That command scans supported local AI agents, copies one eligible session per provider into a temp proof workspace, compresses it, restores it, compares hashes, and prints the before/after savings table. Real session files stay untouched.
@@ -29,19 +29,19 @@ pnpm pack:dry-run
 After npm publish:
 
 ```bash
-npx agent-stash doctor
-npx agent-stash check
-npx agent-stash savings
-npx agent-stash pack --dry-run
+npx agent-session-pack doctor
+npx agent-session-pack check
+npx agent-session-pack savings
+npx agent-session-pack pack --dry-run
 ```
 
 Or install the CLI:
 
 ```bash
-npm install -g agent-stash
-agent-stash doctor
-agent-stash check
-agent-stash savings
+npm install -g agent-session-pack
+agent-session-pack doctor
+agent-session-pack check
+agent-session-pack savings
 ```
 
 ## What You Get
@@ -78,26 +78,26 @@ Current safe check:
 Target lifecycle after one-time setup:
 
 ```text
-+-----------------------+
-| agent-stash init      |
-| choose providers      |
-| confirm 7d default    |
-| confirm vault path    |
-+-----------+-----------+
-            |
-            v
-+-----------------------+      relaunch/resume       +-----------------------+
-| ~/.agent-stash config | -------------------------> | restore native file   |
-| provider policy       |                            | from verified archive |
-| lifecycle hooks       | <------------------------- | run the agent session |
-+-----------+-----------+      session closes        +-----------+-----------+
-            |                                                    |
-            v                                                    v
-+-----------------------+      verify before remove  +-----------------------+
-| pack cold sessions    | -------------------------> | compressed vault      |
-| copy, archive, hash   |                            | manifest + tombstone  |
-| restore check         |                            | byte-exact recovery   |
-+-----------------------+                            +-----------------------+
++-----------------------------+
+| agent-session-pack init     |
+| choose providers            |
+| confirm 7d default          |
+| confirm vault path          |
++--------------+--------------+
+               |
+               v
++-----------------------------+      relaunch/resume       +-----------------------------+
+| ~/.agent-session-pack       | -------------------------> | restore native file         |
+| provider policy             |                            | from verified archive       |
+| lifecycle hooks             | <------------------------- | run the agent session       |
++--------------+--------------+      session closes        +--------------+--------------+
+               |                                                    |
+               v                                                    v
++-----------------------------+      verify before remove  +-----------------------------+
+| pack cold sessions          | -------------------------> | compressed vault            |
+| copy, archive, hash         |                            | manifest + tombstone        |
+| restore check               |                            | byte-exact recovery         |
++-----------------------------+                            +-----------------------------+
 ```
 
 The first row exists today through `check`, `savings`, and `pack --dry-run`. The lifecycle hook row is the next feature: `init` should make the developer explicitly choose providers and acknowledge that selected agents will restore on relaunch and pack again after close.
@@ -105,16 +105,16 @@ The first row exists today through `check`, `savings`, and `pack --dry-run`. The
 ## Commands
 
 ```bash
-agent-stash check [--provider codex|claude|kiro|cursor|devin] [--json]
-agent-stash doctor [--json]
-agent-stash scan [--provider codex|claude|kiro|cursor|devin] [--json]
-agent-stash savings [--provider codex|claude|kiro|cursor|devin] [--json]
-agent-stash pack [--provider codex|claude|kiro|cursor|devin] [--older-than 7d] [--dry-run|--apply] [--json]
-agent-stash list [--provider codex|claude|kiro|cursor|devin] [--json]
-agent-stash restore <selector> [--to original|<path>] [--json]
-agent-stash pin <selector>
-agent-stash unpin <selector>
-agent-stash prune [--quarantine] [--dry-run|--apply]
+agent-session-pack check [--provider codex|claude|kiro|cursor|devin] [--json]
+agent-session-pack doctor [--json]
+agent-session-pack scan [--provider codex|claude|kiro|cursor|devin] [--json]
+agent-session-pack savings [--provider codex|claude|kiro|cursor|devin] [--json]
+agent-session-pack pack [--provider codex|claude|kiro|cursor|devin] [--older-than 7d] [--dry-run|--apply] [--json]
+agent-session-pack list [--provider codex|claude|kiro|cursor|devin] [--json]
+agent-session-pack restore <selector> [--to original|<path>] [--json]
+agent-session-pack pin <selector>
+agent-session-pack unpin <selector>
+agent-session-pack prune [--quarantine] [--dry-run|--apply]
 ```
 
 Local development aliases:
@@ -133,7 +133,7 @@ pnpm pack:dry-run
 
 ## Safety Model
 
-Agent Stash is built around byte-exact restore, not best-effort compression.
+Agent Session Pack is built around byte-exact restore, not best-effort compression.
 
 - Normal tests use fixtures only.
 - `savings` works on copied session files and reports `Original sessions touched: no`.

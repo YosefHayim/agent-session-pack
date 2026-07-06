@@ -1,7 +1,7 @@
 {
-  "name": "agent-stash",
+  "name": "agent-session-pack",
   "version": "0.1.0",
-  "description": "Stash cold local AI coding-agent sessions with byte-exact restore.",
+  "description": "Pack cold local AI coding-agent sessions with byte-exact restore.",
   "license": "MIT",
   "keywords": [
     "ai-agents",
@@ -13,16 +13,16 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/YosefHayim/agent-recall.git"
+    "url": "git+https://github.com/YosefHayim/agent-session-pack.git"
   },
   "bugs": {
-    "url": "https://github.com/YosefHayim/agent-recall/issues"
+    "url": "https://github.com/YosefHayim/agent-session-pack/issues"
   },
-  "homepage": "https://github.com/YosefHayim/agent-recall#readme",
+  "homepage": "https://github.com/YosefHayim/agent-session-pack#readme",
   "type": "module",
   "packageManager": "pnpm@10.12.1",
   "bin": {
-    "agent-stash": "dist/cli/main.js"
+    "agent-session-pack": "dist/cli/main.js"
   },
   "files": [
     "dist",

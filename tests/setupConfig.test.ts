@@ -3,11 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Effect } from 'effect';
 import { describe, expect, it } from 'vitest';
-import {
-  expandHomePath,
-  validateVaultPath,
-  writeSetupConfig,
-} from '../src/core/setupConfig.js';
+import { expandHomePath, validateVaultPath, writeSetupConfig } from '../src/core/setupConfig.js';
 
 const createWorkspace = (): Promise<string> => mkdtemp(join(tmpdir(), 'agent-session-pack-setup-'));
 

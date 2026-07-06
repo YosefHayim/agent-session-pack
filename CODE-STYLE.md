@@ -100,6 +100,9 @@ No `utils.ts`, `helpers.ts`, or `common.ts` dumping grounds.
 Agent Session Pack is CLI-only.
 
 - Bare TTY invocation opens a Clack menu.
+- Bare TTY menu options use Clack `hint` copy for short, dim explanatory descriptions.
+- First setup explains the safety model before prompts, scans providers with a TTY spinner,
+  uses provider multi-select, and validates the vault path before config writes.
 - TTY commands with missing interactive input use Clack prompts or pickers.
 - Flags or non-TTY never prompt or hang.
 - `--json` never prompts and never emits ANSI.

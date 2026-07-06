@@ -49,40 +49,81 @@ export const inspectProviderInventory = (
     const cutoffTime = request.now.getTime() - request.olderThanMs;
 
     for (const provider of request.providers) {
-      const roots = provider.defaultRoots(request.home);
-      const existingRoots: string[] = [];
-      const sessions: DiscoveredSession[] = [];
-
-      for (const root of roots) {
-        const exists = yield* pathExists({
-          provider,
-          path: root,
-        });
-
-        if (!exists) {
-          continue;
-        }
-
-        existingRoots.push(root);
-        sessions.push(
-          ...(yield* provider.discover({
-            provider: provider.id,
-            path: root,
-          })),
-        );
-      }
+      const discovered = yield* discoverProviderRoots({
+        home: request.home,
+        provider,
+      });
 
       rows.push(
         createInventoryRow({
           cutoffTime,
-          paths: existingRoots.length > 0 ? existingRoots : roots,
+          paths: discovered.existingRoots.length > 0 ? discovered.existingRoots : discovered.roots,
           provider,
-          sessions,
+          sessions: discovered.sessions,
         }),
       );
     }
 
     return { rows };
+  });
+
+type ProviderRootDiscovery = {
+  readonly roots: ReadonlyArray<string>;
+  readonly existingRoots: ReadonlyArray<string>;
+  readonly sessions: ReadonlyArray<DiscoveredSession>;
+};
+
+type RootDiscovery = {
+  readonly root: string;
+  readonly sessions: ReadonlyArray<DiscoveredSession>;
+};
+
+const discoverProviderRoots = (request: {
+  readonly home: string;
+  readonly provider: ProviderAdapter;
+}): Effect.Effect<ProviderRootDiscovery, ProviderDiscoveryError> =>
+  Effect.gen(function* () {
+    const roots = request.provider.defaultRoots(request.home);
+    const discoveredRoots = yield* Effect.all(
+      roots.map((root) =>
+        discoverProviderRoot({
+          provider: request.provider,
+          root,
+        }),
+      ),
+    );
+    const existingRoots = discoveredRoots.filter(isRootDiscovery);
+
+    return {
+      roots,
+      existingRoots: existingRoots.map((root) => root.root),
+      sessions: existingRoots.flatMap((root) => root.sessions),
+    };
+  });
+
+const discoverProviderRoot = (request: {
+  readonly provider: ProviderAdapter;
+  readonly root: string;
+}): Effect.Effect<RootDiscovery | undefined, ProviderDiscoveryError> =>
+  Effect.gen(function* () {
+    const exists = yield* pathExists({
+      provider: request.provider,
+      path: request.root,
+    });
+
+    if (!exists) {
+      return undefined;
+    }
+
+    const sessions = yield* request.provider.discover({
+      provider: request.provider.id,
+      path: request.root,
+    });
+
+    return {
+      root: request.root,
+      sessions,
+    };
   });
 
 const createInventoryRow = (request: {
@@ -165,6 +206,9 @@ const pathExists = (request: {
 
 const sumSessionBytes = (sessions: ReadonlyArray<DiscoveredSession>): number =>
   sessions.reduce((totalBytes, session) => totalBytes + session.sizeBytes, 0);
+
+const isRootDiscovery = (discovery: RootDiscovery | undefined): discovery is RootDiscovery =>
+  discovery !== undefined;
 
 const errorCode = (cause: unknown): string | undefined => {
   if (typeof cause !== 'object' || cause === null) {

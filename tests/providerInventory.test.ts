@@ -12,11 +12,7 @@ const olderThanMs = 7 * 24 * 60 * 60 * 1000;
 const createWorkspace = (): Promise<string> =>
   mkdtemp(join(tmpdir(), 'agent-session-pack-inventory-'));
 
-const writeSession = async (
-  path: string,
-  content: string,
-  modifiedAt: Date,
-): Promise<number> => {
+const writeSession = async (path: string, content: string, modifiedAt: Date): Promise<number> => {
   await mkdir(join(path, '..'), { recursive: true });
   await writeFile(path, content);
   await utimes(path, modifiedAt, modifiedAt);

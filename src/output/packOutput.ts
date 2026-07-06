@@ -27,7 +27,7 @@ export const formatHumanPackPlan = (plan: PackPlan, options: PackPlanOutputOptio
     `${'total'.padEnd(10)} ${''.padEnd(12)} ${''.padStart(5)}   ${''.padStart(10)}   ${formatBytes(totalBeforeBytes).padEnd(10)} ${formatBytes(totalBeforeBytes).padEnd(15)} ${formatBytes(0)}`,
     '',
     'Backup-only providers are scanned for visibility but skipped for cleanup.',
-    'Apply is intentionally blocked until restore/list indexing is complete.',
+    'Re-run with --apply to pack cold sessions.',
   ].join('\n');
 };
 

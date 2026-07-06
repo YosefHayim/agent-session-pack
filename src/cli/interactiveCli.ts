@@ -20,8 +20,8 @@ import {
   validateVaultPath,
   writeSetupConfig,
 } from '../core/index.js';
-import { allProviders } from '../providers/index.js';
 import { formatBytes } from '../output/index.js';
+import { allProviders } from '../providers/index.js';
 import { runDoctorCommand } from './commands/doctorCommand.js';
 import { runPackCommand } from './commands/packCommand.js';
 import { runSavingsCommand } from './commands/savingsCommand.js';
@@ -356,7 +356,9 @@ const runInteractiveAction = async (
   await runDoctorCommand({});
 };
 
-const runReviewSessions = async (request: InteractiveCliRequest & { readonly prompts: PromptAdapter }) => {
+const runReviewSessions = async (
+  request: InteractiveCliRequest & { readonly prompts: PromptAdapter },
+) => {
   const home = normalizeHome(request.home);
 
   if (home === undefined) {
@@ -567,9 +569,7 @@ const promptProviderSelection = async (request: {
   }
 };
 
-const promptColdThreshold = async (
-  prompts: PromptAdapter,
-): Promise<string | undefined> => {
+const promptColdThreshold = async (prompts: PromptAdapter): Promise<string | undefined> => {
   const choice = await prompts.select<ColdThresholdChoice>({
     message: 'When is a session considered cold?',
     options: [
@@ -674,7 +674,9 @@ const validateVaultPathInput = async (request: {
   readonly prompts: PromptAdapter;
   readonly providers: ReadonlyArray<ProviderAdapter>;
 }): Promise<string | undefined> => {
-  const providerRoots = request.providers.flatMap((provider) => provider.defaultRoots(request.home));
+  const providerRoots = request.providers.flatMap((provider) =>
+    provider.defaultRoots(request.home),
+  );
   const result = await Effect.runPromise(
     Effect.either(
       validateVaultPath({
@@ -693,7 +695,9 @@ const validateVaultPathInput = async (request: {
   return undefined;
 };
 
-const providerPromptOption = (row: ProviderInventoryReport['rows'][number]): PromptOption<ProviderId> => {
+const providerPromptOption = (
+  row: ProviderInventoryReport['rows'][number],
+): PromptOption<ProviderId> => {
   if (row.provider === 'codex') {
     return {
       value: row.provider,
@@ -769,7 +773,10 @@ const formatPackApplyQuestion = (inventory: ProviderInventoryReport, home: strin
     (totalSessions, row) => totalSessions + row.coldSessions,
     0,
   );
-  const candidateBytes = inventory.rows.reduce((totalBytes, row) => totalBytes + row.candidateBytes, 0);
+  const candidateBytes = inventory.rows.reduce(
+    (totalBytes, row) => totalBytes + row.candidateBytes,
+    0,
+  );
   const providerNames = inventory.rows
     .filter((row) => row.coldSessions > 0)
     .map((row) => row.provider)

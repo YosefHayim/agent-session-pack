@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/hero.png" alt="Agent Session Pack - shrink local AI coding-agent session history into a tiny verified archive" width="640" />
+</p>
+
 # Agent Session Pack
 
 Cold storage for local AI coding-agent sessions.
@@ -6,7 +10,7 @@ Cold storage for local AI coding-agent sessions.
 
 AI coding tools are useful, but their local session history grows quietly: JSONL logs, SQLite stores, browser state, copied context, and provider caches. Agent Session Pack helps you see what is there, prove what can be compressed, pack cold JSONL sessions into a vault, and restore them byte-exact when needed.
 
-Current build status: manual proof, manual pack, and manual unpack. Lifecycle hooks are not installed yet.
+Current build status: guided setup, manual proof, manual pack, and manual unpack. Lifecycle hooks are not installed yet.
 
 ## Five-Minute Check
 
@@ -31,6 +35,8 @@ pnpm pack:all
 After npm publish:
 
 ```bash
+npx agent-session-pack
+npx agent-session-pack init
 npx agent-session-pack doctor
 npx agent-session-pack check
 npx agent-session-pack savings
@@ -42,6 +48,8 @@ Or install the CLI:
 
 ```bash
 npm install -g agent-session-pack
+agent-session-pack
+agent-session-pack init
 agent-session-pack doctor
 agent-session-pack check
 agent-session-pack savings
@@ -67,6 +75,8 @@ total      958                    102 MB     14.6 MB    85.7%            no
 `pack --all-providers` scans existing supported providers and prints a provider table without changing files. Add `--apply` to archive cold sessions into `~/.agent-session-pack`; in a TTY it asks you to confirm with `y` before touching originals.
 
 `unpack --all-providers` previews archived sessions in the vault. Add `--apply` to restore them back to their original provider paths. Changed live files are not overwritten.
+
+Run bare `agent-session-pack` in a terminal to open the guided safety menu. Each option includes a short description, setup uses provider multi-select, provider scans show a loading spinner, and the vault path is validated before config is written.
 
 ## Architecture Flow
 
@@ -130,13 +140,14 @@ Target lifecycle after one-time setup:
 +-----------------------------+                            +-----------------------------+
 ```
 
-Manual `pack --all-providers` and `unpack --all-providers` exist today. The lifecycle hook row is the next feature: `init` should make the developer explicitly choose providers and acknowledge that selected agents will restore on relaunch and pack again after close.
+Manual `pack --all-providers` and `unpack --all-providers` exist today. The lifecycle hook row is the next feature. `init` currently guides provider choice, vault path validation, and the 7d cold-session default, but it does not install lifecycle hooks yet.
 
 ## Commands
 
 ```bash
 agent-session-pack check [--provider codex|claude|kiro|cursor|devin] [--json]
 agent-session-pack doctor [--json]
+agent-session-pack init [--apply] [--json]
 agent-session-pack scan [--provider codex|claude|kiro|cursor|devin] [--json]
 agent-session-pack savings [--provider codex|claude|kiro|cursor|devin] [--json]
 agent-session-pack pack [--all-providers|--provider codex|claude|kiro|cursor|devin] [--older-than 7d] [--dry-run|--apply] [--yes] [--json]

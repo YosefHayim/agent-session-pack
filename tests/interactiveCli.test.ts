@@ -5,10 +5,10 @@ import { Effect } from 'effect';
 import { describe, expect, it } from 'vitest';
 import {
   createMainMenuOptions,
-  runFirstSetup,
-  shouldRunInteractiveCli,
   type PromptAdapter,
   type PromptOption,
+  runFirstSetup,
+  shouldRunInteractiveCli,
 } from '../src/cli/interactiveCli.js';
 import type { ProviderAdapter } from '../src/core/index.js';
 
@@ -43,7 +43,8 @@ const createPromptAdapter = (answers: ReadonlyArray<unknown>): RecordingPromptAd
       return queue.shift() as boolean;
     },
     intro: () => undefined,
-    isCancel: (_value: unknown): _value is symbol => false,
+    isCancel: (value: unknown): value is symbol =>
+      typeof value === 'symbol' && value.description === 'cancel',
     multiselect: async (options) => {
       adapter.multiselects.push(options);
       return queue.shift() as ReadonlyArray<string> as never;
@@ -180,9 +181,9 @@ describe('interactive CLI flow', () => {
       label: 'codex',
       hint: 'archive old JSONL sessions; restore byte-exact when needed',
     });
-    await expect(readFile(join(home, '.agent-session-pack', 'config.json'), 'utf8')).resolves.toContain(
-      '"providers": [',
-    );
+    await expect(
+      readFile(join(home, '.agent-session-pack', 'config.json'), 'utf8'),
+    ).resolves.toContain('"providers": [');
   });
 
   it('validates and writes a custom vault path during setup', async () => {
@@ -200,8 +201,8 @@ describe('interactive CLI flow', () => {
       providers: [createProvider(root)],
     });
 
-    await expect(readFile(join(home, '.agent-session-pack', 'config.json'), 'utf8')).resolves.toContain(
-      `"vaultPath": "${vaultPath}"`,
-    );
+    await expect(
+      readFile(join(home, '.agent-session-pack', 'config.json'), 'utf8'),
+    ).resolves.toContain(`"vaultPath": "${vaultPath}"`);
   });
 });

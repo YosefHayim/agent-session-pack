@@ -2,7 +2,7 @@ import { constants } from 'node:fs';
 import { access, mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { Effect, Schema } from 'effect';
-import { ProviderIdSchema, type ProviderId } from './sessionStore.js';
+import { ProviderIdSchema } from './sessionStore.js';
 
 export const SetupConfigSchema = Schema.Struct({
   version: Schema.Literal(1),

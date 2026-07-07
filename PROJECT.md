@@ -13,6 +13,7 @@ The project is a CLI-only tool for developers and coding agents. It should make 
 - Developers with large local AI session histories.
 - Coding agents that need stable JSON output and safe restore commands.
 - Maintainers who need evidence that compression did not damage session data.
+- Agents that need a single command explaining safe non-interactive usage.
 
 ## Non-Goals
 
@@ -25,6 +26,7 @@ The project is a CLI-only tool for developers and coding agents. It should make 
 ## Success
 
 - `agent-session-pack scan` shows savings, locations, and cold candidates.
+- `agent-session-pack guide --json` shows the safe non-interactive command flow for agents.
 - `agent-session-pack pack --apply` removes originals only after verified byte-exact restore.
 - `agent-session-pack restore <selector>` restores native files by ID, name, slug, or picker.
 - Normal tests never read or mutate real home AI session directories.

@@ -1,4 +1,5 @@
 export * from './doctorCommand.js';
+export * from './guideCommand.js';
 export * from './initCommand.js';
 export * from './listCommand.js';
 export * from './packCommand.js';

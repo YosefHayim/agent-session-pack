@@ -1,6 +1,7 @@
 const commandFlagAliases: Readonly<Record<string, string>> = {
   '--check': 'check',
   '--doctor': 'doctor',
+  '--guide': 'guide',
   '--init': 'init',
   '--list': 'list',
   '--pack': 'pack',

@@ -1,6 +1,6 @@
 {
   "name": "agent-session-pack",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Pack cold local AI coding-agent sessions with byte-exact restore.",
   "license": "MIT",
   "keywords": [
@@ -59,6 +59,7 @@
   },
   "scripts": {
     "dev": "tsx src/cli/main.ts",
+    "guide": "tsx src/cli/main.ts guide",
     "health": "tsx src/cli/main.ts doctor",
     "scan": "tsx src/cli/main.ts scan",
     "savings": "tsx src/cli/main.ts savings",

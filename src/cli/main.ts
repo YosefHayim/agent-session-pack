@@ -3,6 +3,7 @@ import { defineCommand, runMain } from 'citty';
 import {
   checkCommand,
   doctorCommand,
+  guideCommand,
   initCommand,
   listCommand,
   packCommand,
@@ -19,10 +20,12 @@ export const mainCommand = defineCommand({
   meta: {
     name: 'agent-session-pack',
     version: '0.1.0',
-    description: 'Pack cold local AI coding-agent sessions with byte-exact restore.',
+    description:
+      'Pack cold local AI coding-agent sessions with byte-exact restore. Run guide for agent-safe commands.',
   },
   subCommands: {
     check: checkCommand,
+    guide: guideCommand,
     init: initCommand,
     scan: scanCommand,
     pack: packCommand,

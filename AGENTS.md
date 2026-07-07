@@ -6,6 +6,8 @@ Agent Session Pack is a CLI-only TypeScript tool for reducing local disk usage f
 
 - Do not touch real AI session directories in normal tests.
 - Real local evidence runs must be explicit through `pnpm savings`, `pnpm evidence:local`, or `agent-session-pack check`.
+- Prefer `agent-session-pack guide --json` or `pnpm guide` when an agent needs the safe command map.
+- Use `pack --max --dry-run` only for curiosity previews; never combine `--max` with `--apply`.
 - Keep provider modules read-only.
 - Centralize destructive behavior in core archive/restore workflows.
 - Preserve exact source bytes before any original file is removed.

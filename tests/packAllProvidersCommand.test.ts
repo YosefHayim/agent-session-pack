@@ -90,6 +90,31 @@ describe('all-provider pack and unpack commands', () => {
     expect(writes.join('')).toContain('packed');
   });
 
+  it('refuses max preview in apply mode', async () => {
+    const home = await createWorkspace();
+    process.env.HOME = home;
+
+    await Effect.runPromise(
+      runPackCommand({
+        allProviders: true,
+        apply: true,
+        compression: copyCompression,
+        confirmed: true,
+        dryRun: undefined,
+        json: undefined,
+        max: true,
+        olderThan: undefined,
+        provider: undefined,
+        vaultPath: join(home, '.agent-session-pack-test'),
+        yes: true,
+        now: new Date('2026-07-06T12:00:00.000Z'),
+      }),
+    );
+
+    expect(process.exitCode).toBe(2);
+    expect(writes.join('')).toContain('Refusing --max with --apply');
+  });
+
   it('unpacks every archived provider session back to the original path', async () => {
     const home = await createWorkspace();
     const vaultPath = join(home, '.agent-session-pack-test');

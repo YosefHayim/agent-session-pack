@@ -47,6 +47,10 @@ export const packCommand = defineCommand({
       type: 'boolean',
       description: 'Discover every supported provider store on this machine.',
     },
+    max: {
+      type: 'boolean',
+      description: 'Preview every archive-mode session candidate. Dry-run only.',
+    },
     apply: {
       type: 'boolean',
       description: 'Apply archive/remove workflow after verification.',
@@ -61,17 +65,21 @@ export const packCommand = defineCommand({
     },
   },
   run: async ({ args }) => {
-    const confirmed = await resolveApplyConfirmation({
-      action: 'Pack cold sessions for the selected providers',
-      apply: args.apply,
-      json: args.json,
-      yes: args.yes,
-    });
+    const confirmed =
+      args.max === true && args.apply === true
+        ? false
+        : await resolveApplyConfirmation({
+            action: 'Pack cold sessions for the selected providers',
+            apply: args.apply,
+            json: args.json,
+            yes: args.yes,
+          });
 
     await Effect.runPromise(
       runPackCommand({
         allProviders: args['all-providers'],
         provider: args.provider,
+        max: args.max,
         olderThan: args['older-than'],
         dryRun: args['dry-run'],
         apply: args.apply,
@@ -86,6 +94,7 @@ export const packCommand = defineCommand({
 export type PackArgs = {
   readonly allProviders: boolean | undefined;
   readonly provider: string | undefined;
+  readonly max?: boolean | undefined;
   readonly olderThan: string | undefined;
   readonly dryRun: boolean | undefined;
   readonly apply: boolean | undefined;
@@ -109,6 +118,13 @@ export const runPackCommand = (
   args: PackArgs,
 ): Effect.Effect<void, ArchiveWriteError | ManifestStoreError | ProviderDiscoveryError> =>
   Effect.gen(function* () {
+    if (args.max === true && args.apply === true) {
+      process.stderr.write('Refusing --max with --apply. Use --max as a dry-run preview only.\n');
+      process.stderr.write('\n');
+      process.exitCode = 2;
+      return;
+    }
+
     const home = normalizeHome(args.home);
 
     if (home === undefined) {
@@ -124,7 +140,10 @@ export const runPackCommand = (
       return;
     }
 
-    const olderThan = normalizeOlderThan(args.olderThan);
+    const olderThan = normalizeOlderThan({
+      max: args.max,
+      olderThan: args.olderThan,
+    });
     const olderThanMs = parseDurationMs(olderThan);
     const providers = normalizeProviders({
       provider: args.provider,
@@ -136,6 +155,7 @@ export const runPackCommand = (
         home,
         vaultPath: normalizeVaultPath(args.vaultPath, home),
         providers,
+        olderThan,
         olderThanMs,
         now: normalizeNow(args.now),
         apply: args.apply === true,
@@ -160,6 +180,7 @@ export const runPackCommand = (
     });
     const plan = createPackPlan({
       now: new Date(),
+      olderThan,
       olderThanMs,
       sessions: report.sessions,
       providers: providers.map((provider) => ({
@@ -177,12 +198,19 @@ export const runPackCommand = (
     process.stdout.write(`${formatHumanPackPlan(plan, { olderThan })}\n`);
   });
 
-const normalizeOlderThan = (olderThan: string | undefined): string => {
-  if (olderThan === undefined) {
+const normalizeOlderThan = (args: {
+  readonly max: boolean | undefined;
+  readonly olderThan: string | undefined;
+}): string => {
+  if (args.max === true) {
+    return '0h';
+  }
+
+  if (args.olderThan === undefined) {
     return defaultOlderThan;
   }
 
-  return olderThan;
+  return args.olderThan;
 };
 
 const parseDurationMs = (duration: string): number => {
@@ -235,6 +263,10 @@ const shouldUseArchiveWorkflow = (args: PackArgs): boolean => {
   }
 
   if (args.allProviders === true) {
+    return true;
+  }
+
+  if (args.max === true) {
     return true;
   }
 

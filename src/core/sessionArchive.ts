@@ -17,6 +17,7 @@ import {
   type SessionManifest,
   writeSessionManifest,
 } from './manifestStore.js';
+import { createPackThresholdPreviews, type PackThresholdPreview } from './packPlan.js';
 import type {
   DiscoveredSession,
   ProviderAdapter,
@@ -47,12 +48,14 @@ export type PackSessionsReport = {
   readonly apply: boolean;
   readonly vaultPath: string;
   readonly rows: ReadonlyArray<PackSessionRow>;
+  readonly thresholdPreviews: ReadonlyArray<PackThresholdPreview>;
 };
 
 export type PackProviderSessionsRequest = {
   readonly home: string;
   readonly vaultPath: string;
   readonly providers: ReadonlyArray<ProviderAdapter>;
+  readonly olderThan: string;
   readonly olderThanMs: number;
   readonly now: Date;
   readonly apply: boolean;
@@ -118,6 +121,7 @@ export const packProviderSessions = (
 > =>
   Effect.gen(function* () {
     const rows: PackSessionRow[] = [];
+    const packableSessions: DiscoveredSession[] = [];
     const cutoffTime = request.now.getTime() - request.olderThanMs;
 
     for (const provider of request.providers) {
@@ -135,6 +139,8 @@ export const packProviderSessions = (
         rows.push(createBackupOnlyPackRow(provider, sessions.length));
         continue;
       }
+
+      packableSessions.push(...sessions);
 
       const candidates = sessions.filter((session) => session.modifiedAt.getTime() < cutoffTime);
 
@@ -171,6 +177,12 @@ export const packProviderSessions = (
       apply: request.apply,
       vaultPath: request.vaultPath,
       rows,
+      thresholdPreviews: createPackThresholdPreviews({
+        now: request.now,
+        olderThan: request.olderThan,
+        olderThanMs: request.olderThanMs,
+        sessions: packableSessions,
+      }),
     };
   });
 

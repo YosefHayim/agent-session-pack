@@ -38,8 +38,11 @@
 ## Important Commands
 
 ```bash
+npx --yes agent-session-pack guide
+npx --yes agent-session-pack guide --json
 npx --yes agent-session-pack check
 npx --yes agent-session-pack
+npx --yes agent-session-pack pack --max --dry-run
 npx --yes agent-session-pack pack --all-providers --older-than 7d
 npx --yes agent-session-pack pack --all-providers --older-than 7d --apply
 npx --yes agent-session-pack unpack --all-providers --apply

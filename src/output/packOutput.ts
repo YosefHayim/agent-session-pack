@@ -26,6 +26,8 @@ export const formatHumanPackPlan = (plan: PackPlan, options: PackPlanOutputOptio
     '--------   ----         -----   ----------   ------     -------------   -------',
     `${'total'.padEnd(10)} ${''.padEnd(12)} ${''.padStart(5)}   ${''.padStart(10)}   ${formatBytes(totalBeforeBytes).padEnd(10)} ${formatBytes(totalBeforeBytes).padEnd(15)} ${formatBytes(0)}`,
     '',
+    ...formatThresholdPreviewBlock(plan.thresholdPreviews),
+    '',
     'Backup-only providers are scanned for visibility but skipped for cleanup.',
     'Re-run with --apply to pack cold sessions.',
   ].join('\n');
@@ -66,6 +68,8 @@ export const formatHumanPackReport = (
     ...report.rows.map(formatPackReportRow),
     '--------   --------  ----         ----------  ------  ------     -------    -----      -------  -----  ------',
     `${'total'.padEnd(10)} ${String(totals.foundSessions).padEnd(9)} ${''.padEnd(12)} ${String(totals.candidateSessions).padStart(10)}  ${String(totals.packedSessions).padStart(6)}  ${formatBytes(totals.beforeBytes).padEnd(10)} ${formatMaybeBytes(totals.archiveBytes).padEnd(10)} ${formatMaybeBytes(totals.savedBytes).padEnd(10)} ${formatMaybePercent(totals.savedPercent).padEnd(8)} ${formatTouched(totals.touchedOriginals).padEnd(6)} ${report.apply ? 'applied' : 'dry-run'}`,
+    '',
+    ...formatThresholdPreviewBlock(report.thresholdPreviews),
   ].join('\n');
 };
 
@@ -114,6 +118,56 @@ const formatPackPlanRow = (row: PackPlan['rows'][number]): string => {
   const cleanup = formatBytes(row.cleanupBytes);
 
   return `${provider} ${mode} ${found}   ${candidates}   ${before} ${after} ${cleanup}`;
+};
+
+const formatThresholdPreviewBlock = (
+  previews: PackPlan['thresholdPreviews'],
+): ReadonlyArray<string> => {
+  if (previews.length === 0) {
+    return [];
+  }
+
+  return [
+    'What if:',
+    ...previews.map((preview) => {
+      const label = formatThresholdPreviewLabel(preview.kind).padEnd(11);
+      const command = formatThresholdPreviewCommand(preview).padEnd(17);
+      const sessions = formatSessionCount(preview.candidateSessions).padEnd(11);
+
+      return `${label} ${command} ${sessions} ${formatBytes(preview.beforeBytes)} source`;
+    }),
+    'Tip: use --max --dry-run to preview every archive-mode session without touching files.',
+  ];
+};
+
+const formatThresholdPreviewLabel = (
+  kind: PackPlan['thresholdPreviews'][number]['kind'],
+): string => {
+  if (kind === 'safer') {
+    return 'safer';
+  }
+
+  if (kind === 'broader') {
+    return 'broader';
+  }
+
+  return 'max preview';
+};
+
+const formatThresholdPreviewCommand = (preview: PackPlan['thresholdPreviews'][number]): string => {
+  if (preview.kind === 'max') {
+    return '--max --dry-run';
+  }
+
+  return `--older-than ${preview.olderThan}`;
+};
+
+const formatSessionCount = (sessions: number): string => {
+  if (sessions === 1) {
+    return '1 session';
+  }
+
+  return `${sessions} sessions`;
 };
 
 const formatPackReportRow = (row: PackSessionsReport['rows'][number]): string => {

@@ -21,6 +21,7 @@ describe('CLI argument aliases', () => {
       'main.js',
       'savings',
     ]);
+    expect(normalizeCliArgv(['node', 'main.js', '--guide'])).toEqual(['node', 'main.js', 'guide']);
     expect(normalizeCliArgv(['node', 'main.js', '--unpack', '--all-providers'])).toEqual([
       'node',
       'main.js',

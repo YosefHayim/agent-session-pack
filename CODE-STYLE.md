@@ -113,10 +113,11 @@ Agent Session Pack is CLI-only.
 Commands:
 
 ```bash
+agent-session-pack guide [--json]
 agent-session-pack check [--provider codex|claude|kiro|cursor|devin] [--json]
 agent-session-pack init [--apply] [--json]
 agent-session-pack scan [--provider codex|claude|kiro|cursor|devin] [--json]
-agent-session-pack pack [--all-providers|--provider codex|claude|kiro|cursor|devin] [--older-than 7d] [--dry-run|--apply] [--yes] [--json]
+agent-session-pack pack [--all-providers|--provider codex|claude|kiro|cursor|devin] [--older-than 7d|--max] [--dry-run|--apply] [--yes] [--json]
 agent-session-pack unpack [--all-providers|--provider codex|claude|kiro|cursor|devin] [--apply] [--yes] [--json]
 agent-session-pack savings [--provider codex|claude|kiro|cursor|devin] [--json]
 agent-session-pack list [--provider codex|claude|kiro|cursor|devin] [--json]
@@ -131,6 +132,7 @@ Local package scripts should cover the common human paths:
 
 ```bash
 pnpm health
+pnpm guide
 pnpm dev --check
 pnpm dev --doctor
 pnpm dev --scan --provider devin
@@ -185,7 +187,9 @@ Avoid `memory` in code identifiers because it confuses RAM with disk.
 
 - `pnpm test`: synthetic fixtures only.
 - `pnpm test:integration`: temp HOME and temp provider roots only.
+- `pnpm guide`: agent-first command map for safe non-interactive use.
 - `npx agent-session-pack check`: no-install copy-only local proof after publish.
+- `npx agent-session-pack pack --max --dry-run`: all-age pack preview; never apply with `--max`.
 - `pnpm savings`: explicit local machine proof against copied real sessions.
 - `pnpm evidence:local`: alias kept for existing proof notes.
 - `pnpm pack:dry-run` and `pnpm pack:all`: non-destructive all-provider cleanup summary.

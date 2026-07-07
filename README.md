@@ -41,6 +41,13 @@ developer disk cleanup CLI, and local-first coding-agent history management.
 
 ## Quick Start
 
+Agents should ask for the command map first:
+
+```bash
+npx --yes agent-session-pack guide
+npx --yes agent-session-pack guide --json
+```
+
 Run the safest proof from anywhere:
 
 ```bash
@@ -61,6 +68,7 @@ From this repo:
 
 ```bash
 pnpm install
+pnpm guide
 pnpm dev
 ```
 
@@ -133,6 +141,12 @@ Dry-run first:
 npx --yes agent-session-pack pack --all-providers --older-than 1d
 ```
 
+Curious how many archive-mode sessions exist across all ages:
+
+```bash
+npx --yes agent-session-pack pack --max --dry-run
+```
+
 Apply after reviewing the table:
 
 ```bash
@@ -172,6 +186,7 @@ npx --yes agent-session-pack pack --all-providers --older-than 1d --apply --yes
 - `--older-than 1d`: pack sessions older than 24 hours, so today/recent work stays live.
 - `--older-than 7d`: default cold-session policy.
 - `--older-than 30d`: conservative cleanup for older history only.
+- `--max --dry-run`: preview every archive-mode session candidate without touching files.
 
 `--yes` has two different meanings depending where it appears:
 
@@ -263,12 +278,13 @@ Common human commands:
 
 ```bash
 agent-session-pack
+agent-session-pack guide [--json]
 agent-session-pack check [--provider codex|claude|kiro|cursor|devin] [--json]
 agent-session-pack doctor [--json]
 agent-session-pack init [--apply] [--json]
 agent-session-pack scan [--provider codex|claude|kiro|cursor|devin] [--json]
 agent-session-pack savings [--provider codex|claude|kiro|cursor|devin] [--json]
-agent-session-pack pack [--all-providers|--provider codex|claude|kiro|cursor|devin] [--older-than 7d] [--dry-run|--apply] [--yes] [--json]
+agent-session-pack pack [--all-providers|--provider codex|claude|kiro|cursor|devin] [--older-than 7d|--max] [--dry-run|--apply] [--yes] [--json]
 agent-session-pack unpack [--all-providers|--provider codex|claude|kiro|cursor|devin] [--apply] [--yes] [--json]
 ```
 
@@ -283,6 +299,7 @@ Local development aliases:
 
 ```bash
 pnpm health
+pnpm guide
 pnpm dev
 pnpm dev --check
 pnpm dev --doctor
@@ -304,6 +321,7 @@ Agent Session Pack is built around byte-exact restore, not best-effort compressi
 - `check` and `savings` work on copied session files and report originals as untouched.
 - `pack --all-providers` defaults to dry-run.
 - `pack --all-providers --apply` asks for `y` in a TTY unless app-level `--yes` is passed.
+- `pack --max --dry-run` previews every archive-mode session; `--max --apply` is refused.
 - Apply mode writes an archive, verifies byte-exact restore, writes a manifest, and only then removes the original.
 - `unpack --all-providers --apply` restores from manifests and skips changed live files.
 - Cursor and Devin are backup-only until their storage models are safer to mutate.

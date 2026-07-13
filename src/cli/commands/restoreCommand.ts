@@ -1,5 +1,8 @@
 import { defineCommand } from 'citty';
 
+/**
+ * Citty command that restores a packed session by id, name, slug, or picker.
+ */
 export const restoreCommand = defineCommand({
   meta: {
     name: 'restore',

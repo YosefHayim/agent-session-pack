@@ -43,6 +43,9 @@ WHERE s.hidden = 0
 ORDER BY s.last_activity_at DESC
 `;
 
+/**
+ * Backup-only provider adapter for Devin CLI sessions.
+ */
 export const devinProvider: ProviderAdapter = {
   id: 'devin',
   label: 'Devin',
@@ -58,6 +61,12 @@ export const devinProvider: ProviderAdapter = {
  *
  * @param store - Devin CLI storage root.
  * @returns Effect containing backup-only Devin session metadata.
+ * @example
+ * ```ts
+ * import { discoverDevinProviderSessions } from './devin.js';
+ *
+ * const sessions = discoverDevinProviderSessions(store);
+ * ```
  */
 export const discoverDevinProviderSessions = (
   store: SessionStore,

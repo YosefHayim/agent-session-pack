@@ -1,5 +1,8 @@
 import { defineCommand } from 'citty';
 
+/**
+ * Citty command that lists indexed sessions with date, status, and path.
+ */
 export const listCommand = defineCommand({
   meta: {
     name: 'list',

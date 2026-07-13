@@ -26,8 +26,14 @@ import type {
   ProviderMode,
 } from './sessionStore.js';
 
+/**
+ * Outcome status reported for one provider during a pack run.
+ */
 export type PackSessionStatus = 'backup-only' | 'dry-run' | 'missing' | 'no-candidates' | 'packed';
 
+/**
+ * Per-provider pack result row with byte totals and status.
+ */
 export type PackSessionRow = {
   readonly provider: ProviderId;
   readonly mode: ProviderMode;
@@ -43,6 +49,9 @@ export type PackSessionRow = {
   readonly reason: string | undefined;
 };
 
+/**
+ * Full pack report covering all providers and threshold previews.
+ */
 export type PackSessionsReport = {
   readonly command: 'pack';
   readonly apply: boolean;
@@ -51,6 +60,9 @@ export type PackSessionsReport = {
   readonly thresholdPreviews: ReadonlyArray<PackThresholdPreview>;
 };
 
+/**
+ * Inputs required to pack cold provider sessions into the vault.
+ */
 export type PackProviderSessionsRequest = {
   readonly home: string;
   readonly vaultPath: string;
@@ -62,6 +74,9 @@ export type PackProviderSessionsRequest = {
   readonly compression: CompressionAdapter;
 };
 
+/**
+ * Outcome status reported for one provider during an unpack run.
+ */
 export type UnpackSessionStatus =
   | 'already-present'
   | 'conflict'
@@ -69,6 +84,9 @@ export type UnpackSessionStatus =
   | 'no-archives'
   | 'restored';
 
+/**
+ * Per-provider unpack result row with restore counts and byte totals.
+ */
 export type UnpackSessionRow = {
   readonly provider: ProviderId;
   readonly archivedSessions: number;
@@ -83,6 +101,9 @@ export type UnpackSessionRow = {
   readonly reason: string | undefined;
 };
 
+/**
+ * Full unpack report covering all providers.
+ */
 export type UnpackSessionsReport = {
   readonly command: 'unpack';
   readonly apply: boolean;
@@ -90,6 +111,9 @@ export type UnpackSessionsReport = {
   readonly rows: ReadonlyArray<UnpackSessionRow>;
 };
 
+/**
+ * Inputs required to restore archived provider sessions from the vault.
+ */
 export type UnpackProviderSessionsRequest = {
   readonly vaultPath: string;
   readonly providers: ReadonlyArray<ProviderAdapter>;
@@ -104,6 +128,12 @@ type RestoreOutcome = 'already-present' | 'conflict' | 'restored';
  *
  * @param home - User home directory.
  * @returns Default Agent Session Pack vault path.
+ * @example
+ * ```ts
+ * import { resolveDefaultVaultPath } from './sessionArchive.js';
+ *
+ * const vaultPath = resolveDefaultVaultPath(process.env.HOME ?? '');
+ * ```
  */
 export const resolveDefaultVaultPath = (home: string): string => join(home, '.agent-session-pack');
 
@@ -112,6 +142,24 @@ export const resolveDefaultVaultPath = (home: string): string => join(home, '.ag
  *
  * @param request - Provider selection, compression, vault, and cold threshold.
  * @returns Effect containing a provider-level archive report.
+ * @example
+ * ```ts
+ * import { packProviderSessions } from './sessionArchive.js';
+ * import { createZstdCompression } from './archiveReader.js';
+ *
+ * const report = await Effect.runPromise(
+ *   packProviderSessions({
+ *     home: process.env.HOME ?? '',
+ *     vaultPath: '/vault',
+ *     providers,
+ *     olderThan: '168h',
+ *     olderThanMs: 168 * 60 * 60 * 1000,
+ *     now: new Date(),
+ *     apply: false,
+ *     compression: createZstdCompression(),
+ *   }),
+ * );
+ * ```
  */
 export const packProviderSessions = (
   request: PackProviderSessionsRequest,
@@ -191,6 +239,20 @@ export const packProviderSessions = (
  *
  * @param request - Provider selection, compression, vault, and apply mode.
  * @returns Effect containing a provider-level restore report.
+ * @example
+ * ```ts
+ * import { unpackProviderSessions } from './sessionArchive.js';
+ * import { createZstdCompression } from './archiveReader.js';
+ *
+ * const report = await Effect.runPromise(
+ *   unpackProviderSessions({
+ *     vaultPath: '/vault',
+ *     providers,
+ *     apply: false,
+ *     compression: createZstdCompression(),
+ *   }),
+ * );
+ * ```
  */
 export const unpackProviderSessions = (
   request: UnpackProviderSessionsRequest,

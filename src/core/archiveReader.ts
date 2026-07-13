@@ -9,6 +9,12 @@ const execFileAsync = promisify(execFile);
  * Compression adapter backed by the system zstd binary.
  *
  * @returns Adapter used by production archive workflows.
+ * @example
+ * ```ts
+ * import { createZstdCompression } from './archiveReader.js';
+ *
+ * const compression = createZstdCompression();
+ * ```
  */
 export const createZstdCompression = (): CompressionAdapter => ({
   compress: ({ sourcePath, archivePath }) =>

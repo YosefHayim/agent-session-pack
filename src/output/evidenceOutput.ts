@@ -6,6 +6,12 @@ import { formatBytes } from './byteFormat.js';
  *
  * @param report - Copy-only local evidence report.
  * @returns Human-readable before and after table.
+ * @example
+ * ```ts
+ * import { formatHumanEvidenceReport } from './evidenceOutput.js';
+ *
+ * formatHumanEvidenceReport(report);
+ * ```
  */
 export const formatHumanEvidenceReport = (report: LocalEvidenceReport): string => {
   if (report.evidence.length === 0) {
@@ -46,6 +52,12 @@ export const formatHumanEvidenceReport = (report: LocalEvidenceReport): string =
  *
  * @param report - Copy-only local evidence report.
  * @returns Stable JSON output.
+ * @example
+ * ```ts
+ * import { formatJsonEvidenceReport } from './evidenceOutput.js';
+ *
+ * formatJsonEvidenceReport(report);
+ * ```
  */
 export const formatJsonEvidenceReport = (report: LocalEvidenceReport): string =>
   `${JSON.stringify(report, null, 2)}\n`;

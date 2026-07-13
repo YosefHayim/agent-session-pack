@@ -16,6 +16,9 @@ import { runInteractiveCli, shouldRunInteractiveCli } from './interactiveCli.js'
 import { normalizeCliArgv } from './mainArgs.js';
 import { isCliEntrypoint } from './mainEntrypoint.js';
 
+/**
+ * Root citty command that wires all Agent Session Pack subcommands.
+ */
 export const mainCommand = defineCommand({
   meta: {
     name: 'agent-session-pack',

@@ -9,8 +9,14 @@ import type {
 } from './sessionStore.js';
 import { ProviderDiscoveryError as ProviderDiscoveryFailure } from './sessionStore.js';
 
+/**
+ * Readiness status reported for a provider store during inventory.
+ */
 export type ProviderInventoryStatus = 'backup-only' | 'missing' | 'ready';
 
+/**
+ * Read-only inventory row summarizing one provider's sessions and bytes.
+ */
 export type ProviderInventoryRow = {
   readonly provider: ProviderId;
   readonly label: string;
@@ -24,10 +30,16 @@ export type ProviderInventoryRow = {
   readonly status: ProviderInventoryStatus;
 };
 
+/**
+ * Aggregated inventory report across all inspected providers.
+ */
 export type ProviderInventoryReport = {
   readonly rows: ReadonlyArray<ProviderInventoryRow>;
 };
 
+/**
+ * Inputs required to inspect provider stores for inventory.
+ */
 export type ProviderInventoryRequest = {
   readonly home: string;
   readonly providers: ReadonlyArray<ProviderAdapter>;
@@ -40,6 +52,20 @@ export type ProviderInventoryRequest = {
  *
  * @param request - Home, providers, cold threshold, and current time.
  * @returns Provider-level read-only inventory report.
+ * @example
+ * ```ts
+ * import { inspectProviderInventory } from './providerInventory.js';
+ * import { providers } from '../providers/index.js';
+ *
+ * const report = await Effect.runPromise(
+ *   inspectProviderInventory({
+ *     home: process.env.HOME ?? '',
+ *     providers,
+ *     olderThanMs: 168 * 60 * 60 * 1000,
+ *     now: new Date(),
+ *   }),
+ * );
+ * ```
  */
 export const inspectProviderInventory = (
   request: ProviderInventoryRequest,

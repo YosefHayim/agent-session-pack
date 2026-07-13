@@ -1,6 +1,9 @@
 import type { PackPlan, PackSessionsReport, UnpackSessionsReport } from '../core/index.js';
 import { formatBytes } from './byteFormat.js';
 
+/**
+ * Render options for pack plan and report output.
+ */
 export type PackPlanOutputOptions = {
   readonly olderThan: string;
 };
@@ -11,6 +14,12 @@ export type PackPlanOutputOptions = {
  * @param plan - Dry-run pack plan.
  * @param options - Render options.
  * @returns Human-readable dry-run table.
+ * @example
+ * ```ts
+ * import { formatHumanPackPlan } from './packOutput.js';
+ *
+ * formatHumanPackPlan(plan, { olderThan: '7d' });
+ * ```
  */
 export const formatHumanPackPlan = (plan: PackPlan, options: PackPlanOutputOptions): string => {
   const totalBeforeBytes = plan.rows.reduce((totalBytes, row) => totalBytes + row.beforeBytes, 0);
@@ -38,6 +47,12 @@ export const formatHumanPackPlan = (plan: PackPlan, options: PackPlanOutputOptio
  *
  * @param plan - Dry-run pack plan.
  * @returns Stable JSON output.
+ * @example
+ * ```ts
+ * import { formatJsonPackPlan } from './packOutput.js';
+ *
+ * formatJsonPackPlan(plan);
+ * ```
  */
 export const formatJsonPackPlan = (plan: PackPlan): string => `${JSON.stringify(plan, null, 2)}\n`;
 
@@ -47,6 +62,12 @@ export const formatJsonPackPlan = (plan: PackPlan): string => `${JSON.stringify(
  * @param report - Pack workflow report.
  * @param options - Render options.
  * @returns Human-readable pack table.
+ * @example
+ * ```ts
+ * import { formatHumanPackReport } from './packOutput.js';
+ *
+ * formatHumanPackReport(report, { olderThan: '7d' });
+ * ```
  */
 export const formatHumanPackReport = (
   report: PackSessionsReport,
@@ -78,6 +99,12 @@ export const formatHumanPackReport = (
  *
  * @param report - Unpack workflow report.
  * @returns Human-readable unpack table.
+ * @example
+ * ```ts
+ * import { formatHumanUnpackReport } from './packOutput.js';
+ *
+ * formatHumanUnpackReport(report);
+ * ```
  */
 export const formatHumanUnpackReport = (report: UnpackSessionsReport): string => {
   const totals = unpackTotals(report);
@@ -103,6 +130,12 @@ export const formatHumanUnpackReport = (report: UnpackSessionsReport): string =>
  *
  * @param report - Stable workflow report.
  * @returns JSON output.
+ * @example
+ * ```ts
+ * import { formatJsonArchiveReport } from './packOutput.js';
+ *
+ * formatJsonArchiveReport(report);
+ * ```
  */
 export const formatJsonArchiveReport = (
   report: PackSessionsReport | UnpackSessionsReport,

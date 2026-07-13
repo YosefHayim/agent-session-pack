@@ -12,6 +12,13 @@ import { allProviders } from '../src/providers/index.js';
  * Runs opt-in local evidence against copied provider sessions.
  *
  * @returns Effect that prints local evidence.
+ * @example
+ * ```ts
+ * import { Effect } from 'effect';
+ * import { runEvidenceLocal } from './evidenceLocal.js';
+ *
+ * await Effect.runPromise(runEvidenceLocal());
+ * ```
  */
 export const runEvidenceLocal = (): Effect.Effect<
   void,

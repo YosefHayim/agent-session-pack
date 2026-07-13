@@ -3,6 +3,9 @@ import { dirname, join } from 'node:path';
 import { Effect, Schema } from 'effect';
 import { ProviderIdSchema } from './sessionStore.js';
 
+/**
+ * Schema describing the restore manifest recorded for an archived session.
+ */
 export const SessionManifestSchema = Schema.Struct({
   sessionId: Schema.String,
   provider: ProviderIdSchema,
@@ -15,8 +18,14 @@ export const SessionManifestSchema = Schema.Struct({
   archiveBytes: Schema.optional(Schema.Number),
   archivedAt: Schema.String,
 });
+/**
+ * Decoded session manifest record used to drive restores.
+ */
 export type SessionManifest = typeof SessionManifestSchema.Type;
 
+/**
+ * Typed error raised when reading or writing a session manifest fails.
+ */
 export class ManifestStoreError extends Schema.TaggedError<ManifestStoreError>()(
   'ManifestStoreError',
   {
@@ -31,6 +40,12 @@ export class ManifestStoreError extends Schema.TaggedError<ManifestStoreError>()
  * @param path - Manifest destination path.
  * @param manifest - Restore metadata to persist.
  * @returns Effect completing after write.
+ * @example
+ * ```ts
+ * import { writeSessionManifest } from './manifestStore.js';
+ *
+ * await Effect.runPromise(writeSessionManifest('/vault/manifests/abc.json', manifest));
+ * ```
  */
 export const writeSessionManifest = (
   path: string,
@@ -53,6 +68,12 @@ export const writeSessionManifest = (
  *
  * @param path - Manifest file path.
  * @returns Effect containing decoded manifest data.
+ * @example
+ * ```ts
+ * import { readSessionManifest } from './manifestStore.js';
+ *
+ * const manifest = await Effect.runPromise(readSessionManifest('/vault/manifests/abc.json'));
+ * ```
  */
 export const readSessionManifest = (
   path: string,
@@ -76,6 +97,12 @@ export const readSessionManifest = (
  *
  * @param root - Manifest root directory.
  * @returns Effect containing manifest file paths.
+ * @example
+ * ```ts
+ * import { listSessionManifestPaths } from './manifestStore.js';
+ *
+ * const paths = await Effect.runPromise(listSessionManifestPaths('/vault/manifests'));
+ * ```
  */
 export const listSessionManifestPaths = (
   root: string,

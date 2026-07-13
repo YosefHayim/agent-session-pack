@@ -11,11 +11,17 @@ import {
 import { formatHumanEvidenceReport, formatJsonEvidenceReport } from '../../output/index.js';
 import { allProviders, ProviderIdSchema } from '../../providers/index.js';
 
+/**
+ * Schema describing the savings command arguments.
+ */
 export const SavingsArgsSchema = Schema.Struct({
   provider: Schema.optional(Schema.String),
   json: Schema.optional(Schema.Boolean),
 });
 
+/**
+ * Decoded arguments for the savings command.
+ */
 export type SavingsArgs = typeof SavingsArgsSchema.Type;
 
 /**
@@ -23,6 +29,13 @@ export type SavingsArgs = typeof SavingsArgsSchema.Type;
  *
  * @param args - Decoded command-line arguments.
  * @returns Effect that writes savings output.
+ * @example
+ * ```ts
+ * import { Effect } from 'effect';
+ * import { runSavingsCommand } from './commands/savingsCommand.js';
+ *
+ * await Effect.runPromise(runSavingsCommand({ json: true }));
+ * ```
  */
 export const runSavingsCommand = (
   args: SavingsArgs,
@@ -51,6 +64,9 @@ export const runSavingsCommand = (
     process.stdout.write(`${formatHumanEvidenceReport(report)}\n`);
   });
 
+/**
+ * Citty command that shows copy-only local before/after compression proof.
+ */
 export const savingsCommand = defineCommand({
   meta: {
     name: 'savings',
@@ -77,6 +93,9 @@ export const savingsCommand = defineCommand({
   },
 });
 
+/**
+ * Citty command that runs the no-install local savings proof.
+ */
 export const checkCommand = defineCommand({
   meta: {
     name: 'check',

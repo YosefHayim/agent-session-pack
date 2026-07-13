@@ -25,6 +25,9 @@ import { resolveApplyConfirmation } from '../applyConfirmation.js';
 
 const defaultOlderThan = '7d';
 
+/**
+ * Citty command that packs cold sessions after verified archive restore.
+ */
 export const packCommand = defineCommand({
   meta: {
     name: 'pack',
@@ -91,6 +94,9 @@ export const packCommand = defineCommand({
   },
 });
 
+/**
+ * Decoded arguments for the pack command.
+ */
 export type PackArgs = {
   readonly allProviders: boolean | undefined;
   readonly provider: string | undefined;
@@ -113,6 +119,23 @@ export type PackArgs = {
  *
  * @param args - Decoded command-line arguments.
  * @returns Effect that writes the pack plan.
+ * @example
+ * ```ts
+ * import { Effect } from 'effect';
+ * import { runPackCommand } from './commands/packCommand.js';
+ *
+ * await Effect.runPromise(
+ *   runPackCommand({
+ *     allProviders: true,
+ *     provider: undefined,
+ *     olderThan: '7d',
+ *     dryRun: true,
+ *     apply: false,
+ *     json: false,
+ *     yes: false,
+ *   }),
+ * );
+ * ```
  */
 export const runPackCommand = (
   args: PackArgs,

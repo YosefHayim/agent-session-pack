@@ -15,6 +15,9 @@ import { formatHumanUnpackReport, formatJsonArchiveReport } from '../../output/i
 import { allProviders, ProviderIdSchema } from '../../providers/index.js';
 import { resolveApplyConfirmation } from '../applyConfirmation.js';
 
+/**
+ * Citty command that restores archived sessions from the vault.
+ */
 export const unpackCommand = defineCommand({
   meta: {
     name: 'unpack',
@@ -63,6 +66,9 @@ export const unpackCommand = defineCommand({
   },
 });
 
+/**
+ * Decoded arguments for the unpack command.
+ */
 export type UnpackArgs = {
   readonly allProviders: boolean | undefined;
   readonly apply: boolean | undefined;
@@ -81,6 +87,21 @@ export type UnpackArgs = {
  *
  * @param args - Decoded command-line arguments.
  * @returns Effect that writes unpack output.
+ * @example
+ * ```ts
+ * import { Effect } from 'effect';
+ * import { runUnpackCommand } from './commands/unpackCommand.js';
+ *
+ * await Effect.runPromise(
+ *   runUnpackCommand({
+ *     allProviders: true,
+ *     apply: false,
+ *     json: false,
+ *     provider: undefined,
+ *     yes: false,
+ *   }),
+ * );
+ * ```
  */
 export const runUnpackCommand = (
   args: UnpackArgs,

@@ -6,6 +6,12 @@ const units = ['B', 'KB', 'MB', 'GB', 'TB'] as const;
  *
  * @param bytes - Raw byte count.
  * @returns Human-readable byte count.
+ * @example
+ * ```ts
+ * import { formatBytes } from './byteFormat.js';
+ *
+ * formatBytes(2048);
+ * ```
  */
 export const formatBytes = (bytes: number): string => {
   if (bytes < bytesPerUnit) {

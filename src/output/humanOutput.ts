@@ -8,6 +8,12 @@ const maxTitlePreviewLength = 96;
  *
  * @param report - Scan report to render.
  * @returns Human-readable scan summary.
+ * @example
+ * ```ts
+ * import { formatHumanScan } from './humanOutput.js';
+ *
+ * formatHumanScan(report);
+ * ```
  */
 export const formatHumanScan = (report: ScanReport): string => {
   if (report.sessions.length === 0) {
@@ -29,6 +35,12 @@ export const formatHumanScan = (report: ScanReport): string => {
  *
  * @param report - Scan report to render.
  * @returns Effect completing after output.
+ * @example
+ * ```ts
+ * import { renderHumanScan } from './humanOutput.js';
+ *
+ * renderHumanScan(report);
+ * ```
  */
 export const renderHumanScan = (report: ScanReport): Effect.Effect<void> =>
   Effect.sync(() => {

@@ -22,9 +22,10 @@ Agent Session Pack is a CLI-only TypeScript tool for reducing local disk usage f
 
 - Use Effect workflows, Effect Schema contracts, and typed Effect errors.
 - Export app APIs as arrow const functions with explicit params and return types.
-- Add TSDoc to exported APIs.
+- Add TSDoc to every export (CI-enforced via `eslint-plugin-jsdoc`): functions need summary + `@param` + `@returns` + `@example`; schemas, errors, `defineCommand` objects, and types need a summary only.
 - Use camelCase filenames. Do not add kebab-case source files.
 - Do not add `utils.ts`, `helpers.ts`, or `common.ts`.
+- No over-engineering: an abstraction needs a second caller or a real domain name, else inline it. No no-op/identity wrappers, one-use wrappers, or cross-file copy-pasted micro-helpers.
 - Do not use raw `throw new Error()` in domain/application code.
 - Do not use normal tests against real home session directories.
 - Use `@clack/prompts` only for TTY interaction.
@@ -49,6 +50,15 @@ scripts/
 docs/adr/current/
 .github/workflows/
 ```
+
+## Canonical Docs
+
+Root guidance stays compact. Deeper detail lives in dedicated files:
+
+- `PROJECT.md`: purpose, direction, non-goals.
+- `CONTEXT.md` and `LANGUAGE.md`: domain model and vocabulary.
+- `CODE-STYLE.md`: full code style, CLI contract, and test policy.
+- `docs/adr/current`: architecture decisions.
 
 ## Validation
 

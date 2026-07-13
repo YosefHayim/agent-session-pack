@@ -11,6 +11,9 @@ import {
   slugifyTitle,
 } from '../core/index.js';
 
+/**
+ * Options for discovering JSONL-backed provider sessions.
+ */
 export type JsonlProviderDiscoveryOptions = {
   readonly provider: ProviderId;
   readonly store: SessionStore;
@@ -22,6 +25,12 @@ export type JsonlProviderDiscoveryOptions = {
  *
  * @param options - Provider id, store, and excluded path parts.
  * @returns Effect containing discovered sessions.
+ * @example
+ * ```ts
+ * import { discoverJsonlProviderSessions } from './sessionMetadata.js';
+ *
+ * const sessions = discoverJsonlProviderSessions({ provider, store, excludePathParts: [] });
+ * ```
  */
 export const discoverJsonlProviderSessions = (
   options: JsonlProviderDiscoveryOptions,
@@ -52,6 +61,12 @@ export const discoverJsonlProviderSessions = (
  *
  * @param adapter - Provider adapter metadata and store behavior.
  * @returns Provider adapter.
+ * @example
+ * ```ts
+ * import { createJsonlProviderAdapter } from './sessionMetadata.js';
+ *
+ * const provider = createJsonlProviderAdapter(adapter);
+ * ```
  */
 export const createJsonlProviderAdapter = (adapter: ProviderAdapter): ProviderAdapter => adapter;
 

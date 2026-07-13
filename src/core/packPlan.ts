@@ -1,11 +1,17 @@
 import type { DiscoveredSession, ProviderId, ProviderMode } from './sessionStore.js';
 
+/**
+ * Provider identity and mode considered when building a pack plan.
+ */
 export type PackPlanProvider = {
   readonly id: ProviderId;
   readonly label: string;
   readonly mode: ProviderMode;
 };
 
+/**
+ * Inputs describing sessions, providers, and the cold threshold for a plan.
+ */
 export type PackPlanRequest = {
   readonly now: Date;
   readonly olderThan: string;
@@ -14,6 +20,9 @@ export type PackPlanRequest = {
   readonly providers: ReadonlyArray<PackPlanProvider>;
 };
 
+/**
+ * Per-provider row summarizing scanned, candidate, and byte totals.
+ */
 export type PackPlanRow = {
   readonly provider: ProviderId;
   readonly mode: ProviderMode;
@@ -25,13 +34,22 @@ export type PackPlanRow = {
   readonly applySupport: 'backup-only' | 'ready';
 };
 
+/**
+ * Complete dry-run pack plan with provider rows and threshold previews.
+ */
 export type PackPlan = {
   readonly rows: ReadonlyArray<PackPlanRow>;
   readonly thresholdPreviews: ReadonlyArray<PackThresholdPreview>;
 };
 
+/**
+ * Kind of alternative threshold preview shown as a curiosity tip.
+ */
 export type PackThresholdPreviewKind = 'broader' | 'max' | 'safer';
 
+/**
+ * Aggregate candidate count and byte total for one alternative threshold.
+ */
 export type PackThresholdPreview = {
   readonly kind: PackThresholdPreviewKind;
   readonly olderThan: string;
@@ -40,10 +58,32 @@ export type PackThresholdPreview = {
 };
 
 /**
+ * Sessions and current threshold context used to build curiosity previews.
+ */
+export type PackThresholdPreviewRequest = {
+  readonly now: Date;
+  readonly olderThan: string;
+  readonly olderThanMs: number;
+  readonly sessions: ReadonlyArray<DiscoveredSession>;
+};
+
+/**
  * Creates a non-destructive pack plan for cold sessions.
  *
  * @param request - Providers, sessions, and cold threshold.
  * @returns Dry-run pack plan grouped by provider.
+ * @example
+ * ```ts
+ * import { createPackPlan } from './packPlan.js';
+ *
+ * const plan = createPackPlan({
+ *   now: new Date(),
+ *   olderThan: '168h',
+ *   olderThanMs: 168 * 60 * 60 * 1000,
+ *   sessions,
+ *   providers,
+ * });
+ * ```
  */
 export const createPackPlan = (request: PackPlanRequest): PackPlan => {
   const cutoffTime = request.now.getTime() - request.olderThanMs;
@@ -103,13 +143,21 @@ export const createPackPlan = (request: PackPlanRequest): PackPlan => {
  *
  * @param request - Sessions and current threshold context.
  * @returns Safer, broader, and max preview summaries.
+ * @example
+ * ```ts
+ * import { createPackThresholdPreviews } from './packPlan.js';
+ *
+ * const previews = createPackThresholdPreviews({
+ *   now: new Date(),
+ *   olderThan: '168h',
+ *   olderThanMs: 168 * 60 * 60 * 1000,
+ *   sessions,
+ * });
+ * ```
  */
-export const createPackThresholdPreviews = (request: {
-  readonly now: Date;
-  readonly olderThan: string;
-  readonly olderThanMs: number;
-  readonly sessions: ReadonlyArray<DiscoveredSession>;
-}): ReadonlyArray<PackThresholdPreview> => {
+export const createPackThresholdPreviews = (
+  request: PackThresholdPreviewRequest,
+): ReadonlyArray<PackThresholdPreview> => {
   const duration = parseDuration(request.olderThan);
 
   if (duration === undefined || duration.value === 0) {

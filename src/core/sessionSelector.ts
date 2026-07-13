@@ -7,6 +7,9 @@ import {
   slugifyTitle,
 } from './sessionStore.js';
 
+/**
+ * Selector text paired with the sessions it should resolve against.
+ */
 export type SessionSelectorRequest = {
   readonly selector: string;
   readonly sessions: ReadonlyArray<DiscoveredSession>;
@@ -17,6 +20,9 @@ type ParsedSelector = {
   readonly query: string;
 };
 
+/**
+ * Typed error raised when a selector matches no session.
+ */
 export class SessionSelectorNotFoundError extends Schema.TaggedError<SessionSelectorNotFoundError>()(
   'SessionSelectorNotFoundError',
   {
@@ -24,6 +30,9 @@ export class SessionSelectorNotFoundError extends Schema.TaggedError<SessionSele
   },
 ) {}
 
+/**
+ * Typed error raised when a selector matches more than one session.
+ */
 export class SessionSelectorAmbiguousError extends Schema.TaggedError<SessionSelectorAmbiguousError>()(
   'SessionSelectorAmbiguousError',
   {
@@ -32,6 +41,9 @@ export class SessionSelectorAmbiguousError extends Schema.TaggedError<SessionSel
   },
 ) {}
 
+/**
+ * Union of errors a selector resolution can produce.
+ */
 export type SessionSelectorError = SessionSelectorNotFoundError | SessionSelectorAmbiguousError;
 
 /**
@@ -39,6 +51,14 @@ export type SessionSelectorError = SessionSelectorNotFoundError | SessionSelecto
  *
  * @param request - Selector text and candidate sessions.
  * @returns Effect containing the resolved session or typed selector error.
+ * @example
+ * ```ts
+ * import { resolveSessionSelector } from './sessionSelector.js';
+ *
+ * const session = await Effect.runPromise(
+ *   resolveSessionSelector({ selector: 'codex:fix-login', sessions }),
+ * );
+ * ```
  */
 export const resolveSessionSelector = (
   request: SessionSelectorRequest,

@@ -12,6 +12,9 @@ import type {
   ProviderMode,
 } from './sessionStore.js';
 
+/**
+ * Per-provider byte-exact compression evidence produced by a local run.
+ */
 export type LocalEvidenceEntry = {
   readonly provider: ProviderId;
   readonly foundSessions: number;
@@ -32,11 +35,17 @@ export type LocalEvidenceEntry = {
   readonly maxEvidenceSourceBytes?: number;
 };
 
+/**
+ * Aggregated local evidence report across all inspected providers.
+ */
 export type LocalEvidenceReport = {
   readonly workRoot: string;
   readonly evidence: ReadonlyArray<LocalEvidenceEntry>;
 };
 
+/**
+ * Inputs required to run a local evidence pass over provider sessions.
+ */
 export type LocalEvidenceRequest = {
   readonly home: string;
   readonly workRoot: string;
@@ -52,6 +61,15 @@ const maxTitlePreviewLength = 96;
  *
  * @param request - Home directory, work root, and providers to inspect.
  * @returns Report containing byte-exact compression proof for eligible sessions.
+ * @example
+ * ```ts
+ * import { runLocalEvidence } from './localEvidence.js';
+ * import { providers } from '../providers/index.js';
+ *
+ * const report = await Effect.runPromise(
+ *   runLocalEvidence({ home: process.env.HOME ?? '', workRoot: '/tmp/evidence', providers }),
+ * );
+ * ```
  */
 export const runLocalEvidence = (
   request: LocalEvidenceRequest,

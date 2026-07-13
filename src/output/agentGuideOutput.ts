@@ -89,6 +89,12 @@ const agentGuide: AgentGuide = {
  * Formats a compact terminal guide for coding agents and script authors.
  *
  * @returns Human-readable agent command guide.
+ * @example
+ * ```ts
+ * import { formatHumanAgentGuide } from './agentGuideOutput.js';
+ *
+ * formatHumanAgentGuide();
+ * ```
  */
 export const formatHumanAgentGuide = (): string =>
   [
@@ -120,5 +126,11 @@ export const formatHumanAgentGuide = (): string =>
  * Formats the agent guide as stable JSON.
  *
  * @returns Machine-readable agent command guide.
+ * @example
+ * ```ts
+ * import { formatJsonAgentGuide } from './agentGuideOutput.js';
+ *
+ * formatJsonAgentGuide();
+ * ```
  */
 export const formatJsonAgentGuide = (): string => `${JSON.stringify(agentGuide, null, 2)}\n`;

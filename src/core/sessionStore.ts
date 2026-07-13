@@ -4,12 +4,27 @@ import { readdir, stat } from 'node:fs/promises';
 import { basename, extname, join } from 'node:path';
 import { Effect, Schema } from 'effect';
 
+/**
+ * Schema enumerating the supported provider identifiers.
+ */
 export const ProviderIdSchema = Schema.Literal('codex', 'claude', 'kiro', 'cursor', 'devin');
+/**
+ * Supported provider identifier value.
+ */
 export type ProviderId = typeof ProviderIdSchema.Type;
 
+/**
+ * Schema enumerating how a provider store may be treated.
+ */
 export const ProviderModeSchema = Schema.Literal('archive', 'backup-only');
+/**
+ * Provider handling mode value.
+ */
 export type ProviderMode = typeof ProviderModeSchema.Type;
 
+/**
+ * Schema enumerating lifecycle states a session can occupy.
+ */
 export const SessionStatusSchema = Schema.Literal(
   'live',
   'cold',
@@ -18,8 +33,14 @@ export const SessionStatusSchema = Schema.Literal(
   'pinned',
   'quarantined',
 );
+/**
+ * Session lifecycle status value.
+ */
 export type SessionStatus = typeof SessionStatusSchema.Type;
 
+/**
+ * Schema describing a session discovered in a provider store.
+ */
 export const DiscoveredSessionSchema = Schema.Struct({
   id: Schema.String,
   provider: ProviderIdSchema,
@@ -33,23 +54,38 @@ export const DiscoveredSessionSchema = Schema.Struct({
   archivePath: Schema.optional(Schema.String),
   savedPercent: Schema.optional(Schema.Number),
 });
+/**
+ * Decoded discovered session record.
+ */
 export type DiscoveredSession = typeof DiscoveredSessionSchema.Type;
 
+/**
+ * Provider store location targeted by a scan.
+ */
 export type SessionStore = {
   readonly provider: ProviderId;
   readonly path: string;
 };
 
+/**
+ * File metadata for a discovered JSONL session file.
+ */
 export type JsonlSessionFile = {
   readonly path: string;
   readonly sizeBytes: number;
   readonly modifiedAt: Date;
 };
 
+/**
+ * Options controlling which directories are skipped while collecting JSONL files.
+ */
 export type CollectJsonlOptions = {
   readonly excludePathParts: ReadonlyArray<string>;
 };
 
+/**
+ * Read-only provider adapter used to discover sessions in a store.
+ */
 export type ProviderAdapter = {
   readonly id: ProviderId;
   readonly label: string;
@@ -60,6 +96,9 @@ export type ProviderAdapter = {
   ) => Effect.Effect<ReadonlyArray<DiscoveredSession>, ProviderDiscoveryError>;
 };
 
+/**
+ * Typed error raised when provider discovery fails.
+ */
 export class ProviderDiscoveryError extends Schema.TaggedError<ProviderDiscoveryError>()(
   'ProviderDiscoveryError',
   {
@@ -69,11 +108,17 @@ export class ProviderDiscoveryError extends Schema.TaggedError<ProviderDiscovery
   },
 ) {}
 
+/**
+ * Stores and providers to inspect during a scan.
+ */
 export type ScanRequest = {
   readonly stores: ReadonlyArray<SessionStore>;
   readonly providers: ReadonlyArray<ProviderAdapter>;
 };
 
+/**
+ * Aggregated sessions discovered across all scanned stores.
+ */
 export type ScanReport = {
   readonly sessions: ReadonlyArray<DiscoveredSession>;
 };
@@ -87,6 +132,14 @@ const titleReadHighWaterMarkBytes = 64 * 1024;
  * @param root - Store root to scan.
  * @param options - Path parts that should be skipped during recursion.
  * @returns Effect containing discovered JSONL file metadata.
+ * @example
+ * ```ts
+ * import { collectJsonlSessions } from './sessionStore.js';
+ *
+ * const files = await Effect.runPromise(
+ *   collectJsonlSessions('/root', { excludePathParts: ['node_modules'] }),
+ * );
+ * ```
  */
 export const collectJsonlSessions = (
   root: string,
@@ -107,6 +160,12 @@ export const collectJsonlSessions = (
  *
  * @param title - Human title extracted from provider data.
  * @returns Lowercase slug suitable for selectors.
+ * @example
+ * ```ts
+ * import { slugifyTitle } from './sessionStore.js';
+ *
+ * const slug = slugifyTitle('Fix login bug');
+ * ```
  */
 export const slugifyTitle = (title: string): string => {
   const slug = title
@@ -126,6 +185,12 @@ export const slugifyTitle = (title: string): string => {
  *
  * @param path - Provider session file path.
  * @returns UUID-like id when available, otherwise the basename without extension.
+ * @example
+ * ```ts
+ * import { sessionIdFromPath } from './sessionStore.js';
+ *
+ * const id = sessionIdFromPath('/sessions/2024-01-01-abc.jsonl');
+ * ```
  */
 export const sessionIdFromPath = (path: string): string => {
   const fileName = basename(path, extname(path));
@@ -143,6 +208,12 @@ export const sessionIdFromPath = (path: string): string => {
  *
  * @param path - Provider JSONL session path.
  * @returns Effect containing the title fallback text.
+ * @example
+ * ```ts
+ * import { readSessionTitle } from './sessionStore.js';
+ *
+ * const title = await Effect.runPromise(readSessionTitle('/sessions/abc.jsonl'));
+ * ```
  */
 export const readSessionTitle = (path: string): Effect.Effect<string, ProviderDiscoveryError> =>
   Effect.tryPromise({
@@ -160,6 +231,12 @@ export const readSessionTitle = (path: string): Effect.Effect<string, ProviderDi
  *
  * @param request - Providers and stores to scan.
  * @returns Scan report containing all discovered sessions.
+ * @example
+ * ```ts
+ * import { scanStores } from './sessionStore.js';
+ *
+ * const report = await Effect.runPromise(scanStores({ stores, providers }));
+ * ```
  */
 export const scanStores = (
   request: ScanRequest,

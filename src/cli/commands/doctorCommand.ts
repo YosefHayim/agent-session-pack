@@ -9,6 +9,9 @@ type CommandCheck = {
   readonly version?: string;
 };
 
+/**
+ * Arguments for the doctor prerequisite command.
+ */
 export type DoctorArgs = {
   readonly json?: boolean | undefined;
 };
@@ -18,6 +21,12 @@ export type DoctorArgs = {
  *
  * @param args - Output mode.
  * @returns Promise that resolves after output is written.
+ * @example
+ * ```ts
+ * import { runDoctorCommand } from './commands/doctorCommand.js';
+ *
+ * await runDoctorCommand({ json: true });
+ * ```
  */
 export const runDoctorCommand = async (args: DoctorArgs): Promise<void> => {
   const zstd = await checkCommand('zstd', ['--version']);
@@ -32,6 +41,9 @@ export const runDoctorCommand = async (args: DoctorArgs): Promise<void> => {
   process.stdout.write(`sqlite3: ${sqlite3.available ? sqlite3.version : 'missing'}\n`);
 };
 
+/**
+ * Citty command that checks local prerequisites.
+ */
 export const doctorCommand = defineCommand({
   meta: {
     name: 'doctor',

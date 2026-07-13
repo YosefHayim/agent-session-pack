@@ -28,6 +28,9 @@ import { runSavingsCommand } from './commands/savingsCommand.js';
 import { runScanCommand } from './commands/scanCommand.js';
 import { runUnpackCommand } from './commands/unpackCommand.js';
 
+/**
+ * A single selectable option shown by an interactive prompt.
+ */
 export type PromptOption<Value extends string> = {
   readonly value: Value;
   readonly label: string;
@@ -35,6 +38,9 @@ export type PromptOption<Value extends string> = {
   readonly disabled?: boolean;
 };
 
+/**
+ * Spinner interface used to report long-running interactive work.
+ */
 export type PromptSpinner = {
   readonly isCancelled: boolean;
   start: (message?: string) => void;
@@ -45,6 +51,9 @@ export type PromptSpinner = {
   clear: () => void;
 };
 
+/**
+ * Prompt surface that abstracts Clack for testable interactive flows.
+ */
 export type PromptAdapter = {
   intro: (title?: string) => void;
   note: (message?: string, title?: string) => void;
@@ -77,6 +86,9 @@ export type PromptAdapter = {
   spinner: () => PromptSpinner;
 };
 
+/**
+ * Optional overrides for the interactive CLI menu.
+ */
 export type InteractiveCliRequest = {
   readonly home?: string;
   readonly now?: Date;
@@ -85,10 +97,16 @@ export type InteractiveCliRequest = {
   readonly providers?: ReadonlyArray<ProviderAdapter>;
 };
 
+/**
+ * Interactive request options extended with first-setup wizard controls.
+ */
 export type FirstSetupRequest = InteractiveCliRequest & {
   readonly showIntro?: boolean;
 };
 
+/**
+ * Inputs used to decide whether the interactive CLI should run.
+ */
 export type InteractiveCliDetectionRequest = {
   readonly argv: ReadonlyArray<string>;
   readonly stdinIsTty: boolean;
@@ -103,6 +121,9 @@ type FlowResult = 'cancelled' | 'saved';
 const defaultColdAfter = '7d';
 const defaultOlderThanMs = 7 * 24 * 60 * 60 * 1000;
 
+/**
+ * Prompt adapter backed by the Clack prompt library.
+ */
 export const clackPromptAdapter: PromptAdapter = {
   cancel,
   confirm: (options) => confirm(options),
@@ -131,6 +152,16 @@ export const clackPromptAdapter: PromptAdapter = {
  *
  * @param request - Normalized argv and terminal state.
  * @returns True when no command or flags were provided in a TTY.
+ * @example
+ * ```ts
+ * import { shouldRunInteractiveCli } from './interactiveCli.js';
+ *
+ * const interactive = shouldRunInteractiveCli({
+ *   argv: ['node', 'cli.js'],
+ *   stdinIsTty: true,
+ *   stdoutIsTty: true,
+ * });
+ * ```
  */
 export const shouldRunInteractiveCli = (request: InteractiveCliDetectionRequest): boolean => {
   if (!request.stdinIsTty || !request.stdoutIsTty) {
@@ -144,6 +175,12 @@ export const shouldRunInteractiveCli = (request: InteractiveCliDetectionRequest)
  * Builds the main interactive menu options with Clack hint copy.
  *
  * @returns Main menu options.
+ * @example
+ * ```ts
+ * import { createMainMenuOptions } from './interactiveCli.js';
+ *
+ * const options = createMainMenuOptions();
+ * ```
  */
 export const createMainMenuOptions = (): ReadonlyArray<PromptOption<MainMenuAction>> => [
   {
@@ -188,6 +225,12 @@ export const createMainMenuOptions = (): ReadonlyArray<PromptOption<MainMenuActi
  *
  * @param request - Optional test overrides for prompts, home, providers, and time.
  * @returns Promise that resolves after the selected action completes.
+ * @example
+ * ```ts
+ * import { runInteractiveCli } from './interactiveCli.js';
+ *
+ * await runInteractiveCli();
+ * ```
  */
 export const runInteractiveCli = async (request: InteractiveCliRequest = {}): Promise<void> => {
   const prompts = normalizePrompts(request.prompts);
@@ -216,6 +259,12 @@ export const runInteractiveCli = async (request: InteractiveCliRequest = {}): Pr
  *
  * @param request - Optional test overrides for prompts, home, providers, and time.
  * @returns Flow status.
+ * @example
+ * ```ts
+ * import { runFirstSetup } from './interactiveCli.js';
+ *
+ * const result = await runFirstSetup();
+ * ```
  */
 export const runFirstSetup = async (request: FirstSetupRequest = {}): Promise<FlowResult> => {
   const prompts = normalizePrompts(request.prompts);

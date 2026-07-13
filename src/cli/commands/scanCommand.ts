@@ -10,11 +10,17 @@ import {
 import { renderHumanScan, renderJsonScan } from '../../output/index.js';
 import { allProviders, ProviderIdSchema } from '../../providers/index.js';
 
+/**
+ * Schema describing the scan command arguments.
+ */
 export const ScanArgsSchema = Schema.Struct({
   provider: Schema.optional(Schema.String),
   json: Schema.optional(Schema.Boolean),
 });
 
+/**
+ * Decoded arguments for the scan command.
+ */
 export type ScanArgs = typeof ScanArgsSchema.Type;
 
 /**
@@ -22,6 +28,13 @@ export type ScanArgs = typeof ScanArgsSchema.Type;
  *
  * @param args - Decoded command-line arguments.
  * @returns Effect that writes scan output.
+ * @example
+ * ```ts
+ * import { Effect } from 'effect';
+ * import { runScanCommand } from './commands/scanCommand.js';
+ *
+ * await Effect.runPromise(runScanCommand({ json: true }));
+ * ```
  */
 export const runScanCommand = (args: ScanArgs): Effect.Effect<void, ProviderDiscoveryError> =>
   Effect.gen(function* () {
@@ -49,6 +62,9 @@ export const runScanCommand = (args: ScanArgs): Effect.Effect<void, ProviderDisc
     return yield* renderHumanScan(report);
   });
 
+/**
+ * Citty command that scans provider stores and estimates sessions.
+ */
 export const scanCommand = defineCommand({
   meta: {
     name: 'scan',

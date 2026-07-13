@@ -54,11 +54,44 @@ export async function discoverStoreSessions(adapter, store) {
 Rules:
 
 - Exported app APIs use `export const name = (...) => ...`.
-- Exported APIs include TSDoc with `@param` and `@returns`.
 - Explicit params and return types are required.
 - `function*` is allowed only as an `Effect.gen` callback.
 - Avoid nested conditions; prefer guard returns.
 - Do not scatter `??` defaults through workflows. Normalize defaults once at the boundary.
+
+## TSDoc
+
+Every exported symbol carries TSDoc. This is enforced, not aspirational: `eslint-plugin-jsdoc` fails `pnpm check:ci` when an export is missing its required tags. `[lint: jsdoc/require-jsdoc, jsdoc/require-param, jsdoc/require-returns, jsdoc/require-example]`
+
+- Exported functions (arrow-const callables and function declarations) require a one-line summary, `@param name - description` for every parameter, `@returns description`, and a runnable `@example`.
+- Exported non-callables (`effect/Schema` consts, `TaggedError` classes, `citty` `defineCommand` objects, type aliases, interfaces, and plain object consts like provider adapters) require a one-line summary only. Do not add `@param`, `@returns`, or `@example` to these.
+- Use the TSDoc dash form: `@param name - text`.
+- Summaries are present-tense single sentences that name the domain concept, not the mechanics.
+
+Chosen:
+
+```ts
+/**
+ * Writes a compressed archive and verifies byte-exact restore before removal is allowed.
+ *
+ * @param request - Source session and destination archive paths.
+ * @returns Verified archive metadata for the manifest and index.
+ * @example
+ * ```ts
+ * const verified = yield* writeVerifiedArchive({ source, destination });
+ * ```
+ */
+export const writeVerifiedArchive = (
+  request: ArchiveWriteRequest,
+): Effect.Effect<VerifiedArchive, ArchiveWriteError> => ...;
+```
+
+Rejected:
+
+```ts
+// No TSDoc, or a bare summary with no @param / @returns / @example on a function.
+export const writeVerifiedArchive = (request: ArchiveWriteRequest) => ...;
+```
 
 ## Effects, Schemas, And Errors
 
@@ -170,6 +203,10 @@ Avoid `memory` in code identifiers because it confuses RAM with disk.
 - `pinned`: excluded from packing.
 - `quarantined`: metadata retained for explicit prune/recovery.
 
+## Over-Engineering
+
+One test: an abstraction earns its place only if it has a second real caller or names a genuine domain concept. Otherwise inline it. The recurring offenders are listed under `Never`; the reference anti-example is the removed `createJsonlProviderAdapter`, an identity wrapper `(adapter) => adapter` that added an import and a doc block while doing nothing.
+
 ## Never
 
 - No `utils.ts`, `helpers.ts`, or `common.ts` dumping grounds.
@@ -178,7 +215,9 @@ Avoid `memory` in code identifiers because it confuses RAM with disk.
 - No nested `if` ladders when guard returns work.
 - No scattered `??` defaults in workflows.
 - No `throw new Error()` inside domain/application code.
+- No no-op or identity wrappers.
 - No one-use wrapper functions unless they name a real domain concept.
+- No copy-pasted micro-helper across files; inline the trivial ones, and give a genuine shared concept one home in the module that owns it.
 - No defensive `isRecord`-style micro-helpers when Effect Schema should validate.
 - No vague names like `data`, `result`, `item`, or `thing` when a domain name exists.
 - No normal tests against real home directories.
@@ -225,6 +264,7 @@ Dev:
 - `eslint`
 - `typescript-eslint`
 - `eslint-plugin-tsdoc`
+- `eslint-plugin-jsdoc`
 
 External binary:
 

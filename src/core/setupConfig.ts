@@ -4,6 +4,9 @@ import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { Effect, Schema } from 'effect';
 import { ProviderIdSchema } from './sessionStore.js';
 
+/**
+ * Schema describing persisted setup configuration.
+ */
 export const SetupConfigSchema = Schema.Struct({
   version: Schema.Literal(1),
   providers: Schema.Array(ProviderIdSchema),
@@ -13,23 +16,38 @@ export const SetupConfigSchema = Schema.Struct({
   updatedAt: Schema.String,
 });
 
+/**
+ * Decoded setup configuration record.
+ */
 export type SetupConfig = typeof SetupConfigSchema.Type;
 
+/**
+ * Vault path that has passed setup validation.
+ */
 export type ValidatedVaultPath = {
   readonly path: string;
 };
 
+/**
+ * Inputs required to validate a proposed vault path.
+ */
 export type VaultPathValidationRequest = {
   readonly home: string;
   readonly inputPath: string;
   readonly providerRoots: ReadonlyArray<string>;
 };
 
+/**
+ * Inputs required to persist setup configuration.
+ */
 export type WriteSetupConfigRequest = {
   readonly home: string;
   readonly config: SetupConfig;
 };
 
+/**
+ * Typed error raised when a proposed vault path is rejected.
+ */
 export class VaultPathValidationError extends Schema.TaggedError<VaultPathValidationError>()(
   'VaultPathValidationError',
   {
@@ -47,6 +65,9 @@ export class VaultPathValidationError extends Schema.TaggedError<VaultPathValida
   },
 ) {}
 
+/**
+ * Typed error raised when reading or writing the setup config file fails.
+ */
 export class SetupConfigFileError extends Schema.TaggedError<SetupConfigFileError>()(
   'SetupConfigFileError',
   {
@@ -61,6 +82,12 @@ export class SetupConfigFileError extends Schema.TaggedError<SetupConfigFileErro
  * @param path - Raw path from CLI input.
  * @param home - User home directory.
  * @returns Absolute path with leading `~` resolved.
+ * @example
+ * ```ts
+ * import { expandHomePath } from './setupConfig.js';
+ *
+ * const absolutePath = expandHomePath('~/vault', process.env.HOME ?? '');
+ * ```
  */
 export const expandHomePath = (path: string, home: string): string => {
   if (path === '~') {
@@ -83,6 +110,12 @@ export const expandHomePath = (path: string, home: string): string => {
  *
  * @param home - User home directory.
  * @returns Config file path.
+ * @example
+ * ```ts
+ * import { resolveConfigPath } from './setupConfig.js';
+ *
+ * const configPath = resolveConfigPath(process.env.HOME ?? '');
+ * ```
  */
 export const resolveConfigPath = (home: string): string =>
   join(home, '.agent-session-pack', 'config.json');
@@ -92,6 +125,14 @@ export const resolveConfigPath = (home: string): string =>
  *
  * @param request - Home, raw path, and provider roots to protect.
  * @returns Validated absolute vault path.
+ * @example
+ * ```ts
+ * import { validateVaultPath } from './setupConfig.js';
+ *
+ * const validated = await Effect.runPromise(
+ *   validateVaultPath({ home: process.env.HOME ?? '', inputPath: '~/vault', providerRoots: [] }),
+ * );
+ * ```
  */
 export const validateVaultPath = (
   request: VaultPathValidationRequest,
@@ -187,6 +228,12 @@ export const validateVaultPath = (
  *
  * @param home - User home directory.
  * @returns Parsed setup config, or undefined when setup has not run.
+ * @example
+ * ```ts
+ * import { readSetupConfig } from './setupConfig.js';
+ *
+ * const config = await Effect.runPromise(readSetupConfig(process.env.HOME ?? ''));
+ * ```
  */
 export const readSetupConfig = (
   home: string,
@@ -222,6 +269,12 @@ export const readSetupConfig = (
  *
  * @param request - Config and home directory.
  * @returns Effect that completes after config has been persisted.
+ * @example
+ * ```ts
+ * import { writeSetupConfig } from './setupConfig.js';
+ *
+ * await Effect.runPromise(writeSetupConfig({ home: process.env.HOME ?? '', config }));
+ * ```
  */
 export const writeSetupConfig = (
   request: WriteSetupConfigRequest,

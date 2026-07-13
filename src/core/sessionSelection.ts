@@ -1,3 +1,6 @@
+/**
+ * Minimal session shape carrying modification time and byte size.
+ */
 export type SizeBoundSession = {
   readonly modifiedAt: Date;
   readonly sizeBytes: number;
@@ -9,6 +12,12 @@ export type SizeBoundSession = {
  * @param sessions - Candidate sessions.
  * @param maxSizeBytes - Maximum preferred source size.
  * @returns Newest eligible session, or the smallest session when all are oversized.
+ * @example
+ * ```ts
+ * import { selectNewestSessionWithinSize } from './sessionSelection.js';
+ *
+ * const selected = selectNewestSessionWithinSize(sessions, 25 * 1024 * 1024);
+ * ```
  */
 export const selectNewestSessionWithinSize = <Session extends SizeBoundSession>(
   sessions: ReadonlyArray<Session>,
@@ -28,6 +37,12 @@ export const selectNewestSessionWithinSize = <Session extends SizeBoundSession>(
  *
  * @param sessions - Candidate sessions.
  * @returns Newest session when one exists.
+ * @example
+ * ```ts
+ * import { selectNewestSession } from './sessionSelection.js';
+ *
+ * const newest = selectNewestSession(sessions);
+ * ```
  */
 export const selectNewestSession = <Session extends { readonly modifiedAt: Date }>(
   sessions: ReadonlyArray<Session>,

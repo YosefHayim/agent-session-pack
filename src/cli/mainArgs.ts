@@ -16,6 +16,12 @@ const commandFlagAliases: Readonly<Record<string, string>> = {
  *
  * @param argv - Raw process argv.
  * @returns Argv with supported command aliases rewritten as subcommands.
+ * @example
+ * ```ts
+ * import { normalizeCliArgv } from './mainArgs.js';
+ *
+ * const argv = normalizeCliArgv(['node', 'cli.js', '--scan']);
+ * ```
  */
 export const normalizeCliArgv = (argv: ReadonlyArray<string>): ReadonlyArray<string> => {
   const [runtimePath, entrypointPath, firstArg, ...remainingArgs] = argv;

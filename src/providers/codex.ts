@@ -1,6 +1,9 @@
 import { join } from 'node:path';
+import {
+  createJsonlProviderAdapter,
+  discoverJsonlProviderSessions,
+} from '../core/jsonlProviderDiscovery.js';
 import type { ProviderAdapter } from '../core/sessionStore.js';
-import { createJsonlProviderAdapter, discoverJsonlProviderSessions } from './sessionMetadata.js';
 
 /**
  * Archive provider adapter for Codex JSONL sessions.

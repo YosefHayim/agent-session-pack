@@ -9,7 +9,7 @@ import {
   type SessionStore,
   sessionIdFromPath,
   slugifyTitle,
-} from '../core/sessionStore.js';
+} from './sessionStore.js';
 
 /**
  * Options for discovering JSONL-backed provider sessions.
@@ -27,7 +27,7 @@ export type JsonlProviderDiscoveryOptions = {
  * @returns Effect containing discovered sessions.
  * @example
  * ```ts
- * import { discoverJsonlProviderSessions } from './sessionMetadata.js';
+ * import { discoverJsonlProviderSessions } from '../core/jsonlProviderDiscovery.js';
  *
  * const sessions = discoverJsonlProviderSessions({ provider, store, excludePathParts: [] });
  * ```
@@ -63,7 +63,7 @@ export const discoverJsonlProviderSessions = (
  * @returns Provider adapter.
  * @example
  * ```ts
- * import { createJsonlProviderAdapter } from './sessionMetadata.js';
+ * import { createJsonlProviderAdapter } from '../core/jsonlProviderDiscovery.js';
  *
  * const provider = createJsonlProviderAdapter(adapter);
  * ```

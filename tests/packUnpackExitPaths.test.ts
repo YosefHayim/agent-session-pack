@@ -68,7 +68,10 @@ describe('pack and unpack exit paths', () => {
     );
 
     expect(process.exitCode).toBe(1);
-    expect(writes.join('')).toContain('HOME is not set.');
+    const stderr = writes.join('');
+    expect(stderr).toContain('HOME is not set.');
+    expect(stderr).toContain('.env.example');
+    expect(stderr).toContain('vault and config paths');
   });
 
   it('pack cancels apply without confirmation and sets exit code 2', async () => {
@@ -164,7 +167,10 @@ describe('pack and unpack exit paths', () => {
     );
 
     expect(process.exitCode).toBe(1);
-    expect(writes.join('')).toContain('HOME is not set.');
+    const stderr = writes.join('');
+    expect(stderr).toContain('HOME is not set.');
+    expect(stderr).toContain('.env.example');
+    expect(stderr).toContain('vault and config paths');
   });
 
   it('unpack cancels apply without confirmation and sets exit code 2', async () => {

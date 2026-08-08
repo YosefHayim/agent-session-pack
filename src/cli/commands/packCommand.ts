@@ -22,6 +22,7 @@ import {
 } from '../../output/index.js';
 import { allProviders, ProviderIdSchema } from '../../providers/index.js';
 import { resolveApplyConfirmation } from '../applyConfirmation.js';
+import { homeNotSetStderrMessage } from '../homeEnv.js';
 
 const defaultOlderThan = '7d';
 
@@ -152,7 +153,7 @@ export const runPackCommand = (
     const home = normalizeHome(args.home);
 
     if (home === undefined) {
-      process.stderr.write('HOME is not set.\n');
+      process.stderr.write(homeNotSetStderrMessage);
       process.exitCode = 1;
       return;
     }

@@ -50,6 +50,12 @@ describe('lifecycle command', () => {
       restoreCacheAfter: '7d',
       configPresent: true,
     });
+    const enabled = JSON.parse(stdoutWrites.join('')) as {
+      wrappersBin: string;
+      pathHint: string;
+    };
+    expect(enabled.wrappersBin).toContain('.agent-session-pack');
+    expect(enabled.pathHint).toContain('PATH=');
 
     const configPath = resolveConfigPath(home);
     const config = JSON.parse(await readFile(configPath, 'utf8')) as {

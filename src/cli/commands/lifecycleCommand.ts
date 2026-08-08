@@ -1,5 +1,12 @@
+import { fileURLToPath } from 'node:url';
 import { defineCommand } from 'citty';
 import { Effect } from 'effect';
+import {
+  installLifecycleWrappers,
+  type LifecycleWrapperError,
+  uninstallLifecycleWrappers,
+} from '../../core/lifecycleWrappers.js';
+import { resolveWrappersBinPath } from '../../core/sessionAccess.js';
 import { resolveDefaultVaultPath } from '../../core/sessionArchive.js';
 import {
   isRestoreOnLaunchEnabled,
@@ -11,12 +18,13 @@ import {
 import { HOME_NOT_SET_STDERR_MESSAGE } from '../homeEnv.js';
 
 /**
- * Citty command that enables, disables, or shows restore-on-launch lifecycle settings.
+ * Citty command that enables, disables, or shows continuous restore/pack lifecycle.
  */
 export const lifecycleCommand = defineCommand({
   meta: {
     name: 'lifecycle',
-    description: 'Enable, disable, or show restore-on-launch lifecycle settings.',
+    description:
+      'Enable, disable, or show continuous restore-on-open + cold-pack lifecycle (installs provider wrappers).',
   },
   args: {
     action: {
@@ -47,6 +55,7 @@ export type LifecycleArgs = {
   readonly json: boolean | undefined;
   readonly home?: string | undefined;
   readonly now?: Date | undefined;
+  readonly cliEntrypoint?: string | undefined;
 };
 
 /**
@@ -64,7 +73,7 @@ export type LifecycleArgs = {
  */
 export const runLifecycleCommand = (
   args: LifecycleArgs,
-): Effect.Effect<void, SetupConfigFileError> =>
+): Effect.Effect<void, SetupConfigFileError | LifecycleWrapperError> =>
   Effect.gen(function* () {
     const home = args.home ?? process.env.HOME;
 
@@ -84,14 +93,22 @@ export const runLifecycleCommand = (
 
     const existingConfig = yield* readSetupConfig(home);
     const now = args.now ?? new Date();
+    const vaultPath = existingConfig?.vaultPath ?? resolveDefaultVaultPath(home);
+    const wrappersBin = resolveWrappersBinPath(vaultPath);
+    const cliEntrypoint = args.cliEntrypoint ?? resolveDefaultCliEntrypoint();
 
     if (action === 'status') {
       writeLifecycleStatus(
         {
           restoreOnLaunch: isRestoreOnLaunchEnabled(existingConfig),
           restoreCacheAfter: existingConfig?.restoreCacheAfter,
-          vaultPath: existingConfig?.vaultPath ?? resolveDefaultVaultPath(home),
+          coldAfter: existingConfig?.coldAfter,
+          vaultPath,
+          wrappersBin,
+          pathHint: `export PATH="${wrappersBin}:$PATH"`,
           configPresent: existingConfig !== undefined,
+          openCommand: 'agent-session-pack open --provider <id> <session> --json',
+          maintainCommand: 'agent-session-pack maintain --dry-run --json',
         },
         args.json === true,
       );
@@ -110,13 +127,27 @@ export const runLifecycleCommand = (
       config: nextConfig,
     });
 
+    if (action === 'enable') {
+      yield* installLifecycleWrappers({
+        vaultPath: nextConfig.vaultPath,
+        cliEntrypoint,
+      });
+    } else {
+      yield* uninstallLifecycleWrappers(nextConfig.vaultPath);
+    }
+
     writeLifecycleStatus(
       {
         restoreOnLaunch: nextConfig.restoreOnLaunch === true,
         restoreCacheAfter: nextConfig.restoreCacheAfter,
+        coldAfter: nextConfig.coldAfter,
         vaultPath: nextConfig.vaultPath,
+        wrappersBin: resolveWrappersBinPath(nextConfig.vaultPath),
+        pathHint: `export PATH="${resolveWrappersBinPath(nextConfig.vaultPath)}:$PATH"`,
         configPresent: true,
         action,
+        openCommand: 'agent-session-pack open --provider <id> <session> --json',
+        maintainCommand: 'agent-session-pack maintain --apply --yes --json',
       },
       args.json === true,
     );
@@ -134,7 +165,7 @@ const buildLifecycleConfig = (request: {
   if (request.existingConfig === undefined) {
     return {
       version: 1,
-      providers: ['codex'],
+      providers: ['codex', 'claude', 'grok', 'gemini'],
       vaultPath,
       coldAfter: '7d',
       createdAt: timestamp,
@@ -152,13 +183,26 @@ const buildLifecycleConfig = (request: {
   };
 };
 
+const resolveDefaultCliEntrypoint = (): string => {
+  try {
+    return fileURLToPath(new URL('../main.js', import.meta.url));
+  } catch {
+    return 'agent-session-pack';
+  }
+};
+
 const writeLifecycleStatus = (
   status: {
     readonly restoreOnLaunch: boolean;
     readonly restoreCacheAfter: string | undefined;
+    readonly coldAfter?: string | undefined;
     readonly vaultPath: string;
+    readonly wrappersBin: string;
+    readonly pathHint: string;
     readonly configPresent: boolean;
     readonly action?: string;
+    readonly openCommand?: string;
+    readonly maintainCommand?: string;
   },
   json: boolean,
 ): void => {
@@ -182,7 +226,12 @@ const writeLifecycleStatus = (
     status.restoreCacheAfter === undefined
       ? undefined
       : `restoreCacheAfter: ${status.restoreCacheAfter}`,
+    status.coldAfter === undefined ? undefined : `coldAfter: ${status.coldAfter}`,
     `vaultPath: ${status.vaultPath}`,
+    `wrappersBin: ${status.wrappersBin}`,
+    `pathHint: ${status.pathHint}`,
+    status.openCommand === undefined ? undefined : `open: ${status.openCommand}`,
+    status.maintainCommand === undefined ? undefined : `maintain: ${status.maintainCommand}`,
     `configPresent: ${String(status.configPresent)}`,
   ].filter((line): line is string => line !== undefined);
 

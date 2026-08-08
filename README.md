@@ -20,10 +20,11 @@ coding agents whose local [OpenAI Codex CLI](https://developers.openai.com/codex
 session stores, proves lossless [Zstandard](https://facebook.github.io/zstd/)
 compression on copies, and packs cold sessions into a local vault only when you ask it to.
 
-Current status: `v0.3.0` ships guided setup, read-only proof, manual pack/unpack/restore,
-and an **opt-in** `ensure-restored` helper for restore-on-launch workflows. It does not
-install a daemon, timer, pack-on-close hook, web app, cloud sync, or lossy conversation
-summarizer. Restore-on-launch stays off until `lifecycle enable`.
+Current status: `v0.3.0` ships guided setup, read-only proof, pack/unpack/restore, and an
+**opt-in continuous lifecycle**: `lifecycle enable` installs provider wrappers that
+auto-restore packed sessions on launch, `open` materializes a session by id, and
+`maintain` re-packs cold sessions so storage stays low. No daemon, web app, cloud sync,
+or lossy summarizer. Lifecycle stays off until you enable it.
 
 ## Quick Start
 
@@ -208,38 +209,42 @@ and general disk-analysis tools.
 <details>
 <summary>Does setup automatically compress sessions later?</summary>
 
-No. Setup writes config only. It does not start a daemon, timer, cron job, or lifecycle
-hook. Sessions are compressed only when you run a pack command such as:
+Setup alone does not. After **`lifecycle enable`**, use continuous maintenance:
 
 ```bash
-npx --yes agent-session-pack pack --all-providers --older-than 7d --apply
+npx --yes agent-session-pack maintain --apply --yes --json
 ```
+
+That re-packs sessions older than your configured `coldAfter` (default `7d`). You can also
+run `pack` directly. No background daemon is started; schedule `maintain` with cron/launchd
+if you want hands-free re-packing.
 </details>
 
 <details>
 <summary>Can agents still resume sessions after packing?</summary>
 
-The archive is byte-exact, but a provider can only resume from its native file location.
+Yes. Archives are byte-exact. When a session is packed, native files are removed; when you
+**open / launch** it again with lifecycle on, it is restored first.
 
-**Manual path (always available):**
-
-```bash
-npx --yes agent-session-pack unpack --all-providers --apply --yes --json
-# or one session:
-npx --yes agent-session-pack restore codex:<session-id> --json
-```
-
-**Opt-in restore-on-launch helper** (for agents/wrappers before resume):
+**Continuous loop (recommended):**
 
 ```bash
+# once
 npx --yes agent-session-pack lifecycle enable --json
-npx --yes agent-session-pack ensure-restored --provider codex <session-id> --json
+export PATH="$HOME/.agent-session-pack/bin:$PATH"   # wrappers call preflight then real CLI
+
+# look up / resume one session (always materializes if packed)
+npx --yes agent-session-pack open --provider grok <session-id> --json
+
+# keep storage low after restores
+npx --yes agent-session-pack maintain --apply --yes --json
 ```
 
-`ensure-restored` restores byte-exact native files when lifecycle is enabled, skips when
-the live file already matches, and refuses to overwrite a changed live file. Disable with
-`lifecycle disable` to fall back to manual `unpack` / `restore` only. No provider daemon
-or pack-on-close hook is installed automatically.
+Provider wrappers (codex, claude, grok, …) run `preflight` so session ids in argv are
+auto-restored before the real binary starts. Live files that differ from the archive are
+**never** overwritten (`conflict`). Disable with `lifecycle disable` (removes wrappers).
+
+**Manual path (always available):** `unpack` / `restore` without lifecycle.
 </details>
 
 <details>

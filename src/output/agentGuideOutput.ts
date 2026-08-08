@@ -27,7 +27,9 @@ type AgentGuide = {
     readonly applyPack: string;
     readonly applyUnpack: string;
     readonly restoreOne: string;
+    readonly openSession: string;
     readonly ensureRestored: string;
+    readonly maintain: string;
     readonly lifecycleEnable: string;
     readonly lifecycleStatus: string;
   };
@@ -57,10 +59,21 @@ const RECOMMENDED_FLOW: ReadonlyArray<AgentGuideStep> = [
     command: `${ONE_OFF_PREFIX} unpack --all-providers --apply --yes --json`,
   },
   {
-    id: 'ensure-restored',
+    id: 'lifecycle',
     purpose:
-      'Before resume, restore one archived session when restore-on-launch lifecycle is enabled.',
-    command: `${ONE_OFF_PREFIX} ensure-restored --provider codex <session-id> --json`,
+      'Enable continuous lifecycle: provider wrappers auto-restore packed sessions; maintain re-packs cold ones.',
+    command: `${ONE_OFF_PREFIX} lifecycle enable --json`,
+  },
+  {
+    id: 'open',
+    purpose:
+      'Look up a session and auto-uncompress it if packed (safe conflict skip if live differs).',
+    command: `${ONE_OFF_PREFIX} open --provider codex <session-id> --json`,
+  },
+  {
+    id: 'maintain',
+    purpose: 'Re-pack cold sessions so storage stays low after restores.',
+    command: `${ONE_OFF_PREFIX} maintain --apply --yes --json`,
   },
 ];
 
@@ -85,7 +98,9 @@ const AGENT_GUIDE: AgentGuide = {
     applyPack: `${ONE_OFF_PREFIX} pack --all-providers --older-than 7d --apply --yes --json`,
     applyUnpack: `${ONE_OFF_PREFIX} unpack --all-providers --apply --yes --json`,
     restoreOne: `${ONE_OFF_PREFIX} restore <selector> --json`,
+    openSession: `${ONE_OFF_PREFIX} open --provider codex <session-id> --json`,
     ensureRestored: `${ONE_OFF_PREFIX} ensure-restored --provider codex <session-id> --json`,
+    maintain: `${ONE_OFF_PREFIX} maintain --apply --yes --json`,
     lifecycleEnable: `${ONE_OFF_PREFIX} lifecycle enable --json`,
     lifecycleStatus: `${ONE_OFF_PREFIX} lifecycle status --json`,
   },
@@ -96,7 +111,8 @@ const AGENT_GUIDE: AgentGuide = {
     'Use --dry-run before any --apply command.',
     'Use --max --dry-run to preview every archive-mode session without touching files.',
     'Use --older-than 1d to skip recent sessions from roughly the last 24 hours.',
-    'Opt in to restore-on-launch with lifecycle enable, then call ensure-restored before resume.',
+    'lifecycle enable installs provider wrappers + PATH hint; open/preflight auto-restore packed sessions.',
+    'Run maintain periodically (or after heavy restore) to re-pack cold sessions and keep savings.',
   ],
 };
 
@@ -129,10 +145,11 @@ export const formatHumanAgentGuide = (): string =>
     'Curiosity preview',
     `${ONE_OFF_PREFIX} pack --max --dry-run --json`,
     '',
-    'Restore-on-launch (opt-in)',
+    'Continuous storage lifecycle (opt-in)',
     `${ONE_OFF_PREFIX} lifecycle enable --json`,
-    `${ONE_OFF_PREFIX} ensure-restored --provider codex <session-id> --json`,
-    `${ONE_OFF_PREFIX} restore <selector> --json`,
+    '# put wrappers first: export PATH="$HOME/.agent-session-pack/bin:$PATH"',
+    `${ONE_OFF_PREFIX} open --provider codex <session-id> --json`,
+    `${ONE_OFF_PREFIX} maintain --apply --yes --json`,
     '',
     'Provider ids',
     'codex, claude, kiro, grok, kimi, opencode, gemini, cursor, devin',

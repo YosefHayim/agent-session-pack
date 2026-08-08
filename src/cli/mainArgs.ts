@@ -10,6 +10,7 @@ const COMMAND_FLAG_ALIASES: Readonly<Record<string, string>> = {
   '--pack': 'pack',
   '--preflight': 'preflight',
   '--restore': 'restore',
+  '--watch': 'watch',
   '--savings': 'savings',
   '--scan': 'scan',
   '--unpack': 'unpack',

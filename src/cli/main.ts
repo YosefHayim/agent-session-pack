@@ -14,6 +14,7 @@ import { restoreCommand } from './commands/restoreCommand.js';
 import { checkCommand, savingsCommand } from './commands/savingsCommand.js';
 import { scanCommand } from './commands/scanCommand.js';
 import { unpackCommand } from './commands/unpackCommand.js';
+import { watchCommand } from './commands/watchCommand.js';
 import { runInteractiveCli, shouldRunInteractiveCli } from './interactiveCli.js';
 import { rewriteCommandFlagAliases } from './mainArgs.js';
 import { isCliEntrypoint } from './mainEntrypoint.js';
@@ -39,6 +40,7 @@ export const mainCommand = defineCommand({
     restore: restoreCommand,
     open: openCommand,
     preflight: preflightCommand,
+    watch: watchCommand,
     maintain: maintainCommand,
     'ensure-restored': ensureRestoredCommand,
     lifecycle: lifecycleCommand,

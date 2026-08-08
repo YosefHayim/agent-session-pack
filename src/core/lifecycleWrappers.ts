@@ -160,6 +160,11 @@ if command -v node >/dev/null 2>&1; then
   node "$CLI_ENTRY" preflight --provider "$PROVIDER" -- "$@" >/dev/null 2>&1 || true
 fi
 
+# Follow the provider process and materialize GUI-opened stubs (no session id in argv).
+if command -v node >/dev/null 2>&1; then
+  exec node "$CLI_ENTRY" watch --provider "$PROVIDER" -- "$REAL_BIN" "$@"
+fi
+
 exec "$REAL_BIN" "$@"
 `;
 

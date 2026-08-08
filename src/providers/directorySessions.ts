@@ -8,7 +8,7 @@ import {
   type ProviderId,
   type SessionStore,
   slugifyTitle,
-} from '../core/index.js';
+} from '../core/sessionStore.js';
 
 /**
  * Marker files that identify a directory-backed provider session.

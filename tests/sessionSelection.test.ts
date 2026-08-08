@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { selectNewestSessionWithinSize } from '../src/core/index.js';
+import { selectNewestSessionWithinSize } from '../src/core/sessionSelection.js';
 
 describe('session selection', () => {
   it('selects the newest session that fits under the size cap', () => {

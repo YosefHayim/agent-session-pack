@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { DiscoveredSession } from '../src/core/index.js';
 import { createPackPlan } from '../src/core/packPlan.js';
+import type { DiscoveredSession } from '../src/core/sessionStore.js';
 
 const now = new Date('2026-07-06T12:00:00.000Z');
 

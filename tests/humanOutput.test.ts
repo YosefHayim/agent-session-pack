@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { createPackPlan, type ScanReport } from '../src/core/index.js';
-import { formatHumanPackPlan, formatHumanScan } from '../src/output/index.js';
+import { createPackPlan } from '../src/core/packPlan.js';
+import type { ScanReport } from '../src/core/sessionStore.js';
+import { formatHumanScan } from '../src/output/humanOutput.js';
+import { formatHumanPackPlan } from '../src/output/packOutput.js';
 
 describe('human scan output', () => {
   it('keeps session titles on one short terminal row', () => {

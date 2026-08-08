@@ -1,5 +1,5 @@
 import { Effect } from 'effect';
-import type { DiscoveredSession, ScanReport } from '../core/index.js';
+import type { DiscoveredSession, ScanReport } from '../core/sessionStore.js';
 
 const maxTitlePreviewLength = 96;
 

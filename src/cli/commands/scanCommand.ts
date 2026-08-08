@@ -4,11 +4,13 @@ import {
   type ProviderAdapter,
   type ProviderDiscoveryError,
   type ProviderId,
+  ProviderIdSchema,
   type SessionStore,
   scanStores,
-} from '../../core/index.js';
-import { renderHumanScan, renderJsonScan } from '../../output/index.js';
-import { allProviders, ProviderIdSchema } from '../../providers/index.js';
+} from '../../core/sessionStore.js';
+import { renderHumanScan } from '../../output/humanOutput.js';
+import { renderJsonScan } from '../../output/jsonOutput.js';
+import { allProviders } from '../../providers/allProviders.js';
 import { homeNotSetStderrMessage } from '../homeEnv.js';
 
 /**

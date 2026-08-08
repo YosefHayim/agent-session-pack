@@ -55,12 +55,12 @@ export type ProviderInventoryRequest = {
  * @example
  * ```ts
  * import { inspectProviderInventory } from './providerInventory.js';
- * import { providers } from '../providers/index.js';
+ * import { allProviders } from '../providers/allProviders.js';
  *
  * const report = await Effect.runPromise(
  *   inspectProviderInventory({
  *     home: process.env.HOME ?? '',
- *     providers,
+ *     providers: allProviders,
  *     olderThanMs: 168 * 60 * 60 * 1000,
  *     now: new Date(),
  *   }),

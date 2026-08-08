@@ -9,7 +9,7 @@ import {
   type SessionStore,
   sessionIdFromPath,
   slugifyTitle,
-} from '../core/index.js';
+} from '../core/sessionStore.js';
 
 /**
  * Options for discovering JSONL-backed provider sessions.

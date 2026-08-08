@@ -10,7 +10,7 @@ import {
   runFirstSetup,
   shouldRunInteractiveCli,
 } from '../src/cli/interactiveCli.js';
-import type { ProviderAdapter } from '../src/core/index.js';
+import type { ProviderAdapter } from '../src/core/sessionStore.js';
 
 const createWorkspace = (): Promise<string> =>
   mkdtemp(join(tmpdir(), 'agent-session-pack-interactive-'));

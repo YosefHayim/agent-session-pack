@@ -1,4 +1,5 @@
-import type { PackPlan, PackSessionsReport, UnpackSessionsReport } from '../core/index.js';
+import type { PackPlan } from '../core/packPlan.js';
+import type { PackSessionsReport, UnpackSessionsReport } from '../core/sessionArchive.js';
 import { formatBytes } from './byteFormat.js';
 
 /**

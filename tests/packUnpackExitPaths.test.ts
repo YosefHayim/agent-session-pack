@@ -5,7 +5,7 @@ import { Effect } from 'effect';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { runPackCommand } from '../src/cli/commands/packCommand.js';
 import { runUnpackCommand } from '../src/cli/commands/unpackCommand.js';
-import type { CompressionAdapter } from '../src/core/index.js';
+import type { CompressionAdapter } from '../src/core/archiveWriter.js';
 
 const copyCompression: CompressionAdapter = {
   compress: ({ sourcePath, archivePath }) =>

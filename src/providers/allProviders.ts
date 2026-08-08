@@ -1,4 +1,4 @@
-import type { ProviderAdapter } from '../core/index.js';
+import type { ProviderAdapter } from '../core/sessionStore.js';
 import { claudeCodeProvider } from './claudeCode.js';
 import { codexProvider } from './codex.js';
 import { cursorProvider } from './cursor.js';
@@ -10,22 +10,7 @@ import { kiroProvider } from './kiro.js';
 import { opencodeProvider } from './opencode.js';
 
 /**
- * Re-exports the provider id type and schema from the core module.
- */
-export { type ProviderId, ProviderIdSchema } from '../core/index.js';
-export * from './claudeCode.js';
-export * from './codex.js';
-export * from './cursor.js';
-export * from './devin.js';
-export * from './directorySessions.js';
-export * from './gemini.js';
-export * from './grok.js';
-export * from './kimi.js';
-export * from './kiro.js';
-export * from './opencode.js';
-
-/**
- * All registered provider adapters.
+ * All registered provider adapters in discovery order.
  */
 export const allProviders: ReadonlyArray<ProviderAdapter> = [
   codexProvider,

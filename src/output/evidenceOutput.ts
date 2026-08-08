@@ -1,4 +1,4 @@
-import type { LocalEvidenceEntry, LocalEvidenceReport } from '../core/index.js';
+import type { LocalEvidenceEntry, LocalEvidenceReport } from '../core/localEvidence.js';
 import { formatBytes } from './byteFormat.js';
 
 /**

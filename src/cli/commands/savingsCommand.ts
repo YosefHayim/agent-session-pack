@@ -1,15 +1,19 @@
 import { defineCommand } from 'citty';
 import { Effect, Schema } from 'effect';
+import type { ArchiveWriteError } from '../../core/archiveWriter.js';
+import { resolveEvidenceWorkRoot } from '../../core/evidenceWorkRoot.js';
+import { runLocalEvidence } from '../../core/localEvidence.js';
 import {
-  type ArchiveWriteError,
   type ProviderAdapter,
   type ProviderDiscoveryError,
   type ProviderId,
-  resolveEvidenceWorkRoot,
-  runLocalEvidence,
-} from '../../core/index.js';
-import { formatHumanEvidenceReport, formatJsonEvidenceReport } from '../../output/index.js';
-import { allProviders, ProviderIdSchema } from '../../providers/index.js';
+  ProviderIdSchema,
+} from '../../core/sessionStore.js';
+import {
+  formatHumanEvidenceReport,
+  formatJsonEvidenceReport,
+} from '../../output/evidenceOutput.js';
+import { allProviders } from '../../providers/allProviders.js';
 import { homeNotSetStderrMessage } from '../homeEnv.js';
 
 /**

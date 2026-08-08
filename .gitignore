@@ -3,6 +3,7 @@ dist/
 coverage/
 .vault-test/
 .agent-session-pack/
+.worktrees/
 scripts/dev/
 *.log
 .DS_Store

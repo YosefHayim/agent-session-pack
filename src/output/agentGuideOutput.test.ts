@@ -17,10 +17,11 @@ describe('agent guide output', () => {
     expect(output).toContain(
       'npx --yes agent-session-pack unpack --all-providers --apply --yes --json',
     );
-    expect(output).toContain(
-      'npx --yes agent-session-pack ensure-restored --provider codex <session-id> --json',
-    );
     expect(output).toContain('npx --yes agent-session-pack lifecycle enable --json');
+    expect(output).toContain(
+      'npx --yes agent-session-pack open --provider codex <session-id> --json',
+    );
+    expect(output).toContain('npx --yes agent-session-pack maintain --apply --yes --json');
     expect(output).toContain('npx --yes agent-session-pack pack --max --dry-run --json');
     expect(output).toContain('Bare agent-session-pack is for human TTY setup.');
   });
@@ -42,12 +43,12 @@ describe('agent guide output', () => {
       'npx --yes agent-session-pack pack --all-providers --older-than 7d --dry-run --json',
       'npx --yes agent-session-pack pack --all-providers --older-than 7d --apply --yes --json',
       'npx --yes agent-session-pack unpack --all-providers --apply --yes --json',
-      'npx --yes agent-session-pack ensure-restored --provider codex <session-id> --json',
+      'npx --yes agent-session-pack lifecycle enable --json',
+      'npx --yes agent-session-pack open --provider codex <session-id> --json',
+      'npx --yes agent-session-pack maintain --apply --yes --json',
     ]);
-    expect(guide.commands.maxPreview).toBe(
-      'npx --yes agent-session-pack pack --max --dry-run --json',
-    );
-    expect(guide.commands.ensureRestored).toContain('ensure-restored');
+    expect(guide.commands.openSession).toContain('open');
+    expect(guide.commands.maintain).toContain('maintain');
     expect(guide.commands.lifecycleEnable).toContain('lifecycle enable');
   });
 });

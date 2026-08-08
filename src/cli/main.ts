@@ -6,7 +6,10 @@ import { guideCommand } from './commands/guideCommand.js';
 import { initCommand } from './commands/initCommand.js';
 import { lifecycleCommand } from './commands/lifecycleCommand.js';
 import { listCommand } from './commands/listCommand.js';
+import { maintainCommand } from './commands/maintainCommand.js';
+import { openCommand } from './commands/openCommand.js';
 import { packCommand } from './commands/packCommand.js';
+import { preflightCommand } from './commands/preflightCommand.js';
 import { restoreCommand } from './commands/restoreCommand.js';
 import { checkCommand, savingsCommand } from './commands/savingsCommand.js';
 import { scanCommand } from './commands/scanCommand.js';
@@ -34,6 +37,9 @@ export const mainCommand = defineCommand({
     unpack: unpackCommand,
     list: listCommand,
     restore: restoreCommand,
+    open: openCommand,
+    preflight: preflightCommand,
+    maintain: maintainCommand,
     'ensure-restored': ensureRestoredCommand,
     lifecycle: lifecycleCommand,
     savings: savingsCommand,

@@ -1,5 +1,5 @@
 import { Effect } from 'effect';
-import type { ScanReport } from '../core/index.js';
+import type { ScanReport } from '../core/sessionStore.js';
 
 /**
  * Formats scan output for agents.

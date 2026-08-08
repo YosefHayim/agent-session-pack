@@ -1,11 +1,11 @@
 import { Effect } from 'effect';
 import {
   inspectProviderInventory,
-  type ProviderAdapter,
   type ProviderInventoryReport,
-} from '../core/index.js';
-import { formatBytes } from '../output/index.js';
-import { allProviders } from '../providers/index.js';
+} from '../core/providerInventory.js';
+import type { ProviderAdapter } from '../core/sessionStore.js';
+import { formatBytes } from '../output/byteFormat.js';
+import { allProviders } from '../providers/allProviders.js';
 import { clackPromptAdapter, type PromptAdapter } from './promptAdapter.js';
 
 /**
@@ -211,7 +211,7 @@ export const runWithSpinner = async <Value>(request: SpinnerTaskRequest<Value>):
  * ```ts
  * import { loadInventoryWithSpinner } from './interactiveCliContext.js';
  * import { clackPromptAdapter } from './promptAdapter.js';
- * import { allProviders } from '../providers/index.js';
+ * import { allProviders } from '../providers/allProviders.js';
  *
  * const inventory = await loadInventoryWithSpinner({
  *   home: process.env.HOME!,

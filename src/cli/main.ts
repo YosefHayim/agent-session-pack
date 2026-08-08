@@ -1,17 +1,14 @@
 import { fileURLToPath } from 'node:url';
 import { defineCommand, runMain } from 'citty';
-import {
-  checkCommand,
-  doctorCommand,
-  guideCommand,
-  initCommand,
-  listCommand,
-  packCommand,
-  restoreCommand,
-  savingsCommand,
-  scanCommand,
-  unpackCommand,
-} from './commands/index.js';
+import { doctorCommand } from './commands/doctorCommand.js';
+import { guideCommand } from './commands/guideCommand.js';
+import { initCommand } from './commands/initCommand.js';
+import { listCommand } from './commands/listCommand.js';
+import { packCommand } from './commands/packCommand.js';
+import { restoreCommand } from './commands/restoreCommand.js';
+import { checkCommand, savingsCommand } from './commands/savingsCommand.js';
+import { scanCommand } from './commands/scanCommand.js';
+import { unpackCommand } from './commands/unpackCommand.js';
 import { runInteractiveCli, shouldRunInteractiveCli } from './interactiveCli.js';
 import { normalizeCliArgv } from './mainArgs.js';
 import { isCliEntrypoint } from './mainEntrypoint.js';

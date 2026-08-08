@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { Effect } from 'effect';
-import type { ProviderAdapter } from '../core/index.js';
+import type { ProviderAdapter } from '../core/sessionStore.js';
 import { discoverDirectoryProviderSessions } from './directorySessions.js';
 import { discoverJsonlProviderSessions } from './sessionMetadata.js';
 

@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty';
 import { Effect, Schema } from 'effect';
-import { formatHumanAgentGuide, formatJsonAgentGuide } from '../../output/index.js';
+import { formatHumanAgentGuide, formatJsonAgentGuide } from '../../output/agentGuideOutput.js';
 
 /**
  * Schema describing the guide command arguments.

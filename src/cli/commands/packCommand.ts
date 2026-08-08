@@ -1,26 +1,25 @@
 import { defineCommand } from 'citty';
 import { Effect, Schema } from 'effect';
+import { createZstdCompression } from '../../core/archiveReader.js';
+import type { ArchiveWriteError, CompressionAdapter } from '../../core/archiveWriter.js';
+import type { ManifestStoreError } from '../../core/manifestStore.js';
+import { createPackPlan } from '../../core/packPlan.js';
+import { packProviderSessions, resolveDefaultVaultPath } from '../../core/sessionArchive.js';
 import {
-  type ArchiveWriteError,
-  type CompressionAdapter,
-  createPackPlan,
-  createZstdCompression,
-  type ManifestStoreError,
   type ProviderAdapter,
   type ProviderDiscoveryError,
   type ProviderId,
-  packProviderSessions,
-  resolveDefaultVaultPath,
+  ProviderIdSchema,
   type SessionStore,
   scanStores,
-} from '../../core/index.js';
+} from '../../core/sessionStore.js';
 import {
   formatHumanPackPlan,
   formatHumanPackReport,
   formatJsonArchiveReport,
   formatJsonPackPlan,
-} from '../../output/index.js';
-import { allProviders, ProviderIdSchema } from '../../providers/index.js';
+} from '../../output/packOutput.js';
+import { allProviders } from '../../providers/allProviders.js';
 import { resolveApplyConfirmation } from '../applyConfirmation.js';
 import { homeNotSetStderrMessage } from '../homeEnv.js';
 

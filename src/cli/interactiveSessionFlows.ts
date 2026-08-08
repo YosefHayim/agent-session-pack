@@ -1,6 +1,7 @@
 import { Effect } from 'effect';
-import { type ProviderInventoryReport, resolveDefaultVaultPath } from '../core/index.js';
-import { formatBytes } from '../output/index.js';
+import type { ProviderInventoryReport } from '../core/providerInventory.js';
+import { resolveDefaultVaultPath } from '../core/sessionArchive.js';
+import { formatBytes } from '../output/byteFormat.js';
 import { runPackCommand } from './commands/packCommand.js';
 import { runScanCommand } from './commands/scanCommand.js';
 import { runUnpackCommand } from './commands/unpackCommand.js';

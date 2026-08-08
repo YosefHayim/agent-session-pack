@@ -66,10 +66,14 @@ const maxTitlePreviewLength = 96;
  * @example
  * ```ts
  * import { runLocalEvidence } from './localEvidence.js';
- * import { providers } from '../providers/index.js';
+ * import { allProviders } from '../providers/allProviders.js';
  *
  * const report = await Effect.runPromise(
- *   runLocalEvidence({ home: process.env.HOME ?? '', workRoot: '/tmp/evidence', providers }),
+ *   runLocalEvidence({
+ *     home: process.env.HOME ?? '',
+ *     workRoot: '/tmp/evidence',
+ *     providers: allProviders,
+ *   }),
  * );
  * ```
  */

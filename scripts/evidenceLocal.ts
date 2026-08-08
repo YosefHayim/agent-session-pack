@@ -1,13 +1,14 @@
 import { Effect } from 'effect';
 import { homeNotSetStderrMessage } from '../src/cli/homeEnv.js';
+import type { ArchiveWriteError } from '../src/core/archiveWriter.js';
+import { resolveEvidenceWorkRoot } from '../src/core/evidenceWorkRoot.js';
+import { runLocalEvidence } from '../src/core/localEvidence.js';
+import type { ProviderDiscoveryError } from '../src/core/sessionStore.js';
 import {
-  type ArchiveWriteError,
-  type ProviderDiscoveryError,
-  resolveEvidenceWorkRoot,
-  runLocalEvidence,
-} from '../src/core/index.js';
-import { formatHumanEvidenceReport, formatJsonEvidenceReport } from '../src/output/index.js';
-import { allProviders } from '../src/providers/index.js';
+  formatHumanEvidenceReport,
+  formatJsonEvidenceReport,
+} from '../src/output/evidenceOutput.js';
+import { allProviders } from '../src/providers/allProviders.js';
 
 /**
  * Runs opt-in local evidence against copied provider sessions.

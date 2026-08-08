@@ -1,11 +1,7 @@
 import { Effect } from 'effect';
-import {
-  type ProviderAdapter,
-  type ProviderId,
-  type ProviderInventoryReport,
-  validateVaultPath,
-  writeSetupConfig,
-} from '../core/index.js';
+import type { ProviderInventoryReport } from '../core/providerInventory.js';
+import type { ProviderAdapter, ProviderId } from '../core/sessionStore.js';
+import { validateVaultPath, writeSetupConfig } from '../core/setupConfig.js';
 import { homeNotSetCancelMessage } from './homeEnv.js';
 import {
   defaultColdAfter,

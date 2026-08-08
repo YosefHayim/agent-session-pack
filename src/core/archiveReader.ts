@@ -27,8 +27,9 @@ const execFileAsync = promisify(execFile);
 export const createZstdCompression = (): CompressionAdapter => ({
   compress: ({ sourcePath, archivePath }) =>
     Effect.tryPromise({
-      try: () =>
-        execFileAsync(ZSTD_BINARY, [
+      try: () => {
+        // Compress sourcePath to archivePath: zstd level 9, long window 27, quiet, force overwrite.
+        const compressArgs = [
           ZSTD_LEVEL_FLAG,
           ZSTD_LONG_WINDOW_FLAG,
           ZSTD_QUIET_FLAG,
@@ -36,7 +37,9 @@ export const createZstdCompression = (): CompressionAdapter => ({
           sourcePath,
           ZSTD_OUTPUT_FLAG,
           archivePath,
-        ]).then(() => undefined),
+        ];
+        return execFileAsync(ZSTD_BINARY, compressArgs).then(() => undefined);
+      },
       catch: (cause) =>
         new ArchiveFileSystemError({
           path: sourcePath,
@@ -45,15 +48,18 @@ export const createZstdCompression = (): CompressionAdapter => ({
     }),
   decompress: ({ archivePath, restoredPath }) =>
     Effect.tryPromise({
-      try: () =>
-        execFileAsync(ZSTD_BINARY, [
+      try: () => {
+        // Decompress archivePath to restoredPath: quiet, force overwrite.
+        const decompressArgs = [
           ZSTD_DECOMPRESS_FLAG,
           ZSTD_QUIET_FLAG,
           ZSTD_FORCE_FLAG,
           archivePath,
           ZSTD_OUTPUT_FLAG,
           restoredPath,
-        ]).then(() => undefined),
+        ];
+        return execFileAsync(ZSTD_BINARY, decompressArgs).then(() => undefined);
+      },
       catch: (cause) =>
         new ArchiveFileSystemError({
           path: archivePath,

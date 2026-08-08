@@ -149,7 +149,7 @@ export const runPackCommand = (
       return;
     }
 
-    const home = normalizeHome(args.home);
+    const home = args.home ?? process.env.HOME;
 
     if (home === undefined) {
       process.stderr.write(HOME_NOT_SET_STDERR_MESSAGE);
@@ -164,12 +164,9 @@ export const runPackCommand = (
       return;
     }
 
-    const olderThan = normalizeOlderThan({
-      max: args.max,
-      olderThan: args.olderThan,
-    });
+    const olderThan = args.max === true ? '0h' : (args.olderThan ?? DEFAULT_OLDER_THAN);
     const olderThanMs = parseDurationMs(olderThan);
-    const providers = normalizeProviders({
+    const providers = selectProviders({
       provider: args.provider,
       providers: args.providers,
     });
@@ -177,13 +174,13 @@ export const runPackCommand = (
     if (shouldUseArchiveWorkflow(args)) {
       const report = yield* packProviderSessions({
         home,
-        vaultPath: normalizeVaultPath(args.vaultPath, home),
+        vaultPath: args.vaultPath ?? resolveDefaultVaultPath(home),
         providers,
         olderThan,
         olderThanMs,
-        now: normalizeNow(args.now),
+        now: args.now ?? new Date(),
         apply: args.apply === true,
-        compression: normalizeCompression(args.compression),
+        compression: args.compression ?? createZstdCompression(),
       });
 
       if (args.json === true) {
@@ -222,21 +219,6 @@ export const runPackCommand = (
     process.stdout.write(`${formatHumanPackPlan(plan, { olderThan })}\n`);
   });
 
-const normalizeOlderThan = (args: {
-  readonly max: boolean | undefined;
-  readonly olderThan: string | undefined;
-}): string => {
-  if (args.max === true) {
-    return '0h';
-  }
-
-  if (args.olderThan === undefined) {
-    return DEFAULT_OLDER_THAN;
-  }
-
-  return args.olderThan;
-};
-
 const parseDurationMs = (duration: string): number => {
   const match = duration.match(/^(\d+)(h|d|w)$/);
 
@@ -258,7 +240,7 @@ const parseDurationMs = (duration: string): number => {
   return value * 24 * 60 * 60 * 1000;
 };
 
-const normalizeProviders = (args: {
+const selectProviders = (args: {
   readonly provider: string | undefined;
   readonly providers: ReadonlyArray<ProviderAdapter> | undefined;
 }): ReadonlyArray<ProviderAdapter> => {
@@ -295,36 +277,4 @@ const shouldUseArchiveWorkflow = (args: PackArgs): boolean => {
   }
 
   return false;
-};
-
-const normalizeHome = (home: string | undefined): string | undefined => {
-  if (home !== undefined) {
-    return home;
-  }
-
-  return process.env.HOME;
-};
-
-const normalizeVaultPath = (vaultPath: string | undefined, home: string): string => {
-  if (vaultPath !== undefined) {
-    return vaultPath;
-  }
-
-  return resolveDefaultVaultPath(home);
-};
-
-const normalizeCompression = (compression: CompressionAdapter | undefined): CompressionAdapter => {
-  if (compression !== undefined) {
-    return compression;
-  }
-
-  return createZstdCompression();
-};
-
-const normalizeNow = (now: Date | undefined): Date => {
-  if (now !== undefined) {
-    return now;
-  }
-
-  return new Date();
 };

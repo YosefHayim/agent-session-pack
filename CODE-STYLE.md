@@ -57,7 +57,15 @@ Rules:
 - Explicit params and return types are required.
 - `function*` is allowed only as an `Effect.gen` callback.
 - Avoid nested conditions; prefer guard returns.
-- Do not scatter `??` defaults through workflows. Normalize defaults once at the boundary.
+- Resolve optional defaults once at the command or flow boundary with inline `??` or Schema defaults. Do not invent `normalize*` wrappers for trivial defaults.
+
+## Naming
+
+- Prefer domain names for locals, parameters, and helpers (`packPlanRow`, `inventoryReport`, `vaultPathValidation`).
+- Ban vague locals when a domain name exists: `result`, `data`, `payload`, `body`, `response`, `row` (type names like `PackPlanRow` are fine).
+- Module-level constants use `UPPER_SNAKE` and sit after imports.
+- No `index.ts` barrel re-export files. Import from the concrete module path.
+- Do not prefix helpers with `normalize*`. Name by domain purpose (`rewriteCommandFlagAliases`, `posixRelativePath`) or inline trivial defaults.
 
 ## TSDoc
 
@@ -98,6 +106,7 @@ export const writeVerifiedArchive = (request: ArchiveWriteRequest) => ...;
 Use Effect for workflows, expected errors, schemas, provider scanning, filesystem operations, compression, restore, config, and manifests.
 
 - Runtime schemas use `effect/Schema`.
+- Prefer Schema validation at boundaries over custom ad-hoc validators when Schema already fits.
 - Expected failures are typed Effect errors.
 - Domain/application code does not use `throw new Error()`.
 - CLI boundary code renders errors to human text, JSON, and exit codes.
@@ -213,17 +222,21 @@ One test: an abstraction earns its place only if it has a second real caller or 
 - No top-level `function foo()` declarations in app code.
 - No nested ternaries.
 - No nested `if` ladders when guard returns work.
-- No scattered `??` defaults in workflows.
+- No `normalize*` prefix wrappers for defaults or path munging; inline trivial defaults or name helpers by domain purpose.
+- No mid-workflow default resolution; resolve optional inputs once at the boundary.
 - No `throw new Error()` inside domain/application code.
 - No no-op or identity wrappers.
 - No one-use wrapper functions unless they name a real domain concept.
 - No copy-pasted micro-helper across files; inline the trivial ones, and give a genuine shared concept one home in the module that owns it.
 - No defensive `isRecord`-style micro-helpers when Effect Schema should validate.
-- No vague names like `data`, `result`, `item`, or `thing` when a domain name exists.
+- No vague names like `result`, `data`, `payload`, `body`, `response`, `row`, `item`, or `thing` when a domain name exists.
+- No `index.ts` barrel re-export modules.
 - No normal tests against real home directories.
 
 ## Tests
 
+- Unit tests are colocated next to source as `*.test.ts` under `src/`.
+- `tests/` holds shared helpers/fixtures and optional `*.integration.test.ts` only.
 - `pnpm test`: synthetic fixtures only.
 - `pnpm test:integration`: temp HOME and temp provider roots only.
 - `pnpm guide`: agent-first command map for safe non-interactive use.

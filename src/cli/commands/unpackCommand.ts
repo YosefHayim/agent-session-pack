@@ -111,7 +111,7 @@ export const runUnpackCommand = (
   args: UnpackArgs,
 ): Effect.Effect<void, ArchiveFileSystemError | ArchiveVerificationError | ManifestStoreError> =>
   Effect.gen(function* () {
-    const home = normalizeHome(args.home);
+    const home = args.home ?? process.env.HOME;
 
     if (home === undefined) {
       process.stderr.write(HOME_NOT_SET_STDERR_MESSAGE);
@@ -129,13 +129,13 @@ export const runUnpackCommand = (
     }
 
     const report = yield* unpackProviderSessions({
-      vaultPath: normalizeVaultPath(args.vaultPath, home),
-      providers: normalizeProviders({
+      vaultPath: args.vaultPath ?? resolveDefaultVaultPath(home),
+      providers: selectProviders({
         provider: args.provider,
         providers: args.providers,
       }),
       apply: args.apply === true,
-      compression: normalizeCompression(args.compression),
+      compression: args.compression ?? createZstdCompression(),
     });
 
     if (args.json === true) {
@@ -146,7 +146,7 @@ export const runUnpackCommand = (
     process.stdout.write(`${formatHumanUnpackReport(report)}\n`);
   });
 
-const normalizeProviders = (args: {
+const selectProviders = (args: {
   readonly provider: string | undefined;
   readonly providers: ReadonlyArray<ProviderAdapter> | undefined;
 }): ReadonlyArray<ProviderAdapter> => {
@@ -167,28 +167,4 @@ const normalizeProviders = (args: {
   }
 
   return allProviders.filter((adapter) => adapter.id === (args.provider as ProviderId));
-};
-
-const normalizeHome = (home: string | undefined): string | undefined => {
-  if (home !== undefined) {
-    return home;
-  }
-
-  return process.env.HOME;
-};
-
-const normalizeVaultPath = (vaultPath: string | undefined, home: string): string => {
-  if (vaultPath !== undefined) {
-    return vaultPath;
-  }
-
-  return resolveDefaultVaultPath(home);
-};
-
-const normalizeCompression = (compression: CompressionAdapter | undefined): CompressionAdapter => {
-  if (compression !== undefined) {
-    return compression;
-  }
-
-  return createZstdCompression();
 };

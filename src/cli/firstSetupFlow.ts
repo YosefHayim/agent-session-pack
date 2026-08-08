@@ -2,19 +2,16 @@ import { Effect } from 'effect';
 import type { ProviderInventoryReport } from '../core/providerInventory.js';
 import type { ProviderAdapter, ProviderId } from '../core/sessionStore.js';
 import { validateVaultPath, writeSetupConfig } from '../core/setupConfig.js';
+import { allProviders } from '../providers/allProviders.js';
 import { HOME_NOT_SET_CANCEL_MESSAGE } from './homeEnv.js';
 import {
   DEFAULT_COLD_AFTER,
+  DEFAULT_OLDER_THAN_MS,
   type FirstSetupRequest,
   formatProviderInventoryTable,
   loadInventoryWithSpinner,
-  normalizeHome,
-  normalizeNow,
-  normalizeOlderThanMs,
-  normalizePrompts,
-  normalizeProviders,
 } from './interactiveCliContext.js';
-import type { PromptAdapter, PromptOption } from './promptAdapter.js';
+import { clackPromptAdapter, type PromptAdapter, type PromptOption } from './promptAdapter.js';
 
 type ColdThresholdChoice = '14d' | '30d' | '7d' | 'custom';
 type VaultPathChoice = 'custom' | 'default';
@@ -29,12 +26,12 @@ type FlowResult = 'cancelled' | 'saved';
  * ```ts
  * import { runFirstSetup } from './firstSetupFlow.js';
  *
- * const result = await runFirstSetup();
+ * const setupStatus = await runFirstSetup();
  * ```
  */
 export const runFirstSetup = async (request: FirstSetupRequest = {}): Promise<FlowResult> => {
-  const prompts = normalizePrompts(request.prompts);
-  const home = normalizeHome(request.home);
+  const prompts = request.prompts ?? clackPromptAdapter;
+  const home = request.home ?? process.env.HOME;
 
   if (home === undefined) {
     prompts.cancel(HOME_NOT_SET_CANCEL_MESSAGE);
@@ -47,9 +44,9 @@ export const runFirstSetup = async (request: FirstSetupRequest = {}): Promise<Fl
 
   prompts.note(firstSetupCopy());
 
-  const providers = normalizeProviders(request.providers);
-  const olderThanMs = normalizeOlderThanMs(request.olderThanMs);
-  const now = normalizeNow(request.now);
+  const providers = request.providers ?? allProviders;
+  const olderThanMs = request.olderThanMs ?? DEFAULT_OLDER_THAN_MS;
+  const now = request.now ?? new Date();
   const inventory = await loadInventoryWithSpinner({
     home,
     now,
@@ -261,7 +258,7 @@ const validateVaultPathInput = async (request: {
   const providerRoots = request.providers.flatMap((provider) =>
     provider.defaultRoots(request.home),
   );
-  const result = await Effect.runPromise(
+  const vaultPathValidation = await Effect.runPromise(
     Effect.either(
       validateVaultPath({
         home: request.home,
@@ -271,76 +268,76 @@ const validateVaultPathInput = async (request: {
     ),
   );
 
-  if (result._tag === 'Right') {
-    return result.right.path;
+  if (vaultPathValidation._tag === 'Right') {
+    return vaultPathValidation.right.path;
   }
 
-  request.prompts.note(result.left.message, 'Invalid vault path');
+  request.prompts.note(vaultPathValidation.left.message, 'Invalid vault path');
   return undefined;
 };
 
 const providerPromptOption = (
-  row: ProviderInventoryReport['rows'][number],
+  inventoryRow: ProviderInventoryReport['rows'][number],
 ): PromptOption<ProviderId> => {
-  if (row.provider === 'codex') {
+  if (inventoryRow.provider === 'codex') {
     return {
-      value: row.provider,
-      label: row.provider,
+      value: inventoryRow.provider,
+      label: inventoryRow.provider,
       hint: 'archive old JSONL sessions; restore byte-exact when needed',
     };
   }
 
-  if (row.provider === 'claude') {
+  if (inventoryRow.provider === 'claude') {
     return {
-      value: row.provider,
-      label: row.provider,
+      value: inventoryRow.provider,
+      label: inventoryRow.provider,
       hint: 'archive old Claude Code project sessions',
     };
   }
 
-  if (row.provider === 'kiro') {
+  if (inventoryRow.provider === 'kiro') {
     return {
-      value: row.provider,
-      label: row.provider,
+      value: inventoryRow.provider,
+      label: inventoryRow.provider,
       hint: 'archive old Kiro CLI sessions',
     };
   }
 
-  if (row.provider === 'grok') {
+  if (inventoryRow.provider === 'grok') {
     return {
-      value: row.provider,
-      label: row.provider,
+      value: inventoryRow.provider,
+      label: inventoryRow.provider,
       hint: 'archive old Grok multi-file session directories',
     };
   }
 
-  if (row.provider === 'kimi') {
+  if (inventoryRow.provider === 'kimi') {
     return {
-      value: row.provider,
-      label: row.provider,
+      value: inventoryRow.provider,
+      label: inventoryRow.provider,
       hint: 'archive old Kimi Code multi-file sessions',
     };
   }
 
-  if (row.provider === 'opencode') {
+  if (inventoryRow.provider === 'opencode') {
     return {
-      value: row.provider,
-      label: row.provider,
+      value: inventoryRow.provider,
+      label: inventoryRow.provider,
       hint: 'archive old OpenCode local sessions when present',
     };
   }
 
-  if (row.provider === 'gemini') {
+  if (inventoryRow.provider === 'gemini') {
     return {
-      value: row.provider,
-      label: row.provider,
+      value: inventoryRow.provider,
+      label: inventoryRow.provider,
       hint: 'archive old Gemini CLI sessions when present',
     };
   }
 
   return {
-    value: row.provider,
-    label: row.provider,
+    value: inventoryRow.provider,
+    label: inventoryRow.provider,
     hint: 'backup-only proof; native mutation disabled for safety',
   };
 };

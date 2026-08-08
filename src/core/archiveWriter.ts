@@ -544,7 +544,7 @@ const hashDirectoryTree = async (root: string): Promise<string> => {
   const treeHash = createHash('sha256');
 
   for (const filePath of files) {
-    const relativePath = normalizeRelativePath(relative(root, filePath));
+    const relativePath = relative(root, filePath).split(sep).join('/');
     const fileDigest = await hashFile(filePath);
     treeHash.update(relativePath);
     treeHash.update('\0');
@@ -563,8 +563,6 @@ const hashFile = (path: string): Promise<string> =>
       .on('error', reject)
       .on('end', () => resolve(hash.digest('hex')));
   });
-
-const normalizeRelativePath = (path: string): string => path.split(sep).join('/');
 
 const createTarArchive = (request: {
   readonly sourcePath: string;

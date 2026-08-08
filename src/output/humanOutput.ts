@@ -20,13 +20,13 @@ export const formatHumanScan = (report: ScanReport): string => {
     return 'No sessions found.';
   }
 
-  const rows = report.sessions.map(formatSessionRow);
+  const sessionRows = report.sessions.map(formatSessionRow);
 
   return [
     'Found sessions',
     '',
     'Provider   Date         Size       Status   Name   Path',
-    ...rows,
+    ...sessionRows,
   ].join('\n');
 };
 

@@ -89,13 +89,15 @@ const discoverDevinSessions = async (root: string): Promise<ReadonlyArray<Discov
     return [];
   }
 
-  const rows = await readDevinSessionRows(dbPath).catch(() => []);
+  const devinSessionRows = await readDevinSessionRows(dbPath).catch(() => []);
 
-  if (rows.length === 0) {
+  if (devinSessionRows.length === 0) {
     return [sessionFromDatabaseSnapshot(dbPath, dbStat.size, dbStat.mtime)];
   }
 
-  return rows.map((row) => sessionFromDevinRow(row, dbPath, dbStat.size));
+  return devinSessionRows.map((devinSessionRow) =>
+    sessionFromDevinRow(devinSessionRow, dbPath, dbStat.size),
+  );
 };
 
 const readDevinSessionRows = async (dbPath: string): Promise<ReadonlyArray<DevinSessionRow>> => {
@@ -111,20 +113,20 @@ const readDevinSessionRows = async (dbPath: string): Promise<ReadonlyArray<Devin
 };
 
 const sessionFromDevinRow = (
-  row: DevinSessionRow,
+  devinSessionRow: DevinSessionRow,
   dbPath: string,
   dbBytes: number,
 ): DiscoveredSession => {
-  const sizeBytes = row.sizeBytes > 0 ? row.sizeBytes : dbBytes;
+  const sizeBytes = devinSessionRow.sizeBytes > 0 ? devinSessionRow.sizeBytes : dbBytes;
 
   return {
-    id: row.id,
+    id: devinSessionRow.id,
     provider: 'devin',
-    title: row.title,
-    slug: slugifyTitle(row.title),
+    title: devinSessionRow.title,
+    slug: slugifyTitle(devinSessionRow.title),
     originalPath: dbPath,
-    createdAt: dateFromDevinTimestamp(row.createdAt),
-    modifiedAt: dateFromDevinTimestamp(row.modifiedAt),
+    createdAt: dateFromDevinTimestamp(devinSessionRow.createdAt),
+    modifiedAt: dateFromDevinTimestamp(devinSessionRow.modifiedAt),
     sizeBytes,
     status: 'live',
   };

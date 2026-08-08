@@ -71,7 +71,7 @@ export const inspectProviderInventory = (
   request: ProviderInventoryRequest,
 ): Effect.Effect<ProviderInventoryReport, ProviderDiscoveryError> =>
   Effect.gen(function* () {
-    const rows: ProviderInventoryRow[] = [];
+    const inventoryRows: ProviderInventoryRow[] = [];
     const cutoffTime = request.now.getTime() - request.olderThanMs;
 
     for (const provider of request.providers) {
@@ -80,7 +80,7 @@ export const inspectProviderInventory = (
         provider,
       });
 
-      rows.push(
+      inventoryRows.push(
         createInventoryRow({
           cutoffTime,
           paths: discovered.existingRoots.length > 0 ? discovered.existingRoots : discovered.roots,
@@ -90,7 +90,7 @@ export const inspectProviderInventory = (
       );
     }
 
-    return { rows };
+    return { rows: inventoryRows };
   });
 
 type ProviderRootDiscovery = {

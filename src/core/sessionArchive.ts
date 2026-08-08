@@ -171,7 +171,7 @@ export const packProviderSessions = (
   ArchiveWriteError | ManifestStoreError | ProviderDiscoveryError
 > =>
   Effect.gen(function* () {
-    const rows: PackSessionRow[] = [];
+    const packSessionRows: PackSessionRow[] = [];
     const packableSessions: DiscoveredSession[] = [];
     const cutoffTime = request.now.getTime() - request.olderThanMs;
 
@@ -182,12 +182,12 @@ export const packProviderSessions = (
       });
 
       if (sessions === undefined) {
-        rows.push(createMissingPackRow(provider));
+        packSessionRows.push(createMissingPackRow(provider));
         continue;
       }
 
       if (provider.mode === 'backup-only') {
-        rows.push(createBackupOnlyPackRow(provider, sessions.length));
+        packSessionRows.push(createBackupOnlyPackRow(provider, sessions.length));
         continue;
       }
 
@@ -196,12 +196,12 @@ export const packProviderSessions = (
       const candidates = sessions.filter((session) => session.modifiedAt.getTime() < cutoffTime);
 
       if (candidates.length === 0) {
-        rows.push(createNoCandidatesPackRow(provider, sessions.length));
+        packSessionRows.push(createNoCandidatesPackRow(provider, sessions.length));
         continue;
       }
 
       if (request.apply === false) {
-        rows.push(createDryRunPackRow(provider, sessions.length, candidates));
+        packSessionRows.push(createDryRunPackRow(provider, sessions.length, candidates));
         continue;
       }
 
@@ -212,7 +212,7 @@ export const packProviderSessions = (
         vaultPath: request.vaultPath,
       });
 
-      rows.push(
+      packSessionRows.push(
         createPackedRow({
           provider,
           foundSessions: sessions.length,
@@ -227,7 +227,7 @@ export const packProviderSessions = (
       command: 'pack',
       apply: request.apply,
       vaultPath: request.vaultPath,
-      rows,
+      rows: packSessionRows,
       thresholdPreviews: createPackThresholdPreviews({
         now: request.now,
         olderThan: request.olderThan,
@@ -265,13 +265,13 @@ export const unpackProviderSessions = (
 > =>
   Effect.gen(function* () {
     const manifests = yield* readVaultManifests(request.vaultPath);
-    const rows: UnpackSessionRow[] = [];
+    const unpackSessionRows: UnpackSessionRow[] = [];
 
     for (const provider of request.providers) {
       const providerManifests = manifests.filter((manifest) => manifest.provider === provider.id);
 
       if (providerManifests.length === 0) {
-        rows.push(createNoArchivesUnpackRow(provider.id));
+        unpackSessionRows.push(createNoArchivesUnpackRow(provider.id));
         continue;
       }
 
@@ -279,7 +279,7 @@ export const unpackProviderSessions = (
       const beforeBytes = sumManifestSourceBytes(providerManifests);
 
       if (request.apply === false) {
-        rows.push(createDryRunUnpackRow(provider.id, providerManifests, archiveBytes));
+        unpackSessionRows.push(createDryRunUnpackRow(provider.id, providerManifests, archiveBytes));
         continue;
       }
 
@@ -289,7 +289,7 @@ export const unpackProviderSessions = (
         vaultPath: request.vaultPath,
       });
 
-      rows.push({
+      unpackSessionRows.push({
         provider: provider.id,
         archivedSessions: providerManifests.length,
         restoredSessions: restored.restoredSessions,
@@ -308,7 +308,7 @@ export const unpackProviderSessions = (
       command: 'unpack',
       apply: request.apply,
       vaultPath: request.vaultPath,
-      rows,
+      rows: unpackSessionRows,
     };
   });
 

@@ -23,7 +23,10 @@ export type PackPlanOutputOptions = {
  * ```
  */
 export const formatHumanPackPlan = (plan: PackPlan, options: PackPlanOutputOptions): string => {
-  const totalBeforeBytes = plan.rows.reduce((totalBytes, row) => totalBytes + row.beforeBytes, 0);
+  const totalBeforeBytes = plan.rows.reduce(
+    (totalBytes, packPlanRow) => totalBytes + packPlanRow.beforeBytes,
+    0,
+  );
 
   return [
     'Pack dry run',
@@ -142,14 +145,14 @@ export const formatJsonArchiveReport = (
   report: PackSessionsReport | UnpackSessionsReport,
 ): string => `${JSON.stringify(report, null, 2)}\n`;
 
-const formatPackPlanRow = (row: PackPlan['rows'][number]): string => {
-  const provider = row.provider.padEnd(10);
-  const mode = row.mode.padEnd(12);
-  const found = String(row.scannedSessions).padStart(5);
-  const candidates = String(row.candidateSessions).padStart(10);
-  const before = formatBytes(row.beforeBytes).padEnd(10);
-  const after = formatBytes(row.afterDryRunBytes).padEnd(15);
-  const cleanup = formatBytes(row.cleanupBytes);
+const formatPackPlanRow = (packPlanRow: PackPlan['rows'][number]): string => {
+  const provider = packPlanRow.provider.padEnd(10);
+  const mode = packPlanRow.mode.padEnd(12);
+  const found = String(packPlanRow.scannedSessions).padStart(5);
+  const candidates = String(packPlanRow.candidateSessions).padStart(10);
+  const before = formatBytes(packPlanRow.beforeBytes).padEnd(10);
+  const after = formatBytes(packPlanRow.afterDryRunBytes).padEnd(15);
+  const cleanup = formatBytes(packPlanRow.cleanupBytes);
 
   return `${provider} ${mode} ${found}   ${candidates}   ${before} ${after} ${cleanup}`;
 };
@@ -204,33 +207,33 @@ const formatSessionCount = (sessions: number): string => {
   return `${sessions} sessions`;
 };
 
-const formatPackReportRow = (row: PackSessionsReport['rows'][number]): string => {
-  const provider = row.provider.padEnd(10);
-  const sessions = String(row.foundSessions).padEnd(9);
-  const mode = row.mode.padEnd(12);
-  const candidates = String(row.candidateSessions).padStart(10);
-  const packed = String(row.packedSessions).padStart(6);
-  const before = formatBytes(row.beforeBytes).padEnd(10);
-  const archive = formatMaybeBytes(row.archiveBytes).padEnd(10);
-  const saved = formatMaybeBytes(row.savedBytes).padEnd(10);
-  const savedPercent = formatMaybePercent(row.savedPercent).padEnd(8);
-  const touched = formatTouched(row.touchedOriginals).padEnd(6);
+const formatPackReportRow = (packSessionRow: PackSessionsReport['rows'][number]): string => {
+  const provider = packSessionRow.provider.padEnd(10);
+  const sessions = String(packSessionRow.foundSessions).padEnd(9);
+  const mode = packSessionRow.mode.padEnd(12);
+  const candidates = String(packSessionRow.candidateSessions).padStart(10);
+  const packed = String(packSessionRow.packedSessions).padStart(6);
+  const before = formatBytes(packSessionRow.beforeBytes).padEnd(10);
+  const archive = formatMaybeBytes(packSessionRow.archiveBytes).padEnd(10);
+  const saved = formatMaybeBytes(packSessionRow.savedBytes).padEnd(10);
+  const savedPercent = formatMaybePercent(packSessionRow.savedPercent).padEnd(8);
+  const touched = formatTouched(packSessionRow.touchedOriginals).padEnd(6);
 
-  return `${provider} ${sessions} ${mode} ${candidates}  ${packed}  ${before} ${archive} ${saved} ${savedPercent} ${touched} ${formatStatus(row.status, row.reason)}`;
+  return `${provider} ${sessions} ${mode} ${candidates}  ${packed}  ${before} ${archive} ${saved} ${savedPercent} ${touched} ${formatStatus(packSessionRow.status, packSessionRow.reason)}`;
 };
 
-const formatUnpackReportRow = (row: UnpackSessionsReport['rows'][number]): string => {
-  const provider = row.provider.padEnd(10);
-  const archived = String(row.archivedSessions).padEnd(9);
-  const restored = String(row.restoredSessions).padEnd(9);
-  const present = String(row.alreadyPresentSessions).padEnd(8);
-  const conflicts = String(row.conflictSessions).padEnd(10);
-  const before = formatBytes(row.beforeBytes).padEnd(10);
-  const archive = formatBytes(row.archiveBytes).padEnd(10);
-  const restoredBytes = formatBytes(row.restoredBytes).padEnd(10);
-  const touched = formatTouched(row.touchedOriginals).padEnd(6);
+const formatUnpackReportRow = (unpackSessionRow: UnpackSessionsReport['rows'][number]): string => {
+  const provider = unpackSessionRow.provider.padEnd(10);
+  const archived = String(unpackSessionRow.archivedSessions).padEnd(9);
+  const restored = String(unpackSessionRow.restoredSessions).padEnd(9);
+  const present = String(unpackSessionRow.alreadyPresentSessions).padEnd(8);
+  const conflicts = String(unpackSessionRow.conflictSessions).padEnd(10);
+  const before = formatBytes(unpackSessionRow.beforeBytes).padEnd(10);
+  const archive = formatBytes(unpackSessionRow.archiveBytes).padEnd(10);
+  const restoredBytes = formatBytes(unpackSessionRow.restoredBytes).padEnd(10);
+  const touched = formatTouched(unpackSessionRow.touchedOriginals).padEnd(6);
 
-  return `${provider} ${archived} ${restored} ${present} ${conflicts} ${before} ${archive} ${restoredBytes} ${touched} ${formatStatus(row.status, row.reason)}`;
+  return `${provider} ${archived} ${restored} ${present} ${conflicts} ${before} ${archive} ${restoredBytes} ${touched} ${formatStatus(unpackSessionRow.status, unpackSessionRow.reason)}`;
 };
 
 const packTotals = (
@@ -245,25 +248,31 @@ const packTotals = (
   readonly savedPercent: number | undefined;
   readonly touchedOriginals: boolean;
 } => {
-  const archiveBytes = sumMaybe(report.rows.map((row) => row.archiveBytes));
-  const beforeBytes = report.rows.reduce((totalBytes, row) => totalBytes + row.beforeBytes, 0);
+  const archiveBytes = sumMaybe(report.rows.map((packSessionRow) => packSessionRow.archiveBytes));
+  const beforeBytes = report.rows.reduce(
+    (totalBytes, packSessionRow) => totalBytes + packSessionRow.beforeBytes,
+    0,
+  );
   const savedBytes = archiveBytes === undefined ? undefined : beforeBytes - archiveBytes;
 
   return {
     archiveBytes,
     beforeBytes,
     candidateSessions: report.rows.reduce(
-      (totalSessions, row) => totalSessions + row.candidateSessions,
+      (totalSessions, packSessionRow) => totalSessions + packSessionRow.candidateSessions,
       0,
     ),
-    foundSessions: report.rows.reduce((totalSessions, row) => totalSessions + row.foundSessions, 0),
+    foundSessions: report.rows.reduce(
+      (totalSessions, packSessionRow) => totalSessions + packSessionRow.foundSessions,
+      0,
+    ),
     packedSessions: report.rows.reduce(
-      (totalSessions, row) => totalSessions + row.packedSessions,
+      (totalSessions, packSessionRow) => totalSessions + packSessionRow.packedSessions,
       0,
     ),
     savedBytes,
     savedPercent: archiveBytes === undefined ? undefined : savedPercent(beforeBytes, archiveBytes),
-    touchedOriginals: report.rows.some((row) => row.touchedOriginals),
+    touchedOriginals: report.rows.some((packSessionRow) => packSessionRow.touchedOriginals),
   };
 };
 
@@ -280,25 +289,34 @@ const unpackTotals = (
   readonly touchedOriginals: boolean;
 } => ({
   alreadyPresentSessions: report.rows.reduce(
-    (totalSessions, row) => totalSessions + row.alreadyPresentSessions,
+    (totalSessions, unpackSessionRow) => totalSessions + unpackSessionRow.alreadyPresentSessions,
     0,
   ),
-  archiveBytes: report.rows.reduce((totalBytes, row) => totalBytes + row.archiveBytes, 0),
+  archiveBytes: report.rows.reduce(
+    (totalBytes, unpackSessionRow) => totalBytes + unpackSessionRow.archiveBytes,
+    0,
+  ),
   archivedSessions: report.rows.reduce(
-    (totalSessions, row) => totalSessions + row.archivedSessions,
+    (totalSessions, unpackSessionRow) => totalSessions + unpackSessionRow.archivedSessions,
     0,
   ),
-  beforeBytes: report.rows.reduce((totalBytes, row) => totalBytes + row.beforeBytes, 0),
+  beforeBytes: report.rows.reduce(
+    (totalBytes, unpackSessionRow) => totalBytes + unpackSessionRow.beforeBytes,
+    0,
+  ),
   conflictSessions: report.rows.reduce(
-    (totalSessions, row) => totalSessions + row.conflictSessions,
+    (totalSessions, unpackSessionRow) => totalSessions + unpackSessionRow.conflictSessions,
     0,
   ),
-  restoredBytes: report.rows.reduce((totalBytes, row) => totalBytes + row.restoredBytes, 0),
+  restoredBytes: report.rows.reduce(
+    (totalBytes, unpackSessionRow) => totalBytes + unpackSessionRow.restoredBytes,
+    0,
+  ),
   restoredSessions: report.rows.reduce(
-    (totalSessions, row) => totalSessions + row.restoredSessions,
+    (totalSessions, unpackSessionRow) => totalSessions + unpackSessionRow.restoredSessions,
     0,
   ),
-  touchedOriginals: report.rows.some((row) => row.touchedOriginals),
+  touchedOriginals: report.rows.some((unpackSessionRow) => unpackSessionRow.touchedOriginals),
 });
 
 const sumMaybe = (values: ReadonlyArray<number | undefined>): number | undefined => {

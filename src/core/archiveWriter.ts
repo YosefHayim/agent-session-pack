@@ -7,6 +7,12 @@ import { promisify } from 'node:util';
 import { Effect, Schema } from 'effect';
 import type { SessionSourceKind } from './sessionStore.js';
 
+const TAR_BINARY = 'tar';
+const TAR_CREATE_FLAG = '-c';
+const TAR_EXTRACT_FLAG = '-x';
+const TAR_FILE_FLAG = '-f';
+const TAR_CHANGE_DIR_FLAG = '-C';
+
 const execFileAsync = promisify(execFile);
 
 /**
@@ -571,13 +577,16 @@ const createTarArchive = (request: {
   Effect.tryPromise({
     try: async () => {
       await mkdir(dirname(request.tarPath), { recursive: true });
-      await execFileAsync('tar', [
-        '-cf',
+      // Pack sourcePath into tarPath: create archive from parent so the leaf name is the top entry.
+      const createTarArgs = [
+        TAR_CREATE_FLAG,
+        TAR_FILE_FLAG,
         request.tarPath,
-        '-C',
+        TAR_CHANGE_DIR_FLAG,
         dirname(request.sourcePath),
         basename(request.sourcePath),
-      ]);
+      ];
+      await execFileAsync(TAR_BINARY, createTarArgs);
     },
     catch: (cause) =>
       new ArchiveFileSystemError({
@@ -600,7 +609,15 @@ const extractTarArchive = (request: {
       const extractRoot = join(parent, `.extract-${leaf}`);
       await rm(extractRoot, { recursive: true, force: true });
       await mkdir(extractRoot, { recursive: true });
-      await execFileAsync('tar', ['-xf', request.tarPath, '-C', extractRoot]);
+      // Extract tarPath into extractRoot: unpack archive contents under the staging directory.
+      const extractTarArgs = [
+        TAR_EXTRACT_FLAG,
+        TAR_FILE_FLAG,
+        request.tarPath,
+        TAR_CHANGE_DIR_FLAG,
+        extractRoot,
+      ];
+      await execFileAsync(TAR_BINARY, extractTarArgs);
 
       const extractedEntries = await readdir(extractRoot, { withFileTypes: true });
       const onlyEntry = extractedEntries[0];

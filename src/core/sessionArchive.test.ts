@@ -3,18 +3,18 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Effect } from 'effect';
 import { describe, expect, it } from 'vitest';
-import type { CompressionAdapter } from '../src/core/archiveWriter.js';
+import type { CompressionAdapter } from './archiveWriter.js';
 import {
   listSessionManifestPaths,
   readSessionManifest,
   writeSessionManifest,
-} from '../src/core/manifestStore.js';
+} from './manifestStore.js';
 import {
   packProviderSessions,
   resolveDefaultVaultPath,
   unpackProviderSessions,
-} from '../src/core/sessionArchive.js';
-import type { DiscoveredSession, ProviderAdapter } from '../src/core/sessionStore.js';
+} from './sessionArchive.js';
+import type { DiscoveredSession, ProviderAdapter } from './sessionStore.js';
 
 const copyCompression: CompressionAdapter = {
   compress: ({ sourcePath, archivePath }) =>

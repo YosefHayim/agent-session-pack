@@ -43,7 +43,8 @@ src/
   core/
   providers/
   output/
-tests/
+  **/*.test.ts   # unit tests colocated next to source
+tests/           # shared helpers/fixtures + optional *.integration.test.ts
 examples/roundtrip/
 scripts/
   evidenceLocal.ts

@@ -1,6 +1,6 @@
 import { runCommand } from 'citty';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { initCommand } from '../src/cli/commands/initCommand.js';
+import { initCommand } from './initCommand.js';
 
 describe('init command', () => {
   const writes: string[] = [];

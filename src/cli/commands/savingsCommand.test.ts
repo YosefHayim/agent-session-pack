@@ -3,11 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Effect } from 'effect';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  checkCommand,
-  runSavingsCommand,
-  savingsCommand,
-} from '../src/cli/commands/savingsCommand.js';
+import { checkCommand, runSavingsCommand, savingsCommand } from './savingsCommand.js';
 
 const createWorkspace = (): Promise<string> =>
   mkdtemp(join(tmpdir(), 'agent-session-pack-savings-cmd-'));

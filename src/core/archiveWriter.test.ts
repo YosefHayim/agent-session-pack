@@ -14,7 +14,7 @@ import {
   sha256File,
   sha256Path,
   writeVerifiedArchive,
-} from '../src/core/archiveWriter.js';
+} from './archiveWriter.js';
 
 const copyCompression: CompressionAdapter = {
   compress: ({ sourcePath, archivePath }) =>

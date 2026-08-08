@@ -77,7 +77,7 @@
     "build": "tsup",
     "check:ci": "biome ci . && eslint .",
     "test": "vitest run",
-    "test:integration": "vitest run tests/*.integration.test.ts",
+    "test:integration": "vitest run tests/**/*.integration.test.ts",
     "typecheck": "tsc --noEmit",
     "evidence:local": "tsx src/cli/main.ts savings"
   },

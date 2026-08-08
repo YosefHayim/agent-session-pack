@@ -8,7 +8,7 @@ import {
   type CompressionAdapter,
   sha256Directory,
   writeVerifiedArchive,
-} from '../src/core/archiveWriter.js';
+} from './archiveWriter.js';
 
 const copyCompression: CompressionAdapter = {
   compress: ({ sourcePath, archivePath }) =>

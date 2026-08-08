@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { Effect } from 'effect';
 import { describe, expect, it } from 'vitest';
-import { devinProvider } from '../src/providers/devin.js';
+import { devinProvider } from './devin.js';
 
 const execFileAsync = promisify(execFile);
 

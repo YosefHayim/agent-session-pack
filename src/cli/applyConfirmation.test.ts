@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { resolveApplyConfirmation } from '../src/cli/applyConfirmation.js';
+import { resolveApplyConfirmation } from './applyConfirmation.js';
 
 describe('apply confirmation contract', () => {
   const originalStdinIsTty = process.stdin.isTTY;

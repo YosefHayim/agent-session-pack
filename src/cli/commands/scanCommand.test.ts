@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Effect } from 'effect';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { runScanCommand, scanCommand } from '../src/cli/commands/scanCommand.js';
+import { runScanCommand, scanCommand } from './scanCommand.js';
 
 const createWorkspace = (): Promise<string> =>
   mkdtemp(join(tmpdir(), 'agent-session-pack-scan-cmd-'));

@@ -3,8 +3,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Effect, Either } from 'effect';
 import { describe, expect, it } from 'vitest';
-import { createZstdCompression } from '../src/core/archiveReader.js';
-import { ArchiveFileSystemError } from '../src/core/archiveWriter.js';
+import { createZstdCompression } from './archiveReader.js';
+import { ArchiveFileSystemError } from './archiveWriter.js';
 
 const createWorkspace = (): Promise<string> =>
   mkdtemp(join(tmpdir(), 'agent-session-pack-archive-reader-'));

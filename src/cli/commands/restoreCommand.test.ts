@@ -1,6 +1,6 @@
 import { runCommand } from 'citty';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { restoreCommand } from '../src/cli/commands/restoreCommand.js';
+import { restoreCommand } from './restoreCommand.js';
 
 describe('restore command', () => {
   const stdoutWrites: string[] = [];

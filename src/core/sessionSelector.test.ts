@@ -1,10 +1,7 @@
 import { Effect, Either } from 'effect';
 import { describe, expect, it } from 'vitest';
-import {
-  resolveSessionSelector,
-  SessionSelectorAmbiguousError,
-} from '../src/core/sessionSelector.js';
-import type { DiscoveredSession } from '../src/core/sessionStore.js';
+import { resolveSessionSelector, SessionSelectorAmbiguousError } from './sessionSelector.js';
+import type { DiscoveredSession } from './sessionStore.js';
 
 const sessions: ReadonlyArray<DiscoveredSession> = [
   {

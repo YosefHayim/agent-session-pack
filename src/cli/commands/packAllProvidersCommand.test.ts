@@ -3,9 +3,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Effect } from 'effect';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { runPackCommand } from '../src/cli/commands/packCommand.js';
-import { runUnpackCommand } from '../src/cli/commands/unpackCommand.js';
-import type { CompressionAdapter } from '../src/core/archiveWriter.js';
+import type { CompressionAdapter } from '../../core/archiveWriter.js';
+import { runPackCommand } from './packCommand.js';
+import { runUnpackCommand } from './unpackCommand.js';
 
 const copyCompression: CompressionAdapter = {
   compress: ({ sourcePath, archivePath }) =>

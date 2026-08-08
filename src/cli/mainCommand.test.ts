@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { mainCommand } from '../src/cli/main.js';
+import { mainCommand } from './main.js';
 
 interface PackageJson {
   readonly version: string;
@@ -14,7 +14,7 @@ interface VersionedCommandMeta {
 
 const readPackageJson = async (): Promise<PackageJson> => {
   const testDirectory = dirname(fileURLToPath(import.meta.url));
-  const packagePath = join(testDirectory, '..', 'package.json');
+  const packagePath = join(testDirectory, '..', '..', 'package.json');
   const packageJson = JSON.parse(await readFile(packagePath, 'utf8')) as PackageJson;
 
   return packageJson;

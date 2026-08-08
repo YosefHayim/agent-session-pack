@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatHumanEvidenceReport } from '../src/output/evidenceOutput.js';
+import { formatHumanEvidenceReport } from './evidenceOutput.js';
 
 describe('human evidence output', () => {
   it('renders local proof as a compact before and after table', () => {

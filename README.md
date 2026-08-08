@@ -61,6 +61,7 @@ Requirements:
 - [Node.js](https://nodejs.org/en) 20 or newer.
 - `zstd` for proof, pack, and restore workflows.
 - `sqlite3` only when discovering Devin session metadata.
+- `HOME` must be set so vault and provider paths resolve (normal on macOS/Linux shells; see [`.env.example`](.env.example)).
 
 ## What It Does
 

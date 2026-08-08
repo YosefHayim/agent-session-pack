@@ -10,6 +10,7 @@ import {
 } from '../../core/index.js';
 import { formatHumanEvidenceReport, formatJsonEvidenceReport } from '../../output/index.js';
 import { allProviders, ProviderIdSchema } from '../../providers/index.js';
+import { homeNotSetStderrMessage } from '../homeEnv.js';
 
 /**
  * Schema describing the savings command arguments.
@@ -44,7 +45,7 @@ export const runSavingsCommand = (
     const home = process.env.HOME;
 
     if (home === undefined) {
-      process.stderr.write('HOME is not set.\n');
+      process.stderr.write(homeNotSetStderrMessage);
       process.exitCode = 1;
       return;
     }

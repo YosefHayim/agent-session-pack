@@ -9,6 +9,7 @@ import {
 } from '../../core/index.js';
 import { renderHumanScan, renderJsonScan } from '../../output/index.js';
 import { allProviders, ProviderIdSchema } from '../../providers/index.js';
+import { homeNotSetStderrMessage } from '../homeEnv.js';
 
 /**
  * Schema describing the scan command arguments.
@@ -41,7 +42,7 @@ export const runScanCommand = (args: ScanArgs): Effect.Effect<void, ProviderDisc
     const home = process.env.HOME;
 
     if (home === undefined) {
-      process.stderr.write('HOME is not set.\n');
+      process.stderr.write(homeNotSetStderrMessage);
       process.exitCode = 1;
       return;
     }

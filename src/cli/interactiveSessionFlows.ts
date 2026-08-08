@@ -4,6 +4,7 @@ import { formatBytes } from '../output/index.js';
 import { runPackCommand } from './commands/packCommand.js';
 import { runScanCommand } from './commands/scanCommand.js';
 import { runUnpackCommand } from './commands/unpackCommand.js';
+import { homeNotSetCancelMessage } from './homeEnv.js';
 import {
   defaultColdAfter,
   formatProviderInventoryTable,
@@ -36,7 +37,7 @@ export const runReviewSessions = async (
   const home = normalizeHome(request.home);
 
   if (home === undefined) {
-    request.prompts.cancel('HOME is not set. No files changed.');
+    request.prompts.cancel(homeNotSetCancelMessage);
     return;
   }
 
@@ -73,7 +74,7 @@ export const runPackFlow = async (
   const home = normalizeHome(request.home);
 
   if (home === undefined) {
-    request.prompts.cancel('HOME is not set. No files changed.');
+    request.prompts.cancel(homeNotSetCancelMessage);
     return;
   }
 

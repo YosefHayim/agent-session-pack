@@ -6,6 +6,7 @@ import {
   validateVaultPath,
   writeSetupConfig,
 } from '../core/index.js';
+import { homeNotSetCancelMessage } from './homeEnv.js';
 import {
   defaultColdAfter,
   type FirstSetupRequest,
@@ -40,7 +41,7 @@ export const runFirstSetup = async (request: FirstSetupRequest = {}): Promise<Fl
   const home = normalizeHome(request.home);
 
   if (home === undefined) {
-    prompts.cancel('HOME is not set. No files changed.');
+    prompts.cancel(homeNotSetCancelMessage);
     return 'cancelled';
   }
 

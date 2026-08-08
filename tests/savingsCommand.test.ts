@@ -64,7 +64,10 @@ describe('savings command', () => {
     await Effect.runPromise(runSavingsCommand({ json: true }));
 
     expect(process.exitCode).toBe(1);
-    expect(stderrWrites.join('')).toContain('HOME is not set.');
+    const stderr = stderrWrites.join('');
+    expect(stderr).toContain('HOME is not set.');
+    expect(stderr).toContain('.env.example');
+    expect(stderr).toContain('vault and config paths');
   });
 
   it('exits with code 2 for an unknown provider without prompting', async () => {

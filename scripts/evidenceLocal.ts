@@ -1,4 +1,5 @@
 import { Effect } from 'effect';
+import { homeNotSetStderrMessage } from '../src/cli/homeEnv.js';
 import {
   type ArchiveWriteError,
   type ProviderDiscoveryError,
@@ -28,7 +29,7 @@ export const runEvidenceLocal = (): Effect.Effect<
     const home = process.env.HOME;
 
     if (home === undefined) {
-      process.stderr.write('HOME is not set.\n');
+      process.stderr.write(homeNotSetStderrMessage);
       process.exitCode = 1;
       return;
     }

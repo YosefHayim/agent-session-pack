@@ -13,7 +13,7 @@ import {
   scanStores,
   sessionIdFromPath,
   slugifyTitle,
-} from '../src/core/sessionStore.js';
+} from './sessionStore.js';
 
 const createWorkspace = (): Promise<string> =>
   mkdtemp(join(tmpdir(), 'agent-session-pack-session-store-'));

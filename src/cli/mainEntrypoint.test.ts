@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isCliEntrypoint } from '../src/cli/mainEntrypoint.js';
+import { isCliEntrypoint } from './mainEntrypoint.js';
 
 describe('CLI entrypoint detection', () => {
   it('accepts npm bin symlinks that resolve to the built module path', () => {

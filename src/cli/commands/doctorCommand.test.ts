@@ -1,6 +1,6 @@
 import { runCommand } from 'citty';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { doctorCommand, runDoctorCommand } from '../src/cli/commands/doctorCommand.js';
+import { doctorCommand, runDoctorCommand } from './doctorCommand.js';
 
 describe('doctor command', () => {
   const writes: string[] = [];

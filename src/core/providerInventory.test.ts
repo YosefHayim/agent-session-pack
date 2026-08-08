@@ -3,9 +3,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Effect } from 'effect';
 import { describe, expect, it } from 'vitest';
-import { inspectProviderInventory } from '../src/core/providerInventory.js';
-import type { ProviderAdapter } from '../src/core/sessionStore.js';
-import { codexProvider } from '../src/providers/codex.js';
+import { codexProvider } from '../providers/codex.js';
+import { inspectProviderInventory } from './providerInventory.js';
+import type { ProviderAdapter } from './sessionStore.js';
 
 const now = new Date('2026-07-06T12:00:00.000Z');
 const olderThanMs = 7 * 24 * 60 * 60 * 1000;

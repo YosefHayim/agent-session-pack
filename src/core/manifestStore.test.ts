@@ -9,7 +9,7 @@ import {
   readSessionManifest,
   type SessionManifest,
   writeSessionManifest,
-} from '../src/core/manifestStore.js';
+} from './manifestStore.js';
 
 const createWorkspace = (): Promise<string> =>
   mkdtemp(join(tmpdir(), 'agent-session-pack-manifest-'));

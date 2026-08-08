@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeCliArgv } from '../src/cli/mainArgs.js';
+import { normalizeCliArgv } from './mainArgs.js';
 
 describe('CLI argument aliases', () => {
   it('maps pnpm-friendly flag aliases to subcommands', () => {

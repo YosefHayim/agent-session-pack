@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatHumanAgentGuide, formatJsonAgentGuide } from '../src/output/agentGuideOutput.js';
+import { formatHumanAgentGuide, formatJsonAgentGuide } from './agentGuideOutput.js';
 
 describe('agent guide output', () => {
   it('shows a safe non-interactive command path for coding agents', () => {

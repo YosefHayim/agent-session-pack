@@ -1,7 +1,7 @@
 import { runCommand } from 'citty';
 import { Effect } from 'effect';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { guideCommand, runGuideCommand } from '../src/cli/commands/guideCommand.js';
+import { guideCommand, runGuideCommand } from './guideCommand.js';
 
 describe('guide command', () => {
   const writes: string[] = [];

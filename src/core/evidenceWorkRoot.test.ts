@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { resolveEvidenceWorkRoot } from '../src/core/evidenceWorkRoot.js';
+import { resolveEvidenceWorkRoot } from './evidenceWorkRoot.js';
 
 describe('evidence work root', () => {
   it('uses a run-specific directory to avoid parallel command collisions', () => {

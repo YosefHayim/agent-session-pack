@@ -1,6 +1,6 @@
 import { runCommand } from 'citty';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { listCommand } from '../src/cli/commands/listCommand.js';
+import { listCommand } from './listCommand.js';
 
 describe('list command', () => {
   const writes: string[] = [];

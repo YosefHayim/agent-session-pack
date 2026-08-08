@@ -3,14 +3,14 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Effect } from 'effect';
 import { describe, expect, it } from 'vitest';
+import type { ProviderAdapter } from '../core/sessionStore.js';
 import {
   createMainMenuOptions,
   type PromptAdapter,
   type PromptOption,
   runFirstSetup,
   shouldRunInteractiveCli,
-} from '../src/cli/interactiveCli.js';
-import type { ProviderAdapter } from '../src/core/sessionStore.js';
+} from './interactiveCli.js';
 
 const createWorkspace = (): Promise<string> =>
   mkdtemp(join(tmpdir(), 'agent-session-pack-interactive-'));

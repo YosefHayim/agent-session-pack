@@ -4,10 +4,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Effect } from 'effect';
 import { describe, expect, it } from 'vitest';
-import { claudeCodeProvider } from '../src/providers/claudeCode.js';
-import { codexProvider } from '../src/providers/codex.js';
-import { grokProvider } from '../src/providers/grok.js';
-import { kimiProvider } from '../src/providers/kimi.js';
+import { claudeCodeProvider } from './claudeCode.js';
+import { codexProvider } from './codex.js';
+import { grokProvider } from './grok.js';
+import { kimiProvider } from './kimi.js';
 
 const createWorkspace = (): Promise<string> =>
   mkdtemp(join(tmpdir(), 'agent-session-pack-provider-'));

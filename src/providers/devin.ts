@@ -13,19 +13,7 @@ import {
 
 const execFileAsync = promisify(execFile);
 
-const DevinSessionRowSchema = Schema.Struct({
-  id: Schema.String,
-  title: Schema.String,
-  createdAt: Schema.Number,
-  modifiedAt: Schema.Number,
-  sizeBytes: Schema.Number,
-});
-
-const DevinSessionRowsSchema = Schema.Array(DevinSessionRowSchema);
-
-type DevinSessionRow = typeof DevinSessionRowSchema.Type;
-
-const devinSessionsSql = `
+const DEVIN_SESSIONS_SQL = `
 SELECT
   s.id AS id,
   COALESCE(NULLIF(TRIM(s.title), ''), s.id) AS title,
@@ -42,6 +30,18 @@ FROM sessions s
 WHERE s.hidden = 0
 ORDER BY s.last_activity_at DESC
 `;
+
+const DevinSessionRowSchema = Schema.Struct({
+  id: Schema.String,
+  title: Schema.String,
+  createdAt: Schema.Number,
+  modifiedAt: Schema.Number,
+  sizeBytes: Schema.Number,
+});
+
+const DevinSessionRowsSchema = Schema.Array(DevinSessionRowSchema);
+
+type DevinSessionRow = typeof DevinSessionRowSchema.Type;
 
 /**
  * Backup-only provider adapter for Devin CLI sessions.
@@ -99,7 +99,7 @@ const discoverDevinSessions = async (root: string): Promise<ReadonlyArray<Discov
 };
 
 const readDevinSessionRows = async (dbPath: string): Promise<ReadonlyArray<DevinSessionRow>> => {
-  const output = await execFileAsync('sqlite3', ['-json', dbPath, devinSessionsSql]);
+  const output = await execFileAsync('sqlite3', ['-json', dbPath, DEVIN_SESSIONS_SQL]);
   const parsed = JSON.parse(output.stdout) as unknown;
   const decoded = Schema.decodeUnknownEither(DevinSessionRowsSchema)(parsed);
 

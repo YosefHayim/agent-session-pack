@@ -1,7 +1,7 @@
 import { Effect } from 'effect';
 import type { DiscoveredSession, ScanReport } from '../core/sessionStore.js';
 
-const maxTitlePreviewLength = 96;
+const MAX_TITLE_PREVIEW_LENGTH = 96;
 
 /**
  * Formats scan output for terminal users.
@@ -68,9 +68,9 @@ const formatStatus = (session: DiscoveredSession): string => {
 const formatTitlePreview = (title: string): string => {
   const singleLineTitle = title.replace(/\s+/g, ' ').trim();
 
-  if (singleLineTitle.length <= maxTitlePreviewLength) {
+  if (singleLineTitle.length <= MAX_TITLE_PREVIEW_LENGTH) {
     return singleLineTitle;
   }
 
-  return `${singleLineTitle.slice(0, maxTitlePreviewLength - 3)}...`;
+  return `${singleLineTitle.slice(0, MAX_TITLE_PREVIEW_LENGTH - 3)}...`;
 };

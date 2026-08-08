@@ -21,9 +21,9 @@ import {
 } from '../../output/packOutput.js';
 import { allProviders } from '../../providers/allProviders.js';
 import { resolveApplyConfirmation } from '../applyConfirmation.js';
-import { homeNotSetStderrMessage } from '../homeEnv.js';
+import { HOME_NOT_SET_STDERR_MESSAGE } from '../homeEnv.js';
 
-const defaultOlderThan = '7d';
+const DEFAULT_OLDER_THAN = '7d';
 
 /**
  * Citty command that packs cold sessions after verified archive restore.
@@ -152,7 +152,7 @@ export const runPackCommand = (
     const home = normalizeHome(args.home);
 
     if (home === undefined) {
-      process.stderr.write(homeNotSetStderrMessage);
+      process.stderr.write(HOME_NOT_SET_STDERR_MESSAGE);
       process.exitCode = 1;
       return;
     }
@@ -231,7 +231,7 @@ const normalizeOlderThan = (args: {
   }
 
   if (args.olderThan === undefined) {
-    return defaultOlderThan;
+    return DEFAULT_OLDER_THAN;
   }
 
   return args.olderThan;

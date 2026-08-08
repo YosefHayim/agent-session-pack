@@ -1,4 +1,4 @@
-const oneOffPrefix = 'npx --yes agent-session-pack';
+const ONE_OFF_PREFIX = 'npx --yes agent-session-pack';
 
 type AgentGuideStep = {
   readonly id: string;
@@ -31,30 +31,30 @@ type AgentGuide = {
   readonly notes: ReadonlyArray<string>;
 };
 
-const recommendedFlow: ReadonlyArray<AgentGuideStep> = [
+const RECOMMENDED_FLOW: ReadonlyArray<AgentGuideStep> = [
   {
     id: 'proof',
     purpose: 'Copy-only proof. Shows local before/after savings without touching originals.',
-    command: `${oneOffPrefix} check --json`,
+    command: `${ONE_OFF_PREFIX} check --json`,
   },
   {
     id: 'dry-run-pack',
     purpose: 'Plan cold-session packing across discovered providers without removing originals.',
-    command: `${oneOffPrefix} pack --all-providers --older-than 7d --dry-run --json`,
+    command: `${ONE_OFF_PREFIX} pack --all-providers --older-than 7d --dry-run --json`,
   },
   {
     id: 'apply-pack',
     purpose: 'Archive and remove only after byte-exact restore verification and manifest writes.',
-    command: `${oneOffPrefix} pack --all-providers --older-than 7d --apply --yes --json`,
+    command: `${ONE_OFF_PREFIX} pack --all-providers --older-than 7d --apply --yes --json`,
   },
   {
     id: 'restore',
     purpose: 'Restore archived sessions back to original provider paths when needed.',
-    command: `${oneOffPrefix} unpack --all-providers --apply --yes --json`,
+    command: `${ONE_OFF_PREFIX} unpack --all-providers --apply --yes --json`,
   },
 ];
 
-const agentGuide: AgentGuide = {
+const AGENT_GUIDE: AgentGuide = {
   name: 'agent-session-pack',
   mode: 'agent-guide',
   summary: 'Agent-safe command map for local AI coding-agent session cold storage.',
@@ -64,16 +64,16 @@ const agentGuide: AgentGuide = {
     machineOutput: '--json',
     applyConfirmation: '--apply --yes',
   },
-  recommendedFlow,
+  recommendedFlow: RECOMMENDED_FLOW,
   commands: {
-    humanSetup: `${oneOffPrefix}`,
-    doctor: `${oneOffPrefix} doctor --json`,
-    scan: `${oneOffPrefix} scan --json`,
-    check: `${oneOffPrefix} check --json`,
-    dryRunPack: `${oneOffPrefix} pack --all-providers --older-than 7d --dry-run --json`,
-    maxPreview: `${oneOffPrefix} pack --max --dry-run --json`,
-    applyPack: `${oneOffPrefix} pack --all-providers --older-than 7d --apply --yes --json`,
-    applyUnpack: `${oneOffPrefix} unpack --all-providers --apply --yes --json`,
+    humanSetup: `${ONE_OFF_PREFIX}`,
+    doctor: `${ONE_OFF_PREFIX} doctor --json`,
+    scan: `${ONE_OFF_PREFIX} scan --json`,
+    check: `${ONE_OFF_PREFIX} check --json`,
+    dryRunPack: `${ONE_OFF_PREFIX} pack --all-providers --older-than 7d --dry-run --json`,
+    maxPreview: `${ONE_OFF_PREFIX} pack --max --dry-run --json`,
+    applyPack: `${ONE_OFF_PREFIX} pack --all-providers --older-than 7d --apply --yes --json`,
+    applyUnpack: `${ONE_OFF_PREFIX} unpack --all-providers --apply --yes --json`,
   },
   providers: ['codex', 'claude', 'kiro', 'grok', 'kimi', 'opencode', 'gemini', 'cursor', 'devin'],
   notes: [
@@ -107,12 +107,12 @@ export const formatHumanAgentGuide = (): string =>
     '- Use --dry-run before --apply, then use --yes only for non-interactive execution.',
     '',
     'Safe flow',
-    ...recommendedFlow.map((step, index) =>
+    ...RECOMMENDED_FLOW.map((step, index) =>
       [`${index + 1}. ${step.purpose}`, `   ${step.command}`].join('\n'),
     ),
     '',
     'Curiosity preview',
-    `${oneOffPrefix} pack --max --dry-run --json`,
+    `${ONE_OFF_PREFIX} pack --max --dry-run --json`,
     '',
     'Provider ids',
     'codex, claude, kiro, grok, kimi, opencode, gemini, cursor, devin',
@@ -133,4 +133,4 @@ export const formatHumanAgentGuide = (): string =>
  * formatJsonAgentGuide();
  * ```
  */
-export const formatJsonAgentGuide = (): string => `${JSON.stringify(agentGuide, null, 2)}\n`;
+export const formatJsonAgentGuide = (): string => `${JSON.stringify(AGENT_GUIDE, null, 2)}\n`;

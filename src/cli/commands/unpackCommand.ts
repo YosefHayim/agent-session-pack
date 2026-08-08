@@ -16,7 +16,7 @@ import {
 import { formatHumanUnpackReport, formatJsonArchiveReport } from '../../output/packOutput.js';
 import { allProviders } from '../../providers/allProviders.js';
 import { resolveApplyConfirmation } from '../applyConfirmation.js';
-import { homeNotSetStderrMessage } from '../homeEnv.js';
+import { HOME_NOT_SET_STDERR_MESSAGE } from '../homeEnv.js';
 
 /**
  * Citty command that restores archived sessions from the vault.
@@ -114,7 +114,7 @@ export const runUnpackCommand = (
     const home = normalizeHome(args.home);
 
     if (home === undefined) {
-      process.stderr.write(homeNotSetStderrMessage);
+      process.stderr.write(HOME_NOT_SET_STDERR_MESSAGE);
       process.exitCode = 1;
       return;
     }

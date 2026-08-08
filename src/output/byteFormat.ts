@@ -1,5 +1,5 @@
-const bytesPerUnit = 1024;
-const units = ['B', 'KB', 'MB', 'GB', 'TB'] as const;
+const BYTES_PER_UNIT = 1024;
+const BYTE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB'] as const;
 
 /**
  * Formats bytes for compact terminal tables.
@@ -14,21 +14,21 @@ const units = ['B', 'KB', 'MB', 'GB', 'TB'] as const;
  * ```
  */
 export const formatBytes = (bytes: number): string => {
-  if (bytes < bytesPerUnit) {
+  if (bytes < BYTES_PER_UNIT) {
     return `${bytes} B`;
   }
 
   let value = bytes;
   let unitIndex = 0;
 
-  while (value >= bytesPerUnit && unitIndex < units.length - 1) {
-    value = value / bytesPerUnit;
+  while (value >= BYTES_PER_UNIT && unitIndex < BYTE_UNITS.length - 1) {
+    value = value / BYTES_PER_UNIT;
     unitIndex += 1;
   }
 
   if (value >= 100) {
-    return `${value.toFixed(0)} ${units[unitIndex]}`;
+    return `${value.toFixed(0)} ${BYTE_UNITS[unitIndex]}`;
   }
 
-  return `${value.toFixed(1)} ${units[unitIndex]}`;
+  return `${value.toFixed(1)} ${BYTE_UNITS[unitIndex]}`;
 };

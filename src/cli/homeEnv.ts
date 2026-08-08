@@ -9,7 +9,7 @@
 /**
  * Multi-line stderr guidance for non-interactive command paths when HOME is unset.
  */
-export const homeNotSetStderrMessage = [
+export const HOME_NOT_SET_STDERR_MESSAGE = [
   'HOME is not set.',
   '',
   'Agent Session Pack needs HOME to resolve vault and config paths under your home directory',
@@ -21,5 +21,5 @@ export const homeNotSetStderrMessage = [
 /**
  * Interactive cancel guidance when HOME is unset.
  */
-export const homeNotSetCancelMessage =
+export const HOME_NOT_SET_CANCEL_MESSAGE =
   'HOME is not set. Agent Session Pack needs HOME to resolve vault and config paths (default ~/.agent-session-pack). Set HOME in your shell, or see .env.example. No files changed.';

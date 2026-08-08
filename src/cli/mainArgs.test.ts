@@ -1,28 +1,32 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeCliArgv } from './mainArgs.js';
+import { rewriteCommandFlagAliases } from './mainArgs.js';
 
-describe('CLI argument aliases', () => {
-  it('maps pnpm-friendly flag aliases to subcommands', () => {
-    expect(normalizeCliArgv(['node', 'main.js', '--check'])).toEqual(['node', 'main.js', 'check']);
-    expect(normalizeCliArgv(['node', 'main.js', '--doctor'])).toEqual([
+describe('rewriteCommandFlagAliases', () => {
+  it('rewrites supported command flag aliases into subcommands', () => {
+    expect(rewriteCommandFlagAliases(['node', 'main.js', '--check'])).toEqual([
+      'node',
+      'main.js',
+      'check',
+    ]);
+    expect(rewriteCommandFlagAliases(['node', 'main.js', '--doctor'])).toEqual([
       'node',
       'main.js',
       'doctor',
     ]);
-    expect(normalizeCliArgv(['node', 'main.js', '--scan', '--provider', 'devin'])).toEqual([
-      'node',
-      'main.js',
-      'scan',
-      '--provider',
-      'devin',
-    ]);
-    expect(normalizeCliArgv(['node', 'main.js', '--savings'])).toEqual([
+    expect(rewriteCommandFlagAliases(['node', 'main.js', '--scan', '--provider', 'devin'])).toEqual(
+      ['node', 'main.js', 'scan', '--provider', 'devin'],
+    );
+    expect(rewriteCommandFlagAliases(['node', 'main.js', '--savings'])).toEqual([
       'node',
       'main.js',
       'savings',
     ]);
-    expect(normalizeCliArgv(['node', 'main.js', '--guide'])).toEqual(['node', 'main.js', 'guide']);
-    expect(normalizeCliArgv(['node', 'main.js', '--unpack', '--all-providers'])).toEqual([
+    expect(rewriteCommandFlagAliases(['node', 'main.js', '--guide'])).toEqual([
+      'node',
+      'main.js',
+      'guide',
+    ]);
+    expect(rewriteCommandFlagAliases(['node', 'main.js', '--unpack', '--all-providers'])).toEqual([
       'node',
       'main.js',
       'unpack',
@@ -30,8 +34,8 @@ describe('CLI argument aliases', () => {
     ]);
   });
 
-  it('removes a standalone pnpm separator before a subcommand', () => {
-    expect(normalizeCliArgv(['node', 'main.js', '--', 'doctor'])).toEqual([
+  it('strips a bare -- separator before the first command', () => {
+    expect(rewriteCommandFlagAliases(['node', 'main.js', '--', 'doctor'])).toEqual([
       'node',
       'main.js',
       'doctor',

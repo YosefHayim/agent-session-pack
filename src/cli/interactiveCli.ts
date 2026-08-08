@@ -5,11 +5,10 @@ import { runFirstSetup } from './firstSetupFlow.js';
 import {
   type InteractiveCliDetectionRequest,
   type InteractiveCliRequest,
-  normalizePrompts,
   runWithSpinner,
 } from './interactiveCliContext.js';
 import { runPackFlow, runRestoreFlow, runReviewSessions } from './interactiveSessionFlows.js';
-import type { PromptAdapter, PromptOption } from './promptAdapter.js';
+import { clackPromptAdapter, type PromptAdapter, type PromptOption } from './promptAdapter.js';
 
 /**
  * Re-exports the first-setup wizard for init and menu entrypoints.
@@ -120,7 +119,7 @@ export const createMainMenuOptions = (): ReadonlyArray<PromptOption<MainMenuActi
  * ```
  */
 export const runInteractiveCli = async (request: InteractiveCliRequest = {}): Promise<void> => {
-  const prompts = normalizePrompts(request.prompts);
+  const prompts = request.prompts ?? clackPromptAdapter;
   prompts.intro('Agent Session Pack');
   prompts.note(firstScreenCopy());
 

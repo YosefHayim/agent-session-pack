@@ -5,8 +5,7 @@ import {
 } from '../core/providerInventory.js';
 import type { ProviderAdapter } from '../core/sessionStore.js';
 import { formatBytes } from '../output/byteFormat.js';
-import { allProviders } from '../providers/allProviders.js';
-import { clackPromptAdapter, type PromptAdapter } from './promptAdapter.js';
+import type { PromptAdapter } from './promptAdapter.js';
 
 /**
  * Default cold-after duration used by interactive pack previews.
@@ -43,108 +42,6 @@ export type InteractiveCliDetectionRequest = {
   readonly argv: ReadonlyArray<string>;
   readonly stdinIsTty: boolean;
   readonly stdoutIsTty: boolean;
-};
-
-/**
- * Resolves HOME for interactive flows, preferring an explicit override.
- *
- * @param home - Optional home directory override from tests or callers.
- * @returns Resolved home path, or undefined when HOME is unset.
- * @example
- * ```ts
- * import { normalizeHome } from './interactiveCliContext.js';
- *
- * const home = normalizeHome('/tmp/home');
- * ```
- */
-export const normalizeHome = (home: string | undefined): string | undefined => {
-  if (home !== undefined) {
-    return home;
-  }
-
-  return process.env.HOME;
-};
-
-/**
- * Resolves the reference clock for cold-session classification.
- *
- * @param now - Optional fixed clock for tests.
- * @returns Date used for inventory and setup timestamps.
- * @example
- * ```ts
- * import { normalizeNow } from './interactiveCliContext.js';
- *
- * const now = normalizeNow(new Date('2026-07-07T00:00:00.000Z'));
- * ```
- */
-export const normalizeNow = (now: Date | undefined): Date => {
-  if (now !== undefined) {
-    return now;
-  }
-
-  return new Date();
-};
-
-/**
- * Resolves the cold threshold duration in milliseconds.
- *
- * @param olderThanMs - Optional override from tests or callers.
- * @returns Milliseconds after which a session is treated as cold.
- * @example
- * ```ts
- * import { normalizeOlderThanMs } from './interactiveCliContext.js';
- *
- * const threshold = normalizeOlderThanMs(undefined);
- * ```
- */
-export const normalizeOlderThanMs = (olderThanMs: number | undefined): number => {
-  if (olderThanMs !== undefined) {
-    return olderThanMs;
-  }
-
-  return DEFAULT_OLDER_THAN_MS;
-};
-
-/**
- * Resolves the prompt adapter, defaulting to Clack in production.
- *
- * @param prompts - Optional test double or custom adapter.
- * @returns Prompt surface used by interactive flows.
- * @example
- * ```ts
- * import { normalizePrompts } from './interactiveCliContext.js';
- *
- * const prompts = normalizePrompts(undefined);
- * ```
- */
-export const normalizePrompts = (prompts: PromptAdapter | undefined): PromptAdapter => {
-  if (prompts !== undefined) {
-    return prompts;
-  }
-
-  return clackPromptAdapter;
-};
-
-/**
- * Resolves the provider list used for discovery during interactive flows.
- *
- * @param providers - Optional provider override from tests or callers.
- * @returns Providers scanned by setup, review, and pack flows.
- * @example
- * ```ts
- * import { normalizeProviders } from './interactiveCliContext.js';
- *
- * const providers = normalizeProviders(undefined);
- * ```
- */
-export const normalizeProviders = (
-  providers: ReadonlyArray<ProviderAdapter> | undefined,
-): ReadonlyArray<ProviderAdapter> => {
-  if (providers !== undefined) {
-    return providers;
-  }
-
-  return allProviders;
 };
 
 /**
@@ -265,14 +162,16 @@ export const formatProviderInventoryTable = (report: ProviderInventoryReport): s
   ].join('\n');
 };
 
-const formatProviderInventoryRow = (row: ProviderInventoryReport['rows'][number]): string => {
-  const provider = row.provider.padEnd(10);
-  const mode = row.mode.padEnd(12);
-  const sessions = String(row.sessions).padStart(8);
-  const cold = String(row.coldSessions).padStart(6);
-  const guarded = String(row.guardedRecentSessions).padStart(16);
-  const size = formatBytes(row.candidateBytes).padEnd(10);
-  const path = row.paths.join(', ');
+const formatProviderInventoryRow = (
+  inventoryRow: ProviderInventoryReport['rows'][number],
+): string => {
+  const provider = inventoryRow.provider.padEnd(10);
+  const mode = inventoryRow.mode.padEnd(12);
+  const sessions = String(inventoryRow.sessions).padStart(8);
+  const cold = String(inventoryRow.coldSessions).padStart(6);
+  const guarded = String(inventoryRow.guardedRecentSessions).padStart(16);
+  const size = formatBytes(inventoryRow.candidateBytes).padEnd(10);
+  const path = inventoryRow.paths.join(', ');
 
   return `${provider} ${mode} ${sessions}   ${cold}   ${guarded}   ${size} ${path}`;
 };

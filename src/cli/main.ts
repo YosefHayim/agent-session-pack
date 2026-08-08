@@ -10,7 +10,7 @@ import { checkCommand, savingsCommand } from './commands/savingsCommand.js';
 import { scanCommand } from './commands/scanCommand.js';
 import { unpackCommand } from './commands/unpackCommand.js';
 import { runInteractiveCli, shouldRunInteractiveCli } from './interactiveCli.js';
-import { normalizeCliArgv } from './mainArgs.js';
+import { rewriteCommandFlagAliases } from './mainArgs.js';
 import { isCliEntrypoint } from './mainEntrypoint.js';
 
 /**
@@ -42,7 +42,7 @@ const entrypointPath = process.argv[1];
 const modulePath = fileURLToPath(import.meta.url);
 
 if (isCliEntrypoint(entrypointPath, modulePath)) {
-  process.argv.splice(0, process.argv.length, ...normalizeCliArgv(process.argv));
+  process.argv.splice(0, process.argv.length, ...rewriteCommandFlagAliases(process.argv));
 
   if (
     shouldRunInteractiveCli({

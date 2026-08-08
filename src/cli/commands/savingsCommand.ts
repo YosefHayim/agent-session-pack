@@ -54,7 +54,7 @@ export const runSavingsCommand = (
       return;
     }
 
-    const providers = normalizeProviders(args.provider);
+    const providers = selectProviders(args.provider);
     const report = yield* runLocalEvidence({
       home,
       workRoot: resolveEvidenceWorkRoot(process.cwd(), String(process.pid)),
@@ -129,7 +129,7 @@ export const checkCommand = defineCommand({
   },
 });
 
-const normalizeProviders = (provider: string | undefined): ReadonlyArray<ProviderAdapter> => {
+const selectProviders = (provider: string | undefined): ReadonlyArray<ProviderAdapter> => {
   if (provider === undefined) {
     return allProviders;
   }

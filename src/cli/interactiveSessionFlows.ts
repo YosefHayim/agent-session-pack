@@ -2,19 +2,17 @@ import { Effect } from 'effect';
 import type { ProviderInventoryReport } from '../core/providerInventory.js';
 import { resolveDefaultVaultPath } from '../core/sessionArchive.js';
 import { formatBytes } from '../output/byteFormat.js';
+import { allProviders } from '../providers/allProviders.js';
 import { runPackCommand } from './commands/packCommand.js';
 import { runScanCommand } from './commands/scanCommand.js';
 import { runUnpackCommand } from './commands/unpackCommand.js';
 import { HOME_NOT_SET_CANCEL_MESSAGE } from './homeEnv.js';
 import {
   DEFAULT_COLD_AFTER,
+  DEFAULT_OLDER_THAN_MS,
   formatProviderInventoryTable,
   type InteractiveCliRequest,
   loadInventoryWithSpinner,
-  normalizeHome,
-  normalizeNow,
-  normalizeOlderThanMs,
-  normalizeProviders,
   runWithSpinner,
 } from './interactiveCliContext.js';
 import type { PromptAdapter } from './promptAdapter.js';
@@ -35,7 +33,7 @@ import type { PromptAdapter } from './promptAdapter.js';
 export const runReviewSessions = async (
   request: InteractiveCliRequest & { readonly prompts: PromptAdapter },
 ): Promise<void> => {
-  const home = normalizeHome(request.home);
+  const home = request.home ?? process.env.HOME;
 
   if (home === undefined) {
     request.prompts.cancel(HOME_NOT_SET_CANCEL_MESSAGE);
@@ -44,10 +42,10 @@ export const runReviewSessions = async (
 
   const inventory = await loadInventoryWithSpinner({
     home,
-    now: normalizeNow(request.now),
-    olderThanMs: normalizeOlderThanMs(request.olderThanMs),
+    now: request.now ?? new Date(),
+    olderThanMs: request.olderThanMs ?? DEFAULT_OLDER_THAN_MS,
     prompts: request.prompts,
-    providers: normalizeProviders(request.providers),
+    providers: request.providers ?? allProviders,
     startMessage: 'Scanning provider stores...',
     stopMessage: 'Scanned provider stores.',
   });
@@ -72,7 +70,7 @@ export const runReviewSessions = async (
 export const runPackFlow = async (
   request: InteractiveCliRequest & { readonly prompts: PromptAdapter },
 ): Promise<void> => {
-  const home = normalizeHome(request.home);
+  const home = request.home ?? process.env.HOME;
 
   if (home === undefined) {
     request.prompts.cancel(HOME_NOT_SET_CANCEL_MESSAGE);
@@ -81,10 +79,10 @@ export const runPackFlow = async (
 
   const inventory = await loadInventoryWithSpinner({
     home,
-    now: normalizeNow(request.now),
-    olderThanMs: normalizeOlderThanMs(request.olderThanMs),
+    now: request.now ?? new Date(),
+    olderThanMs: request.olderThanMs ?? DEFAULT_OLDER_THAN_MS,
     prompts: request.prompts,
-    providers: normalizeProviders(request.providers),
+    providers: request.providers ?? allProviders,
     startMessage: 'Scanning provider stores...',
     stopMessage: 'Scanned provider stores.',
   });
@@ -205,16 +203,16 @@ export const runRestoreFlow = async (
 
 const formatPackApplyQuestion = (inventory: ProviderInventoryReport, home: string): string => {
   const candidateSessions = inventory.rows.reduce(
-    (totalSessions, row) => totalSessions + row.coldSessions,
+    (totalSessions, inventoryRow) => totalSessions + inventoryRow.coldSessions,
     0,
   );
   const candidateBytes = inventory.rows.reduce(
-    (totalBytes, row) => totalBytes + row.candidateBytes,
+    (totalBytes, inventoryRow) => totalBytes + inventoryRow.candidateBytes,
     0,
   );
   const providerNames = inventory.rows
-    .filter((row) => row.coldSessions > 0)
-    .map((row) => row.provider)
+    .filter((inventoryRow) => inventoryRow.coldSessions > 0)
+    .map((inventoryRow) => inventoryRow.provider)
     .join(', ');
 
   return [

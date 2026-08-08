@@ -49,7 +49,7 @@ export const runScanCommand = (args: ScanArgs): Effect.Effect<void, ProviderDisc
       return;
     }
 
-    const providers = normalizeProviders(args.provider);
+    const providers = selectProviders(args.provider);
     const stores = providers.flatMap((provider) =>
       provider.defaultRoots(home).map((path): SessionStore => ({ provider: provider.id, path })),
     );
@@ -95,7 +95,7 @@ export const scanCommand = defineCommand({
   },
 });
 
-const normalizeProviders = (provider: string | undefined): ReadonlyArray<ProviderAdapter> => {
+const selectProviders = (provider: string | undefined): ReadonlyArray<ProviderAdapter> => {
   if (provider === undefined) {
     return allProviders;
   }

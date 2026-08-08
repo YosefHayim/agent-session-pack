@@ -608,7 +608,10 @@ const extractTarArchive = (request: {
       const onlyEntry = extractedEntries[0];
 
       if (extractedEntries.length !== 1 || onlyEntry === undefined) {
-        throw new Error(`expected one top-level entry in tar archive: ${request.tarPath}`);
+        throw new ArchiveFileSystemError({
+          path: request.tarPath,
+          message: `expected one top-level entry in tar archive: ${request.tarPath}`,
+        });
       }
 
       const extractedPath = join(extractRoot, onlyEntry.name);
@@ -616,11 +619,16 @@ const extractTarArchive = (request: {
       await movePathAsync(extractedPath, request.destinationPath);
       await rm(extractRoot, { recursive: true, force: true });
     },
-    catch: (cause) =>
-      new ArchiveFileSystemError({
+    catch: (cause) => {
+      if (cause instanceof ArchiveFileSystemError) {
+        return cause;
+      }
+
+      return new ArchiveFileSystemError({
         path: request.destinationPath,
         message: String(cause),
-      }),
+      });
+    },
   });
 
 const movePath = (

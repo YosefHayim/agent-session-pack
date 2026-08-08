@@ -11,7 +11,7 @@ import {
 import { renderHumanScan } from '../../output/humanOutput.js';
 import { renderJsonScan } from '../../output/jsonOutput.js';
 import { allProviders } from '../../providers/allProviders.js';
-import { homeNotSetStderrMessage } from '../homeEnv.js';
+import { HOME_NOT_SET_STDERR_MESSAGE } from '../homeEnv.js';
 
 /**
  * Schema describing the scan command arguments.
@@ -44,7 +44,7 @@ export const runScanCommand = (args: ScanArgs): Effect.Effect<void, ProviderDisc
     const home = process.env.HOME;
 
     if (home === undefined) {
-      process.stderr.write(homeNotSetStderrMessage);
+      process.stderr.write(HOME_NOT_SET_STDERR_MESSAGE);
       process.exitCode = 1;
       return;
     }

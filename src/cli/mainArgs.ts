@@ -1,4 +1,4 @@
-const commandFlagAliases: Readonly<Record<string, string>> = {
+const COMMAND_FLAG_ALIASES: Readonly<Record<string, string>> = {
   '--check': 'check',
   '--doctor': 'doctor',
   '--guide': 'guide',
@@ -34,7 +34,7 @@ export const normalizeCliArgv = (argv: ReadonlyArray<string>): ReadonlyArray<str
     return [runtimePath, entrypointPath, ...remainingArgs];
   }
 
-  const aliasedCommand = commandFlagAliases[firstArg];
+  const aliasedCommand = COMMAND_FLAG_ALIASES[firstArg];
 
   if (aliasedCommand === undefined) {
     return argv;

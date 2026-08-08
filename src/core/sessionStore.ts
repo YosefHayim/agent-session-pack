@@ -4,6 +4,9 @@ import { readdir, stat } from 'node:fs/promises';
 import { basename, extname, join } from 'node:path';
 import { Effect, Schema } from 'effect';
 
+const TITLE_SEARCH_LIMIT_BYTES = 1024 * 1024;
+const TITLE_READ_HIGH_WATER_MARK_BYTES = 64 * 1024;
+
 /**
  * Schema enumerating the supported provider identifiers.
  */
@@ -151,9 +154,6 @@ export type ScanRequest = {
 export type ScanReport = {
   readonly sessions: ReadonlyArray<DiscoveredSession>;
 };
-
-const titleSearchLimitBytes = 1024 * 1024;
-const titleReadHighWaterMarkBytes = 64 * 1024;
 
 /**
  * Collects JSONL files below a provider store.
@@ -394,7 +394,7 @@ const readSessionTitleFromFile = async (path: string): Promise<string> => {
   let bytesRead = 0;
   const stream = createReadStream(path, {
     encoding: 'utf8',
-    highWaterMark: titleReadHighWaterMarkBytes,
+    highWaterMark: TITLE_READ_HIGH_WATER_MARK_BYTES,
   });
 
   for await (const chunk of stream) {
@@ -410,7 +410,7 @@ const readSessionTitleFromFile = async (path: string): Promise<string> => {
 
     carry = scan.rest;
 
-    if (bytesRead >= titleSearchLimitBytes) {
+    if (bytesRead >= TITLE_SEARCH_LIMIT_BYTES) {
       stream.destroy();
       return basename(path, extname(path));
     }

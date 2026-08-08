@@ -11,12 +11,12 @@ import { clackPromptAdapter, type PromptAdapter } from './promptAdapter.js';
 /**
  * Default cold-after duration used by interactive pack previews.
  */
-export const defaultColdAfter = '7d';
+export const DEFAULT_COLD_AFTER = '7d';
 
 /**
  * Default cold threshold in milliseconds (7 days).
  */
-export const defaultOlderThanMs = 7 * 24 * 60 * 60 * 1000;
+export const DEFAULT_OLDER_THAN_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
  * Optional overrides for the interactive CLI menu.
@@ -102,7 +102,7 @@ export const normalizeOlderThanMs = (olderThanMs: number | undefined): number =>
     return olderThanMs;
   }
 
-  return defaultOlderThanMs;
+  return DEFAULT_OLDER_THAN_MS;
 };
 
 /**

@@ -14,7 +14,7 @@ import {
   formatJsonEvidenceReport,
 } from '../../output/evidenceOutput.js';
 import { allProviders } from '../../providers/allProviders.js';
-import { homeNotSetStderrMessage } from '../homeEnv.js';
+import { HOME_NOT_SET_STDERR_MESSAGE } from '../homeEnv.js';
 
 /**
  * Schema describing the savings command arguments.
@@ -49,7 +49,7 @@ export const runSavingsCommand = (
     const home = process.env.HOME;
 
     if (home === undefined) {
-      process.stderr.write(homeNotSetStderrMessage);
+      process.stderr.write(HOME_NOT_SET_STDERR_MESSAGE);
       process.exitCode = 1;
       return;
     }

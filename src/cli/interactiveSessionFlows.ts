@@ -5,9 +5,9 @@ import { formatBytes } from '../output/byteFormat.js';
 import { runPackCommand } from './commands/packCommand.js';
 import { runScanCommand } from './commands/scanCommand.js';
 import { runUnpackCommand } from './commands/unpackCommand.js';
-import { homeNotSetCancelMessage } from './homeEnv.js';
+import { HOME_NOT_SET_CANCEL_MESSAGE } from './homeEnv.js';
 import {
-  defaultColdAfter,
+  DEFAULT_COLD_AFTER,
   formatProviderInventoryTable,
   type InteractiveCliRequest,
   loadInventoryWithSpinner,
@@ -38,7 +38,7 @@ export const runReviewSessions = async (
   const home = normalizeHome(request.home);
 
   if (home === undefined) {
-    request.prompts.cancel(homeNotSetCancelMessage);
+    request.prompts.cancel(HOME_NOT_SET_CANCEL_MESSAGE);
     return;
   }
 
@@ -75,7 +75,7 @@ export const runPackFlow = async (
   const home = normalizeHome(request.home);
 
   if (home === undefined) {
-    request.prompts.cancel(homeNotSetCancelMessage);
+    request.prompts.cancel(HOME_NOT_SET_CANCEL_MESSAGE);
     return;
   }
 
@@ -107,7 +107,7 @@ export const runPackFlow = async (
       apply: false,
       dryRun: true,
       json: false,
-      olderThan: defaultColdAfter,
+      olderThan: DEFAULT_COLD_AFTER,
       provider: undefined,
       yes: false,
       confirmed: undefined,
@@ -130,7 +130,7 @@ export const runPackFlow = async (
       apply: true,
       dryRun: false,
       json: false,
-      olderThan: defaultColdAfter,
+      olderThan: DEFAULT_COLD_AFTER,
       provider: undefined,
       yes: true,
       confirmed: true,

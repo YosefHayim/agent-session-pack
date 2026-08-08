@@ -1,5 +1,5 @@
 import { Effect } from 'effect';
-import { homeNotSetStderrMessage } from '../src/cli/homeEnv.js';
+import { HOME_NOT_SET_STDERR_MESSAGE } from '../src/cli/homeEnv.js';
 import type { ArchiveWriteError } from '../src/core/archiveWriter.js';
 import { resolveEvidenceWorkRoot } from '../src/core/evidenceWorkRoot.js';
 import { runLocalEvidence } from '../src/core/localEvidence.js';
@@ -30,7 +30,7 @@ export const runEvidenceLocal = (): Effect.Effect<
     const home = process.env.HOME;
 
     if (home === undefined) {
-      process.stderr.write(homeNotSetStderrMessage);
+      process.stderr.write(HOME_NOT_SET_STDERR_MESSAGE);
       process.exitCode = 1;
       return;
     }

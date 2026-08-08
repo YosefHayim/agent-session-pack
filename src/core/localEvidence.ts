@@ -13,6 +13,10 @@ import type {
   SessionSourceKind,
 } from './sessionStore.js';
 
+const MAX_ARCHIVE_EVIDENCE_SOURCE_BYTES = 25 * 1024 * 1024;
+const MAX_BACKUP_EVIDENCE_SOURCE_BYTES = 128 * 1024 * 1024;
+const MAX_TITLE_PREVIEW_LENGTH = 96;
+
 /**
  * Per-provider byte-exact compression evidence produced by a local run.
  */
@@ -54,10 +58,6 @@ export type LocalEvidenceRequest = {
   readonly providers: ReadonlyArray<ProviderAdapter>;
 };
 
-const maxArchiveEvidenceSourceBytes = 25 * 1024 * 1024;
-const maxBackupEvidenceSourceBytes = 128 * 1024 * 1024;
-const maxTitlePreviewLength = 96;
-
 /**
  * Creates copy-only local compression evidence from provider sessions.
  *
@@ -89,8 +89,8 @@ export const runLocalEvidence = (
       const sessions = yield* discoverProviderSessions(provider, roots);
       const maxEvidenceSourceBytes =
         provider.mode === 'backup-only'
-          ? maxBackupEvidenceSourceBytes
-          : maxArchiveEvidenceSourceBytes;
+          ? MAX_BACKUP_EVIDENCE_SOURCE_BYTES
+          : MAX_ARCHIVE_EVIDENCE_SOURCE_BYTES;
       const selected = selectNewestSessionWithinSize(sessions, maxEvidenceSourceBytes);
 
       if (selected === undefined) {
@@ -198,9 +198,9 @@ const discoverProviderSessions = (
 const formatTitlePreview = (title: string): string => {
   const singleLineTitle = title.replace(/\s+/g, ' ').trim();
 
-  if (singleLineTitle.length <= maxTitlePreviewLength) {
+  if (singleLineTitle.length <= MAX_TITLE_PREVIEW_LENGTH) {
     return singleLineTitle;
   }
 
-  return `${singleLineTitle.slice(0, maxTitlePreviewLength - 3)}...`;
+  return `${singleLineTitle.slice(0, MAX_TITLE_PREVIEW_LENGTH - 3)}...`;
 };

@@ -2,9 +2,9 @@ import { Effect } from 'effect';
 import type { ProviderInventoryReport } from '../core/providerInventory.js';
 import type { ProviderAdapter, ProviderId } from '../core/sessionStore.js';
 import { validateVaultPath, writeSetupConfig } from '../core/setupConfig.js';
-import { homeNotSetCancelMessage } from './homeEnv.js';
+import { HOME_NOT_SET_CANCEL_MESSAGE } from './homeEnv.js';
 import {
-  defaultColdAfter,
+  DEFAULT_COLD_AFTER,
   type FirstSetupRequest,
   formatProviderInventoryTable,
   loadInventoryWithSpinner,
@@ -37,7 +37,7 @@ export const runFirstSetup = async (request: FirstSetupRequest = {}): Promise<Fl
   const home = normalizeHome(request.home);
 
   if (home === undefined) {
-    prompts.cancel(homeNotSetCancelMessage);
+    prompts.cancel(HOME_NOT_SET_CANCEL_MESSAGE);
     return 'cancelled';
   }
 
@@ -175,7 +175,7 @@ const promptColdThreshold = async (prompts: PromptAdapter): Promise<string | und
 
   const custom = await prompts.text({
     message: 'Enter cold threshold',
-    placeholder: defaultColdAfter,
+    placeholder: DEFAULT_COLD_AFTER,
     validate: validateDurationText,
   });
 

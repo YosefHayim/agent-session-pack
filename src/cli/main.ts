@@ -1,8 +1,10 @@
 import { fileURLToPath } from 'node:url';
 import { defineCommand, runMain } from 'citty';
 import { doctorCommand } from './commands/doctorCommand.js';
+import { ensureRestoredCommand } from './commands/ensureRestoredCommand.js';
 import { guideCommand } from './commands/guideCommand.js';
 import { initCommand } from './commands/initCommand.js';
+import { lifecycleCommand } from './commands/lifecycleCommand.js';
 import { listCommand } from './commands/listCommand.js';
 import { packCommand } from './commands/packCommand.js';
 import { restoreCommand } from './commands/restoreCommand.js';
@@ -32,6 +34,8 @@ export const mainCommand = defineCommand({
     unpack: unpackCommand,
     list: listCommand,
     restore: restoreCommand,
+    'ensure-restored': ensureRestoredCommand,
+    lifecycle: lifecycleCommand,
     savings: savingsCommand,
     doctor: doctorCommand,
   },

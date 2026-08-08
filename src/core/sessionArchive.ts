@@ -28,6 +28,7 @@ import type {
   ProviderMode,
   SessionSourceKind,
 } from './sessionStore.js';
+import { isArchivedStubPath, writeArchivedStub } from './sessionStub.js';
 
 /**
  * Outcome status reported for one provider during a pack run.
@@ -558,6 +559,13 @@ const archiveCandidateSessions = (request: {
         sourceKind,
       });
       yield* removeOriginalSession(session.originalPath);
+      // Leave a tiny listable stub so GUIs can still see the session; watch materializes on open.
+      yield* writeArchivedStub({
+        originalPath: session.originalPath,
+        sessionId: session.id,
+        provider: session.provider,
+        sourceKind,
+      });
       yield* removePath(restoredPath);
 
       archiveBytes += archived.archiveBytes;
@@ -620,6 +628,29 @@ const restoreProviderManifests = (request: {
     };
   });
 
+const resolveLiveOriginalOutcome = (request: {
+  readonly originalPath: string;
+  readonly sourceKind: SessionSourceKind;
+  readonly sourceSha256: string;
+}): Effect.Effect<
+  RestoreOutcome | 'continue-restore',
+  ArchiveFileSystemError | ArchiveVerificationError
+> =>
+  Effect.gen(function* () {
+    const isStub = yield* isArchivedStubPath(request.originalPath, request.sourceKind);
+    if (isStub) {
+      yield* removePath(request.originalPath);
+      return 'continue-restore' as const;
+    }
+
+    const existingSha256 = yield* sha256Path(request.originalPath, request.sourceKind);
+    if (existingSha256 === request.sourceSha256) {
+      return 'already-present' as const;
+    }
+
+    return 'conflict' as const;
+  });
+
 const restoreManifest = (request: {
   readonly compression: CompressionAdapter;
   readonly manifest: SessionManifest;
@@ -630,13 +661,15 @@ const restoreManifest = (request: {
     const originalExists = yield* pathExists(request.manifest.originalPath);
 
     if (originalExists) {
-      const existingSha256 = yield* sha256Path(request.manifest.originalPath, sourceKind);
+      const liveOutcome = yield* resolveLiveOriginalOutcome({
+        originalPath: request.manifest.originalPath,
+        sourceKind,
+        sourceSha256: request.manifest.sourceSha256,
+      });
 
-      if (existingSha256 === request.manifest.sourceSha256) {
-        return 'already-present';
+      if (liveOutcome !== 'continue-restore') {
+        return liveOutcome;
       }
-
-      return 'conflict';
     }
 
     const restoredPath = restorePathForManifest(request.vaultPath, request.manifest, sourceKind);

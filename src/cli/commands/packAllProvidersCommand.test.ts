@@ -1,4 +1,4 @@
-import { copyFile, mkdir, mkdtemp, readFile, stat, utimes, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, mkdtemp, readFile, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Effect } from 'effect';
@@ -80,7 +80,9 @@ describe('all-provider pack and unpack commands', () => {
       }),
     );
 
-    await expect(stat(session.path)).rejects.toMatchObject({ code: 'ENOENT' });
+    await expect(readFile(session.path, 'utf8')).resolves.toContain(
+      'agent-session-pack-archived-stub',
+    );
     await expect(
       readFile(join(vaultPath, 'manifests', 'codex', 'session-old.json'), 'utf8'),
     ).resolves.toContain(session.path);

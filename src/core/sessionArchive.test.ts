@@ -347,7 +347,11 @@ describe('sessionArchive dry-run and status paths', () => {
         touchedOriginals: true,
       }),
     ]);
-    await expect(stat(session.path)).rejects.toMatchObject({ code: 'ENOENT' });
+    // Packed path keeps a listable stub so GUIs can still see the session.
+    const stubAfterPack = JSON.parse(await readFile(session.path, 'utf8')) as {
+      agentSessionPack: string;
+    };
+    expect(stubAfterPack.agentSessionPack).toBe('agent-session-pack-archived-stub');
 
     const unpackReport = await Effect.runPromise(
       unpackProviderSessions({
@@ -434,7 +438,10 @@ describe('sessionArchive dry-run and status paths', () => {
         compression: copyCompression,
       }),
     );
-    await expect(stat(session.path)).rejects.toMatchObject({ code: 'ENOENT' });
+    const stubAfterPack = JSON.parse(await readFile(session.path, 'utf8')) as {
+      agentSessionPack: string;
+    };
+    expect(stubAfterPack.agentSessionPack).toBe('agent-session-pack-archived-stub');
 
     const disabled = await Effect.runPromise(
       ensureSessionRestored({
@@ -448,7 +455,9 @@ describe('sessionArchive dry-run and status paths', () => {
       }),
     );
     expect(disabled.status).toBe('lifecycle-disabled');
-    await expect(stat(session.path)).rejects.toMatchObject({ code: 'ENOENT' });
+    await expect(readFile(session.path, 'utf8')).resolves.toContain(
+      'agent-session-pack-archived-stub',
+    );
 
     const restored = await Effect.runPromise(
       ensureSessionRestored({

@@ -240,11 +240,14 @@ npx --yes agent-session-pack open --provider grok <session-id> --json
 npx --yes agent-session-pack maintain --apply --yes --json
 ```
 
-Provider wrappers (codex, claude, grok, …) run `preflight` so session ids in argv are
-auto-restored before the real binary starts. Live files that differ from the archive are
-**never** overwritten (`conflict`). Disable with `lifecycle disable` (removes wrappers).
+Provider wrappers (codex, claude, grok, …) run `preflight` (session ids on the command line)
+and **`watch`** while the app runs. Packed sessions leave tiny **stubs** so they stay listable;
+when the app opens a stub (GUI session pick), watch materializes the full archive automatically.
 
-**Manual path (always available):** `unpack` / `restore` without lifecycle.
+Live files that differ from the archive are **never** overwritten (`conflict`). Disable with
+`lifecycle disable` (removes wrappers).
+
+**Manual path (always available):** `unpack` / `restore` / `open` without relying on wrappers.
 </details>
 
 <details>

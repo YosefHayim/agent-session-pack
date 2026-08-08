@@ -26,6 +26,10 @@ type AgentGuide = {
     readonly maxPreview: string;
     readonly applyPack: string;
     readonly applyUnpack: string;
+    readonly restoreOne: string;
+    readonly ensureRestored: string;
+    readonly lifecycleEnable: string;
+    readonly lifecycleStatus: string;
   };
   readonly providers: ReadonlyArray<string>;
   readonly notes: ReadonlyArray<string>;
@@ -52,6 +56,12 @@ const RECOMMENDED_FLOW: ReadonlyArray<AgentGuideStep> = [
     purpose: 'Restore archived sessions back to original provider paths when needed.',
     command: `${ONE_OFF_PREFIX} unpack --all-providers --apply --yes --json`,
   },
+  {
+    id: 'ensure-restored',
+    purpose:
+      'Before resume, restore one archived session when restore-on-launch lifecycle is enabled.',
+    command: `${ONE_OFF_PREFIX} ensure-restored --provider codex <session-id> --json`,
+  },
 ];
 
 const AGENT_GUIDE: AgentGuide = {
@@ -74,6 +84,10 @@ const AGENT_GUIDE: AgentGuide = {
     maxPreview: `${ONE_OFF_PREFIX} pack --max --dry-run --json`,
     applyPack: `${ONE_OFF_PREFIX} pack --all-providers --older-than 7d --apply --yes --json`,
     applyUnpack: `${ONE_OFF_PREFIX} unpack --all-providers --apply --yes --json`,
+    restoreOne: `${ONE_OFF_PREFIX} restore <selector> --json`,
+    ensureRestored: `${ONE_OFF_PREFIX} ensure-restored --provider codex <session-id> --json`,
+    lifecycleEnable: `${ONE_OFF_PREFIX} lifecycle enable --json`,
+    lifecycleStatus: `${ONE_OFF_PREFIX} lifecycle status --json`,
   },
   providers: ['codex', 'claude', 'kiro', 'grok', 'kimi', 'opencode', 'gemini', 'cursor', 'devin'],
   notes: [
@@ -82,6 +96,7 @@ const AGENT_GUIDE: AgentGuide = {
     'Use --dry-run before any --apply command.',
     'Use --max --dry-run to preview every archive-mode session without touching files.',
     'Use --older-than 1d to skip recent sessions from roughly the last 24 hours.',
+    'Opt in to restore-on-launch with lifecycle enable, then call ensure-restored before resume.',
   ],
 };
 
@@ -113,6 +128,11 @@ export const formatHumanAgentGuide = (): string =>
     '',
     'Curiosity preview',
     `${ONE_OFF_PREFIX} pack --max --dry-run --json`,
+    '',
+    'Restore-on-launch (opt-in)',
+    `${ONE_OFF_PREFIX} lifecycle enable --json`,
+    `${ONE_OFF_PREFIX} ensure-restored --provider codex <session-id> --json`,
+    `${ONE_OFF_PREFIX} restore <selector> --json`,
     '',
     'Provider ids',
     'codex, claude, kiro, grok, kimi, opencode, gemini, cursor, devin',

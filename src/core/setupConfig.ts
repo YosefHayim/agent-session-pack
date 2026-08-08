@@ -14,12 +14,31 @@ export const SetupConfigSchema = Schema.Struct({
   coldAfter: Schema.String,
   createdAt: Schema.String,
   updatedAt: Schema.String,
+  /** When true, `ensure-restored` may write native session files on launch helpers. */
+  restoreOnLaunch: Schema.optional(Schema.Boolean),
+  /** Optional cache window (e.g. `7d`) for how long restored sessions stay live. */
+  restoreCacheAfter: Schema.optional(Schema.String),
 });
 
 /**
  * Decoded setup configuration record.
  */
 export type SetupConfig = typeof SetupConfigSchema.Type;
+
+/**
+ * Reports whether restore-on-launch lifecycle helpers are enabled in setup config.
+ *
+ * @param config - Optional setup config from disk.
+ * @returns True only when the user explicitly opted in.
+ * @example
+ * ```ts
+ * import { isRestoreOnLaunchEnabled } from './setupConfig.js';
+ *
+ * isRestoreOnLaunchEnabled({ restoreOnLaunch: true } as SetupConfig);
+ * ```
+ */
+export const isRestoreOnLaunchEnabled = (config: SetupConfig | undefined): boolean =>
+  config?.restoreOnLaunch === true;
 
 /**
  * Vault path that has passed setup validation.

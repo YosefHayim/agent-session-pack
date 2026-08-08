@@ -13,30 +13,32 @@ import {
   resolveDefaultVaultPath,
 } from '../../core/sessionArchive.js';
 import { type ProviderId, ProviderIdSchema } from '../../core/sessionStore.js';
-import { readSetupConfig, type SetupConfigFileError } from '../../core/setupConfig.js';
+import {
+  isRestoreOnLaunchEnabled,
+  readSetupConfig,
+  type SetupConfigFileError,
+} from '../../core/setupConfig.js';
 import { HOME_NOT_SET_STDERR_MESSAGE } from '../homeEnv.js';
 
 /**
- * Citty command that restores a packed session by id, name, slug, or picker.
+ * Citty command that restores one archived session when restore-on-launch is enabled.
  */
-export const restoreCommand = defineCommand({
+export const ensureRestoredCommand = defineCommand({
   meta: {
-    name: 'restore',
-    description: 'Restore a packed session by id, name, slug, or provider-prefixed selector.',
+    name: 'ensure-restored',
+    description:
+      'Restore one archived session before provider resume when restore-on-launch is enabled.',
   },
   args: {
-    selector: {
-      type: 'positional',
-      description: 'Session id, exact name, slug, fuzzy query, or provider-prefixed selector.',
-    },
     provider: {
       type: 'string',
       description:
         'Provider id: codex, claude, kiro, grok, kimi, opencode, gemini, cursor, or devin.',
     },
-    to: {
-      type: 'string',
-      description: 'Restore destination: original (default). Custom paths are not supported yet.',
+    session: {
+      type: 'positional',
+      description: 'Session id, slug, title, or provider-prefixed selector (e.g. codex:cold).',
+      required: true,
     },
     json: {
       type: 'boolean',
@@ -45,51 +47,48 @@ export const restoreCommand = defineCommand({
   },
   run: async ({ args }) => {
     await Effect.runPromise(
-      runRestoreCommand({
+      runEnsureRestoredCommand({
         json: args.json,
         provider: args.provider,
-        selector: args.selector,
-        to: args.to,
+        session: args.session,
       }),
     );
   },
 });
 
 /**
- * Decoded arguments for the restore command.
+ * Decoded arguments for ensure-restored.
  */
-export type RestoreArgs = {
+export type EnsureRestoredArgs = {
   readonly json: boolean | undefined;
   readonly provider: string | undefined;
-  readonly selector: string | undefined;
-  readonly to: string | undefined;
+  readonly session: string | undefined;
   readonly compression?: CompressionAdapter | undefined;
   readonly home?: string | undefined;
   readonly vaultPath?: string | undefined;
 };
 
 /**
- * Runs the restore command for human and agent callers.
+ * Runs ensure-restored for human and agent callers.
  *
  * @param args - Decoded command-line arguments.
- * @returns Effect that writes restore output and sets exit codes.
+ * @returns Effect that writes ensure-restored output and sets exit codes.
  * @example
  * ```ts
  * import { Effect } from 'effect';
- * import { runRestoreCommand } from './restoreCommand.js';
+ * import { runEnsureRestoredCommand } from './ensureRestoredCommand.js';
  *
  * await Effect.runPromise(
- *   runRestoreCommand({
+ *   runEnsureRestoredCommand({
  *     json: true,
  *     provider: 'codex',
- *     selector: 'cold',
- *     to: 'original',
+ *     session: 'cold',
  *   }),
  * );
  * ```
  */
-export const runRestoreCommand = (
-  args: RestoreArgs,
+export const runEnsureRestoredCommand = (
+  args: EnsureRestoredArgs,
 ): Effect.Effect<
   void,
   ArchiveFileSystemError | ArchiveVerificationError | ManifestStoreError | SetupConfigFileError
@@ -103,17 +102,11 @@ export const runRestoreCommand = (
       return;
     }
 
-    const selector = args.selector?.trim() ?? '';
+    const sessionSelector = args.session?.trim() ?? '';
 
-    if (selector.length === 0) {
-      process.stderr.write('Missing selector. Use agent-session-pack restore <selector>.\n');
-      process.exitCode = 2;
-      return;
-    }
-
-    if (args.to !== undefined && args.to !== 'original') {
+    if (sessionSelector.length === 0) {
       process.stderr.write(
-        'Only --to original is supported. Custom restore destinations are not available yet.\n',
+        'Missing session selector. Use agent-session-pack ensure-restored [--provider codex] <session>.\n',
       );
       process.exitCode = 2;
       return;
@@ -129,20 +122,21 @@ export const runRestoreCommand = (
 
     const setupConfig = yield* readSetupConfig(home);
     const vaultPath = args.vaultPath ?? setupConfig?.vaultPath ?? resolveDefaultVaultPath(home);
+    const restoreOnLaunchEnabled = isRestoreOnLaunchEnabled(setupConfig);
     const compression = args.compression ?? createZstdCompression();
 
     const report = yield* ensureSessionRestored({
-      command: 'restore',
+      command: 'ensure-restored',
       vaultPath,
-      selector,
+      selector: sessionSelector,
       provider,
       compression,
-      restoreOnLaunchEnabled: setupConfig?.restoreOnLaunch === true,
-      requireLifecycleEnabled: false,
+      restoreOnLaunchEnabled,
+      requireLifecycleEnabled: true,
     });
 
-    writeRestoreOutput(report, args.json === true);
-    process.exitCode = restoreExitCode(report);
+    writeEnsureRestoredOutput(report, args.json === true);
+    process.exitCode = ensureRestoredExitCode(report);
   });
 
 const parseOptionalProvider = (provider: string | undefined): ProviderId | undefined => {
@@ -159,33 +153,38 @@ const parseOptionalProvider = (provider: string | undefined): ProviderId | undef
   return decoded.right;
 };
 
-const writeRestoreOutput = (report: EnsureRestoredReport, json: boolean): void => {
+const writeEnsureRestoredOutput = (report: EnsureRestoredReport, json: boolean): void => {
   if (json) {
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
     return;
   }
 
   const lines = [
-    `restore: ${report.status}`,
+    `ensure-restored: ${report.status}`,
     report.provider === undefined ? undefined : `provider: ${report.provider}`,
     report.sessionId === undefined ? undefined : `session: ${report.sessionId}`,
     report.originalPath === undefined ? undefined : `originalPath: ${report.originalPath}`,
     report.reason === undefined ? undefined : `reason: ${report.reason}`,
+    `restoreOnLaunchEnabled: ${String(report.restoreOnLaunchEnabled)}`,
   ].filter((line): line is string => line !== undefined);
 
   process.stdout.write(`${lines.join('\n')}\n`);
 };
 
-const restoreExitCode = (report: EnsureRestoredReport): number | undefined => {
+const ensureRestoredExitCode = (report: EnsureRestoredReport): number | undefined => {
   if (report.status === 'restored' || report.status === 'already-present') {
     return undefined;
   }
 
-  if (
-    report.status === 'conflict' ||
-    report.status === 'missing-archive' ||
-    report.status === 'backup-only'
-  ) {
+  if (report.status === 'lifecycle-disabled') {
+    return 3;
+  }
+
+  if (report.status === 'conflict' || report.status === 'missing-archive') {
+    return 2;
+  }
+
+  if (report.status === 'backup-only') {
     return 2;
   }
 

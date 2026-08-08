@@ -6,7 +6,8 @@ import { Effect } from 'effect';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CompressionAdapter } from '../../core/archiveWriter.js';
 import { writeSessionManifest } from '../../core/manifestStore.js';
-import { runRestoreCommand } from './restoreCommand.js';
+import { writeSetupConfig } from '../../core/setupConfig.js';
+import { runEnsureRestoredCommand } from './ensureRestoredCommand.js';
 
 const copyCompression: CompressionAdapter = {
   compress: ({ sourcePath, archivePath }) =>
@@ -15,7 +16,7 @@ const copyCompression: CompressionAdapter = {
     Effect.promise(() => copyFile(archivePath, restoredPath)),
 };
 
-describe('restore command', () => {
+describe('ensure-restored command', () => {
   const stdoutWrites: string[] = [];
   const stderrWrites: string[] = [];
 
@@ -38,29 +39,51 @@ describe('restore command', () => {
     vi.restoreAllMocks();
   });
 
-  it('exits with code 2 when selector is missing', async () => {
+  it('exits 3 with JSON when restore-on-launch is disabled', async () => {
+    const home = await mkdtemp(join(tmpdir(), 'asp-ensure-disabled-'));
+    const vaultPath = join(home, '.agent-session-pack');
+
     await Effect.runPromise(
-      runRestoreCommand({
-        selector: undefined,
-        provider: undefined,
-        to: undefined,
-        json: true,
-        home: '/tmp/synthetic-home',
+      writeSetupConfig({
+        home,
+        config: {
+          version: 1,
+          providers: ['codex'],
+          vaultPath,
+          coldAfter: '7d',
+          createdAt: '2026-07-01T00:00:00.000Z',
+          updatedAt: '2026-07-01T00:00:00.000Z',
+          restoreOnLaunch: false,
+        },
       }),
     );
 
-    expect(stderrWrites.join('')).toContain(
-      'Missing selector. Use agent-session-pack restore <selector>.',
+    await Effect.runPromise(
+      runEnsureRestoredCommand({
+        home,
+        vaultPath,
+        provider: 'codex',
+        session: 'cold',
+        json: true,
+        compression: copyCompression,
+      }),
     );
-    expect(process.exitCode).toBe(2);
+
+    expect(process.exitCode).toBe(3);
+    expect(JSON.parse(stdoutWrites.join(''))).toMatchObject({
+      command: 'ensure-restored',
+      status: 'lifecycle-disabled',
+      restoreOnLaunchEnabled: false,
+    });
+    await rm(home, { recursive: true, force: true });
   });
 
-  it('restores an archived session without requiring lifecycle enable', async () => {
-    const home = await mkdtemp(join(tmpdir(), 'asp-restore-cmd-'));
+  it('restores a missing archived session when lifecycle is enabled', async () => {
+    const home = await mkdtemp(join(tmpdir(), 'asp-ensure-restore-'));
     const vaultPath = join(home, '.agent-session-pack');
     const originalPath = join(home, '.codex', 'sessions', 'cold.jsonl');
     const archivePath = join(vaultPath, 'archives', 'codex', 'cold.jsonl.zst');
-    const content = '{"type":"user","text":"manual restore"}\n';
+    const content = '{"type":"user","text":"ensure"}\n';
     const sourceSha256 = createHash('sha256').update(content).digest('hex');
 
     await mkdir(join(vaultPath, 'archives', 'codex'), { recursive: true });
@@ -69,8 +92,8 @@ describe('restore command', () => {
       writeSessionManifest(join(vaultPath, 'manifests', 'codex', 'cold.json'), {
         sessionId: 'cold',
         provider: 'codex',
-        title: 'manual restore',
-        slug: 'manual-restore',
+        title: 'ensure',
+        slug: 'ensure',
         originalPath,
         archivePath,
         sourceSha256,
@@ -80,14 +103,27 @@ describe('restore command', () => {
         sourceKind: 'file',
       }),
     );
+    await Effect.runPromise(
+      writeSetupConfig({
+        home,
+        config: {
+          version: 1,
+          providers: ['codex'],
+          vaultPath,
+          coldAfter: '7d',
+          createdAt: '2026-07-01T00:00:00.000Z',
+          updatedAt: '2026-07-01T00:00:00.000Z',
+          restoreOnLaunch: true,
+        },
+      }),
+    );
 
     await Effect.runPromise(
-      runRestoreCommand({
+      runEnsureRestoredCommand({
         home,
         vaultPath,
-        selector: 'codex:cold',
-        provider: undefined,
-        to: 'original',
+        provider: 'codex',
+        session: 'cold',
         json: true,
         compression: copyCompression,
       }),
@@ -95,23 +131,13 @@ describe('restore command', () => {
 
     expect(process.exitCode).toBeUndefined();
     expect(JSON.parse(stdoutWrites.join(''))).toMatchObject({
-      command: 'restore',
+      command: 'ensure-restored',
       status: 'restored',
-      sessionId: 'cold',
       provider: 'codex',
+      sessionId: 'cold',
+      originalPath,
     });
     await expect(readFile(originalPath, 'utf8')).resolves.toBe(content);
     await rm(home, { recursive: true, force: true });
-  });
-
-  it('exposes citty metadata and flags', async () => {
-    const { restoreCommand } = await import('./restoreCommand.js');
-    expect(restoreCommand.meta).toMatchObject({
-      name: 'restore',
-    });
-    expect(restoreCommand.args).toMatchObject({
-      selector: { type: 'positional' },
-      json: { type: 'boolean' },
-    });
   });
 });

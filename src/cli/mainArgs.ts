@@ -4,6 +4,7 @@ const COMMAND_FLAG_ALIASES: Readonly<Record<string, string>> = {
   '--guide': 'guide',
   '--init': 'init',
   '--list': 'list',
+  '--lifecycle': 'lifecycle',
   '--pack': 'pack',
   '--restore': 'restore',
   '--savings': 'savings',

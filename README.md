@@ -20,10 +20,10 @@ coding agents whose local [OpenAI Codex CLI](https://developers.openai.com/codex
 session stores, proves lossless [Zstandard](https://facebook.github.io/zstd/)
 compression on copies, and packs cold sessions into a local vault only when you ask it to.
 
-Current status: `v0.3.0` ships guided setup, read-only proof, manual pack, and manual
-unpack for single-file and multi-file session stores. It does not install a daemon,
-timer, pack-on-close hook, restore-on-launch hook, web app, cloud sync, or lossy
-conversation summarizer.
+Current status: `v0.3.0` ships guided setup, read-only proof, manual pack/unpack/restore,
+and an **opt-in** `ensure-restored` helper for restore-on-launch workflows. It does not
+install a daemon, timer, pack-on-close hook, web app, cloud sync, or lossy conversation
+summarizer. Restore-on-launch stays off until `lifecycle enable`.
 
 ## Quick Start
 
@@ -220,8 +220,26 @@ npx --yes agent-session-pack pack --all-providers --older-than 7d --apply
 <summary>Can agents still resume sessions after packing?</summary>
 
 The archive is byte-exact, but a provider can only resume from its native file location.
-Use `unpack --apply` to restore archived sessions before resuming them. Automatic
-restore-on-launch is not installed in `v0.3.0`.
+
+**Manual path (always available):**
+
+```bash
+npx --yes agent-session-pack unpack --all-providers --apply --yes --json
+# or one session:
+npx --yes agent-session-pack restore codex:<session-id> --json
+```
+
+**Opt-in restore-on-launch helper** (for agents/wrappers before resume):
+
+```bash
+npx --yes agent-session-pack lifecycle enable --json
+npx --yes agent-session-pack ensure-restored --provider codex <session-id> --json
+```
+
+`ensure-restored` restores byte-exact native files when lifecycle is enabled, skips when
+the live file already matches, and refuses to overwrite a changed live file. Disable with
+`lifecycle disable` to fall back to manual `unpack` / `restore` only. No provider daemon
+or pack-on-close hook is installed automatically.
 </details>
 
 <details>

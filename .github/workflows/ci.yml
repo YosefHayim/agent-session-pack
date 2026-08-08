@@ -10,16 +10,70 @@ permissions:
 
 jobs:
   biome:
-    uses: ./.github/workflows/biome.yml
+    name: Biome
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.1
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec biome ci .
 
   typecheck:
-    uses: ./.github/workflows/typecheck.yml
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.1
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
 
   test:
-    uses: ./.github/workflows/test.yml
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.1
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      # archiveReader + devinProvider tests need system binaries
+      - run: sudo apt-get update && sudo apt-get install -y zstd sqlite3
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
 
   build:
-    uses: ./.github/workflows/build.yml
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.1
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
 
   ciGate:
     name: CI Gate

@@ -1,31 +1,128 @@
-# Agent Session Pack Code Style
+# agent-session-pack code style
 
 This guide is the source of truth for how Agent Session Pack code is written. Existing proof-spike code is evidence, not precedent.
 
-## Purpose
+## How to read a rule
 
-Agent Session Pack is a CLI-only tool that reduces local disk usage from AI coding-agent session history without breaking resume, restore, or conversation quality.
+| Slot | Meaning |
+| --- | --- |
+| rule ID | Stable review and detector key |
+| verify | Cheapest command that proves the rule, or judgment |
+| chosen / rejected | The local idiom and the concrete failure shape |
 
-## Formatting
+## Rules
 
-- Formatter: Biome.
-- Indent: 2 spaces.
-- Quotes: single quotes.
-- Semicolons: required.
-- Trailing commas: all multiline positions.
-- Line width: 100.
-- Imports: organized by tooling.
-- Filenames: camelCase TypeScript files. Do not use kebab-case source filenames.
+### Formatter: Biome
+[rule:formatter.biome] · verify: judgment
 
-## TypeScript Shape
+Formatter: Biome.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### Indent: 2 spaces
+[rule:indent.2-spaces] · verify: judgment
+
+Indent: 2 spaces.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### Quotes: single quotes
+[rule:quotes.single-quotes] · verify: judgment
+
+Quotes: single quotes.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### Semicolons: required
+[rule:semicolons.required] · verify: judgment
+
+Semicolons: required.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### Trailing commas: all multiline positions
+[rule:trailing.commas-all-multiline-positions] · verify: judgment
+
+Trailing commas: all multiline positions.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### Line width: 100
+[rule:line.width-100] · verify: judgment
+
+Line width: 100.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### Imports: organized by tooling
+[rule:imports.organized-by-tooling] · verify: judgment
+
+Imports: organized by tooling.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### Filenames: camelCase TypeScript files. Do not
+[rule:filenames.camelcase-typescript-files-do-not] · verify: judgment
+
+Filenames: camelCase TypeScript files.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
 
 ### Exported Functions
+[rule:exported.functions] · verify: judgment
 
 Use arrow const exports with explicit parameter and return types.
 
-Chosen:
-
 ```ts
+// ✓ chosen
 export const discoverStoreSessions = (
   adapter: ProviderAdapter,
   store: SessionStore,
@@ -41,101 +138,611 @@ export const discoverStoreSessions = (
 
     return sessions;
   });
+// ✗ rejected
 ```
 
-Rejected:
+Why: Keeps the local idiom consistent and reviewable.
+
+### Prefer domain names for locals, parameters,
+[rule:prefer.domain-names-for-locals-parameters] · verify: judgment
+
+Prefer domain names for locals, parameters, and helpers (`packPlanRow`, `inventoryReport`, `vaultPathValidation`).
 
 ```ts
-export async function discoverStoreSessions(adapter, store) {
-  return adapter.discover(store);
-}
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
 ```
 
-Rules:
+Why: Keeps the local idiom consistent and reviewable.
 
-- Exported app APIs use `export const name = (...) => ...`.
-- Explicit params and return types are required.
-- `function*` is allowed only as an `Effect.gen` callback.
-- Avoid nested conditions; prefer guard returns.
-- Resolve optional defaults once at the command or flow boundary with inline `??` or Schema defaults. Do not invent `normalize*` wrappers for trivial defaults.
+### Ban vague locals when a domain
+[rule:ban.vague-locals-when-a-domain] · verify: judgment
 
-## Naming
-
-- Prefer domain names for locals, parameters, and helpers (`packPlanRow`, `inventoryReport`, `vaultPathValidation`).
-- Ban vague locals when a domain name exists: `result`, `data`, `payload`, `body`, `response`, `row` (type names like `PackPlanRow` are fine).
-- Module-level constants use `UPPER_SNAKE` and sit after imports.
-- No `index.ts` barrel re-export files. Import from the concrete module path.
-- Do not prefix helpers with `normalize*`. Name by domain purpose (`rewriteCommandFlagAliases`, `posixRelativePath`) or inline trivial defaults.
-
-## TSDoc
-
-Every exported symbol carries TSDoc. This is enforced, not aspirational: `eslint-plugin-jsdoc` fails `pnpm check:ci` when an export is missing its required tags. `[lint: jsdoc/require-jsdoc, jsdoc/require-param, jsdoc/require-returns, jsdoc/require-example]`
-
-- Exported functions (arrow-const callables and function declarations) require a one-line summary, `@param name - description` for every parameter, `@returns description`, and a runnable `@example`.
-- Exported non-callables (`effect/Schema` consts, `TaggedError` classes, `citty` `defineCommand` objects, type aliases, interfaces, and plain object consts like provider adapters) require a one-line summary only. Do not add `@param`, `@returns`, or `@example` to these.
-- Use the TSDoc dash form: `@param name - text`.
-- Summaries are present-tense single sentences that name the domain concept, not the mechanics.
-
-Chosen:
+Ban vague locals when a domain name exists: `result`, `data`, `payload`, `body`, `response`, `row` (type names like `PackPlanRow` are fine).
 
 ```ts
-/**
- * Writes a compressed archive and verifies byte-exact restore before removal is allowed.
- *
- * @param request - Source session and destination archive paths.
- * @returns Verified archive metadata for the manifest and index.
- * @example
- * ```ts
- * const verified = yield* writeVerifiedArchive({ source, destination });
- * ```
- */
-export const writeVerifiedArchive = (
-  request: ArchiveWriteRequest,
-): Effect.Effect<VerifiedArchive, ArchiveWriteError> => ...;
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
 ```
 
-Rejected:
+Why: Keeps the local idiom consistent and reviewable.
+
+### Module-level constants use UPPERSNAKE and sit
+[rule:module.level-constants-use-uppersnake-and] · verify: judgment
+
+Module-level constants use `UPPER_SNAKE` and sit after imports.
 
 ```ts
-// No TSDoc, or a bare summary with no @param / @returns / @example on a function.
-export const writeVerifiedArchive = (request: ArchiveWriteRequest) => ...;
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
 ```
 
-## Effects, Schemas, And Errors
+Why: Keeps the local idiom consistent and reviewable.
 
-Use Effect for workflows, expected errors, schemas, provider scanning, filesystem operations, compression, restore, config, and manifests.
+### No index.ts barrel re-export files. Import
+[rule:no.index-ts-barrel-re-export] · verify: judgment
 
-- Runtime schemas use `effect/Schema`.
-- Prefer Schema validation at boundaries over custom ad-hoc validators when Schema already fits.
-- Expected failures are typed Effect errors.
-- Domain/application code does not use `throw new Error()`.
-- CLI boundary code renders errors to human text, JSON, and exit codes.
-
-Chosen:
+No `index.ts` barrel re-export files.
 
 ```ts
-export class ProviderStoreMissingError extends Schema.TaggedError<ProviderStoreMissingError>()(
-  'ProviderStoreMissingError',
-  {
-    provider: ProviderIdSchema,
-    path: Schema.String,
-  },
-) {}
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
 ```
 
-## Module Boundaries
+Why: Keeps the local idiom consistent and reviewable.
 
-Providers never write. Provider modules discover and describe native sessions only.
+### Do not prefix helpers with normalize.
+[rule:do.not-prefix-helpers-with-normalize] · verify: judgment
 
-- `src/providers/*`: native store roots, discovery, title/date/id extraction.
-- `src/core/archiveWriter.ts`: create zstd archive and verify restore hash.
-- `src/core/sessionArchive.ts`: pack/unpack workflows, manifests, and remove/restore safety.
-- `src/core/manifestStore.ts`: write/read restore metadata.
-- `src/core/sessionIndex.ts`: SQLite search/list/cache.
-- `src/output/*`: human and JSON rendering.
-- `src/cli/*`: citty commands, Clack TTY prompts, exit mapping.
+Do not prefix helpers with `normalize*`.
 
-No `utils.ts`, `helpers.ts`, or `common.ts` dumping grounds.
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### Exported functions (arrow-const callables and function
+[rule:exported.functions-arrow-const-callables-and] · verify: judgment
+
+Exported functions (arrow-const callables and function declarations) require a one-line summary, `@param name - description` for every parameter, `@returns description`, and a runnable `@example`.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### Exported non-callables (effect/Schema consts, TaggedError cl
+[rule:exported.non-callables-effect-schema-consts] · verify: judgment
+
+Exported non-callables (`effect/Schema` consts, `TaggedError` classes, `citty` `defineCommand` objects, type aliases, interfaces, and plain object consts like provider adapters) require a one-line summary only.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### Use the TSDoc dash form: @param
+[rule:use.the-tsdoc-dash-form-param] · verify: judgment
+
+Use the TSDoc dash form: `@param name - text`.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### Summaries are present-tense single sentences that
+[rule:summaries.are-present-tense-single-sentences] · verify: judgment
+
+Summaries are present-tense single sentences that name the domain concept, not the mechanics.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### Writes a compressed archive and verifies
+[rule:writes.a-compressed-archive-and-verifies] · verify: judgment
+
+Writes a compressed archive and verifies byte-exact restore before removal is allowed.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### @param request - Source session and
+[rule:param.request-source-session-and] · verify: judgment
+
+@param request - Source session and destination archive paths.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### @returns Verified archive metadata for the
+[rule:returns.verified-archive-metadata-for-the] · verify: judgment
+
+@returns Verified archive metadata for the manifest and index.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### @example
+[rule:example] · verify: judgment
+
+@example.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### ts
+[rule:ts] · verify: judgment
+
+Follow this project rule as specified.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### const verified = yield writeVerifiedArchive({ source,
+[rule:const.verified-yield-writeverifiedarchive-source] · verify: judgment
+
+const verified = yield* writeVerifiedArchive({ source, destination }).
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### 
+[rule:rule.item] · verify: judgment
+
+Follow this project rule as specified.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### Runtime schemas use effect/Schema
+[rule:runtime.schemas-use-effect-schema] · verify: judgment
+
+Runtime schemas use `effect/Schema`.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### Prefer Schema validation at boundaries over
+[rule:prefer.schema-validation-at-boundaries-over] · verify: judgment
+
+Prefer Schema validation at boundaries over custom ad-hoc validators when Schema already fits.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### Expected failures are typed Effect errors
+[rule:expected.failures-are-typed-effect-errors] · verify: judgment
+
+Expected failures are typed Effect errors.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### Domain/application code does not use throw
+[rule:domain.application-code-does-not-use] · verify: judgment
+
+Domain/application code does not use `throw new Error()`.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### CLI boundary code renders errors to
+[rule:cli.boundary-code-renders-errors-to] · verify: judgment
+
+CLI boundary code renders errors to human text, JSON, and exit codes.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### src/providers/: native store roots, discovery, title/date/id
+[rule:src.providers-native-store-roots-discovery] · verify: judgment
+
+Follow this project rule as specified.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### src/core/archiveWriter.ts: create zstd archive and verify
+[rule:src.core-archivewriter-ts-create-zstd] · verify: judgment
+
+Follow this project rule as specified.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### src/core/sessionArchive.ts: pack/unpack workflows, manifests
+[rule:src.core-sessionarchive-ts-pack-unpack] · verify: judgment
+
+Follow this project rule as specified.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### src/core/manifestStore.ts: write/read restore metadata
+[rule:src.core-manifeststore-ts-write-read] · verify: judgment
+
+Follow this project rule as specified.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### src/core/sessionIndex.ts: SQLite search/list/cache
+[rule:src.core-sessionindex-ts-sqlite-search] · verify: judgment
+
+Follow this project rule as specified.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### src/output/: human and JSON rendering
+[rule:src.output-human-and-json-rendering] · verify: judgment
+
+Follow this project rule as specified.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### src/cli/: citty commands, Clack TTY prompts,
+[rule:src.cli-citty-commands-clack-tty] · verify: judgment
+
+Follow this project rule as specified.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### Over-Engineering
+[rule:over.engineering] · verify: judgment
+
+One test: an abstraction earns its place only if it has a second real caller or names a genuine domain concept.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### Unit tests are colocated next to
+[rule:unit.tests-are-colocated-next-to] · verify: judgment
+
+Unit tests are colocated next to source as `*.test.ts` under `src/`.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### tests/ holds shared helpers/fixtures and optional
+[rule:tests.holds-shared-helpers-fixtures-and] · verify: judgment
+
+Follow this project rule as specified.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### pnpm test: synthetic fixtures only
+[rule:pnpm.test-synthetic-fixtures-only] · verify: judgment
+
+Follow this project rule as specified.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### pnpm test:integration: temp HOME and temp
+[rule:pnpm.test-integration-temp-home-and] · verify: judgment
+
+Follow this project rule as specified.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### pnpm guide: agent-first command map for
+[rule:pnpm.guide-agent-first-command-map] · verify: judgment
+
+Follow this project rule as specified.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### npx agent-session-pack check: no-install copy-only local
+[rule:npx.agent-session-pack-check-no] · verify: judgment
+
+Follow this project rule as specified.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### npx agent-session-pack pack --max --dry-run: all-age
+[rule:npx.agent-session-pack-pack-max] · verify: judgment
+
+Follow this project rule as specified.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### pnpm savings: explicit local machine proof
+[rule:pnpm.savings-explicit-local-machine-proof] · verify: judgment
+
+Follow this project rule as specified.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### pnpm evidence:local: alias kept for existing
+[rule:pnpm.evidence-local-alias-kept-for] · verify: judgment
+
+Follow this project rule as specified.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### pnpm pack:dry-run and pnpm pack:all: non-destructive
+[rule:pnpm.pack-dry-run-and-pnpm] · verify: judgment
+
+Follow this project rule as specified.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### pnpm unpack:all: non-destructive all-provider restore summar
+[rule:pnpm.unpack-all-non-destructive-all] · verify: judgment
+
+Follow this project rule as specified.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### Round-trip tests assert SHA-256 byte-exact restore
+[rule:round.trip-tests-assert-sha-256] · verify: judgment
+
+Round-trip tests assert SHA-256 byte-exact restore.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### Dry-run tests assert originals are not
+[rule:dry.run-tests-assert-originals-are] · verify: judgment
+
+Dry-run tests assert originals are not touched.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+### Selector tests cover ID, exact name,
+[rule:selector.tests-cover-id-exact-name] · verify: judgment
+
+Selector tests cover ID, exact name, slug, fuzzy query, provider-prefixed selector, and ambiguity.
+
+```ts
+// ✓ agent-session-pack idiom
+
+// ✗ rejected shape
+```
+
+Why: Keeps the local idiom consistent and reviewable.
+
+## Canonical example
+
+Compose one real feature slice that shows the rules together. Point at real paths once code exists.
+
+## Golden path — adding a unit
+
+1. Name vocabulary changes in LANGUAGE.md / CONTEXT.md when needed.
+2. Implement at the owning path for this repository.
+3. Wire the unit at its registration seam.
+4. Colocate or place tests per the rules above and run the project gate.
+
+Definition of done:
+
+- Focused tests pass.
+- Style and typecheck pass.
+- No `## Never` tell was introduced.
+
+## Exemplars
+
+The current proof spike is legacy, not an exemplar. The first real exemplars are:
+
+- `src/cli/commands/scanCommand.ts`
+- `src/core/archiveWriter.ts`
+- `src/providers/codex.ts`
+
+## Never
+
+- No `utils.ts`, `helpers.ts`, or `common.ts` dumping grounds.
+- No top-level `function foo()` declarations in app code.
+- No nested ternaries.
+- No nested `if` ladders when guard returns work.
+- No `normalize*` prefix wrappers for defaults or path munging; inline trivial defaults or name helpers by domain purpose.
+- No mid-workflow default resolution; resolve optional inputs once at the boundary.
+- No `throw new Error()` inside domain/application code.
+- No no-op or identity wrappers.
+- No one-use wrapper functions unless they name a real domain concept.
+- No copy-pasted micro-helper across files; inline the trivial ones, and give a genuine shared concept one home in the module that owns it.
+- No defensive `isRecord`-style micro-helpers when Effect Schema should validate.
+- No vague names like `result`, `data`, `payload`, `body`, `response`, `row`, `item`, or `thing` when a domain name exists.
+- No `index.ts` barrel re-export modules.
+- No normal tests against real home directories.
 
 ## CLI Contract
 
@@ -190,96 +797,3 @@ pnpm evidence:local
 Human output starts with a compact summary, then tables. Scan output includes provider, session count, current size, archived size, savings, and location path. Per-session output includes ID, provider, date, size, savings, status, name, and path.
 
 JSON output has a stable object shape, machine-readable errors, no ANSI, and no prompts.
-
-## Vocabulary
-
-- `vault`: `~/.agent-session-pack`.
-- `store`: provider local session root, such as `~/.codex/sessions`.
-- `session`: one conversation/log.
-- `archive`: compressed content-addressed `.zst` object.
-- `manifest`: restore metadata.
-- `tombstone`: metadata proving the original was removed only after verified archive.
-- `backup`: use only for Cursor and Devin backup-only modes.
-
-Avoid `memory` in code identifiers because it confuses RAM with disk.
-
-## Status Names
-
-- `live`: original file still exists.
-- `cold`: eligible to pack.
-- `archived`: packed and original removed after verification.
-- `restored`: unpacked back into native location.
-- `pinned`: excluded from packing.
-- `quarantined`: metadata retained for explicit prune/recovery.
-
-## Over-Engineering
-
-One test: an abstraction earns its place only if it has a second real caller or names a genuine domain concept. Otherwise inline it. The recurring offenders are listed under `Never`; the reference anti-example is the removed `createJsonlProviderAdapter`, an identity wrapper `(adapter) => adapter` that added an import and a doc block while doing nothing.
-
-## Never
-
-- No `utils.ts`, `helpers.ts`, or `common.ts` dumping grounds.
-- No top-level `function foo()` declarations in app code.
-- No nested ternaries.
-- No nested `if` ladders when guard returns work.
-- No `normalize*` prefix wrappers for defaults or path munging; inline trivial defaults or name helpers by domain purpose.
-- No mid-workflow default resolution; resolve optional inputs once at the boundary.
-- No `throw new Error()` inside domain/application code.
-- No no-op or identity wrappers.
-- No one-use wrapper functions unless they name a real domain concept.
-- No copy-pasted micro-helper across files; inline the trivial ones, and give a genuine shared concept one home in the module that owns it.
-- No defensive `isRecord`-style micro-helpers when Effect Schema should validate.
-- No vague names like `result`, `data`, `payload`, `body`, `response`, `row`, `item`, or `thing` when a domain name exists.
-- No `index.ts` barrel re-export modules.
-- No normal tests against real home directories.
-
-## Tests
-
-- Unit tests are colocated next to source as `*.test.ts` under `src/`.
-- `tests/` holds shared helpers/fixtures and optional `*.integration.test.ts` only.
-- `pnpm test`: synthetic fixtures only.
-- `pnpm test:integration`: temp HOME and temp provider roots only.
-- `pnpm guide`: agent-first command map for safe non-interactive use.
-- `npx agent-session-pack check`: no-install copy-only local proof after publish.
-- `npx agent-session-pack pack --max --dry-run`: all-age pack preview; never apply with `--max`.
-- `pnpm savings`: explicit local machine proof against copied real sessions.
-- `pnpm evidence:local`: alias kept for existing proof notes.
-- `pnpm pack:dry-run` and `pnpm pack:all`: non-destructive all-provider cleanup summary.
-- `pnpm unpack:all`: non-destructive all-provider restore summary from the vault.
-- Round-trip tests assert SHA-256 byte-exact restore.
-- Dry-run tests assert originals are not touched.
-- Selector tests cover ID, exact name, slug, fuzzy query, provider-prefixed selector, and ambiguity.
-
-## Golden Exemplar Targets
-
-The current proof spike is legacy, not an exemplar. The first real exemplars are:
-
-- `src/cli/commands/scanCommand.ts`
-- `src/core/archiveWriter.ts`
-- `src/providers/codex.ts`
-
-## Dependencies
-
-Runtime:
-
-- `effect`
-- `citty`
-- `@clack/prompts`
-
-Dev:
-
-- `typescript`
-- `tsx`
-- `tsup`
-- `vitest`
-- `@types/node`
-- `@biomejs/biome`
-- `eslint`
-- `typescript-eslint`
-- `eslint-plugin-tsdoc`
-- `eslint-plugin-jsdoc`
-
-External binary:
-
-- `zstd`, checked by `agent-session-pack doctor`.
-- `sqlite3`, checked by `agent-session-pack doctor` for Devin session discovery.

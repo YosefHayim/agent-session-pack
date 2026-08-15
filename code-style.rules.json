@@ -1,0 +1,266 @@
+{
+  "version": 3,
+  "guide": "CODE-STYLE.md",
+  "rules": [
+    {
+      "id": "formatter.biome",
+      "statement": "Formatter: Biome.",
+      "verify": "judgment"
+    },
+    {
+      "id": "indent.2-spaces",
+      "statement": "Indent: 2 spaces.",
+      "verify": "judgment"
+    },
+    {
+      "id": "quotes.single-quotes",
+      "statement": "Quotes: single quotes.",
+      "verify": "judgment"
+    },
+    {
+      "id": "semicolons.required",
+      "statement": "Semicolons: required.",
+      "verify": "judgment"
+    },
+    {
+      "id": "trailing.commas-all-multiline-positions",
+      "statement": "Trailing commas: all multiline positions.",
+      "verify": "judgment"
+    },
+    {
+      "id": "line.width-100",
+      "statement": "Line width: 100.",
+      "verify": "judgment"
+    },
+    {
+      "id": "imports.organized-by-tooling",
+      "statement": "Imports: organized by tooling.",
+      "verify": "judgment"
+    },
+    {
+      "id": "filenames.camelcase-typescript-files-do-not",
+      "statement": "Filenames: camelCase TypeScript files.",
+      "verify": "judgment"
+    },
+    {
+      "id": "exported.functions",
+      "statement": "Use arrow const exports with explicit parameter and return types.",
+      "verify": "judgment"
+    },
+    {
+      "id": "prefer.domain-names-for-locals-parameters",
+      "statement": "Prefer domain names for locals, parameters, and helpers (`packPlanRow`, `inventoryReport`, `vaultPathValidation`).",
+      "verify": "judgment"
+    },
+    {
+      "id": "ban.vague-locals-when-a-domain",
+      "statement": "Ban vague locals when a domain name exists: `result`, `data`, `payload`, `body`, `response`, `row` (type names like `PackPlanRow` are fine).",
+      "verify": "judgment"
+    },
+    {
+      "id": "module.level-constants-use-uppersnake-and",
+      "statement": "Module-level constants use `UPPER_SNAKE` and sit after imports.",
+      "verify": "judgment"
+    },
+    {
+      "id": "no.index-ts-barrel-re-export",
+      "statement": "No `index.ts` barrel re-export files.",
+      "verify": "judgment"
+    },
+    {
+      "id": "do.not-prefix-helpers-with-normalize",
+      "statement": "Do not prefix helpers with `normalize*`.",
+      "verify": "judgment"
+    },
+    {
+      "id": "exported.functions-arrow-const-callables-and",
+      "statement": "Exported functions (arrow-const callables and function declarations) require a one-line summary, `@param name - description` for every parameter, `@returns description`, and a runnable `@example`.",
+      "verify": "judgment"
+    },
+    {
+      "id": "exported.non-callables-effect-schema-consts",
+      "statement": "Exported non-callables (`effect/Schema` consts, `TaggedError` classes, `citty` `defineCommand` objects, type aliases, interfaces, and plain object consts like provider adapters) require a one-line summary only.",
+      "verify": "judgment"
+    },
+    {
+      "id": "use.the-tsdoc-dash-form-param",
+      "statement": "Use the TSDoc dash form: `@param name - text`.",
+      "verify": "judgment"
+    },
+    {
+      "id": "summaries.are-present-tense-single-sentences",
+      "statement": "Summaries are present-tense single sentences that name the domain concept, not the mechanics.",
+      "verify": "judgment"
+    },
+    {
+      "id": "writes.a-compressed-archive-and-verifies",
+      "statement": "Writes a compressed archive and verifies byte-exact restore before removal is allowed.",
+      "verify": "judgment"
+    },
+    {
+      "id": "param.request-source-session-and",
+      "statement": "@param request - Source session and destination archive paths.",
+      "verify": "judgment"
+    },
+    {
+      "id": "returns.verified-archive-metadata-for-the",
+      "statement": "@returns Verified archive metadata for the manifest and index.",
+      "verify": "judgment"
+    },
+    {
+      "id": "example",
+      "statement": "@example.",
+      "verify": "judgment"
+    },
+    {
+      "id": "ts",
+      "statement": "Follow this project rule as specified.",
+      "verify": "judgment"
+    },
+    {
+      "id": "const.verified-yield-writeverifiedarchive-source",
+      "statement": "const verified = yield* writeVerifiedArchive({ source, destination }).",
+      "verify": "judgment"
+    },
+    {
+      "id": "rule.item",
+      "statement": "Follow this project rule as specified.",
+      "verify": "judgment"
+    },
+    {
+      "id": "runtime.schemas-use-effect-schema",
+      "statement": "Runtime schemas use `effect/Schema`.",
+      "verify": "judgment"
+    },
+    {
+      "id": "prefer.schema-validation-at-boundaries-over",
+      "statement": "Prefer Schema validation at boundaries over custom ad-hoc validators when Schema already fits.",
+      "verify": "judgment"
+    },
+    {
+      "id": "expected.failures-are-typed-effect-errors",
+      "statement": "Expected failures are typed Effect errors.",
+      "verify": "judgment"
+    },
+    {
+      "id": "domain.application-code-does-not-use",
+      "statement": "Domain/application code does not use `throw new Error()`.",
+      "verify": "judgment"
+    },
+    {
+      "id": "cli.boundary-code-renders-errors-to",
+      "statement": "CLI boundary code renders errors to human text, JSON, and exit codes.",
+      "verify": "judgment"
+    },
+    {
+      "id": "src.providers-native-store-roots-discovery",
+      "statement": "Follow this project rule as specified.",
+      "verify": "judgment"
+    },
+    {
+      "id": "src.core-archivewriter-ts-create-zstd",
+      "statement": "Follow this project rule as specified.",
+      "verify": "judgment"
+    },
+    {
+      "id": "src.core-sessionarchive-ts-pack-unpack",
+      "statement": "Follow this project rule as specified.",
+      "verify": "judgment"
+    },
+    {
+      "id": "src.core-manifeststore-ts-write-read",
+      "statement": "Follow this project rule as specified.",
+      "verify": "judgment"
+    },
+    {
+      "id": "src.core-sessionindex-ts-sqlite-search",
+      "statement": "Follow this project rule as specified.",
+      "verify": "judgment"
+    },
+    {
+      "id": "src.output-human-and-json-rendering",
+      "statement": "Follow this project rule as specified.",
+      "verify": "judgment"
+    },
+    {
+      "id": "src.cli-citty-commands-clack-tty",
+      "statement": "Follow this project rule as specified.",
+      "verify": "judgment"
+    },
+    {
+      "id": "over.engineering",
+      "statement": "One test: an abstraction earns its place only if it has a second real caller or names a genuine domain concept.",
+      "verify": "judgment"
+    },
+    {
+      "id": "unit.tests-are-colocated-next-to",
+      "statement": "Unit tests are colocated next to source as `*.test.ts` under `src/`.",
+      "verify": "judgment"
+    },
+    {
+      "id": "tests.holds-shared-helpers-fixtures-and",
+      "statement": "Follow this project rule as specified.",
+      "verify": "judgment"
+    },
+    {
+      "id": "pnpm.test-synthetic-fixtures-only",
+      "statement": "Follow this project rule as specified.",
+      "verify": "judgment"
+    },
+    {
+      "id": "pnpm.test-integration-temp-home-and",
+      "statement": "Follow this project rule as specified.",
+      "verify": "judgment"
+    },
+    {
+      "id": "pnpm.guide-agent-first-command-map",
+      "statement": "Follow this project rule as specified.",
+      "verify": "judgment"
+    },
+    {
+      "id": "npx.agent-session-pack-check-no",
+      "statement": "Follow this project rule as specified.",
+      "verify": "judgment"
+    },
+    {
+      "id": "npx.agent-session-pack-pack-max",
+      "statement": "Follow this project rule as specified.",
+      "verify": "judgment"
+    },
+    {
+      "id": "pnpm.savings-explicit-local-machine-proof",
+      "statement": "Follow this project rule as specified.",
+      "verify": "judgment"
+    },
+    {
+      "id": "pnpm.evidence-local-alias-kept-for",
+      "statement": "Follow this project rule as specified.",
+      "verify": "judgment"
+    },
+    {
+      "id": "pnpm.pack-dry-run-and-pnpm",
+      "statement": "Follow this project rule as specified.",
+      "verify": "judgment"
+    },
+    {
+      "id": "pnpm.unpack-all-non-destructive-all",
+      "statement": "Follow this project rule as specified.",
+      "verify": "judgment"
+    },
+    {
+      "id": "round.trip-tests-assert-sha-256",
+      "statement": "Round-trip tests assert SHA-256 byte-exact restore.",
+      "verify": "judgment"
+    },
+    {
+      "id": "dry.run-tests-assert-originals-are",
+      "statement": "Dry-run tests assert originals are not touched.",
+      "verify": "judgment"
+    },
+    {
+      "id": "selector.tests-cover-id-exact-name",
+      "statement": "Selector tests cover ID, exact name, slug, fuzzy query, provider-prefixed selector, and ambiguity.",
+      "verify": "judgment"
+    }
+  ]
+}

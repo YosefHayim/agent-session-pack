@@ -1,4 +1,4 @@
-import { cp, mkdir, rm, stat } from 'node:fs/promises';
+import { cp, mkdir, rm } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import { Effect } from 'effect';
 import { createZstdCompression } from './archiveReader.js';
@@ -12,22 +12,26 @@ import type {
   ProviderMode,
   SessionSourceKind,
 } from './sessionStore.js';
+import { discoverStoreSessions } from './sessionStore.js';
 
 const MAX_ARCHIVE_EVIDENCE_SOURCE_BYTES = 25 * 1024 * 1024;
 const MAX_BACKUP_EVIDENCE_SOURCE_BYTES = 128 * 1024 * 1024;
 const MAX_TITLE_PREVIEW_LENGTH = 96;
 
 /**
- * Per-provider byte-exact compression evidence produced by a local run.
+ * Describes discovered sessions and copied proof samples for one provider.
  */
 export type LocalEvidenceEntry = {
   readonly provider: ProviderId;
+  /** Sessions discovered in the provider store before proof sampling. */
   readonly foundSessions: number;
+  /** Sources copied into the isolated proof workspace and measured. */
+  readonly sampledSources: number;
   readonly mode: ProviderMode;
-  readonly sourceBytes: number;
-  readonly archiveBytes: number;
-  readonly savedPercent: number;
-  readonly byteExact: boolean;
+  readonly sourceBytes?: number;
+  readonly archiveBytes?: number;
+  readonly savedPercent?: number;
+  readonly byteExact?: boolean;
   readonly originalTouched: boolean;
   readonly titlePreview?: string;
   readonly originalPath?: string;
@@ -42,9 +46,11 @@ export type LocalEvidenceEntry = {
 };
 
 /**
- * Aggregated local evidence report across all inspected providers.
+ * Aggregates provider discovery under the sampled-copy proof scope.
  */
 export type LocalEvidenceReport = {
+  /** Declares that byte measurements describe copied samples rather than whole stores. */
+  readonly scope: 'sampled-copy-proof';
   readonly workRoot: string;
   readonly evidence: ReadonlyArray<LocalEvidenceEntry>;
 };
@@ -98,6 +104,14 @@ export const runLocalEvidence = (
       }
 
       if (selected.sizeBytes > maxEvidenceSourceBytes) {
+        evidence.push({
+          provider: provider.id,
+          foundSessions: sessions.length,
+          sampledSources: 0,
+          mode: provider.mode,
+          originalTouched: false,
+          maxEvidenceSourceBytes,
+        });
         continue;
       }
 
@@ -135,6 +149,7 @@ export const runLocalEvidence = (
       evidence.push({
         provider: provider.id,
         foundSessions: sessions.length,
+        sampledSources: 1,
         mode: provider.mode,
         sourceKind,
         titlePreview: formatTitlePreview(selected.title),
@@ -159,6 +174,7 @@ export const runLocalEvidence = (
     }
 
     return {
+      scope: 'sampled-copy-proof',
       workRoot: request.workRoot,
       evidence,
     };
@@ -175,17 +191,7 @@ const discoverProviderSessions = (
     const discovered = [];
 
     for (const root of roots) {
-      const exists = yield* Effect.promise(() =>
-        stat(root)
-          .then(() => true)
-          .catch(() => false),
-      );
-
-      if (!exists) {
-        continue;
-      }
-
-      const sessions = yield* provider.discover({
+      const sessions = yield* discoverStoreSessions(provider, {
         provider: provider.id,
         path: root,
       });

@@ -109,15 +109,18 @@ describe('savings command', () => {
     await Effect.runPromise(runSavingsCommand({ provider: 'codex', json: true }));
 
     const payload = JSON.parse(stdoutWrites.join('')) as {
+      readonly scope: string;
       readonly evidence: ReadonlyArray<{
         readonly provider: string;
         readonly originalTouched: boolean;
         readonly byteExact: boolean;
         readonly originalPath?: string;
         readonly foundSessions: number;
+        readonly sampledSources: number;
       }>;
     };
 
+    expect(payload.scope).toBe('sampled-copy-proof');
     expect(payload.evidence).toHaveLength(1);
     expect(payload.evidence[0]).toMatchObject({
       provider: 'codex',
@@ -125,6 +128,7 @@ describe('savings command', () => {
       byteExact: true,
       originalPath: sessionPath,
       foundSessions: 1,
+      sampledSources: 1,
     });
   });
 

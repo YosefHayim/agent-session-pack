@@ -89,6 +89,20 @@ describe('scan command', () => {
     expect(process.exitCode).toBeUndefined();
   });
 
+  it('treats absent provider roots as providers without installed stores', async () => {
+    const home = await createWorkspace();
+    process.env.HOME = home;
+
+    await Effect.runPromise(runScanCommand({ json: true }));
+
+    const payload = JSON.parse(stdoutWrites.join('')) as {
+      readonly sessions: ReadonlyArray<unknown>;
+    };
+    expect(payload.sessions).toEqual([]);
+    expect(stderrWrites).toEqual([]);
+    expect(process.exitCode).toBeUndefined();
+  });
+
   it('discovers synthetic codex sessions in JSON mode', async () => {
     const home = await createWorkspace();
     const session = await writeCodexSession(home);

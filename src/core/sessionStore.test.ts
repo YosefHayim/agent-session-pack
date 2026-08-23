@@ -140,6 +140,7 @@ describe('sessionStore discovery helpers', () => {
   it('scans stores through provider adapters and skips unknown providers', async () => {
     const workspace = await createWorkspace();
     const codexRoot = join(workspace, 'codex');
+    await mkdir(codexRoot, { recursive: true });
     const session: DiscoveredSession = {
       id: 'session-1',
       provider: 'codex',

@@ -29,6 +29,10 @@ export const formatHumanEvidenceReport = (report: LocalEvidenceReport): string =
     (totalSessions, entry) => totalSessions + entry.foundSessions,
     0,
   );
+  const totalSampledSources = report.evidence.reduce(
+    (totalSamples, entry) => totalSamples + entry.sampledSources,
+    0,
+  );
   const touchedOriginals = report.evidence.some((entry) => entry.originalTouched);
   const totalSavedPercent = savedPercent(totalSourceBytes, totalArchiveBytes);
 
@@ -36,11 +40,13 @@ export const formatHumanEvidenceReport = (report: LocalEvidenceReport): string =
     'Local evidence',
     '',
     'Copies only. Real session files are not modified.',
+    'One eligible source per provider is copied and measured.',
+    'Proof bytes are not a whole-store estimate.',
     '',
-    'Provider   Sessions  Mode         Before     After      Saved    Exact   Touched',
+    'Provider      Discovered  Samples  Mode         Proof before  Proof after  Saved    Exact   Touched',
     ...report.evidence.map(formatEvidenceRow),
-    '--------   --------  ----         ------     -----      -----    -----   -------',
-    `${'total'.padEnd(10)} ${String(totalFoundSessions).padEnd(9)} ${''.padEnd(12)} ${formatBytes(totalSourceBytes).padEnd(10)} ${formatBytes(totalArchiveBytes).padEnd(10)} ${formatPercent(totalSavedPercent).padEnd(8)} ${''.padEnd(7)} ${touchedOriginals ? 'yes' : 'no'}`,
+    '------------- -----------  -------- ----------- ------------- ------------ -------- ------- -------',
+    `${'sample total'.padEnd(13)} ${String(totalFoundSessions).padEnd(11)} ${String(totalSampledSources).padEnd(8)} ${''.padEnd(12)} ${formatBytes(totalSourceBytes).padEnd(13)} ${formatBytes(totalArchiveBytes).padEnd(12)} ${formatPercent(totalSavedPercent).padEnd(8)} ${''.padEnd(7)} ${touchedOriginals ? 'yes' : 'no'}`,
     '',
     `Original sessions touched: ${touchedOriginals ? 'yes' : 'no'}`,
     `Work root: ${report.workRoot}`,
@@ -63,16 +69,17 @@ export const formatJsonEvidenceReport = (report: LocalEvidenceReport): string =>
   `${JSON.stringify(report, null, 2)}\n`;
 
 const formatEvidenceRow = (entry: LocalEvidenceEntry): string => {
-  const provider = entry.provider.padEnd(10);
-  const foundSessions = String(entry.foundSessions).padEnd(9);
+  const provider = entry.provider.padEnd(13);
+  const foundSessions = String(entry.foundSessions).padEnd(11);
+  const sampledSources = String(entry.sampledSources).padEnd(8);
   const mode = entry.mode.padEnd(12);
-  const before = formatBytes(entry.sourceBytes).padEnd(10);
-  const after = formatBytes(entry.archiveBytes).padEnd(10);
+  const before = formatBytes(entry.sourceBytes).padEnd(13);
+  const after = formatBytes(entry.archiveBytes).padEnd(12);
   const saved = formatPercent(entry.savedPercent).padEnd(8);
   const exact = (entry.byteExact ? 'yes' : 'no').padEnd(7);
   const touched = entry.originalTouched ? 'yes' : 'no';
 
-  return `${provider} ${foundSessions} ${mode} ${before} ${after} ${saved} ${exact} ${touched}`;
+  return `${provider} ${foundSessions} ${sampledSources} ${mode} ${before} ${after} ${saved} ${exact} ${touched}`;
 };
 
 const sumEvidenceBytes = (

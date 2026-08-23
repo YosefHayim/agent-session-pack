@@ -34,7 +34,8 @@ export const formatHumanEvidenceReport = (report: LocalEvidenceReport): string =
     0,
   );
   const touchedOriginals = report.evidence.some((entry) => entry.originalTouched);
-  const totalSavedPercent = savedPercent(totalSourceBytes, totalArchiveBytes);
+  const totalSavedPercent =
+    totalSampledSources === 0 ? undefined : savedPercent(totalSourceBytes, totalArchiveBytes);
 
   return [
     'Local evidence',
@@ -46,7 +47,7 @@ export const formatHumanEvidenceReport = (report: LocalEvidenceReport): string =
     'Provider      Discovered  Samples  Mode         Proof before  Proof after  Saved    Exact   Touched',
     ...report.evidence.map(formatEvidenceRow),
     '------------- -----------  -------- ----------- ------------- ------------ -------- ------- -------',
-    `${'sample total'.padEnd(13)} ${String(totalFoundSessions).padEnd(11)} ${String(totalSampledSources).padEnd(8)} ${''.padEnd(12)} ${formatBytes(totalSourceBytes).padEnd(13)} ${formatBytes(totalArchiveBytes).padEnd(12)} ${formatPercent(totalSavedPercent).padEnd(8)} ${''.padEnd(7)} ${touchedOriginals ? 'yes' : 'no'}`,
+    `${'sample total'.padEnd(13)} ${String(totalFoundSessions).padEnd(11)} ${String(totalSampledSources).padEnd(8)} ${''.padEnd(12)} ${formatMaybeBytes(totalSourceBytes, totalSampledSources).padEnd(13)} ${formatMaybeBytes(totalArchiveBytes, totalSampledSources).padEnd(12)} ${formatMaybePercent(totalSavedPercent).padEnd(8)} ${''.padEnd(7)} ${touchedOriginals ? 'yes' : 'no'}`,
     '',
     `Original sessions touched: ${touchedOriginals ? 'yes' : 'no'}`,
     `Work root: ${report.workRoot}`,
@@ -73,10 +74,10 @@ const formatEvidenceRow = (entry: LocalEvidenceEntry): string => {
   const foundSessions = String(entry.foundSessions).padEnd(11);
   const sampledSources = String(entry.sampledSources).padEnd(8);
   const mode = entry.mode.padEnd(12);
-  const before = formatBytes(entry.sourceBytes).padEnd(13);
-  const after = formatBytes(entry.archiveBytes).padEnd(12);
-  const saved = formatPercent(entry.savedPercent).padEnd(8);
-  const exact = (entry.byteExact ? 'yes' : 'no').padEnd(7);
+  const before = formatOptionalBytes(entry.sourceBytes).padEnd(13);
+  const after = formatOptionalBytes(entry.archiveBytes).padEnd(12);
+  const saved = formatMaybePercent(entry.savedPercent).padEnd(8);
+  const exact = formatExact(entry.byteExact).padEnd(7);
   const touched = entry.originalTouched ? 'yes' : 'no';
 
   return `${provider} ${foundSessions} ${sampledSources} ${mode} ${before} ${after} ${saved} ${exact} ${touched}`;
@@ -85,7 +86,13 @@ const formatEvidenceRow = (entry: LocalEvidenceEntry): string => {
 const sumEvidenceBytes = (
   evidence: ReadonlyArray<LocalEvidenceEntry>,
   key: 'archiveBytes' | 'sourceBytes',
-): number => evidence.reduce((totalBytes, entry) => totalBytes + entry[key], 0);
+): number => evidence.reduce((totalBytes, entry) => totalBytes + (entry[key] ?? 0), 0);
+
+const formatOptionalBytes = (bytes: number | undefined): string =>
+  bytes === undefined ? '-' : formatBytes(bytes);
+
+const formatMaybeBytes = (bytes: number, sampledSources: number): string =>
+  sampledSources === 0 ? '-' : formatBytes(bytes);
 
 const savedPercent = (sourceBytes: number, archiveBytes: number): number => {
   if (sourceBytes === 0) {
@@ -96,3 +103,14 @@ const savedPercent = (sourceBytes: number, archiveBytes: number): number => {
 };
 
 const formatPercent = (percent: number): string => `${percent.toFixed(1)}%`;
+
+const formatMaybePercent = (percent: number | undefined): string =>
+  percent === undefined ? '-' : formatPercent(percent);
+
+const formatExact = (byteExact: boolean | undefined): string => {
+  if (byteExact === undefined) {
+    return '-';
+  }
+
+  return byteExact ? 'yes' : 'no';
+};

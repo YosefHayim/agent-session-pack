@@ -29,6 +29,13 @@ describe('human evidence output', () => {
           byteExact: true,
           originalTouched: false,
         },
+        {
+          provider: 'claude',
+          foundSessions: 1,
+          sampledSources: 0,
+          mode: 'archive',
+          originalTouched: false,
+        },
       ],
     });
 
@@ -46,8 +53,9 @@ describe('human evidence output', () => {
     expect(output).toContain('8');
     expect(output).toContain('86.2%');
     expect(output).toContain('sample total');
-    expect(output).toContain('50');
+    expect(output).toContain('51');
     expect(output).toContain('2');
+    expect(output).toMatch(/claude\s+1\s+0\s+archive\s+-\s+-\s+-\s+-\s+no/);
     expect(output).toContain('Original sessions touched: no');
     expect(output).toContain('/tmp/agent-session-pack/evidence');
   });

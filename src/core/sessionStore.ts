@@ -337,7 +337,17 @@ export const discoverStoreSessions = (
       return [];
     }
 
-    return yield* provider.discover(store);
+    return yield* provider.discover(store).pipe(
+      Effect.catchTag('ProviderDiscoveryError', (discoveryError) =>
+        Effect.flatMap(providerStoreExists(store), (stillExists) => {
+          if (!stillExists) {
+            return Effect.succeed<ReadonlyArray<DiscoveredSession>>([]);
+          }
+
+          return Effect.fail(discoveryError);
+        }),
+      ),
+    );
   });
 
 const collectJsonlSessionFiles = async (

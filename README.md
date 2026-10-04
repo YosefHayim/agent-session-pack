@@ -334,6 +334,5 @@ pnpm build
 
 Project intent lives in [PROJECT.md](PROJECT.md). Agent editing rules live in
 [AGENTS.md](AGENTS.md). Code style and command contracts live in
-[CODE-STYLE.md](CODE-STYLE.md). Architecture decisions live in
-[docs/adr/current](docs/adr/current/). The public AI index lives in
+[CODE-STYLE.md](CODE-STYLE.md). The public AI index lives in
 [llms.txt](llms.txt), following the [llms.txt](https://llmstxt.org/) convention.

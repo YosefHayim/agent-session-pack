@@ -1,10 +1,27 @@
+# dependencies
 node_modules/
+
+# build
 dist/
+
+# env
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+
+# testing
 coverage/
 .vault-test/
-.agent-session-pack/
-.worktrees/
-scripts/dev/
-*.log
+
+# editor and OS
 .DS_Store
-.env
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# local
+.worktrees/

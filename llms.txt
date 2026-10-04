@@ -9,7 +9,6 @@
 - [Project purpose](https://github.com/YosefHayim/agent-session-pack/blob/main/PROJECT.md): Scope, users, non-goals, and success criteria.
 - [Agent instructions](https://github.com/YosefHayim/agent-session-pack/blob/main/AGENTS.md): Editing rules for coding agents.
 - [Code style](https://github.com/YosefHayim/agent-session-pack/blob/main/CODE-STYLE.md): TypeScript, Effect, CLI, output, and test conventions.
-- [Architecture decisions](https://github.com/YosefHayim/agent-session-pack/tree/main/docs/adr/current): Current ADRs for CLI contract, safety model, dependency choices, and CI workflows.
 - [Roundtrip examples](https://github.com/YosefHayim/agent-session-pack/tree/main/examples/roundtrip): Tiny before/archive/after fixtures that show byte-exact restore.
 
 ## What It Does In v0.2.0

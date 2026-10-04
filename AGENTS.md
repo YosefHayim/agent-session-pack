@@ -54,8 +54,6 @@ tests/           # shared helpers/fixtures + optional *.integration.test.ts
 examples/roundtrip/
 scripts/
   evidenceLocal.ts
-  dev/       # ignored scratch
-docs/adr/current/
 .github/workflows/
 ```
 
@@ -66,7 +64,6 @@ Root guidance stays compact. Deeper detail lives in dedicated files:
 - `PROJECT.md`: purpose, direction, non-goals.
 - `CONTEXT.md` and `LANGUAGE.md`: domain model and vocabulary.
 - `CODE-STYLE.md`: full code style, CLI contract, and test policy.
-- `docs/adr/current`: architecture decisions.
 
 ## Validation
 

@@ -51,7 +51,7 @@ src/
   output/
   **/*.test.ts   # unit tests colocated next to source
 tests/           # shared helpers/fixtures + optional *.integration.test.ts
-examples/roundtrip/
+examples/hello-world/
 scripts/
   evidenceLocal.ts
 .github/workflows/

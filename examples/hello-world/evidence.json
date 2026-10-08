@@ -4,9 +4,9 @@
   "sessions": [
     {
       "provider": "codex",
-      "beforePath": "examples/roundtrip/before/codex-session.jsonl",
-      "archivePath": "examples/roundtrip/archives/codex-session.jsonl.zst",
-      "afterPath": "examples/roundtrip/after/codex-session.jsonl",
+      "beforePath": "examples/hello-world/before/codex-session.jsonl",
+      "archivePath": "examples/hello-world/archives/codex-session.jsonl.zst",
+      "afterPath": "examples/hello-world/after/codex-session.jsonl",
       "beforeBytes": 139,
       "archiveBytes": 120,
       "afterBytes": 139,
@@ -17,9 +17,9 @@
     },
     {
       "provider": "claude",
-      "beforePath": "examples/roundtrip/before/claude-session.jsonl",
-      "archivePath": "examples/roundtrip/archives/claude-session.jsonl.zst",
-      "afterPath": "examples/roundtrip/after/claude-session.jsonl",
+      "beforePath": "examples/hello-world/before/claude-session.jsonl",
+      "archivePath": "examples/hello-world/archives/claude-session.jsonl.zst",
+      "afterPath": "examples/hello-world/after/claude-session.jsonl",
       "beforeBytes": 166,
       "archiveBytes": 123,
       "afterBytes": 166,
@@ -30,9 +30,9 @@
     },
     {
       "provider": "kiro",
-      "beforePath": "examples/roundtrip/before/kiro-session.jsonl",
-      "archivePath": "examples/roundtrip/archives/kiro-session.jsonl.zst",
-      "afterPath": "examples/roundtrip/after/kiro-session.jsonl",
+      "beforePath": "examples/hello-world/before/kiro-session.jsonl",
+      "archivePath": "examples/hello-world/archives/kiro-session.jsonl.zst",
+      "afterPath": "examples/hello-world/after/kiro-session.jsonl",
       "beforeBytes": 138,
       "archiveBytes": 119,
       "afterBytes": 138,

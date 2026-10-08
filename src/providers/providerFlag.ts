@@ -1,6 +1,6 @@
 import { Either, Schema } from 'effect';
-import { allProviders } from '../providers/allProviders.js';
-import { type ProviderAdapter, type ProviderId, ProviderIdSchema } from './sessionModel.js';
+import { type ProviderAdapter, type ProviderId, ProviderIdSchema } from '../shared/sessionModel.js';
+import { allProviders } from './allProviders.js';
 
 /**
  * Parses an optional `--provider` value into a provider id.

@@ -1,8 +1,8 @@
 import { defineCommand } from 'citty';
 import { Effect } from 'effect';
+import { selectProviders } from '../../providers/providerFlag.js';
 import { resolveApplyConfirmation } from '../../shared/applyConfirmation.js';
 import { requireHome } from '../../shared/homeEnv.js';
-import { selectProviders } from '../../shared/providerFlag.js';
 import type {
   ProviderAdapter,
   ProviderDiscoveryError,

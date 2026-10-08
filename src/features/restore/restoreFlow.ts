@@ -12,7 +12,7 @@ import { runUnpackCommand } from './unpackCommand.js';
  * @example
  * ```ts
  * import { runRestoreFlow } from './restoreFlow.js';
- * import { clackPromptAdapter } from '../shared/promptAdapter.js';
+ * import { clackPromptAdapter } from '../../shared/promptAdapter.js';
  *
  * await runRestoreFlow({ prompts: clackPromptAdapter });
  * ```

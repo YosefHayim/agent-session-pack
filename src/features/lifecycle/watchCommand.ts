@@ -1,8 +1,8 @@
 import { spawn } from 'node:child_process';
 import { defineCommand } from 'citty';
 import { Effect } from 'effect';
+import { parseOptionalProvider } from '../../providers/providerFlag.js';
 import { requireHome } from '../../shared/homeEnv.js';
-import { parseOptionalProvider } from '../../shared/providerFlag.js';
 import type { ArchiveFileSystemError } from '../archive/archiveFileSystem.js';
 import type { ArchiveVerificationError, CompressionAdapter } from '../archive/archiveWriter.js';
 import type { ManifestStoreError } from '../archive/manifestStore.js';

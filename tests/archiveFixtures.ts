@@ -90,7 +90,7 @@ export const writeColdSession = async (
  * @returns Path of the written session directory.
  * @example
  * ```ts
- * import { writeSessionDirectory } from '../../../tests/archiveFixtures.js';
+ * import { writeSessionDirectory } from './archiveFixtures.js';
  *
  * const sessionPath = await writeSessionDirectory(workspace);
  * ```

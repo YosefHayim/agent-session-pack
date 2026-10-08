@@ -15,7 +15,7 @@ import { runScanCommand } from './scanCommand.js';
  * @example
  * ```ts
  * import { runReviewSessions } from './reviewFlow.js';
- * import { clackPromptAdapter } from '../shared/promptAdapter.js';
+ * import { clackPromptAdapter } from '../../shared/promptAdapter.js';
  *
  * await runReviewSessions({ prompts: clackPromptAdapter });
  * ```

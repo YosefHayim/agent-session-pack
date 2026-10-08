@@ -18,7 +18,7 @@ import { DEFAULT_COLD_AFTER, DEFAULT_COLD_AFTER_MS } from './packPlan.js';
  * @example
  * ```ts
  * import { runPackFlow } from './packFlow.js';
- * import { clackPromptAdapter } from '../shared/promptAdapter.js';
+ * import { clackPromptAdapter } from '../../shared/promptAdapter.js';
  *
  * await runPackFlow({ prompts: clackPromptAdapter });
  * ```

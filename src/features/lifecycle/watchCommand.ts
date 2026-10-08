@@ -3,7 +3,6 @@ import { defineCommand } from 'citty';
 import { Effect } from 'effect';
 import { requireHome } from '../../shared/homeEnv.js';
 import { parseOptionalProvider } from '../../shared/providerFlag.js';
-import { createZstdCompression } from '../archive/archiveReader.js';
 import type {
   ArchiveFileSystemError,
   ArchiveVerificationError,
@@ -11,6 +10,7 @@ import type {
 } from '../archive/archiveWriter.js';
 import type { ManifestStoreError } from '../archive/manifestStore.js';
 import { resolveDefaultVaultPath } from '../archive/sessionArchive.js';
+import { createZstdCompression } from '../archive/zstdCompression.js';
 import {
   isRestoreOnLaunchEnabled,
   readSetupConfig,

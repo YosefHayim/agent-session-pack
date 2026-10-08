@@ -2,7 +2,6 @@ import { defineCommand } from 'citty';
 import { Effect, Schema } from 'effect';
 import { requireHome } from '../../shared/homeEnv.js';
 import { type ProviderId, ProviderIdSchema } from '../../shared/sessionStore.js';
-import { createZstdCompression } from '../archive/archiveReader.js';
 import type {
   ArchiveFileSystemError,
   ArchiveVerificationError,
@@ -14,6 +13,7 @@ import {
   ensureSessionRestored,
   resolveDefaultVaultPath,
 } from '../archive/sessionArchive.js';
+import { createZstdCompression } from '../archive/zstdCompression.js';
 import {
   isRestoreOnLaunchEnabled,
   readSetupConfig,

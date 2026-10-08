@@ -190,7 +190,7 @@ export const resolveDefaultVaultPath = (home: string): string => join(home, '.ag
  * @example
  * ```ts
  * import { packProviderSessions } from './sessionArchive.js';
- * import { createZstdCompression } from './archiveReader.js';
+ * import { createZstdCompression } from './zstdCompression.js';
  *
  * const report = await Effect.runPromise(
  *   packProviderSessions({
@@ -306,7 +306,7 @@ export const listVaultSessionManifests = (
  * @example
  * ```ts
  * import { ensureSessionRestored } from './sessionArchive.js';
- * import { createZstdCompression } from './archiveReader.js';
+ * import { createZstdCompression } from './zstdCompression.js';
  *
  * const report = await Effect.runPromise(
  *   ensureSessionRestored({
@@ -415,7 +415,7 @@ const ensureRestoredReason = (status: RestoreOutcome): string | undefined => {
  * @example
  * ```ts
  * import { unpackProviderSessions } from './sessionArchive.js';
- * import { createZstdCompression } from './archiveReader.js';
+ * import { createZstdCompression } from './zstdCompression.js';
  *
  * const report = await Effect.runPromise(
  *   unpackProviderSessions({

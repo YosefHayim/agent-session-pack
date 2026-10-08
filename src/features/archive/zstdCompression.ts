@@ -19,7 +19,7 @@ const execFileAsync = promisify(execFile);
  * @returns Adapter used by production archive workflows.
  * @example
  * ```ts
- * import { createZstdCompression } from './archiveReader.js';
+ * import { createZstdCompression } from './zstdCompression.js';
  *
  * const compression = createZstdCompression();
  * ```

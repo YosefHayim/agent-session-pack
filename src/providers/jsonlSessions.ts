@@ -26,7 +26,7 @@ export type JsonlProviderDiscoveryOptions = {
  * @returns Effect containing discovered sessions.
  * @example
  * ```ts
- * import { discoverJsonlProviderSessions } from './jsonlProviderDiscovery.js';
+ * import { discoverJsonlProviderSessions } from './jsonlSessions.js';
  *
  * const sessions = discoverJsonlProviderSessions({ provider, store, excludePathParts: [] });
  * ```

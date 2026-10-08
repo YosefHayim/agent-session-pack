@@ -3,13 +3,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Effect, Either } from 'effect';
 import { describe, expect, it } from 'vitest';
-import { createZstdCompression } from './archiveReader.js';
 import { ArchiveFileSystemError } from './archiveWriter.js';
+import { createZstdCompression } from './zstdCompression.js';
 
 const createWorkspace = (): Promise<string> =>
   mkdtemp(join(tmpdir(), 'agent-session-pack-archive-reader-'));
 
-describe('archiveReader createZstdCompression', () => {
+describe('zstdCompression createZstdCompression', () => {
   it('compresses and decompresses a file with the system zstd binary', async () => {
     const workspace = await createWorkspace();
     const sourcePath = join(workspace, 'session.jsonl');

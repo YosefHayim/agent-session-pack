@@ -4,10 +4,10 @@ import { allProviders } from '../../providers/allProviders.js';
 import { resolveApplyConfirmation } from '../../shared/applyConfirmation.js';
 import { requireHome } from '../../shared/homeEnv.js';
 import type { ProviderDiscoveryError } from '../../shared/sessionStore.js';
-import { createZstdCompression } from '../archive/archiveReader.js';
 import type { ArchiveWriteError, CompressionAdapter } from '../archive/archiveWriter.js';
 import type { ManifestStoreError } from '../archive/manifestStore.js';
 import { packProviderSessions, resolveDefaultVaultPath } from '../archive/sessionArchive.js';
+import { createZstdCompression } from '../archive/zstdCompression.js';
 import { formatHumanPackReport } from '../pack/packOutput.js';
 import { parseDurationMs } from '../pack/packPlan.js';
 import {

@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import type { ProviderAdapter } from '../shared/sessionStore.js';
-import { discoverJsonlProviderSessions } from './jsonlProviderDiscovery.js';
+import { discoverJsonlProviderSessions } from './jsonlSessions.js';
 
 /**
  * Archive provider adapter for Kiro JSONL sessions.

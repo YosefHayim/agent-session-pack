@@ -9,10 +9,10 @@ import {
   type SessionStore,
   scanStores,
 } from '../../shared/sessionStore.js';
-import { createZstdCompression } from '../archive/archiveReader.js';
 import type { ArchiveWriteError, CompressionAdapter } from '../archive/archiveWriter.js';
 import type { ManifestStoreError } from '../archive/manifestStore.js';
 import { packProviderSessions, resolveDefaultVaultPath } from '../archive/sessionArchive.js';
+import { createZstdCompression } from '../archive/zstdCompression.js';
 import {
   formatHumanPackPlan,
   formatHumanPackReport,

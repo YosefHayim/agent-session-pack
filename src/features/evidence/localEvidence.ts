@@ -9,10 +9,10 @@ import type {
   SessionSourceKind,
 } from '../../shared/sessionStore.js';
 import { discoverStoreSessions } from '../../shared/sessionStore.js';
-import { createZstdCompression } from '../archive/archiveReader.js';
 import type { ArchiveWriteError } from '../archive/archiveWriter.js';
 import { sha256Path, writeVerifiedArchive } from '../archive/archiveWriter.js';
-import { selectNewestSessionWithinSize } from './sessionSelection.js';
+import { createZstdCompression } from '../archive/zstdCompression.js';
+import { selectNewestSessionWithinSize } from './evidenceSample.js';
 
 const MAX_ARCHIVE_EVIDENCE_SOURCE_BYTES = 25 * 1024 * 1024;
 const MAX_BACKUP_EVIDENCE_SOURCE_BYTES = 128 * 1024 * 1024;

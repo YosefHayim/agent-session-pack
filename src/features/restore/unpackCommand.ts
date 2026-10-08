@@ -4,7 +4,6 @@ import { resolveApplyConfirmation } from '../../shared/applyConfirmation.js';
 import { requireHome } from '../../shared/homeEnv.js';
 import { selectProviders } from '../../shared/providerFlag.js';
 import type { ProviderAdapter } from '../../shared/sessionStore.js';
-import { createZstdCompression } from '../archive/archiveReader.js';
 import type {
   ArchiveFileSystemError,
   ArchiveVerificationError,
@@ -12,6 +11,7 @@ import type {
 } from '../archive/archiveWriter.js';
 import type { ManifestStoreError } from '../archive/manifestStore.js';
 import { resolveDefaultVaultPath, unpackProviderSessions } from '../archive/sessionArchive.js';
+import { createZstdCompression } from '../archive/zstdCompression.js';
 import { formatHumanUnpackReport, formatJsonArchiveReport } from '../pack/packOutput.js';
 
 /**

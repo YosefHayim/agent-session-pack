@@ -14,7 +14,7 @@ export type SizeBoundSession = {
  * @returns Newest eligible session, or the smallest session when all are oversized.
  * @example
  * ```ts
- * import { selectNewestSessionWithinSize } from './sessionSelection.js';
+ * import { selectNewestSessionWithinSize } from './evidenceSample.js';
  *
  * const selected = selectNewestSessionWithinSize(sessions, 25 * 1024 * 1024);
  * ```

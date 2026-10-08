@@ -2,7 +2,7 @@ import { join } from 'node:path';
 import { Effect } from 'effect';
 import type { ProviderAdapter } from '../shared/sessionStore.js';
 import { discoverDirectoryProviderSessions } from './directorySessions.js';
-import { discoverJsonlProviderSessions } from './jsonlProviderDiscovery.js';
+import { discoverJsonlProviderSessions } from './jsonlSessions.js';
 
 /**
  * Archive provider adapter for OpenCode local session stores.

@@ -105,7 +105,7 @@ export type ArchiveWriteError = ArchiveFileSystemError | ArchiveVerificationErro
  * ```ts
  * import { Effect } from 'effect';
  * import { writeVerifiedArchive } from './archiveWriter.js';
- * import { createZstdCompression } from './archiveReader.js';
+ * import { createZstdCompression } from './zstdCompression.js';
  *
  * const verified = await Effect.runPromise(
  *   writeVerifiedArchive({
@@ -405,7 +405,7 @@ export type DirectoryRestoreRequest = {
  * ```ts
  * import { Effect } from 'effect';
  * import { restoreDirectoryArchive } from './archiveWriter.js';
- * import { createZstdCompression } from './archiveReader.js';
+ * import { createZstdCompression } from './zstdCompression.js';
  *
  * await Effect.runPromise(
  *   restoreDirectoryArchive({

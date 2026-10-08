@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { selectNewestSessionWithinSize } from './sessionSelection.js';
+import { selectNewestSessionWithinSize } from './evidenceSample.js';
 
-describe('session selection', () => {
+describe('evidence sample', () => {
   it('selects the newest session that fits under the size cap', () => {
     const selected = selectNewestSessionWithinSize(
       [

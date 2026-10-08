@@ -33,7 +33,7 @@
 - **バイト単位で完全な復元** - 元ファイルを削除する前に、すべてのアーカイブを復元して SHA-256 で検証します。
 - **デフォルトはドライラン** - `--apply` なしでは何も削除されず、`--yes` がなければ確認を求めます。
 - **コールドセッションの絞り込み** - `--older-than 7d`（`12h`、`1d`、`2w`、`30d` も可）で作業中のセッションを守ります。
-- **エージェント向け設計** - `guide --json` が安全なコマンド一覧を出力し、すべてのコマンドが安定した `--json` 出力を持ちます。
+- **エージェント向け設計** - `guide --json` が安全なコマンド一覧を出力し、主要なコマンドが安定した `--json` 出力を持ちます。
 
 ## 対応エージェント
 
@@ -81,7 +81,7 @@ npx --yes agent-session-pack pack --all-providers --older-than 7d --apply
 
 # 4. 必要なときに復元
 npx --yes agent-session-pack unpack --all-providers --apply
-npx --yes agent-session-pack restore <セッション ID または名前>
+npx --yes agent-session-pack restore SESSION_ID_OR_NAME
 ```
 
 引数なしで `npx --yes agent-session-pack` を実行すると、ガイド付きメニューが開きます。

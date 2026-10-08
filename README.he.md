@@ -35,7 +35,7 @@
 - **שחזור מדויק ברמת הבייט** - כל ארכיון משוחזר ונבדק ב־SHA-256 לפני מחיקת המקור.
 - **הרצת ניסיון כברירת מחדל** - שום דבר לא נמחק בלי `--apply`, ו־`--apply` מבקש אישור אלא אם מעבירים `--yes`.
 - **סינון סשנים קרים** - `--older-than 7d` (או `12h`, `1d`, `2w`, `30d`) שומר על העבודה הפעילה.
-- **מותאם לסוכנים** - `guide --json` מדפיס מפת פקודות בטוחה, ולכל פקודה יש פלט `--json` יציב.
+- **מותאם לסוכנים** - `guide --json` מדפיס מפת פקודות בטוחה, ולפקודות העיקריות יש פלט `--json` יציב.
 
 ## סוכנים נתמכים
 
@@ -85,7 +85,7 @@ npx --yes agent-session-pack pack --all-providers --older-than 7d --apply
 
 # 4. Restore when needed
 npx --yes agent-session-pack unpack --all-providers --apply
-npx --yes agent-session-pack restore <session-id-or-name>
+npx --yes agent-session-pack restore SESSION_ID_OR_NAME
 ```
 
 <div dir="rtl">

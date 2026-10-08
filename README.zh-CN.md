@@ -33,7 +33,7 @@
 - **逐字节精确还原** - 每个归档在删除原文件前都会被还原并用 SHA-256 校验。
 - **默认试运行** - 没有 `--apply` 不会删除任何内容；除非传入 `--yes`，`--apply` 会先请求确认。
 - **冷会话筛选** - `--older-than 7d`（也支持 `12h`、`1d`、`2w`、`30d`）保护正在进行的工作。
-- **为代理设计** - `guide --json` 输出安全命令清单，每个命令都有稳定的 `--json` 输出。
+- **为代理设计** - `guide --json` 输出安全命令清单，主要命令都有稳定的 `--json` 输出。
 
 ## 支持的代理
 
@@ -81,7 +81,7 @@ npx --yes agent-session-pack pack --all-providers --older-than 7d --apply
 
 # 4. 需要时还原
 npx --yes agent-session-pack unpack --all-providers --apply
-npx --yes agent-session-pack restore <会话 ID 或名称>
+npx --yes agent-session-pack restore SESSION_ID_OR_NAME
 ```
 
 在终端中不带参数运行 `npx --yes agent-session-pack` 会打开引导菜单。

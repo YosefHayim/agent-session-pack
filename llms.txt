@@ -48,7 +48,7 @@ npx --yes agent-session-pack pack --max --dry-run
 npx --yes agent-session-pack pack --all-providers --older-than 7d --apply
 npx --yes agent-session-pack pack --all-providers --older-than 7d --apply --yes --json
 npx --yes agent-session-pack unpack --all-providers --apply
-npx --yes agent-session-pack restore <selector> --json
+npx --yes agent-session-pack restore SESSION_ID_OR_NAME --json
 npx --yes agent-session-pack lifecycle enable --json
 npx --yes agent-session-pack maintain --apply --yes --json
 ```

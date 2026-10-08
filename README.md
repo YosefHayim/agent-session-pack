@@ -59,7 +59,7 @@ No daemon, no cloud sync, no summarizing. Your sessions never leave your machine
 - **Byte-exact restore** - every archive is restored and verified with SHA-256 before the original is removed.
 - **Dry-run by default** - nothing is removed without `--apply`, and `--apply` asks first unless you pass `--yes`.
 - **Cold-session filter** - `--older-than 7d` (or `12h`, `1d`, `2w`, `30d`) keeps your active work untouched.
-- **Built for agents** - `guide --json` prints the safe command map, and every command has stable `--json` output with no prompts.
+- **Built for agents** - `guide --json` prints the safe command map, and the scan, check, pack, unpack, restore, and lifecycle commands have stable `--json` output with no prompts.
 - **Opt-in lifecycle** - provider wrappers restore a packed session when you open it, and `maintain` re-packs cold ones.
 - **Local-first** - no daemon, no network, no credentials read.
 
@@ -77,7 +77,7 @@ No daemon, no cloud sync, no summarizing. Your sessions never leave your machine
 | Cursor | Backup-only | `~/Library/Application Support/Cursor` |
 | Devin | Backup-only | `~/.local/share/devin/cli` (reads `sessions.db` metadata only) |
 
-**Archive** means sessions can be packed into the vault and restored. **Backup-only** means the agent shows up in scans and savings proof, but its native store is never changed.
+**Archive** means sessions can be packed into the vault and restored. **Backup-only** means the agent is listed as supported, but its native store is never changed. Cursor discovery currently returns no sessions.
 
 ## Benchmarks
 
@@ -167,7 +167,7 @@ Each session is archived into `~/.agent-session-pack`, restored and hash-checked
 
 ```bash
 npx --yes agent-session-pack unpack --all-providers --apply   # everything
-npx --yes agent-session-pack restore <session-id-or-name>      # one session
+npx --yes agent-session-pack restore SESSION_ID_OR_NAME       # one session
 ```
 
 Prefer a guided menu? Run `npx --yes agent-session-pack` with no arguments in a terminal. To keep the command on your path, install it globally with `npm install -g agent-session-pack`.
@@ -181,13 +181,13 @@ Prefer a guided menu? Run `npx --yes agent-session-pack` with no arguments in a 
 | `savings [--json]` | Same copy-only before/after proof | No |
 | `scan [--json]` | Lists session stores, sizes, and cold candidates | No |
 | `doctor [--json]` | Checks that `zstd` and `sqlite3` are installed | No |
-| `init [--apply]` | Shows the vault policy; `--apply` writes the config | Config only |
+| `init` | Shows the vault policy; in a terminal, opens guided setup that writes the config | Config only |
 | `pack --dry-run` | Previews cold sessions to pack | No |
 | `pack --apply [--yes]` | Archives, verifies, then removes originals | Yes |
 | `unpack --apply [--yes]` | Restores archived sessions to their original paths | Yes |
 | `restore <selector>` | Restores one session by id, name, or slug | Yes |
 | `open <session>` | Finds a session and restores it if packed | Yes |
-| `lifecycle enable\|disable\|status` | Installs or removes the auto-restore wrappers | Wrappers only |
+| `lifecycle enable\|disable\|status` | Installs or removes the auto-restore wrappers | Wrappers and config |
 | `maintain --apply [--yes]` | Re-packs sessions that went cold again | Yes |
 
 `preflight`, `watch`, and `ensure-restored` are called by the lifecycle wrappers; you rarely run them yourself.
@@ -219,7 +219,7 @@ npx --yes agent-session-pack lifecycle enable --json
 export PATH="$HOME/.agent-session-pack/bin:$PATH"
 
 # open or resume one session (restores it first if packed)
-npx --yes agent-session-pack open --provider grok <session-id> --json
+npx --yes agent-session-pack open --provider grok SESSION_ID --json
 
 # keep storage low after restores
 npx --yes agent-session-pack maintain --apply --yes --json

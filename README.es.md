@@ -33,7 +33,7 @@ Sin demonio, sin sincronización en la nube, sin resúmenes. Tus sesiones nunca 
 - **Restauración byte a byte** - cada archivo comprimido se restaura y se verifica con SHA-256 antes de borrar el original.
 - **Simulación por defecto** - nada se borra sin `--apply`, y `--apply` pide confirmación salvo que pases `--yes`.
 - **Filtro de sesiones frías** - `--older-than 7d` (o `12h`, `1d`, `2w`, `30d`) protege tu trabajo activo.
-- **Pensado para agentes** - `guide --json` muestra el mapa de comandos seguros y cada comando tiene salida `--json` estable.
+- **Pensado para agentes** - `guide --json` muestra el mapa de comandos seguros y los comandos principales tienen salida `--json` estable.
 
 ## Agentes compatibles
 
@@ -81,7 +81,7 @@ npx --yes agent-session-pack pack --all-providers --older-than 7d --apply
 
 # 4. Restaura cuando lo necesites
 npx --yes agent-session-pack unpack --all-providers --apply
-npx --yes agent-session-pack restore <id-o-nombre-de-sesion>
+npx --yes agent-session-pack restore SESSION_ID_OR_NAME
 ```
 
 Ejecuta `npx --yes agent-session-pack` sin argumentos para abrir un menú guiado en la terminal.

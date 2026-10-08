@@ -28,5 +28,5 @@ The project is a CLI-only tool for developers and coding agents. It should make 
 - `agent-session-pack scan` shows savings, locations, and cold candidates.
 - `agent-session-pack guide --json` shows the safe non-interactive command flow for agents.
 - `agent-session-pack pack --apply` removes originals only after verified byte-exact restore.
-- `agent-session-pack restore <selector>` restores native files by ID, name, slug, or picker.
+- `agent-session-pack restore <selector>` restores native files by ID, ID prefix, name, slug, or words from the name, and lists the matches instead of guessing when more than one session fits.
 - Normal tests never read or mutate real home AI session directories.

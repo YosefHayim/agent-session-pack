@@ -141,6 +141,7 @@ export const watchSessionStubs = (
           command: 'ensure-restored',
           vaultPath: request.vaultPath,
           selector: manifest.sessionId,
+          selectorMatch: 'exact',
           provider: manifest.provider,
           compression,
           restoreOnLaunchEnabled: true,

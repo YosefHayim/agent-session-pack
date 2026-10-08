@@ -1,266 +1,290 @@
+<!-- Keywords: AI session cleanup, coding agent session history, Claude Code disk usage, Codex CLI sessions, compress JSONL sessions, zstd session archive, byte-exact restore, local-first developer tool -->
+
 <p align="center">
-  <img src="https://raw.githubusercontent.com/YosefHayim/agent-session-pack/main/assets/hero.png" alt="Agent Session Pack - shrink local AI coding-agent session history into a tiny verified archive" width="640" />
+  <a href="https://github.com/YosefHayim/agent-session-pack"><img src="https://raw.githubusercontent.com/YosefHayim/agent-session-pack/main/assets/hero.png" alt="Agent Session Pack: shrink local AI coding-agent session history into a verified zstd archive and restore it byte-exact" width="820" /></a>
 </p>
 
-# Agent Session Pack
+<p align="center">
+  <strong>Cold storage for local AI coding-agent sessions. Shrink Codex, Claude Code, Kiro, Grok, Kimi, OpenCode, and Gemini CLI history on disk, and get every byte back on restore.</strong>
+</p>
 
-Cold storage for local AI coding-agent sessions.
+<p align="center">
+  <a href="https://www.npmjs.com/package/agent-session-pack"><img src="https://img.shields.io/npm/v/agent-session-pack?logo=npm&color=cb3837" alt="npm version" /></a>
+  <a href="https://www.npmjs.com/package/agent-session-pack"><img src="https://img.shields.io/npm/dm/agent-session-pack?logo=npm&color=cb3837" alt="npm downloads per month" /></a>
+  <a href="https://github.com/YosefHayim/agent-session-pack/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/YosefHayim/agent-session-pack/ci.yml?branch=main&logo=github&label=CI" alt="CI status" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/npm/l/agent-session-pack?color=blue" alt="MIT license" /></a>
+  <img src="https://img.shields.io/node/v/agent-session-pack?logo=node.js&color=339933" alt="Required Node.js version" />
+</p>
 
-[![npm](https://img.shields.io/npm/v/agent-session-pack?label=npm)](https://www.npmjs.com/package/agent-session-pack)
-[![CI](https://github.com/YosefHayim/agent-session-pack/actions/workflows/ci.yml/badge.svg)](https://github.com/YosefHayim/agent-session-pack/actions)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+<p align="center">
+  <img src="https://img.shields.io/badge/agents-9-8957e5" alt="9 coding agents supported" />
+  <img src="https://img.shields.io/badge/restore-byte--exact-3fb950" alt="Byte-exact restore" />
+  <img src="https://img.shields.io/badge/compression-zstd-informational" alt="zstd compression" />
+  <img src="https://img.shields.io/badge/runs-100%25%20local-blue" alt="Runs entirely on your machine" />
+</p>
 
-Agent Session Pack is a [Node.js](https://nodejs.org/en) CLI for developers and
-coding agents whose local [OpenAI Codex CLI](https://developers.openai.com/codex/cli),
-[Claude Code](https://www.anthropic.com/product/claude-code),
-[Kiro CLI](https://kiro.dev/docs/cli/), [Grok](https://grok.x.ai/),
-[Kimi Code](https://www.kimi.com/), [OpenCode](https://opencode.ai/),
-[Gemini CLI](https://geminicli.com/), [Cursor](https://cursor.com/docs), or
-[Devin CLI](https://docs.devin.ai/cli) histories have grown large. It finds local
-session stores, proves lossless [Zstandard](https://facebook.github.io/zstd/)
-compression on copies, and packs cold sessions into a local vault only when you ask it to.
+<p align="center">
+  <strong>English</strong> · <a href="README.ja.md">日本語</a> · <a href="README.he.md">עברית</a> · <a href="README.es.md">Español</a> · <a href="README.zh-CN.md">简体中文</a>
+</p>
 
-Current status: `v0.3.0` ships guided setup, read-only proof, pack/unpack/restore, and an
-**opt-in continuous lifecycle**: `lifecycle enable` installs provider wrappers that
-auto-restore packed sessions on launch, `open` materializes a session by id, and
-`maintain` re-packs cold sessions so storage stays low. No daemon, web app, cloud sync,
-or lossy summarizer. Lifecycle stays off until you enable it.
+---
 
-## Quick Start
+**Agent Session Pack** is a [Node.js](https://nodejs.org/en) CLI for developers and coding agents whose local session history has grown large. It finds the session stores of [OpenAI Codex CLI](https://developers.openai.com/codex/cli), [Claude Code](https://code.claude.com/docs/en/overview), [Kiro CLI](https://kiro.dev/docs/cli/), [Grok](https://grok.x.ai/), [Kimi Code](https://www.kimi.com/), [OpenCode](https://opencode.ai/), [Gemini CLI](https://geminicli.com/), [Cursor](https://cursor.com/docs), and [Devin CLI](https://docs.devin.ai/cli), proves lossless [Zstandard](https://facebook.github.io/zstd/) compression on copies, and packs cold sessions into a local vault only when you ask. Every pack restores the archive and compares SHA-256 hashes before an original file is removed.
 
-Run the safest proof from anywhere:
+No daemon, no cloud sync, no summarizing. Your sessions never leave your machine.
 
-```bash
-npx --yes agent-session-pack check
+## Table of contents
+
+- [Features](#features)
+- [Supported agents](#supported-agents)
+- [Benchmarks](#benchmarks)
+- [Agent Session Pack vs. deleting or zipping](#agent-session-pack-vs-deleting-or-zipping)
+- [One-click AI setup](#one-click-ai-setup)
+- [Quick start](#quick-start)
+- [Commands](#commands)
+- [Lifecycle: auto-restore on launch](#lifecycle-auto-restore-on-launch)
+- [Safety model](#safety-model)
+- [Hello world](#hello-world)
+- [Alternatives](#alternatives)
+- [FAQ](#faq)
+- [Contributing](#contributing)
+- [Resources](#resources)
+- [License](#license)
+- [Contributors](#contributors)
+
+## Features
+
+- **9 coding agents** - Codex, Claude Code, Kiro, Grok, Kimi Code, OpenCode, and Gemini CLI are packed and restored; Cursor and Devin are backup-only.
+- **Proof before change** - `check` copies one session per agent, compresses it, restores it, and compares hashes. Real files stay untouched.
+- **Byte-exact restore** - every archive is restored and verified with SHA-256 before the original is removed.
+- **Dry-run by default** - nothing is removed without `--apply`, and `--apply` asks first unless you pass `--yes`.
+- **Cold-session filter** - `--older-than 7d` (or `12h`, `1d`, `2w`, `30d`) keeps your active work untouched.
+- **Built for agents** - `guide --json` prints the safe command map, and every command has stable `--json` output with no prompts.
+- **Opt-in lifecycle** - provider wrappers restore a packed session when you open it, and `maintain` re-packs cold ones.
+- **Local-first** - no daemon, no network, no credentials read.
+
+## Supported agents
+
+| Agent | Mode | Session store |
+| --- | --- | --- |
+| Codex | Archive | `~/.codex/sessions` |
+| Claude Code | Archive | `~/.claude/projects` |
+| Kiro | Archive | `~/.kiro/sessions` |
+| Grok | Archive | `~/.grok/sessions` (whole session folders) |
+| Kimi Code | Archive | `~/.kimi-code/sessions` (whole session folders) |
+| OpenCode | Archive | `~/.local/share/opencode`, `~/.opencode` |
+| Gemini CLI | Archive | `~/.gemini`, `~/.gemini/tmp` |
+| Cursor | Backup-only | `~/Library/Application Support/Cursor` |
+| Devin | Backup-only | `~/.local/share/devin/cli` (reads `sessions.db` metadata only) |
+
+**Archive** means sessions can be packed into the vault and restored. **Backup-only** means the agent shows up in scans and savings proof, but its native store is never changed.
+
+## Benchmarks
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/YosefHayim/agent-session-pack/main/assets/benchmarks.svg" alt="Session storage before and after pack on one machine: Codex 2.22 GB to 782 MB, Claude Code 2.10 GB to 457 MB, Kiro 1.95 GB to 190 MB, Cursor backup 7.27 GB to 957 MB" width="820" />
+</p>
+
+| Agent | Before | After | Saved |
+| --- | ---: | ---: | ---: |
+| Codex | 2.22 GB | 782 MB | **65.6%** |
+| Claude Code | 2.10 GB | 457 MB | **78.7%** |
+| Kiro | 1.95 GB | 190 MB | **90.5%** |
+| Cursor (backup copy) | 7.27 GB | 957 MB | **87.1%** |
+| **Total** | **13.5 GB** | **2.3 GB** | **~83%** |
+
+This is one machine's real session history, not a universal benchmark. Run `npx --yes agent-session-pack check` to measure yours; it only works on copies.
+
+## Agent Session Pack vs. deleting or zipping
+
+| | **Agent Session Pack** | **Deleting old files** | **zstd or tar by hand** |
+| --- | --- | --- | --- |
+| Get the session back | Byte-exact, verified before removal | Gone for good | Only if you check it yourself |
+| Finds every agent's store | Built in for 9 agents | You hunt for paths | You hunt for paths |
+| Puts files back where the agent expects | Restore manifest per session | Not applicable | You track paths yourself |
+| Changed files on restore | Skipped, never overwritten | Not applicable | Overwritten silently |
+| Multi-file sessions (Grok, Kimi) | Packed as whole folders | Easy to half-delete | Easy to miss files |
+| Preview first | Dry-run is the default | No | No |
+
+## One-click AI setup
+
+> **Let your coding agent run it for you.** Copy the prompt below into Claude Code, Codex, or any agent with a shell.
+
+<details>
+<summary><strong>Click to copy the AI setup prompt</strong></summary>
+
+```
+I want to free disk space used by my local AI coding-agent sessions with
+Agent Session Pack (https://github.com/YosefHayim/agent-session-pack).
+
+Please:
+1. Check that Node.js 20+ and zstd are installed. If zstd is missing, tell me how to install it on my OS.
+2. Run: npx --yes agent-session-pack guide --json
+   and follow its safe command map.
+3. Run: npx --yes agent-session-pack check --json
+   and show me the before/after savings per agent. This only touches copies.
+4. Run: npx --yes agent-session-pack pack --all-providers --older-than 7d --dry-run --json
+   and show me which sessions would be packed.
+5. Stop and ask me before running anything with --apply.
 ```
 
-`check` scans supported local provider stores, copies one eligible session per provider
-into a temp proof workspace, compresses the copy, restores it, compares hashes, and prints
-a before/after savings table. Real session files stay untouched.
+</details>
 
-For coding agents and automation, ask for the command map first:
+## Quick start
 
-```bash
-npx --yes agent-session-pack guide --json
-```
-
-For humans, open the guided terminal menu:
-
-```bash
-npx --yes agent-session-pack
-```
-
-Install globally only if you want the command on your path:
-
-```bash
-npm install -g agent-session-pack
-agent-session-pack
-```
-
-Requirements:
+### 1. Check requirements
 
 - [Node.js](https://nodejs.org/en) 20 or newer.
-- `zstd` for proof, pack, and restore workflows.
-- `sqlite3` only when discovering Devin session metadata.
-- `HOME` must be set so vault and provider paths resolve (normal on macOS/Linux shells; see [`.env.example`](.env.example)).
+- [`zstd`](https://facebook.github.io/zstd/) on your `PATH` for proof, pack, and restore.
+- `sqlite3` only if you use Devin.
+- `HOME` set in your shell (normal on macOS and Linux; see [`.env.example`](.env.example)).
 
-## What It Does
+Run `npx --yes agent-session-pack doctor` to check them.
 
-```text
-provider stores
-   |
-   | read-only scan
-   v
-temp proof copy ---------------------> savings table
-   |
-   | pack --apply only
-   v
-~/.agent-session-pack/
-archives + manifests
-   |
-   | unpack --apply
-   v
-original provider paths
-```
-
-The tool works in three explicit phases:
-
-1. Prove savings on copied files with `check` or `savings`.
-2. Preview cold-session packing with `pack --dry-run`.
-3. Apply archive/remove only with `pack --apply`, after byte-exact restore verification.
-
-Setup saves configuration only. It does not wait for the threshold and compress later.
-
-## Common Commands
-
-Copy-only proof:
+### 2. Prove the savings on copies
 
 ```bash
 npx --yes agent-session-pack check
-npx --yes agent-session-pack savings
 ```
 
-Review discovered session stores:
+`check` copies one session per agent into a temp workspace, compresses it, restores it, compares hashes, and prints a before/after table. Real session files stay untouched.
 
-```bash
-npx --yes agent-session-pack scan
-```
-
-Preview cold-session packing across supported providers:
+### 3. Preview what would be packed
 
 ```bash
 npx --yes agent-session-pack pack --all-providers --older-than 7d --dry-run
 ```
 
-Preview every archive-mode candidate without touching files:
-
-```bash
-npx --yes agent-session-pack pack --max --dry-run
-```
-
-Apply after reviewing the dry-run table:
+### 4. Pack cold sessions
 
 ```bash
 npx --yes agent-session-pack pack --all-providers --older-than 7d --apply
 ```
 
-Non-interactive apply for automation:
+Each session is archived into `~/.agent-session-pack`, restored and hash-checked, recorded in a manifest, and only then removed from the agent's store.
+
+### 5. Restore when you need them
 
 ```bash
-npx --yes agent-session-pack pack --all-providers --older-than 7d --apply --yes --json
+npx --yes agent-session-pack unpack --all-providers --apply   # everything
+npx --yes agent-session-pack restore <session-id-or-name>      # one session
 ```
 
-Restore archived sessions back to their original provider paths:
+Prefer a guided menu? Run `npx --yes agent-session-pack` with no arguments in a terminal. To keep the command on your path, install it globally with `npm install -g agent-session-pack`.
 
-```bash
-npx --yes agent-session-pack unpack --all-providers --apply
-```
+## Commands
 
-`--older-than` is the cold-session age filter:
-
-- `12h`: shorter cleanup window.
-- `1d`: skip roughly today's active work.
-- `7d`: default setup policy.
-- `30d`: conservative archive pass.
-- `--max --dry-run`: curiosity preview for every archive-mode session.
-
-`npx --yes` belongs to [npm](https://docs.npmjs.com/cli/v8/commands/npx). It approves
-temporary package execution. Agent Session Pack writes are confirmed separately with
-`--apply` and, for automation, app-level `--yes`.
-
-## Provider Modes
-
-| Provider | Mode | Notes |
+| Command | What it does | Changes files |
 | --- | --- | --- |
-| Codex | Archive | Local session files can be packed and restored. |
-| Claude Code | Archive | User-level sessions can be packed and restored. |
-| Kiro | Archive | CLI sessions can be packed and restored. |
-| Cursor | Backup-only | Included in scan/proof output, not destructively packed. |
-| Devin | Backup-only | Reads local SQLite metadata from `~/.local/share/devin/cli/sessions.db`; does not read credentials. |
+| `guide [--json]` | Safe command map for agents and automation | No |
+| `check [--json]` | No-install savings proof on copies | No |
+| `savings [--json]` | Same copy-only before/after proof | No |
+| `scan [--json]` | Lists session stores, sizes, and cold candidates | No |
+| `doctor [--json]` | Checks that `zstd` and `sqlite3` are installed | No |
+| `init [--apply]` | Shows the vault policy; `--apply` writes the config | Config only |
+| `pack --dry-run` | Previews cold sessions to pack | No |
+| `pack --apply [--yes]` | Archives, verifies, then removes originals | Yes |
+| `unpack --apply [--yes]` | Restores archived sessions to their original paths | Yes |
+| `restore <selector>` | Restores one session by id, name, or slug | Yes |
+| `open <session>` | Finds a session and restores it if packed | Yes |
+| `lifecycle enable\|disable\|status` | Installs or removes the auto-restore wrappers | Wrappers only |
+| `maintain --apply [--yes]` | Re-packs sessions that went cold again | Yes |
 
-Backup-only means the provider can appear in proof output, but native store mutation is
-disabled until the storage model is safer to change.
+`preflight`, `watch`, and `ensure-restored` are called by the lifecycle wrappers; you rarely run them yourself.
 
-## Safety Model
-
-Agent Session Pack is built around byte-exact restore, not best-effort cleanup.
-
-- `check` and `savings` operate on copied files.
-- `pack --all-providers` defaults to dry-run.
-- `pack --apply` asks for confirmation in a TTY unless `--yes` is passed.
-- `pack --max --apply` is refused.
-- Apply mode writes an archive, restores it to verify SHA-256 equality, writes a
-  manifest, and only then removes the original.
-- `unpack --apply` restores from manifests and skips changed live files instead of
-  overwriting them.
-- Cursor and Devin are backup-only in `v0.3.0`.
-
-## Local Evidence
-
-This is one machine's evidence, not a universal benchmark.
-
-| Provider | Before | After | Saved |
-| --- | ---: | ---: | ---: |
-| Codex | 2.22 GB | 782 MB | 65.6% |
-| Claude | 2.10 GB | 457 MB | 78.7% |
-| Kiro | 1.95 GB | 190 MB | 90.5% |
-| Cursor backup | 7.27 GB | 957 MB | 87.1% |
-| Total | 13.5 GB | 2.3 GB | about 83% |
-
-Committed fixtures in [examples/roundtrip](examples/roundtrip/) show tiny before,
-archive, and after files for Codex, Claude, and Kiro. Run `agent-session-pack check` on
-your own machine for real local evidence.
-
-## Alternatives And Neighboring Tools
-
-Agent Session Pack is intentionally narrow: it archives cold local AI session files and
-verifies byte-exact restore before removing originals. It pairs well with usage, search,
-and general disk-analysis tools.
-
-| Tool | Main focus | Difference |
-| --- | --- | --- |
-| [`ccusage`](https://ccusage.com/guide/) | Coding-agent token and cost reports | Explains usage; does not pack local session stores. |
-| [`claude-code-history-viewer`](https://github.com/jhlee0409/claude-code-history-viewer) | Offline browsing and search for AI coding histories | Views histories; does not own archive/remove/restore. |
-| [`claude-code-cleaner`](https://github.com/garrickz2/claude-code-cleaner) | Claude Code disk cleanup | Claude-focused cleanup; not a multi-provider verified vault. |
-| `zstd`, `tar`, backups, disk analyzers | Generic storage tools | Compress or locate bytes; do not understand provider sessions or restore manifests. |
-
-## FAQ
+Common flags: `--provider <id>`, `--all-providers`, `--older-than`, `--json`. Agent ids are `codex`, `claude`, `kiro`, `grok`, `kimi`, `opencode`, `gemini`, `cursor`, and `devin`.
 
 <details>
-<summary>Does setup automatically compress sessions later?</summary>
+<summary><strong>Choosing <code>--older-than</code></strong></summary>
 
-Setup alone does not. After **`lifecycle enable`**, use continuous maintenance:
+| Value | Use it for |
+| --- | --- |
+| `12h` | A short cleanup window |
+| `1d` | Skip roughly today's active work |
+| `7d` | The default setup policy |
+| `30d` | A conservative archive pass |
+| `--max --dry-run` | Curiosity preview of every archive-mode session (never with `--apply`) |
 
-```bash
-npx --yes agent-session-pack maintain --apply --yes --json
-```
-
-That re-packs sessions older than your configured `coldAfter` (default `7d`). You can also
-run `pack` directly. No background daemon is started; schedule `maintain` with cron/launchd
-if you want hands-free re-packing.
 </details>
 
-<details>
-<summary>Can agents still resume sessions after packing?</summary>
+`npx --yes` only approves npm's temporary package download. Agent Session Pack asks for its own confirmation through `--apply` and, for automation, `--yes`.
 
-Yes. Archives are byte-exact. When a session is packed, native files are removed; when you
-**open / launch** it again with lifecycle on, it is restored first.
+## Lifecycle: auto-restore on launch
 
-**Continuous loop (recommended):**
+Lifecycle is off until you enable it. Once on, packed sessions come back automatically when an agent opens them.
 
 ```bash
 # once
 npx --yes agent-session-pack lifecycle enable --json
-export PATH="$HOME/.agent-session-pack/bin:$PATH"   # wrappers call preflight then real CLI
+export PATH="$HOME/.agent-session-pack/bin:$PATH"
 
-# look up / resume one session (always materializes if packed)
+# open or resume one session (restores it first if packed)
 npx --yes agent-session-pack open --provider grok <session-id> --json
 
 # keep storage low after restores
 npx --yes agent-session-pack maintain --apply --yes --json
 ```
 
-Provider wrappers (codex, claude, grok, …) run `preflight` (session ids on the command line)
-and **`watch`** while the app runs. Packed sessions leave tiny **stubs** so they stay listable;
-when the app opens a stub (GUI session pick), watch materializes the full archive automatically.
+- The wrappers (`codex`, `claude`, `grok`, ...) run `preflight` on the session ids in the command line, then `watch` while the agent runs.
+- Packed sessions leave tiny stubs so they stay listable. When the agent opens a stub, `watch` restores the full session.
+- `maintain` re-packs sessions older than your configured `coldAfter` (default `7d`). There is no daemon; schedule it with cron or launchd if you want.
+- `lifecycle disable` removes the wrappers.
 
-Live files that differ from the archive are **never** overwritten (`conflict`). Disable with
-`lifecycle disable` (removes wrappers).
+## Safety model
 
-**Manual path (always available):** `unpack` / `restore` / `open` without relying on wrappers.
+Agent Session Pack is built around byte-exact restore, not best-effort cleanup.
+
+- `check` and `savings` work on copies only.
+- `pack --all-providers` is a dry-run unless you pass `--apply`.
+- `pack --apply` asks for confirmation in a terminal unless you pass `--yes`.
+- `pack --max --apply` is refused.
+- Apply writes the archive, restores it, checks SHA-256 equality, writes a manifest, and only then removes the original.
+- `unpack --apply` restores from manifests and skips any live file that changed instead of overwriting it.
+- Grok and Kimi sessions are whole folders, so they are packed and restored as whole folders.
+- Cursor and Devin are backup-only: their native stores are never changed.
+
+## Hello world
+
+[`examples/hello-world`](examples/hello-world/) holds three tiny synthetic sessions with their real `zstd` archives and restored copies. Two commands prove the archive restores the exact bytes:
+
+```bash
+shasum -a 256 < examples/hello-world/before/codex-session.jsonl
+zstd -d -c examples/hello-world/archives/codex-session.jsonl.zst | shasum -a 256
+```
+
+## Alternatives
+
+Agent Session Pack is intentionally narrow: it archives cold local session files and verifies byte-exact restore. It pairs well with usage, search, and disk-analysis tools.
+
+| Tool | Main focus | Difference |
+| --- | --- | --- |
+| [`ccusage`](https://ccusage.com/guide/) | Token and cost reports for coding agents | Explains usage; does not pack session stores. |
+| [`claude-code-history-viewer`](https://github.com/jhlee0409/claude-code-history-viewer) | Offline browsing and search of AI coding history | Views history; does not archive or restore. |
+| [`claude-code-cleaner`](https://github.com/garrickz2/claude-code-cleaner) | Claude Code disk cleanup | Claude only; no verified multi-agent vault. |
+| `zstd`, `tar`, backups, disk analyzers | Generic storage tools | Compress or find bytes; do not know agent sessions or restore paths. |
+
+## FAQ
+
+<details>
+<summary><strong>Is this context compaction or summarization?</strong></summary>
+
+No. Agent Session Pack never summarizes, rewrites, or truncates a conversation. It uses lossless compression and verifies byte-exact restore.
 </details>
 
 <details>
-<summary>Is this context compaction or summarization?</summary>
+<summary><strong>Can agents still resume sessions after packing?</strong></summary>
 
-No. Agent Session Pack does not summarize, rewrite, truncate, or semantically compress a
-conversation. It uses lossless archive compression and verifies byte-exact restore.
+Yes. Restore a session with `restore` or `open` before resuming, or enable [lifecycle](#lifecycle-auto-restore-on-launch) so it happens automatically when the agent opens it.
 </details>
 
 <details>
-<summary>How do I pack old sessions but skip today?</summary>
+<summary><strong>Does setup compress sessions automatically later?</strong></summary>
 
-Use `--older-than 1d` to pack only sessions modified more than 24 hours ago:
+Setup alone only saves configuration. Packing happens when you run `pack --apply`, or `maintain --apply` after `lifecycle enable`. Nothing runs in the background.
+</details>
+
+<details>
+<summary><strong>How do I pack old sessions but skip today?</strong></summary>
 
 ```bash
 npx --yes agent-session-pack pack --all-providers --older-than 1d --apply
@@ -268,71 +292,74 @@ npx --yes agent-session-pack pack --all-providers --older-than 1d --apply
 </details>
 
 <details>
-<summary>Does it read credentials or upload sessions?</summary>
+<summary><strong>Does it read credentials or upload sessions?</strong></summary>
 
-No. The tool is local-first. It scans local provider stores and writes local proof
-workspaces or local archives. Devin support reads SQLite metadata from the local sessions
-database and does not read credentials.
+No. It scans local stores and writes local archives. For Devin it reads session metadata from the local SQLite database and never reads credentials.
 </details>
 
 <details>
-<summary>How is this different from deleting old session files?</summary>
+<summary><strong>How is this different from deleting old session files?</strong></summary>
 
-Deletion is one-way. Agent Session Pack writes an archive, verifies the archive can
-restore the exact original bytes, writes a manifest, and only then removes the original in
-apply mode.
-</details>
-
-## International Summaries
-
-Full documentation is maintained in English. These short summaries help discovery and
-quick orientation.
-
-<details>
-<summary>日本語</summary>
-
-Agent Session Pack は、ローカルの AI コーディングエージェントのセッション履歴を圧縮して
-ディスク使用量を減らす CLI ツールです。`check` はコピーだけで検証し、元のセッションは変更しません。
-</details>
-
-<details dir="rtl">
-<summary>עברית</summary>
-
-Agent Session Pack הוא כלי CLI שמקטין שימוש בדיסק של היסטוריית סשנים מקומית של סוכני
-קוד. `check` עובד על עותקים בלבד ולא משנה קבצים מקוריים.
+Deleting is one-way. Agent Session Pack writes an archive, proves it restores the exact original bytes, writes a manifest, and only then removes the original.
 </details>
 
 <details>
-<summary>Español</summary>
+<summary><strong>Where are archives stored?</strong></summary>
 
-Agent Session Pack es una CLI para reducir el espacio usado por historiales locales de
-agentes de programación con IA. `check` prueba la compresión sobre copias.
+In the vault at `~/.agent-session-pack`: compressed `.zst` archives plus one JSON manifest per session with the original path and SHA-256 hash.
 </details>
 
-<details>
-<summary>中文（简体）</summary>
+## Contributing
 
-Agent Session Pack 是一个 CLI 工具，用于压缩本地 AI 编程代理的会话历史并减少磁盘占用。
-`check` 只处理副本，不修改原始会话。
-</details>
-
-## Development
-
-Agent Session Pack is written in [TypeScript](https://www.typescriptlang.org/) with
-[Effect Schema](https://effect.website/docs/schema/introduction/) for runtime contracts,
-[citty](https://unjs.io/packages/citty) for command parsing, and
-[Clack](https://bomb.sh/docs/clack/basics/getting-started/) for the interactive TTY.
-The repo uses [pnpm](https://pnpm.io/) and [GitHub Actions](https://docs.github.com/en/actions).
+Contributions are welcome. Fork, branch, add tests, run the checks, commit with [Conventional Commits](https://www.conventionalcommits.org/), and open a PR. Agent and style rules live in [AGENTS.md](AGENTS.md) and [CODE-STYLE.md](CODE-STYLE.md).
 
 ```bash
 pnpm install
-pnpm check:ci
-pnpm typecheck
-pnpm test
-pnpm build
+pnpm check:ci     # Biome + ESLint
+pnpm typecheck    # TypeScript
+pnpm test         # Vitest, synthetic fixtures only
+pnpm build        # tsup to dist/
 ```
 
-Project intent lives in [PROJECT.md](PROJECT.md). Agent editing rules live in
-[AGENTS.md](AGENTS.md). Code style and command contracts live in
-[CODE-STYLE.md](CODE-STYLE.md). The public AI index lives in
-[llms.txt](llms.txt), following the [llms.txt](https://llmstxt.org/) convention.
+Tests never read or change your real session folders.
+
+## Resources
+
+Project docs:
+
+- [PROJECT.md](PROJECT.md) - purpose, users, and non-goals.
+- [CODE-STYLE.md](CODE-STYLE.md) - code style, CLI contract, and test policy.
+- [llms.txt](llms.txt) - a compact project summary for AI agents.
+- [Releases](https://github.com/YosefHayim/agent-session-pack/releases) and the [issue tracker](https://github.com/YosefHayim/agent-session-pack/issues).
+
+Built with:
+
+- [TypeScript](https://www.typescriptlang.org/), [Effect](https://effect.website/docs), [citty](https://github.com/unjs/citty), and [Clack](https://bomb.sh/docs/clack/basics/getting-started/).
+- [pnpm](https://pnpm.io/), [Vitest](https://vitest.dev/), [Biome](https://biomejs.dev/), [tsup](https://tsup.egoist.dev/), and [GitHub Actions](https://docs.github.com/en/actions).
+- [Zstandard](https://facebook.github.io/zstd/) and the [llms.txt](https://llmstxt.org/) convention.
+
+## License
+
+MIT - see [LICENSE](LICENSE).
+
+## Contributors
+
+Thanks to everyone who has helped make this project better.
+
+<a href="https://github.com/YosefHayim/agent-session-pack/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=YosefHayim/agent-session-pack" alt="Agent Session Pack contributors" />
+</a>
+
+---
+
+<div align="center">
+
+<a href="https://www.buymeacoffee.com/yosefhayim" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="48" /></a>
+
+<br /><br />
+
+**[Support this project](https://www.buymeacoffee.com/yosefhayim)** · Created by [Yosef Hayim Sabag](https://github.com/YosefHayim)
+
+<sub>Agent Session Pack · cold storage for local AI coding-agent sessions · byte-exact zstd archive and restore for Codex, Claude Code, Kiro, Grok, Kimi, OpenCode, and Gemini CLI.</sub>
+
+</div>

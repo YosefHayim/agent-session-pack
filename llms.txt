@@ -4,38 +4,38 @@
 
 ## Primary Links
 
-- [README](https://github.com/YosefHayim/agent-session-pack#readme): Quick start, command examples, safety model, provider modes, FAQ, and local evidence.
+- [README](https://github.com/YosefHayim/agent-session-pack#readme): Quick start, commands, supported agents, benchmarks, safety model, lifecycle, and FAQ.
 - [npm package](https://www.npmjs.com/package/agent-session-pack): Published package and `npx --yes agent-session-pack` usage.
 - [Project purpose](https://github.com/YosefHayim/agent-session-pack/blob/main/PROJECT.md): Scope, users, non-goals, and success criteria.
 - [Agent instructions](https://github.com/YosefHayim/agent-session-pack/blob/main/AGENTS.md): Editing rules for coding agents.
 - [Code style](https://github.com/YosefHayim/agent-session-pack/blob/main/CODE-STYLE.md): TypeScript, Effect, CLI, output, and test conventions.
-- [Roundtrip examples](https://github.com/YosefHayim/agent-session-pack/tree/main/examples/roundtrip): Tiny before/archive/after fixtures that show byte-exact restore.
+- [Hello-world example](https://github.com/YosefHayim/agent-session-pack/tree/main/examples/hello-world): Tiny before/archive/after fixtures that show byte-exact restore.
 
-## What It Does In v0.2.0
+## What It Does In v0.3.0
 
-- Finds local AI coding-agent session stores.
+- Finds local AI coding-agent session stores for nine agents.
 - Shows before/after compression evidence without touching originals.
 - Packs cold sessions only when `pack --apply` is run.
 - Uses `--older-than` as the cold-session age filter.
 - Writes local archives and manifests under `~/.agent-session-pack` by default.
 - Verifies byte-exact restore before removing originals in apply mode.
-- Restores archived sessions with `unpack --apply`.
+- Restores archived sessions with `unpack --apply`, `restore <selector>`, or `open <session>`.
+- Opt-in lifecycle: `lifecycle enable` installs provider wrappers that restore packed sessions on launch, and `maintain --apply` re-packs cold sessions.
 
-## What It Does Not Do In v0.2.0
+## What It Does Not Do
 
-- No daemon.
-- No timer.
-- No pack-on-close hook.
-- No restore-on-launch hook.
+- No daemon or timer; schedule `maintain` with cron or launchd if wanted.
 - No local web app.
 - No lossy summarization or context compaction.
 - No background deletion of real session files.
 - No mutation of Cursor or Devin native stores.
+- Lifecycle stays off until `lifecycle enable` is run.
 
 ## Supported Provider Modes
 
-- Archive mode: Codex, Claude Code user-level sessions, Kiro.
+- Archive mode: Codex, Claude Code user-level sessions, Kiro, Grok, Kimi Code, OpenCode, Gemini CLI.
 - Backup-only mode: Cursor, Devin.
+- Grok and Kimi sessions are multi-file directories and are packed and restored as whole trees.
 
 ## Important Commands
 
@@ -48,8 +48,11 @@ npx --yes agent-session-pack pack --max --dry-run
 npx --yes agent-session-pack pack --all-providers --older-than 7d --apply
 npx --yes agent-session-pack pack --all-providers --older-than 7d --apply --yes --json
 npx --yes agent-session-pack unpack --all-providers --apply
+npx --yes agent-session-pack restore <selector> --json
+npx --yes agent-session-pack lifecycle enable --json
+npx --yes agent-session-pack maintain --apply --yes --json
 ```
 
 ## Search Phrases
 
-AI agent session cleanup, coding agent disk cleanup, Codex session compression, Claude Code storage cleanup, Kiro JSONL archive, zstd session archive, local-first AI tool storage, byte-exact restore, developer disk cleanup CLI.
+AI agent session cleanup, coding agent disk cleanup, Codex session compression, Claude Code storage cleanup, Kiro JSONL archive, Grok session archive, Gemini CLI session cleanup, zstd session archive, local-first AI tool storage, byte-exact restore, developer disk cleanup CLI.

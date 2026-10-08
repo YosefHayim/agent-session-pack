@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="372" viewBox="0 0 820 372" role="img" aria-labelledby="title desc">
+  <title id="title">Agent Session Pack local benchmark</title>
+  <desc id="desc">Session storage before and after packing on one machine. Codex 2.22 GB to 782 MB, 65.6% saved. Claude Code 2.10 GB to 457 MB, 78.7% saved. Kiro 1.95 GB to 190 MB, 90.5% saved. Cursor backup 7.27 GB to 957 MB, 87.1% saved. Total 13.5 GB to 2.3 GB, about 83% saved.</desc>
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; fill: #111827; }
+    .title { font-size: 18px; font-weight: 700; }
+    .muted { font-size: 13px; fill: #6b7280; }
+    .label { font-size: 15px; font-weight: 600; }
+    .size { font-size: 12px; fill: #374151; }
+    .saved { font-size: 18px; font-weight: 700; fill: #15803d; }
+    .before { fill: #cbd2dc; }
+    .after { fill: #1d5fe0; }
+  </style>
+  <rect x="0.5" y="0.5" width="819" height="371" rx="14" fill="#ffffff" stroke="#e5e7eb" />
+
+  <text class="title" x="28" y="42">Session storage before and after pack</text>
+  <text class="muted" x="28" y="64">One machine, real local sessions. Run check on yours.</text>
+  <rect class="before" x="560" y="30" width="14" height="14" rx="3" />
+  <text class="muted" x="580" y="42">Before</text>
+  <rect class="after" x="648" y="30" width="14" height="14" rx="3" />
+  <text class="muted" x="668" y="42">After pack</text>
+  <text class="muted" x="792" y="64" text-anchor="end">Saved</text>
+
+  <text class="label" x="28" y="112">Codex</text>
+  <rect class="before" x="170" y="94" width="144" height="16" rx="4" />
+  <text class="size" x="322" y="107">2.22 GB</text>
+  <rect class="after" x="170" y="114" width="51" height="16" rx="4" />
+  <text class="size" x="229" y="127">782 MB</text>
+  <text class="saved" x="792" y="119" text-anchor="end">65.6%</text>
+
+  <text class="label" x="28" y="172">Claude Code</text>
+  <rect class="before" x="170" y="154" width="136" height="16" rx="4" />
+  <text class="size" x="314" y="167">2.10 GB</text>
+  <rect class="after" x="170" y="174" width="30" height="16" rx="4" />
+  <text class="size" x="208" y="187">457 MB</text>
+  <text class="saved" x="792" y="179" text-anchor="end">78.7%</text>
+
+  <text class="label" x="28" y="232">Kiro</text>
+  <rect class="before" x="170" y="214" width="126" height="16" rx="4" />
+  <text class="size" x="304" y="227">1.95 GB</text>
+  <rect class="after" x="170" y="234" width="12" height="16" rx="4" />
+  <text class="size" x="190" y="247">190 MB</text>
+  <text class="saved" x="792" y="239" text-anchor="end">90.5%</text>
+
+  <text class="label" x="28" y="292">Cursor</text>
+  <text class="muted" x="28" y="309">backup copy</text>
+  <rect class="before" x="170" y="274" width="470" height="16" rx="4" />
+  <text class="size" x="648" y="287">7.27 GB</text>
+  <rect class="after" x="170" y="294" width="62" height="16" rx="4" />
+  <text class="size" x="240" y="307">957 MB</text>
+  <text class="saved" x="792" y="299" text-anchor="end">87.1%</text>
+
+  <line x1="28" y1="330" x2="792" y2="330" stroke="#e5e7eb" />
+  <text class="label" x="28" y="356">Total</text>
+  <text class="muted" x="170" y="356">13.5 GB to 2.3 GB, byte-exact restore verified before any original is removed</text>
+  <text class="saved" x="792" y="357" text-anchor="end">~83%</text>
+</svg>

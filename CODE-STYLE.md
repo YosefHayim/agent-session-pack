@@ -150,24 +150,27 @@ Agent Session Pack is CLI-only.
 - `--json` never prompts and never emits ANSI.
 - Long flags are preferred. Only obvious short aliases like `-h` and `-v` are allowed.
 - Durations accept `7d`, `2w`, `30d`, and `12h`.
-- `--provider` is repeatable.
+- `--provider` takes one provider id: `codex`, `claude`, `kiro`, `grok`, `kimi`, `opencode`, `gemini`, `cursor`, or `devin`. Use `--all-providers` for every provider.
 
-Commands:
+Commands (`<id>` is a provider id):
 
 ```bash
 agent-session-pack guide [--json]
-agent-session-pack check [--provider codex|claude|kiro|cursor|devin] [--json]
-agent-session-pack init [--apply] [--json]
-agent-session-pack scan [--provider codex|claude|kiro|cursor|devin] [--json]
-agent-session-pack pack [--all-providers|--provider codex|claude|kiro|cursor|devin] [--older-than 7d|--max] [--dry-run|--apply] [--yes] [--json]
-agent-session-pack unpack [--all-providers|--provider codex|claude|kiro|cursor|devin] [--apply] [--yes] [--json]
-agent-session-pack savings [--provider codex|claude|kiro|cursor|devin] [--json]
-agent-session-pack list [--provider codex|claude|kiro|cursor|devin] [--json]
-agent-session-pack restore <selector> [--to original|<path>] [--json]
-agent-session-pack pin <selector>
-agent-session-pack unpin <selector>
+agent-session-pack check [--provider <id>] [--json]
+agent-session-pack savings [--provider <id>] [--json]
+agent-session-pack scan [--provider <id>] [--json]
 agent-session-pack doctor [--json]
-agent-session-pack prune [--quarantine] [--dry-run|--apply]
+agent-session-pack init [--apply] [--json]
+agent-session-pack pack [--all-providers|--provider <id>] [--older-than 7d|--max] [--dry-run|--apply] [--yes] [--json]
+agent-session-pack unpack [--all-providers|--provider <id>] [--apply] [--yes] [--json]
+agent-session-pack restore <selector> [--provider <id>] [--to original] [--json]
+agent-session-pack open <session> [--provider <id>] [--json]
+agent-session-pack list [--provider <id>] [--json]
+agent-session-pack lifecycle enable|disable|status [--json]
+agent-session-pack maintain [--dry-run|--apply] [--yes] [--json]
+agent-session-pack preflight --provider <id> [--json]
+agent-session-pack watch [--provider <id>] [--poll-ms 750] [--json]
+agent-session-pack ensure-restored <session> [--provider <id>] [--json]
 ```
 
 Local package scripts should cover the common human paths:

@@ -1,6 +1,6 @@
 import { Effect, Either } from 'effect';
 import { describe, expect, it } from 'vitest';
-import type { DiscoveredSession } from '../../shared/sessionStore.js';
+import type { DiscoveredSession } from '../../shared/sessionModel.js';
 import { resolveSessionSelector, SessionSelectorAmbiguousError } from './sessionSelector.js';
 
 const sessions: ReadonlyArray<DiscoveredSession> = [

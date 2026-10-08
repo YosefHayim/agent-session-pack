@@ -1,20 +1,13 @@
 import { createHash } from 'node:crypto';
-import { copyFile, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Effect } from 'effect';
 import { afterEach, describe, expect, it } from 'vitest';
-import type { CompressionAdapter } from '../archive/archiveWriter.js';
+import { copyCompression } from '../../../tests/archiveFixtures.js';
 import { writeSessionManifest } from '../archive/manifestStore.js';
 import { writeArchivedStub } from '../archive/sessionStub.js';
 import { watchSessionStubs } from './sessionWatch.js';
-
-const copyCompression: CompressionAdapter = {
-  compress: ({ sourcePath, archivePath }) =>
-    Effect.promise(() => copyFile(sourcePath, archivePath)),
-  decompress: ({ archivePath, restoredPath }) =>
-    Effect.promise(() => copyFile(archivePath, restoredPath)),
-};
 
 describe('sessionWatch', () => {
   const timers: NodeJS.Timeout[] = [];

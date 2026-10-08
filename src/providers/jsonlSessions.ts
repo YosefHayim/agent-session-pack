@@ -1,14 +1,16 @@
 import { Effect } from 'effect';
+import type {
+  DiscoveredSession,
+  ProviderDiscoveryError,
+  ProviderId,
+  SessionStore,
+} from '../shared/sessionModel.js';
 import {
   collectJsonlSessions,
-  type DiscoveredSession,
-  type ProviderDiscoveryError,
-  type ProviderId,
   readSessionTitle,
-  type SessionStore,
   sessionIdFromPath,
   slugifyTitle,
-} from '../shared/sessionStore.js';
+} from './sessionDiscovery.js';
 
 /**
  * Options for discovering JSONL-backed provider sessions.

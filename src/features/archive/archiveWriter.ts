@@ -1,16 +1,28 @@
 import { execFile } from 'node:child_process';
-import { createHash } from 'node:crypto';
-import { createReadStream } from 'node:fs';
 import { mkdir, readdir, rm, stat } from 'node:fs/promises';
-import { basename, dirname, join, relative, sep } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { promisify } from 'node:util';
 import { Effect, Schema } from 'effect';
-import type { SessionSourceKind } from '../../shared/sessionStore.js';
+import type { SessionSourceKind } from '../../shared/sessionModel.js';
+import {
+  ArchiveFileSystemError,
+  directorySizeBytes,
+  ensureDirectory,
+  ensureParentDirectory,
+  removePath,
+  resolveSourceKind,
+  statPath,
+} from './archiveFileSystem.js';
+import { sha256Directory, sha256File } from './archiveHash.js';
 
 const TAR_BINARY = 'tar';
+
 const TAR_CREATE_FLAG = '-c';
+
 const TAR_EXTRACT_FLAG = '-x';
+
 const TAR_FILE_FLAG = '-f';
+
 const TAR_CHANGE_DIR_FLAG = '-C';
 
 const execFileAsync = promisify(execFile);
@@ -69,17 +81,6 @@ export type VerifiedArchive = {
 };
 
 /**
- * Typed error raised when an archive file system operation fails.
- */
-export class ArchiveFileSystemError extends Schema.TaggedError<ArchiveFileSystemError>()(
-  'ArchiveFileSystemError',
-  {
-    path: Schema.String,
-    message: Schema.String,
-  },
-) {}
-
-/**
  * Typed error raised when a restored archive hash does not match the source.
  */
 export class ArchiveVerificationError extends Schema.TaggedError<ArchiveVerificationError>()(
@@ -130,116 +131,6 @@ export const writeVerifiedArchive = (
     }
 
     return yield* writeVerifiedFileArchive(request);
-  });
-
-/**
- * Hashes a file as SHA-256.
- *
- * @param path - File path to hash.
- * @returns Effect containing the hex digest.
- * @example
- * ```ts
- * import { Effect } from 'effect';
- * import { sha256File } from './archiveWriter.js';
- *
- * const digest = await Effect.runPromise(sha256File('/sessions/abc.jsonl'));
- * ```
- */
-export const sha256File = (path: string): Effect.Effect<string, ArchiveFileSystemError> =>
-  Effect.tryPromise({
-    try: () =>
-      new Promise<string>((resolve, reject) => {
-        const hash = createHash('sha256');
-        createReadStream(path)
-          .on('data', (chunk) => hash.update(chunk))
-          .on('error', reject)
-          .on('end', () => resolve(hash.digest('hex')));
-      }),
-    catch: (cause) =>
-      new ArchiveFileSystemError({
-        path,
-        message: String(cause),
-      }),
-  });
-
-/**
- * Hashes a file or directory tree as SHA-256.
- *
- * @param path - File or directory path to hash.
- * @param sourceKind - Explicit source kind when known.
- * @returns Effect containing the hex digest.
- * @example
- * ```ts
- * import { Effect } from 'effect';
- * import { sha256Path } from './archiveWriter.js';
- *
- * const digest = await Effect.runPromise(sha256Path('/sessions/abc', 'directory'));
- * ```
- */
-export const sha256Path = (
-  path: string,
-  sourceKind?: SessionSourceKind,
-): Effect.Effect<string, ArchiveFileSystemError> =>
-  Effect.gen(function* () {
-    const kind = yield* resolveSourceKind(path, sourceKind);
-
-    if (kind === 'directory') {
-      return yield* sha256Directory(path);
-    }
-
-    return yield* sha256File(path);
-  });
-
-/**
- * Hashes every file under a directory into one stable content digest.
- *
- * @param path - Directory path to hash.
- * @returns Effect containing the hex digest.
- * @example
- * ```ts
- * import { Effect } from 'effect';
- * import { sha256Directory } from './archiveWriter.js';
- *
- * const digest = await Effect.runPromise(sha256Directory('/sessions/abc'));
- * ```
- */
-export const sha256Directory = (path: string): Effect.Effect<string, ArchiveFileSystemError> =>
-  Effect.tryPromise({
-    try: () => hashDirectoryTree(path),
-    catch: (cause) =>
-      new ArchiveFileSystemError({
-        path,
-        message: String(cause),
-      }),
-  });
-
-/**
- * Measures total file bytes for a file or directory session path.
- *
- * @param path - File or directory path.
- * @param sourceKind - Explicit source kind when known.
- * @returns Effect containing total source bytes.
- * @example
- * ```ts
- * import { Effect } from 'effect';
- * import { measureSourceBytes } from './archiveWriter.js';
- *
- * const bytes = await Effect.runPromise(measureSourceBytes('/sessions/abc', 'directory'));
- * ```
- */
-export const measureSourceBytes = (
-  path: string,
-  sourceKind?: SessionSourceKind,
-): Effect.Effect<number, ArchiveFileSystemError> =>
-  Effect.gen(function* () {
-    const kind = yield* resolveSourceKind(path, sourceKind);
-
-    if (kind === 'file') {
-      const fileStat = yield* statPath(path);
-      return fileStat.size;
-    }
-
-    return yield* directorySizeBytes(path);
   });
 
 /**
@@ -466,110 +357,6 @@ export const restoreDirectoryArchive = (
     }
   });
 
-const resolveSourceKind = (
-  path: string,
-  sourceKind: SessionSourceKind | undefined,
-): Effect.Effect<SessionSourceKind, ArchiveFileSystemError> => {
-  if (sourceKind !== undefined) {
-    return Effect.succeed(sourceKind);
-  }
-
-  return Effect.tryPromise({
-    try: async () => {
-      const pathStat = await stat(path);
-      return pathStat.isDirectory() ? ('directory' as const) : ('file' as const);
-    },
-    catch: (cause) =>
-      new ArchiveFileSystemError({
-        path,
-        message: String(cause),
-      }),
-  });
-};
-
-const directorySizeBytes = (path: string): Effect.Effect<number, ArchiveFileSystemError> =>
-  Effect.tryPromise({
-    try: async () => {
-      let sizeBytes = 0;
-
-      const walk = async (directory: string): Promise<void> => {
-        const entries = await readdir(directory, { withFileTypes: true });
-
-        for (const entry of entries) {
-          const entryPath = join(directory, entry.name);
-
-          if (entry.isDirectory()) {
-            await walk(entryPath);
-            continue;
-          }
-
-          if (!entry.isFile()) {
-            continue;
-          }
-
-          const fileStat = await stat(entryPath);
-          sizeBytes += fileStat.size;
-        }
-      };
-
-      await walk(path);
-      return sizeBytes;
-    },
-    catch: (cause) =>
-      new ArchiveFileSystemError({
-        path,
-        message: String(cause),
-      }),
-  });
-
-const hashDirectoryTree = async (root: string): Promise<string> => {
-  const files: string[] = [];
-
-  const walk = async (directory: string): Promise<void> => {
-    const entries = await readdir(directory, { withFileTypes: true });
-    const sorted = [...entries].sort((left, right) => left.name.localeCompare(right.name));
-
-    for (const entry of sorted) {
-      const entryPath = join(directory, entry.name);
-
-      if (entry.isDirectory()) {
-        await walk(entryPath);
-        continue;
-      }
-
-      if (!entry.isFile()) {
-        continue;
-      }
-
-      files.push(entryPath);
-    }
-  };
-
-  await walk(root);
-
-  const treeHash = createHash('sha256');
-
-  for (const filePath of files) {
-    const relativePath = relative(root, filePath).split(sep).join('/');
-    const fileDigest = await hashFile(filePath);
-    treeHash.update(relativePath);
-    treeHash.update('\0');
-    treeHash.update(fileDigest);
-    treeHash.update('\n');
-  }
-
-  return treeHash.digest('hex');
-};
-
-const hashFile = (path: string): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const hash = createHash('sha256');
-    createReadStream(path)
-      .on('data', (chunk) => hash.update(chunk))
-      .on('error', reject)
-      .on('end', () => resolve(hash.digest('hex')));
-  });
-
 const createTarArchive = (request: {
   readonly sourcePath: string;
   readonly tarPath: string;
@@ -672,43 +459,3 @@ const movePathAsync = async (sourcePath: string, destinationPath: string): Promi
     await rm(sourcePath, { recursive: true, force: true });
   }
 };
-
-const ensureParentDirectory = (path: string): Effect.Effect<void, ArchiveFileSystemError> =>
-  Effect.tryPromise({
-    try: () => mkdir(dirname(path), { recursive: true }).then(() => undefined),
-    catch: (cause) =>
-      new ArchiveFileSystemError({
-        path,
-        message: String(cause),
-      }),
-  });
-
-const ensureDirectory = (path: string): Effect.Effect<void, ArchiveFileSystemError> =>
-  Effect.tryPromise({
-    try: () => mkdir(path, { recursive: true }).then(() => undefined),
-    catch: (cause) =>
-      new ArchiveFileSystemError({
-        path,
-        message: String(cause),
-      }),
-  });
-
-const removePath = (path: string): Effect.Effect<void, ArchiveFileSystemError> =>
-  Effect.tryPromise({
-    try: () => rm(path, { force: true, recursive: true }).then(() => undefined),
-    catch: (cause) =>
-      new ArchiveFileSystemError({
-        path,
-        message: String(cause),
-      }),
-  });
-
-const statPath = (path: string): Effect.Effect<{ readonly size: number }, ArchiveFileSystemError> =>
-  Effect.tryPromise({
-    try: () => stat(path),
-    catch: (cause) =>
-      new ArchiveFileSystemError({
-        path,
-        message: String(cause),
-      }),
-  });

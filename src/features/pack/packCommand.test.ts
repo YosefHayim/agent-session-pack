@@ -1,41 +1,26 @@
-import { copyFile, mkdir, mkdtemp, readFile, utimes, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Effect } from 'effect';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CompressionAdapter } from '../archive/archiveWriter.js';
-import { runUnpackCommand } from '../restore/unpackCommand.js';
+import { copyCompression, writeColdSession } from '../../../tests/archiveFixtures.js';
 import { runPackCommand } from './packCommand.js';
 
-const copyCompression: CompressionAdapter = {
-  compress: ({ sourcePath, archivePath }) =>
-    Effect.promise(() => copyFile(sourcePath, archivePath)),
-  decompress: ({ archivePath, restoredPath }) =>
-    Effect.promise(() => copyFile(archivePath, restoredPath)),
-};
-
 const createWorkspace = (): Promise<string> =>
-  mkdtemp(join(tmpdir(), 'agent-session-pack-all-providers-'));
+  mkdtemp(join(tmpdir(), 'agent-session-pack-pack-command-'));
 
-const createColdCodexSession = async (
+const createColdCodexSession = (
   home: string,
-): Promise<{ readonly path: string; readonly content: string }> => {
-  const sessionDir = join(home, '.codex', 'sessions', '2026', '06', '01');
-  const sessionPath = join(sessionDir, 'session-old.jsonl');
-  const content = '{"type":"user","text":"pack every provider"}\n';
-  const modifiedAt = new Date('2026-06-01T12:00:00.000Z');
+): Promise<{ readonly path: string; readonly content: string }> =>
+  writeColdSession(
+    home,
+    join('.codex', 'sessions', '2026', '06', '01'),
+    'session-old.jsonl',
+    '{"type":"user","text":"pack every provider"}\n',
+    new Date('2026-06-01T12:00:00.000Z'),
+  );
 
-  await mkdir(sessionDir, { recursive: true });
-  await writeFile(sessionPath, content);
-  await utimes(sessionPath, modifiedAt, modifiedAt);
-
-  return {
-    path: sessionPath,
-    content,
-  };
-};
-
-describe('all-provider pack and unpack commands', () => {
+describe('packCommand', () => {
   const originalHome = process.env.HOME;
   const writes: string[] = [];
 
@@ -117,10 +102,32 @@ describe('all-provider pack and unpack commands', () => {
     expect(writes.join('')).toContain('Refusing --max with --apply');
   });
 
-  it('unpacks every archived provider session back to the original path', async () => {
+  it('pack exits with code 1 when HOME is unset', async () => {
+    delete process.env.HOME;
+
+    await Effect.runPromise(
+      runPackCommand({
+        allProviders: true,
+        apply: undefined,
+        compression: copyCompression,
+        confirmed: undefined,
+        dryRun: true,
+        json: true,
+        olderThan: '7d',
+        provider: undefined,
+        yes: undefined,
+      }),
+    );
+
+    expect(process.exitCode).toBe(1);
+    const stderr = writes.join('');
+    expect(stderr).toContain('HOME is not set.');
+    expect(stderr).toContain('.env.example');
+    expect(stderr).toContain('vault and config paths');
+  });
+
+  it('pack cancels apply without confirmation and sets exit code 2', async () => {
     const home = await createWorkspace();
-    const vaultPath = join(home, '.agent-session-pack-test');
-    const session = await createColdCodexSession(home);
     process.env.HOME = home;
 
     await Effect.runPromise(
@@ -128,32 +135,71 @@ describe('all-provider pack and unpack commands', () => {
         allProviders: true,
         apply: true,
         compression: copyCompression,
-        confirmed: true,
+        confirmed: false,
         dryRun: undefined,
+        home,
         json: true,
         olderThan: '7d',
         provider: undefined,
-        vaultPath,
-        yes: true,
+        vaultPath: join(home, '.agent-session-pack-test'),
+        yes: undefined,
+      }),
+    );
+
+    expect(process.exitCode).toBe(2);
+    expect(writes.join('')).toContain('Cancelled. Re-run with --apply and confirm with y');
+  });
+
+  it('pack writes JSON archive report for dry-run all-providers', async () => {
+    const home = await createWorkspace();
+    await createColdCodexSession(home);
+    process.env.HOME = home;
+
+    await Effect.runPromise(
+      runPackCommand({
+        allProviders: true,
+        apply: false,
+        compression: copyCompression,
+        confirmed: undefined,
+        dryRun: true,
+        home,
+        json: true,
+        olderThan: '7d',
+        provider: 'codex',
+        vaultPath: join(home, '.agent-session-pack-test'),
+        yes: undefined,
         now: new Date('2026-07-06T12:00:00.000Z'),
       }),
     );
 
+    const payload = JSON.parse(writes.join('')) as {
+      readonly rows: ReadonlyArray<{ readonly provider: string; readonly status: string }>;
+    };
+    expect(Array.isArray(payload.rows)).toBe(true);
+    expect(payload.rows.some((row) => row.provider === 'codex')).toBe(true);
+    expect(process.exitCode).toBeUndefined();
+  });
+
+  it('pack reports unknown provider without prompting', async () => {
+    const home = await createWorkspace();
+    process.env.HOME = home;
+
     await Effect.runPromise(
-      runUnpackCommand({
-        allProviders: true,
-        apply: true,
+      runPackCommand({
+        allProviders: undefined,
+        apply: undefined,
         compression: copyCompression,
-        confirmed: true,
-        json: undefined,
-        provider: undefined,
-        vaultPath,
-        yes: true,
+        confirmed: undefined,
+        dryRun: true,
+        home,
+        json: true,
+        olderThan: '7d',
+        provider: 'unknown-agent',
+        yes: undefined,
       }),
     );
 
-    await expect(readFile(session.path, 'utf8')).resolves.toBe(session.content);
-    expect(writes.join('')).toContain('Unpack all providers');
-    expect(writes.join('')).toContain('restored');
+    expect(process.exitCode).toBe(2);
+    expect(writes.join('')).toContain('Unknown provider: unknown-agent');
   });
 });

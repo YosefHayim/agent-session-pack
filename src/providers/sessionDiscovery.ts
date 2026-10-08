@@ -2,93 +2,11 @@ import { Buffer } from 'node:buffer';
 import { createReadStream } from 'node:fs';
 import { readdir, stat } from 'node:fs/promises';
 import { basename, extname, join } from 'node:path';
-import { Effect, Schema } from 'effect';
+import { Effect } from 'effect';
+import { ProviderDiscoveryError } from '../shared/sessionModel.js';
 
 const TITLE_SEARCH_LIMIT_BYTES = 1024 * 1024;
 const TITLE_READ_HIGH_WATER_MARK_BYTES = 64 * 1024;
-
-/**
- * Schema enumerating the supported provider identifiers.
- */
-export const ProviderIdSchema = Schema.Literal(
-  'codex',
-  'claude',
-  'kiro',
-  'cursor',
-  'devin',
-  'grok',
-  'kimi',
-  'opencode',
-  'gemini',
-);
-/**
- * Supported provider identifier value.
- */
-export type ProviderId = typeof ProviderIdSchema.Type;
-
-/**
- * Schema enumerating whether a session is stored as one file or a directory tree.
- */
-export const SessionSourceKindSchema = Schema.Literal('file', 'directory');
-/**
- * Session source storage kind value.
- */
-export type SessionSourceKind = typeof SessionSourceKindSchema.Type;
-
-/**
- * Schema enumerating how a provider store may be treated.
- */
-export const ProviderModeSchema = Schema.Literal('archive', 'backup-only');
-/**
- * Provider handling mode value.
- */
-export type ProviderMode = typeof ProviderModeSchema.Type;
-
-/**
- * Schema enumerating lifecycle states a session can occupy.
- */
-export const SessionStatusSchema = Schema.Literal(
-  'live',
-  'cold',
-  'archived',
-  'restored',
-  'pinned',
-  'quarantined',
-);
-/**
- * Session lifecycle status value.
- */
-export type SessionStatus = typeof SessionStatusSchema.Type;
-
-/**
- * Schema describing a session discovered in a provider store.
- */
-export const DiscoveredSessionSchema = Schema.Struct({
-  id: Schema.String,
-  provider: ProviderIdSchema,
-  title: Schema.String,
-  slug: Schema.String,
-  originalPath: Schema.String,
-  modifiedAt: Schema.DateFromSelf,
-  sizeBytes: Schema.Number,
-  sourceKind: Schema.optional(SessionSourceKindSchema),
-  createdAt: Schema.optional(Schema.DateFromSelf),
-  status: Schema.optional(SessionStatusSchema),
-  archivePath: Schema.optional(Schema.String),
-  savedPercent: Schema.optional(Schema.Number),
-});
-/**
- * Decoded discovered session record.
- */
-export type DiscoveredSession = typeof DiscoveredSessionSchema.Type;
-
-/**
- * Provider store location targeted by a scan.
- */
-export type SessionStore = {
-  readonly provider: ProviderId;
-  readonly path: string;
-};
 
 /**
  * File metadata for a discovered JSONL session file.
@@ -116,46 +34,6 @@ export type CollectJsonlOptions = {
 };
 
 /**
- * Read-only provider adapter used to discover sessions in a store.
- */
-export type ProviderAdapter = {
-  readonly id: ProviderId;
-  readonly label: string;
-  readonly mode: ProviderMode;
-  readonly defaultRoots: (home: string) => ReadonlyArray<string>;
-  readonly discover: (
-    store: SessionStore,
-  ) => Effect.Effect<ReadonlyArray<DiscoveredSession>, ProviderDiscoveryError>;
-};
-
-/**
- * Typed error raised when provider discovery fails.
- */
-export class ProviderDiscoveryError extends Schema.TaggedError<ProviderDiscoveryError>()(
-  'ProviderDiscoveryError',
-  {
-    provider: ProviderIdSchema,
-    path: Schema.String,
-    message: Schema.String,
-  },
-) {}
-
-/**
- * Stores and providers to inspect during a scan.
- */
-export type ScanRequest = {
-  readonly stores: ReadonlyArray<SessionStore>;
-  readonly providers: ReadonlyArray<ProviderAdapter>;
-};
-
-/**
- * Aggregated sessions discovered across all scanned stores.
- */
-export type ScanReport = {
-  readonly sessions: ReadonlyArray<DiscoveredSession>;
-};
-
-/**
  * Collects JSONL files below a provider store.
  *
  * @param root - Store root to scan.
@@ -163,7 +41,7 @@ export type ScanReport = {
  * @returns Effect containing discovered JSONL file metadata.
  * @example
  * ```ts
- * import { collectJsonlSessions } from './sessionStore.js';
+ * import { collectJsonlSessions } from './sessionDiscovery.js';
  *
  * const files = await Effect.runPromise(
  *   collectJsonlSessions('/root', { excludePathParts: ['node_modules'] }),
@@ -191,7 +69,7 @@ export const collectJsonlSessions = (
  * @returns Effect containing directory size and modified time.
  * @example
  * ```ts
- * import { measureDirectorySession } from './sessionStore.js';
+ * import { measureDirectorySession } from './sessionDiscovery.js';
  *
  * const entry = await Effect.runPromise(measureDirectorySession('/sessions/abc'));
  * ```
@@ -216,7 +94,7 @@ export const measureDirectorySession = (
  * @returns Lowercase slug suitable for selectors.
  * @example
  * ```ts
- * import { slugifyTitle } from './sessionStore.js';
+ * import { slugifyTitle } from './sessionDiscovery.js';
  *
  * const slug = slugifyTitle('Fix login bug');
  * ```
@@ -241,7 +119,7 @@ export const slugifyTitle = (title: string): string => {
  * @returns UUID-like id when available, otherwise the basename without extension.
  * @example
  * ```ts
- * import { sessionIdFromPath } from './sessionStore.js';
+ * import { sessionIdFromPath } from './sessionDiscovery.js';
  *
  * const id = sessionIdFromPath('/sessions/2024-01-01-abc.jsonl');
  * ```
@@ -264,7 +142,7 @@ export const sessionIdFromPath = (path: string): string => {
  * @returns Effect containing the title fallback text.
  * @example
  * ```ts
- * import { readSessionTitle } from './sessionStore.js';
+ * import { readSessionTitle } from './sessionDiscovery.js';
  *
  * const title = await Effect.runPromise(readSessionTitle('/sessions/abc.jsonl'));
  * ```
@@ -278,76 +156,6 @@ export const readSessionTitle = (path: string): Effect.Effect<string, ProviderDi
         path,
         message: String(cause),
       }),
-  });
-
-/**
- * Scans stores by delegating discovery to read-only providers.
- *
- * @param request - Providers and stores to scan.
- * @returns Scan report containing all discovered sessions.
- * @example
- * ```ts
- * import { scanStores } from './sessionStore.js';
- *
- * const report = await Effect.runPromise(scanStores({ stores, providers }));
- * ```
- */
-export const scanStores = (
-  request: ScanRequest,
-): Effect.Effect<ScanReport, ProviderDiscoveryError> =>
-  Effect.gen(function* () {
-    const discovered = yield* Effect.all(
-      request.stores.map((store) => {
-        const provider = request.providers.find((adapter) => adapter.id === store.provider);
-
-        if (provider === undefined) {
-          return Effect.succeed<ReadonlyArray<DiscoveredSession>>([]);
-        }
-
-        return discoverStoreSessions(provider, store);
-      }),
-    );
-
-    return {
-      sessions: discovered.flat(),
-    };
-  });
-
-/**
- * Discovers sessions only when a provider store exists.
- *
- * @param provider - Read-only provider adapter for the store.
- * @param store - Provider store path to inspect.
- * @returns Discovered sessions, or an empty collection when the store is absent.
- * @example
- * ```ts
- * import { discoverStoreSessions } from './sessionStore.js';
- *
- * const sessions = await Effect.runPromise(discoverStoreSessions(provider, store));
- * ```
- */
-export const discoverStoreSessions = (
-  provider: ProviderAdapter,
-  store: SessionStore,
-): Effect.Effect<ReadonlyArray<DiscoveredSession>, ProviderDiscoveryError> =>
-  Effect.gen(function* () {
-    const exists = yield* providerStoreExists(store);
-
-    if (!exists) {
-      return [];
-    }
-
-    return yield* provider.discover(store).pipe(
-      Effect.catchTag('ProviderDiscoveryError', (discoveryError) =>
-        Effect.flatMap(providerStoreExists(store), (stillExists) => {
-          if (!stillExists) {
-            return Effect.succeed<ReadonlyArray<DiscoveredSession>>([]);
-          }
-
-          return Effect.fail(discoveryError);
-        }),
-      ),
-    );
   });
 
 const collectJsonlSessionFiles = async (
@@ -386,35 +194,6 @@ const collectJsonlSessionFiles = async (
   }
 
   return files;
-};
-
-const providerStoreExists = (store: SessionStore): Effect.Effect<boolean, ProviderDiscoveryError> =>
-  Effect.tryPromise({
-    try: async () => {
-      const storeStat = await stat(store.path).catch((cause: unknown) => {
-        if (fileSystemErrorCode(cause) === 'ENOENT') {
-          return undefined;
-        }
-
-        return Promise.reject(cause);
-      });
-
-      return storeStat !== undefined;
-    },
-    catch: (cause) =>
-      new ProviderDiscoveryError({
-        provider: store.provider,
-        path: store.path,
-        message: String(cause),
-      }),
-  });
-
-const fileSystemErrorCode = (cause: unknown): string | undefined => {
-  if (typeof cause !== 'object' || cause === null || !('code' in cause)) {
-    return undefined;
-  }
-
-  return String(cause.code);
 };
 
 const measureDirectorySessionEntry = async (path: string): Promise<DirectorySessionEntry> => {

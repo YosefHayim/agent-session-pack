@@ -8,8 +8,8 @@ import {
   type ProviderAdapter,
   ProviderDiscoveryError,
   type SessionStore,
-  slugifyTitle,
-} from '../shared/sessionStore.js';
+} from '../shared/sessionModel.js';
+import { slugifyTitle } from './sessionDiscovery.js';
 
 const execFileAsync = promisify(execFile);
 

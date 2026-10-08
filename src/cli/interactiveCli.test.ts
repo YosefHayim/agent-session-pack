@@ -5,7 +5,7 @@ import { Effect } from 'effect';
 import { describe, expect, it } from 'vitest';
 import { runFirstSetup } from '../features/setup/firstSetupFlow.js';
 import type { PromptAdapter, PromptOption } from '../shared/promptAdapter.js';
-import type { ProviderAdapter } from '../shared/sessionStore.js';
+import type { ProviderAdapter } from '../shared/sessionModel.js';
 import { createMainMenuOptions, shouldRunInteractiveCli } from './interactiveCli.js';
 
 const createWorkspace = (): Promise<string> =>

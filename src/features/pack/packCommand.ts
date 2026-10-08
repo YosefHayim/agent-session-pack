@@ -3,25 +3,24 @@ import { Effect } from 'effect';
 import { resolveApplyConfirmation } from '../../shared/applyConfirmation.js';
 import { requireHome } from '../../shared/homeEnv.js';
 import { selectProviders } from '../../shared/providerFlag.js';
-import {
-  type ProviderAdapter,
-  type ProviderDiscoveryError,
-  type SessionStore,
-  scanStores,
-} from '../../shared/sessionStore.js';
+import type {
+  ProviderAdapter,
+  ProviderDiscoveryError,
+  SessionStore,
+} from '../../shared/sessionModel.js';
 import type { ArchiveWriteError, CompressionAdapter } from '../archive/archiveWriter.js';
 import type { ManifestStoreError } from '../archive/manifestStore.js';
-import { packProviderSessions, resolveDefaultVaultPath } from '../archive/sessionArchive.js';
+import { resolveDefaultVaultPath } from '../archive/vaultPaths.js';
 import { createZstdCompression } from '../archive/zstdCompression.js';
+import { scanStores } from '../scan/scanStores.js';
 import {
   formatHumanPackPlan,
   formatHumanPackReport,
-  formatJsonArchiveReport,
   formatJsonPackPlan,
+  formatJsonPackReport,
 } from './packOutput.js';
-import { createPackPlan, parseDurationMs } from './packPlan.js';
-
-const DEFAULT_OLDER_THAN = '7d';
+import { createPackPlan, DEFAULT_COLD_AFTER, parseDurationMs } from './packPlan.js';
+import { packProviderSessions } from './packSessions.js';
 
 /**
  * Citty command that packs cold sessions after verified archive restore.
@@ -160,7 +159,7 @@ export const runPackCommand = (
       return;
     }
 
-    const olderThan = args.max === true ? '0h' : (args.olderThan ?? DEFAULT_OLDER_THAN);
+    const olderThan = args.max === true ? '0h' : (args.olderThan ?? DEFAULT_COLD_AFTER);
     const olderThanMs = parseDurationMs(olderThan);
     const providers = args.providers ?? selectProviders(args.provider);
 
@@ -177,7 +176,7 @@ export const runPackCommand = (
       });
 
       if (args.json === true) {
-        process.stdout.write(formatJsonArchiveReport(report));
+        process.stdout.write(formatJsonPackReport(report));
         return;
       }
 

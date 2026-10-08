@@ -7,11 +7,11 @@ import type {
   ProviderId,
   ProviderMode,
   SessionSourceKind,
-} from '../../shared/sessionStore.js';
-import { discoverStoreSessions } from '../../shared/sessionStore.js';
-import type { ArchiveWriteError } from '../archive/archiveWriter.js';
-import { sha256Path, writeVerifiedArchive } from '../archive/archiveWriter.js';
+} from '../../shared/sessionModel.js';
+import { sha256Path } from '../archive/archiveHash.js';
+import { type ArchiveWriteError, writeVerifiedArchive } from '../archive/archiveWriter.js';
 import { createZstdCompression } from '../archive/zstdCompression.js';
+import { discoverStoreSessions } from '../scan/scanStores.js';
 import { selectNewestSessionWithinSize } from './evidenceSample.js';
 
 const MAX_ARCHIVE_EVIDENCE_SOURCE_BYTES = 25 * 1024 * 1024;
@@ -184,7 +184,7 @@ const discoverProviderSessions = (
   provider: ProviderAdapter,
   roots: ReadonlyArray<string>,
 ): Effect.Effect<
-  ReadonlyArray<import('../../shared/sessionStore.js').DiscoveredSession>,
+  ReadonlyArray<import('../../shared/sessionModel.js').DiscoveredSession>,
   ProviderDiscoveryError
 > =>
   Effect.gen(function* () {

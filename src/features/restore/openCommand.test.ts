@@ -1,19 +1,12 @@
 import { createHash } from 'node:crypto';
-import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Effect } from 'effect';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CompressionAdapter } from '../archive/archiveWriter.js';
+import { copyCompression } from '../../../tests/archiveFixtures.js';
 import { writeSessionManifest } from '../archive/manifestStore.js';
 import { runOpenCommand } from './openCommand.js';
-
-const copyCompression: CompressionAdapter = {
-  compress: ({ sourcePath, archivePath }) =>
-    Effect.promise(() => copyFile(sourcePath, archivePath)),
-  decompress: ({ archivePath, restoredPath }) =>
-    Effect.promise(() => copyFile(archivePath, restoredPath)),
-};
 
 describe('open command', () => {
   const stdoutWrites: string[] = [];

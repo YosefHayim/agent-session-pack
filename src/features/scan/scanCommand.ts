@@ -2,13 +2,9 @@ import { defineCommand } from 'citty';
 import { Effect, Schema } from 'effect';
 import { requireHome } from '../../shared/homeEnv.js';
 import { selectProviders } from '../../shared/providerFlag.js';
-import {
-  type ProviderDiscoveryError,
-  type SessionStore,
-  scanStores,
-} from '../../shared/sessionStore.js';
-import { renderHumanScan } from './humanOutput.js';
-import { renderJsonScan } from './jsonOutput.js';
+import type { ProviderDiscoveryError, SessionStore } from '../../shared/sessionModel.js';
+import { renderHumanScan, renderJsonScan } from './scanOutput.js';
+import { scanStores } from './scanStores.js';
 
 /**
  * Schema describing the scan command arguments.

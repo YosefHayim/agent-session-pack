@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Effect, Either } from 'effect';
 import { describe, expect, it } from 'vitest';
-import { ArchiveFileSystemError } from './archiveWriter.js';
+import { ArchiveFileSystemError } from './archiveFileSystem.js';
 import { createZstdCompression } from './zstdCompression.js';
 
 const createWorkspace = (): Promise<string> =>

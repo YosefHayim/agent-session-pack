@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { Effect } from 'effect';
-import type { ProviderAdapter } from '../shared/sessionStore.js';
+import type { ProviderAdapter } from '../shared/sessionModel.js';
 
 /**
  * Backup-only provider adapter for Cursor sessions.

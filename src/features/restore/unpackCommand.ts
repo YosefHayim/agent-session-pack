@@ -3,16 +3,14 @@ import { Effect } from 'effect';
 import { resolveApplyConfirmation } from '../../shared/applyConfirmation.js';
 import { requireHome } from '../../shared/homeEnv.js';
 import { selectProviders } from '../../shared/providerFlag.js';
-import type { ProviderAdapter } from '../../shared/sessionStore.js';
-import type {
-  ArchiveFileSystemError,
-  ArchiveVerificationError,
-  CompressionAdapter,
-} from '../archive/archiveWriter.js';
+import type { ProviderAdapter } from '../../shared/sessionModel.js';
+import type { ArchiveFileSystemError } from '../archive/archiveFileSystem.js';
+import type { ArchiveVerificationError, CompressionAdapter } from '../archive/archiveWriter.js';
 import type { ManifestStoreError } from '../archive/manifestStore.js';
-import { resolveDefaultVaultPath, unpackProviderSessions } from '../archive/sessionArchive.js';
+import { resolveDefaultVaultPath } from '../archive/vaultPaths.js';
 import { createZstdCompression } from '../archive/zstdCompression.js';
-import { formatHumanUnpackReport, formatJsonArchiveReport } from '../pack/packOutput.js';
+import { formatHumanUnpackReport } from './unpackOutput.js';
+import { unpackProviderSessions } from './unpackSessions.js';
 
 /**
  * Citty command that restores archived sessions from the vault.
@@ -130,7 +128,7 @@ export const runUnpackCommand = (
     });
 
     if (args.json === true) {
-      process.stdout.write(formatJsonArchiveReport(report));
+      process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
       return;
     }
 

@@ -1,8 +1,8 @@
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { Effect, Schema } from 'effect';
-import type { ProviderId, SessionSourceKind } from '../../shared/sessionStore.js';
-import { ArchiveFileSystemError } from './archiveWriter.js';
+import type { ProviderId, SessionSourceKind } from '../../shared/sessionModel.js';
+import { ArchiveFileSystemError } from './archiveFileSystem.js';
 
 /**
  * Magic marker written into packed-session stubs so GUI list/open can find them.

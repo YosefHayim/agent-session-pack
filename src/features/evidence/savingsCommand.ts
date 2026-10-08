@@ -2,7 +2,7 @@ import { defineCommand } from 'citty';
 import { Effect, Schema } from 'effect';
 import { requireHome } from '../../shared/homeEnv.js';
 import { selectProviders } from '../../shared/providerFlag.js';
-import type { ProviderDiscoveryError } from '../../shared/sessionStore.js';
+import type { ProviderDiscoveryError } from '../../shared/sessionModel.js';
 import type { ArchiveWriteError } from '../archive/archiveWriter.js';
 import { formatHumanEvidenceReport, formatJsonEvidenceReport } from './evidenceOutput.js';
 import { resolveEvidenceWorkRoot } from './evidenceWorkRoot.js';

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { DiscoveredSession } from '../../shared/sessionStore.js';
+import type { DiscoveredSession } from '../../shared/sessionModel.js';
 import { createPackPlan } from './packPlan.js';
 
 const now = new Date('2026-07-06T12:00:00.000Z');

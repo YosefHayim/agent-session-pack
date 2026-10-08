@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { Effect } from 'effect';
 import { describe, expect, it } from 'vitest';
 import { codexProvider } from '../../providers/codex.js';
-import type { ProviderAdapter } from '../../shared/sessionStore.js';
+import type { ProviderAdapter } from '../../shared/sessionModel.js';
 import { inspectProviderInventory } from './providerInventory.js';
 
 const now = new Date('2026-07-06T12:00:00.000Z');

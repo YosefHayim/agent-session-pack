@@ -2,23 +2,17 @@ import { defineCommand } from 'citty';
 import { Effect } from 'effect';
 import { requireHome } from '../../shared/homeEnv.js';
 import { parseOptionalProvider } from '../../shared/providerFlag.js';
-import type {
-  ArchiveFileSystemError,
-  ArchiveVerificationError,
-  CompressionAdapter,
-} from '../archive/archiveWriter.js';
+import type { ArchiveFileSystemError } from '../archive/archiveFileSystem.js';
+import type { ArchiveVerificationError, CompressionAdapter } from '../archive/archiveWriter.js';
 import type { ManifestStoreError } from '../archive/manifestStore.js';
-import {
-  type EnsureRestoredReport,
-  ensureSessionRestored,
-  resolveDefaultVaultPath,
-} from '../archive/sessionArchive.js';
+import { resolveDefaultVaultPath } from '../archive/vaultPaths.js';
 import { createZstdCompression } from '../archive/zstdCompression.js';
 import {
   isRestoreOnLaunchEnabled,
   readSetupConfig,
   type SetupConfigFileError,
 } from '../setup/setupConfig.js';
+import { type EnsureRestoredReport, ensureSessionRestored } from './ensureRestored.js';
 
 /**
  * Citty command that restores one archived session when restore-on-launch is enabled.

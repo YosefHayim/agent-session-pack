@@ -3,13 +3,14 @@ import { Effect } from 'effect';
 import { allProviders } from '../../providers/allProviders.js';
 import { resolveApplyConfirmation } from '../../shared/applyConfirmation.js';
 import { requireHome } from '../../shared/homeEnv.js';
-import type { ProviderDiscoveryError } from '../../shared/sessionStore.js';
+import type { ProviderDiscoveryError } from '../../shared/sessionModel.js';
 import type { ArchiveWriteError, CompressionAdapter } from '../archive/archiveWriter.js';
 import type { ManifestStoreError } from '../archive/manifestStore.js';
-import { packProviderSessions, resolveDefaultVaultPath } from '../archive/sessionArchive.js';
+import { resolveDefaultVaultPath } from '../archive/vaultPaths.js';
 import { createZstdCompression } from '../archive/zstdCompression.js';
 import { formatHumanPackReport } from '../pack/packOutput.js';
-import { parseDurationMs } from '../pack/packPlan.js';
+import { DEFAULT_COLD_AFTER, parseDurationMs } from '../pack/packPlan.js';
+import { packProviderSessions } from '../pack/packSessions.js';
 import {
   isRestoreOnLaunchEnabled,
   readSetupConfig,
@@ -109,7 +110,7 @@ const runMaintainCommand = (
       return;
     }
 
-    const olderThan = setupConfig?.coldAfter ?? '7d';
+    const olderThan = setupConfig?.coldAfter ?? DEFAULT_COLD_AFTER;
     const coldAfter = olderThan.trim().toLowerCase();
     const olderThanMs = parseDurationMs(coldAfter);
     const vaultPath = args.vaultPath ?? setupConfig?.vaultPath ?? resolveDefaultVaultPath(home);

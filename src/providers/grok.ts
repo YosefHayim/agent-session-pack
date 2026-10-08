@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import { Effect } from 'effect';
-import type { ProviderAdapter } from '../shared/sessionStore.js';
+import type { ProviderAdapter } from '../shared/sessionModel.js';
 import { discoverDirectoryProviderSessions, readJsonFile } from './directorySessions.js';
 
 /**

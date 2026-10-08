@@ -1,58 +1,9 @@
 import { Effect } from 'effect';
-import {
-  inspectProviderInventory,
-  type ProviderInventoryReport,
-} from '../features/scan/providerInventory.js';
-import { formatBytes } from './byteFormat.js';
-import type { PromptAdapter } from './promptAdapter.js';
-import type { ProviderAdapter } from './sessionStore.js';
-
-/**
- * Default cold-after duration used by interactive pack previews.
- */
-export const DEFAULT_COLD_AFTER = '7d';
-
-/**
- * Default cold threshold in milliseconds (7 days).
- */
-export const DEFAULT_OLDER_THAN_MS = 7 * 24 * 60 * 60 * 1000;
-
-/**
- * Optional overrides for the interactive CLI menu.
- */
-export type InteractiveCliRequest = {
-  readonly home?: string;
-  readonly now?: Date;
-  readonly olderThanMs?: number;
-  readonly prompts?: PromptAdapter;
-  readonly providers?: ReadonlyArray<ProviderAdapter>;
-};
-
-/**
- * Interactive request options extended with first-setup wizard controls.
- */
-export type FirstSetupRequest = InteractiveCliRequest & {
-  readonly showIntro?: boolean;
-};
-
-/**
- * Inputs used to decide whether the interactive CLI should run.
- */
-export type InteractiveCliDetectionRequest = {
-  readonly argv: ReadonlyArray<string>;
-  readonly stdinIsTty: boolean;
-  readonly stdoutIsTty: boolean;
-};
-
-/**
- * Inputs for running an async task under a TTY spinner.
- */
-export type SpinnerTaskRequest<Value> = {
-  readonly prompts: PromptAdapter;
-  readonly startMessage: string;
-  readonly stopMessage: string;
-  readonly task: () => Promise<Value>;
-};
+import { formatBytes } from '../../shared/byteFormat.js';
+import type { PromptAdapter } from '../../shared/promptAdapter.js';
+import type { ProviderAdapter } from '../../shared/sessionModel.js';
+import { runWithSpinner } from '../../shared/spinnerTask.js';
+import { inspectProviderInventory, type ProviderInventoryReport } from './providerInventory.js';
 
 /**
  * Inputs for spinner-backed provider inventory discovery.
@@ -68,47 +19,15 @@ export type InventorySpinnerRequest = {
 };
 
 /**
- * Runs a promise-backed task under a TTY spinner with start/stop/error messages.
- *
- * @param request - Spinner messages, prompt adapter, and async task.
- * @returns Task result after a successful stop message.
- * @example
- * ```ts
- * import { runWithSpinner } from './interactiveCliContext.js';
- * import { clackPromptAdapter } from './promptAdapter.js';
- *
- * const value = await runWithSpinner({
- *   prompts: clackPromptAdapter,
- *   startMessage: 'Working...',
- *   stopMessage: 'Done.',
- *   task: async () => 42,
- * });
- * ```
- */
-export const runWithSpinner = async <Value>(request: SpinnerTaskRequest<Value>): Promise<Value> => {
-  const scanSpinner = request.prompts.spinner();
-  scanSpinner.start(request.startMessage);
-
-  try {
-    const value = await request.task();
-    scanSpinner.stop(request.stopMessage);
-    return value;
-  } catch (cause) {
-    scanSpinner.error('Operation failed.');
-    throw cause;
-  }
-};
-
-/**
  * Loads provider inventory under a spinner for interactive setup and pack flows.
  *
  * @param request - Home, clock, threshold, providers, prompts, and spinner copy.
  * @returns Provider inventory report used by subsequent prompts.
  * @example
  * ```ts
- * import { loadInventoryWithSpinner } from './interactiveCliContext.js';
- * import { clackPromptAdapter } from './promptAdapter.js';
- * import { allProviders } from '../providers/allProviders.js';
+ * import { loadInventoryWithSpinner } from './inventoryPrompt.js';
+ * import { clackPromptAdapter } from '../../shared/promptAdapter.js';
+ * import { allProviders } from '../../providers/allProviders.js';
  *
  * const inventory = await loadInventoryWithSpinner({
  *   home: process.env.HOME!,
@@ -146,7 +65,7 @@ export const loadInventoryWithSpinner = (
  * @returns Multi-line table string, or a empty-store message.
  * @example
  * ```ts
- * import { formatProviderInventoryTable } from './interactiveCliContext.js';
+ * import { formatProviderInventoryTable } from './inventoryPrompt.js';
  *
  * const table = formatProviderInventoryTable({ rows: [] });
  * ```

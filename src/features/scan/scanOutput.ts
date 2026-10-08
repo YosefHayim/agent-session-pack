@@ -1,5 +1,6 @@
 import { Effect } from 'effect';
-import type { DiscoveredSession, ScanReport } from '../../shared/sessionStore.js';
+import type { DiscoveredSession } from '../../shared/sessionModel.js';
+import type { ScanReport } from './scanStores.js';
 
 const MAX_TITLE_PREVIEW_LENGTH = 96;
 
@@ -10,7 +11,7 @@ const MAX_TITLE_PREVIEW_LENGTH = 96;
  * @returns Human-readable scan summary.
  * @example
  * ```ts
- * import { formatHumanScan } from './humanOutput.js';
+ * import { formatHumanScan } from './scanOutput.js';
  *
  * formatHumanScan(report);
  * ```
@@ -37,7 +38,7 @@ export const formatHumanScan = (report: ScanReport): string => {
  * @returns Effect completing after output.
  * @example
  * ```ts
- * import { renderHumanScan } from './humanOutput.js';
+ * import { renderHumanScan } from './scanOutput.js';
  *
  * renderHumanScan(report);
  * ```
@@ -74,3 +75,22 @@ const formatTitlePreview = (title: string): string => {
 
   return `${singleLineTitle.slice(0, MAX_TITLE_PREVIEW_LENGTH - 3)}...`;
 };
+
+const formatJsonScan = (report: ScanReport): string => `${JSON.stringify(report, null, 2)}\n`;
+
+/**
+ * Writes scan output for agents.
+ *
+ * @param report - Scan report to render.
+ * @returns Effect completing after output.
+ * @example
+ * ```ts
+ * import { renderJsonScan } from './scanOutput.js';
+ *
+ * renderJsonScan(report);
+ * ```
+ */
+export const renderJsonScan = (report: ScanReport): Effect.Effect<void> =>
+  Effect.sync(() => {
+    process.stdout.write(formatJsonScan(report));
+  });

@@ -1,7 +1,7 @@
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { Effect, Schema } from 'effect';
-import { ProviderIdSchema, SessionSourceKindSchema } from '../../shared/sessionStore.js';
+import { ProviderIdSchema, SessionSourceKindSchema } from '../../shared/sessionModel.js';
 
 /**
  * Schema describing the restore manifest recorded for an archived session.
@@ -142,3 +142,30 @@ const collectManifestPaths = async (root: string): Promise<ReadonlyArray<string>
 
   return paths;
 };
+
+/**
+ * Lists every session manifest stored under a vault.
+ *
+ * @param vaultPath - Vault root path.
+ * @returns Effect containing decoded manifests.
+ * @example
+ * ```ts
+ * import { listVaultSessionManifests } from './manifestStore.js';
+ *
+ * const manifests = await Effect.runPromise(listVaultSessionManifests('/vault'));
+ * ```
+ */
+export const listVaultSessionManifests = (
+  vaultPath: string,
+): Effect.Effect<ReadonlyArray<SessionManifest>, ManifestStoreError> =>
+  Effect.gen(function* () {
+    const manifestPaths = yield* listSessionManifestPaths(join(vaultPath, 'manifests'));
+    const manifests: SessionManifest[] = [];
+
+    for (const manifestPath of manifestPaths) {
+      const manifest = yield* readSessionManifest(manifestPath);
+      manifests.push(manifest);
+    }
+
+    return manifests;
+  });

@@ -1,7 +1,7 @@
 import { appendFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Effect, Schema } from 'effect';
-import type { ProviderId } from '../../shared/sessionStore.js';
+import type { ProviderId } from '../../shared/sessionModel.js';
 
 /**
  * One recorded session access used to keep recently opened sessions hot.

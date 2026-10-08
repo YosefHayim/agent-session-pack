@@ -7,8 +7,8 @@ import type {
   ProviderDiscoveryError,
   ProviderId,
   ProviderMode,
-} from '../../shared/sessionStore.js';
-import { ProviderDiscoveryError as ProviderDiscoveryFailure } from '../../shared/sessionStore.js';
+} from '../../shared/sessionModel.js';
+import { ProviderDiscoveryError as ProviderDiscoveryFailure } from '../../shared/sessionModel.js';
 
 /**
  * Readiness status reported for a provider store during inventory.

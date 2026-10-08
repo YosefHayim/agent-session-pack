@@ -1,7 +1,8 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { Effect } from 'effect';
-import { ArchiveFileSystemError, type CompressionAdapter } from './archiveWriter.js';
+import { ArchiveFileSystemError } from './archiveFileSystem.js';
+import type { CompressionAdapter } from './archiveWriter.js';
 
 const ZSTD_BINARY = 'zstd';
 const ZSTD_LEVEL_FLAG = '-9';

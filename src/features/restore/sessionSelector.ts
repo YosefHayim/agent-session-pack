@@ -1,11 +1,11 @@
 import { Effect, Schema } from 'effect';
+import { slugifyTitle } from '../../providers/sessionDiscovery.js';
 import {
   type DiscoveredSession,
   DiscoveredSessionSchema,
   type ProviderId,
   type ProviderIdSchema,
-  slugifyTitle,
-} from '../../shared/sessionStore.js';
+} from '../../shared/sessionModel.js';
 
 /**
  * Selector text paired with the sessions it should resolve against.

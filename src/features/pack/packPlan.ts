@@ -1,7 +1,15 @@
 import { sumSessionBytes } from '../../shared/byteSavings.js';
-import type { DiscoveredSession, ProviderId, ProviderMode } from '../../shared/sessionStore.js';
+import type { DiscoveredSession, ProviderId, ProviderMode } from '../../shared/sessionModel.js';
 
-const DEFAULT_COLD_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
+/**
+ * Default cold threshold: sessions untouched this long are pack candidates.
+ */
+export const DEFAULT_COLD_AFTER = '7d';
+
+/**
+ * Default cold threshold in milliseconds (7 days).
+ */
+export const DEFAULT_COLD_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
  * Provider identity and mode considered when building a pack plan.

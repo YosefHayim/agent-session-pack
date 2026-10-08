@@ -1,4 +1,4 @@
-import type { DiscoveredSession } from './sessionStore.js';
+import type { DiscoveredSession } from './sessionModel.js';
 
 /**
  * Sums the source bytes of discovered sessions.

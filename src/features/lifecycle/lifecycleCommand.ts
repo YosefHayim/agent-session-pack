@@ -2,7 +2,8 @@ import { fileURLToPath } from 'node:url';
 import { defineCommand } from 'citty';
 import { Effect } from 'effect';
 import { requireHome } from '../../shared/homeEnv.js';
-import { resolveDefaultVaultPath } from '../archive/sessionArchive.js';
+import { resolveDefaultVaultPath } from '../archive/vaultPaths.js';
+import { DEFAULT_COLD_AFTER } from '../pack/packPlan.js';
 import {
   isRestoreOnLaunchEnabled,
   readSetupConfig,
@@ -165,7 +166,7 @@ const buildLifecycleConfig = (request: {
       version: 1,
       providers: ['codex', 'claude', 'grok', 'gemini'],
       vaultPath,
-      coldAfter: '7d',
+      coldAfter: DEFAULT_COLD_AFTER,
       createdAt: timestamp,
       updatedAt: timestamp,
       restoreOnLaunch: request.restoreOnLaunch,

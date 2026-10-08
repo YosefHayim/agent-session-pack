@@ -1,20 +1,28 @@
 import { Effect } from 'effect';
 import { runDoctorCommand } from '../features/doctor/doctorCommand.js';
 import { runSavingsCommand } from '../features/evidence/savingsCommand.js';
+import { runPackFlow } from '../features/pack/packFlow.js';
+import { runRestoreFlow } from '../features/restore/restoreFlow.js';
+import { runReviewSessions } from '../features/scan/reviewFlow.js';
 import { runFirstSetup } from '../features/setup/firstSetupFlow.js';
-import {
-  type InteractiveCliDetectionRequest,
-  type InteractiveCliRequest,
-  runWithSpinner,
-} from '../shared/interactiveCliContext.js';
+import type { InteractiveCliRequest } from '../shared/interactiveCliRequest.js';
 import {
   clackPromptAdapter,
   type PromptAdapter,
   type PromptOption,
 } from '../shared/promptAdapter.js';
-import { runPackFlow, runRestoreFlow, runReviewSessions } from './interactiveSessionFlows.js';
+import { runWithSpinner } from '../shared/spinnerTask.js';
 
 type MainMenuAction = 'doctor' | 'exit' | 'pack' | 'restore' | 'review' | 'savings' | 'setup';
+
+/**
+ * Inputs used to decide whether the interactive CLI should run.
+ */
+export type InteractiveCliDetectionRequest = {
+  readonly argv: ReadonlyArray<string>;
+  readonly stdinIsTty: boolean;
+  readonly stdoutIsTty: boolean;
+};
 
 /**
  * Decides whether the bare binary should open the human interactive flow.

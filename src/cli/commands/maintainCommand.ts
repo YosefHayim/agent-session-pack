@@ -3,6 +3,7 @@ import { Effect } from 'effect';
 import { createZstdCompression } from '../../core/archiveReader.js';
 import type { ArchiveWriteError, CompressionAdapter } from '../../core/archiveWriter.js';
 import type { ManifestStoreError } from '../../core/manifestStore.js';
+import { parseDurationMs } from '../../core/packPlan.js';
 import { packProviderSessions, resolveDefaultVaultPath } from '../../core/sessionArchive.js';
 import type { ProviderDiscoveryError } from '../../core/sessionStore.js';
 import {
@@ -13,9 +14,7 @@ import {
 import { formatHumanPackReport } from '../../output/packOutput.js';
 import { allProviders } from '../../providers/allProviders.js';
 import { resolveApplyConfirmation } from '../applyConfirmation.js';
-import { HOME_NOT_SET_STDERR_MESSAGE } from '../homeEnv.js';
-
-const DAY_MS = 24 * 60 * 60 * 1000;
+import { requireHome } from '../homeEnv.js';
 
 /**
  * Citty command that re-packs cold sessions so storage stays low over time.
@@ -86,11 +85,9 @@ const runMaintainCommand = (
   ArchiveWriteError | ManifestStoreError | ProviderDiscoveryError | SetupConfigFileError
 > =>
   Effect.gen(function* () {
-    const home = args.home ?? process.env.HOME;
+    const home = requireHome(args.home);
 
     if (home === undefined) {
-      process.stderr.write(HOME_NOT_SET_STDERR_MESSAGE);
-      process.exitCode = 1;
       return;
     }
 
@@ -113,7 +110,8 @@ const runMaintainCommand = (
     }
 
     const olderThan = setupConfig?.coldAfter ?? '7d';
-    const olderThanMs = parseDurationMs(olderThan);
+    const coldAfter = olderThan.trim().toLowerCase();
+    const olderThanMs = parseDurationMs(coldAfter);
     const vaultPath = args.vaultPath ?? setupConfig?.vaultPath ?? resolveDefaultVaultPath(home);
     const apply = args.apply === true;
     const archiveProviders = allProviders.filter((provider) => provider.mode === 'archive');
@@ -152,23 +150,3 @@ const runMaintainCommand = (
       ].join('\n'),
     );
   });
-
-const parseDurationMs = (duration: string): number => {
-  const match = duration.trim().match(/^(\d+)(h|d|w)$/i);
-  if (match === null) {
-    return 7 * DAY_MS;
-  }
-
-  const amount = Number(match[1]);
-  const unit = match[2]?.toLowerCase();
-
-  if (unit === 'h') {
-    return amount * 60 * 60 * 1000;
-  }
-
-  if (unit === 'w') {
-    return amount * 7 * DAY_MS;
-  }
-
-  return amount * DAY_MS;
-};

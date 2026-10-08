@@ -12,6 +12,7 @@ import {
   sha256Path,
   writeVerifiedArchive,
 } from './archiveWriter.js';
+import { savedPercent, sumSessionBytes } from './byteSavings.js';
 import {
   listSessionManifestPaths,
   type ManifestStoreError,
@@ -938,19 +939,8 @@ const unpackStatus = (restored: {
   return 'already-present';
 };
 
-const sumSessionBytes = (sessions: ReadonlyArray<DiscoveredSession>): number =>
-  sessions.reduce((totalBytes, session) => totalBytes + session.sizeBytes, 0);
-
 const sumManifestSourceBytes = (manifests: ReadonlyArray<SessionManifest>): number =>
   manifests.reduce((totalBytes, manifest) => totalBytes + manifest.sourceBytes, 0);
-
-const savedPercent = (sourceBytes: number, archiveBytes: number): number => {
-  if (sourceBytes === 0) {
-    return 0;
-  }
-
-  return Number((100 - (archiveBytes / sourceBytes) * 100).toFixed(1));
-};
 
 const sessionSourceKind = (session: DiscoveredSession): SessionSourceKind =>
   session.sourceKind ?? 'file';

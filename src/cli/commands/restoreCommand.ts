@@ -1,5 +1,5 @@
 import { defineCommand } from 'citty';
-import { Effect, Schema } from 'effect';
+import { Effect } from 'effect';
 import { createZstdCompression } from '../../core/archiveReader.js';
 import type {
   ArchiveFileSystemError,
@@ -12,9 +12,9 @@ import {
   ensureSessionRestored,
   resolveDefaultVaultPath,
 } from '../../core/sessionArchive.js';
-import { type ProviderId, ProviderIdSchema } from '../../core/sessionStore.js';
 import { readSetupConfig, type SetupConfigFileError } from '../../core/setupConfig.js';
-import { HOME_NOT_SET_STDERR_MESSAGE } from '../homeEnv.js';
+import { requireHome } from '../homeEnv.js';
+import { parseOptionalProvider } from '../providerFlag.js';
 
 /**
  * Citty command that restores a packed session by id, name, slug, or picker.
@@ -95,11 +95,9 @@ export const runRestoreCommand = (
   ArchiveFileSystemError | ArchiveVerificationError | ManifestStoreError | SetupConfigFileError
 > =>
   Effect.gen(function* () {
-    const home = args.home ?? process.env.HOME;
+    const home = requireHome(args.home);
 
     if (home === undefined) {
-      process.stderr.write(HOME_NOT_SET_STDERR_MESSAGE);
-      process.exitCode = 1;
       return;
     }
 
@@ -144,20 +142,6 @@ export const runRestoreCommand = (
     writeRestoreOutput(report, args.json === true);
     process.exitCode = restoreExitCode(report);
   });
-
-const parseOptionalProvider = (provider: string | undefined): ProviderId | undefined => {
-  if (provider === undefined) {
-    return undefined;
-  }
-
-  const decoded = Schema.decodeUnknownEither(ProviderIdSchema)(provider);
-
-  if (decoded._tag === 'Left') {
-    return undefined;
-  }
-
-  return decoded.right;
-};
 
 const writeRestoreOutput = (report: EnsureRestoredReport, json: boolean): void => {
   if (json) {

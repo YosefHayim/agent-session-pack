@@ -1,17 +1,14 @@
 import { defineCommand } from 'citty';
 import { Effect, Schema } from 'effect';
 import {
-  type ProviderAdapter,
   type ProviderDiscoveryError,
-  type ProviderId,
-  ProviderIdSchema,
   type SessionStore,
   scanStores,
 } from '../../core/sessionStore.js';
 import { renderHumanScan } from '../../output/humanOutput.js';
 import { renderJsonScan } from '../../output/jsonOutput.js';
-import { allProviders } from '../../providers/allProviders.js';
-import { HOME_NOT_SET_STDERR_MESSAGE } from '../homeEnv.js';
+import { requireHome } from '../homeEnv.js';
+import { selectProviders } from '../providerFlag.js';
 
 /**
  * Schema describing the scan command arguments.
@@ -41,11 +38,9 @@ export type ScanArgs = typeof ScanArgsSchema.Type;
  */
 export const runScanCommand = (args: ScanArgs): Effect.Effect<void, ProviderDiscoveryError> =>
   Effect.gen(function* () {
-    const home = process.env.HOME;
+    const home = requireHome();
 
     if (home === undefined) {
-      process.stderr.write(HOME_NOT_SET_STDERR_MESSAGE);
-      process.exitCode = 1;
       return;
     }
 
@@ -94,19 +89,3 @@ export const scanCommand = defineCommand({
     );
   },
 });
-
-const selectProviders = (provider: string | undefined): ReadonlyArray<ProviderAdapter> => {
-  if (provider === undefined) {
-    return allProviders;
-  }
-
-  const decoded = Schema.decodeUnknownEither(ProviderIdSchema)(provider);
-
-  if (decoded._tag === 'Left') {
-    process.stderr.write(`Unknown provider: ${provider}\n`);
-    process.exitCode = 2;
-    return [];
-  }
-
-  return allProviders.filter((adapter) => adapter.id === (provider as ProviderId));
-};

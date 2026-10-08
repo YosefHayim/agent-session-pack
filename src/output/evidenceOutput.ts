@@ -1,3 +1,4 @@
+import { savedPercent } from '../core/byteSavings.js';
 import type { LocalEvidenceEntry, LocalEvidenceReport } from '../core/localEvidence.js';
 import { formatBytes } from './byteFormat.js';
 
@@ -93,14 +94,6 @@ const formatOptionalBytes = (bytes: number | undefined): string =>
 
 const formatMaybeBytes = (bytes: number, sampledSources: number): string =>
   sampledSources === 0 ? '-' : formatBytes(bytes);
-
-const savedPercent = (sourceBytes: number, archiveBytes: number): number => {
-  if (sourceBytes === 0) {
-    return 0;
-  }
-
-  return Number((100 - (archiveBytes / sourceBytes) * 100).toFixed(1));
-};
 
 const formatPercent = (percent: number): string => `${percent.toFixed(1)}%`;
 

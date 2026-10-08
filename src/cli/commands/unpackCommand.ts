@@ -1,5 +1,5 @@
 import { defineCommand } from 'citty';
-import { Effect, Schema } from 'effect';
+import { Effect } from 'effect';
 import { createZstdCompression } from '../../core/archiveReader.js';
 import type {
   ArchiveFileSystemError,
@@ -8,15 +8,11 @@ import type {
 } from '../../core/archiveWriter.js';
 import type { ManifestStoreError } from '../../core/manifestStore.js';
 import { resolveDefaultVaultPath, unpackProviderSessions } from '../../core/sessionArchive.js';
-import {
-  type ProviderAdapter,
-  type ProviderId,
-  ProviderIdSchema,
-} from '../../core/sessionStore.js';
+import type { ProviderAdapter } from '../../core/sessionStore.js';
 import { formatHumanUnpackReport, formatJsonArchiveReport } from '../../output/packOutput.js';
-import { allProviders } from '../../providers/allProviders.js';
 import { resolveApplyConfirmation } from '../applyConfirmation.js';
-import { HOME_NOT_SET_STDERR_MESSAGE } from '../homeEnv.js';
+import { requireHome } from '../homeEnv.js';
+import { selectProviders } from '../providerFlag.js';
 
 /**
  * Citty command that restores archived sessions from the vault.
@@ -111,11 +107,9 @@ export const runUnpackCommand = (
   args: UnpackArgs,
 ): Effect.Effect<void, ArchiveFileSystemError | ArchiveVerificationError | ManifestStoreError> =>
   Effect.gen(function* () {
-    const home = args.home ?? process.env.HOME;
+    const home = requireHome(args.home);
 
     if (home === undefined) {
-      process.stderr.write(HOME_NOT_SET_STDERR_MESSAGE);
-      process.exitCode = 1;
       return;
     }
 
@@ -130,10 +124,7 @@ export const runUnpackCommand = (
 
     const report = yield* unpackProviderSessions({
       vaultPath: args.vaultPath ?? resolveDefaultVaultPath(home),
-      providers: selectProviders({
-        provider: args.provider,
-        providers: args.providers,
-      }),
+      providers: args.providers ?? selectProviders(args.provider),
       apply: args.apply === true,
       compression: args.compression ?? createZstdCompression(),
     });
@@ -145,26 +136,3 @@ export const runUnpackCommand = (
 
     process.stdout.write(`${formatHumanUnpackReport(report)}\n`);
   });
-
-const selectProviders = (args: {
-  readonly provider: string | undefined;
-  readonly providers: ReadonlyArray<ProviderAdapter> | undefined;
-}): ReadonlyArray<ProviderAdapter> => {
-  if (args.providers !== undefined) {
-    return args.providers;
-  }
-
-  if (args.provider === undefined) {
-    return allProviders;
-  }
-
-  const decoded = Schema.decodeUnknownEither(ProviderIdSchema)(args.provider);
-
-  if (decoded._tag === 'Left') {
-    process.stderr.write(`Unknown provider: ${args.provider}\n`);
-    process.exitCode = 2;
-    return [];
-  }
-
-  return allProviders.filter((adapter) => adapter.id === (args.provider as ProviderId));
-};

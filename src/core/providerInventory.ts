@@ -1,5 +1,6 @@
 import { stat } from 'node:fs/promises';
 import { Effect } from 'effect';
+import { sumSessionBytes } from './byteSavings.js';
 import type {
   DiscoveredSession,
   ProviderAdapter,
@@ -229,9 +230,6 @@ const pathExists = (request: {
         message: String(cause),
       }),
   });
-
-const sumSessionBytes = (sessions: ReadonlyArray<DiscoveredSession>): number =>
-  sessions.reduce((totalBytes, session) => totalBytes + session.sizeBytes, 0);
 
 const isRootDiscovery = (discovery: RootDiscovery | undefined): discovery is RootDiscovery =>
   discovery !== undefined;

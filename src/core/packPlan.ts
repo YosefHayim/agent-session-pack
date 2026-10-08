@@ -1,4 +1,7 @@
+import { sumSessionBytes } from './byteSavings.js';
 import type { DiscoveredSession, ProviderId, ProviderMode } from './sessionStore.js';
+
+const DEFAULT_COLD_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
  * Provider identity and mode considered when building a pack plan.
@@ -200,14 +203,33 @@ export const createPackThresholdPreviews = (
   ];
 };
 
-const sumSessionBytes = (sessions: ReadonlyArray<DiscoveredSession>): number =>
-  sessions.reduce((totalBytes, session) => totalBytes + session.sizeBytes, 0);
-
 type DurationUnit = 'd' | 'h' | 'w';
 
 type Duration = {
   readonly value: number;
   readonly unit: DurationUnit;
+};
+
+/**
+ * Parses a cold threshold like `12h`, `7d`, or `2w` into milliseconds.
+ *
+ * @param duration - Threshold text: a whole number followed by h, d, or w.
+ * @returns Milliseconds, or 7 days when the text does not match.
+ * @example
+ * ```ts
+ * import { parseDurationMs } from './packPlan.js';
+ *
+ * parseDurationMs('12h');
+ * ```
+ */
+export const parseDurationMs = (duration: string): number => {
+  const parsed = parseDuration(duration);
+
+  if (parsed === undefined) {
+    return DEFAULT_COLD_AFTER_MS;
+  }
+
+  return durationMs(parsed);
 };
 
 const createThresholdPreview = (request: {

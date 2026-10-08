@@ -3,18 +3,13 @@ import { Effect, Schema } from 'effect';
 import type { ArchiveWriteError } from '../../core/archiveWriter.js';
 import { resolveEvidenceWorkRoot } from '../../core/evidenceWorkRoot.js';
 import { runLocalEvidence } from '../../core/localEvidence.js';
-import {
-  type ProviderAdapter,
-  type ProviderDiscoveryError,
-  type ProviderId,
-  ProviderIdSchema,
-} from '../../core/sessionStore.js';
+import type { ProviderDiscoveryError } from '../../core/sessionStore.js';
 import {
   formatHumanEvidenceReport,
   formatJsonEvidenceReport,
 } from '../../output/evidenceOutput.js';
-import { allProviders } from '../../providers/allProviders.js';
-import { HOME_NOT_SET_STDERR_MESSAGE } from '../homeEnv.js';
+import { requireHome } from '../homeEnv.js';
+import { selectProviders } from '../providerFlag.js';
 
 /**
  * Schema describing the savings command arguments.
@@ -46,11 +41,9 @@ export const runSavingsCommand = (
   args: SavingsArgs,
 ): Effect.Effect<void, ArchiveWriteError | ProviderDiscoveryError> =>
   Effect.gen(function* () {
-    const home = process.env.HOME;
+    const home = requireHome();
 
     if (home === undefined) {
-      process.stderr.write(HOME_NOT_SET_STDERR_MESSAGE);
-      process.exitCode = 1;
       return;
     }
 
@@ -128,19 +121,3 @@ export const checkCommand = defineCommand({
     );
   },
 });
-
-const selectProviders = (provider: string | undefined): ReadonlyArray<ProviderAdapter> => {
-  if (provider === undefined) {
-    return allProviders;
-  }
-
-  const decoded = Schema.decodeUnknownEither(ProviderIdSchema)(provider);
-
-  if (decoded._tag === 'Left') {
-    process.stderr.write(`Unknown provider: ${provider}\n`);
-    process.exitCode = 2;
-    return [];
-  }
-
-  return allProviders.filter((adapter) => adapter.id === (provider as ProviderId));
-};

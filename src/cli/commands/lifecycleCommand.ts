@@ -15,7 +15,7 @@ import {
   type SetupConfigFileError,
   writeSetupConfig,
 } from '../../core/setupConfig.js';
-import { HOME_NOT_SET_STDERR_MESSAGE } from '../homeEnv.js';
+import { requireHome } from '../homeEnv.js';
 
 /**
  * Citty command that enables, disables, or shows continuous restore/pack lifecycle.
@@ -75,11 +75,9 @@ export const runLifecycleCommand = (
   args: LifecycleArgs,
 ): Effect.Effect<void, SetupConfigFileError | LifecycleWrapperError> =>
   Effect.gen(function* () {
-    const home = args.home ?? process.env.HOME;
+    const home = requireHome(args.home);
 
     if (home === undefined) {
-      process.stderr.write(HOME_NOT_SET_STDERR_MESSAGE);
-      process.exitCode = 1;
       return;
     }
 

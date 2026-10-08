@@ -1,3 +1,4 @@
+import { savedPercent } from '../core/byteSavings.js';
 import type { PackPlan } from '../core/packPlan.js';
 import type { PackSessionsReport, UnpackSessionsReport } from '../core/sessionArchive.js';
 import { formatBytes } from './byteFormat.js';
@@ -331,14 +332,6 @@ const sumMaybe = (values: ReadonlyArray<number | undefined>): number | undefined
   }
 
   return totalBytes;
-};
-
-const savedPercent = (sourceBytes: number, archiveBytes: number): number => {
-  if (sourceBytes === 0) {
-    return 0;
-  }
-
-  return Number((100 - (archiveBytes / sourceBytes) * 100).toFixed(1));
 };
 
 const formatMaybeBytes = (bytes: number | undefined): string => {

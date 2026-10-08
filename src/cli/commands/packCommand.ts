@@ -1,15 +1,13 @@
 import { defineCommand } from 'citty';
-import { Effect, Schema } from 'effect';
+import { Effect } from 'effect';
 import { createZstdCompression } from '../../core/archiveReader.js';
 import type { ArchiveWriteError, CompressionAdapter } from '../../core/archiveWriter.js';
 import type { ManifestStoreError } from '../../core/manifestStore.js';
-import { createPackPlan } from '../../core/packPlan.js';
+import { createPackPlan, parseDurationMs } from '../../core/packPlan.js';
 import { packProviderSessions, resolveDefaultVaultPath } from '../../core/sessionArchive.js';
 import {
   type ProviderAdapter,
   type ProviderDiscoveryError,
-  type ProviderId,
-  ProviderIdSchema,
   type SessionStore,
   scanStores,
 } from '../../core/sessionStore.js';
@@ -19,9 +17,9 @@ import {
   formatJsonArchiveReport,
   formatJsonPackPlan,
 } from '../../output/packOutput.js';
-import { allProviders } from '../../providers/allProviders.js';
 import { resolveApplyConfirmation } from '../applyConfirmation.js';
-import { HOME_NOT_SET_STDERR_MESSAGE } from '../homeEnv.js';
+import { requireHome } from '../homeEnv.js';
+import { selectProviders } from '../providerFlag.js';
 
 const DEFAULT_OLDER_THAN = '7d';
 
@@ -149,11 +147,9 @@ export const runPackCommand = (
       return;
     }
 
-    const home = args.home ?? process.env.HOME;
+    const home = requireHome(args.home);
 
     if (home === undefined) {
-      process.stderr.write(HOME_NOT_SET_STDERR_MESSAGE);
-      process.exitCode = 1;
       return;
     }
 
@@ -166,10 +162,7 @@ export const runPackCommand = (
 
     const olderThan = args.max === true ? '0h' : (args.olderThan ?? DEFAULT_OLDER_THAN);
     const olderThanMs = parseDurationMs(olderThan);
-    const providers = selectProviders({
-      provider: args.provider,
-      providers: args.providers,
-    });
+    const providers = args.providers ?? selectProviders(args.provider);
 
     if (shouldUseArchiveWorkflow(args)) {
       const report = yield* packProviderSessions({
@@ -218,50 +211,6 @@ export const runPackCommand = (
 
     process.stdout.write(`${formatHumanPackPlan(plan, { olderThan })}\n`);
   });
-
-const parseDurationMs = (duration: string): number => {
-  const match = duration.match(/^(\d+)(h|d|w)$/);
-
-  if (match === null) {
-    return 7 * 24 * 60 * 60 * 1000;
-  }
-
-  const value = Number(match[1]);
-  const unit = match[2];
-
-  if (unit === 'h') {
-    return value * 60 * 60 * 1000;
-  }
-
-  if (unit === 'w') {
-    return value * 7 * 24 * 60 * 60 * 1000;
-  }
-
-  return value * 24 * 60 * 60 * 1000;
-};
-
-const selectProviders = (args: {
-  readonly provider: string | undefined;
-  readonly providers: ReadonlyArray<ProviderAdapter> | undefined;
-}): ReadonlyArray<ProviderAdapter> => {
-  if (args.providers !== undefined) {
-    return args.providers;
-  }
-
-  if (args.provider === undefined) {
-    return allProviders;
-  }
-
-  const decoded = Schema.decodeUnknownEither(ProviderIdSchema)(args.provider);
-
-  if (decoded._tag === 'Left') {
-    process.stderr.write(`Unknown provider: ${args.provider}\n`);
-    process.exitCode = 2;
-    return [];
-  }
-
-  return allProviders.filter((adapter) => adapter.id === (args.provider as ProviderId));
-};
 
 const shouldUseArchiveWorkflow = (args: PackArgs): boolean => {
   if (args.apply === true) {

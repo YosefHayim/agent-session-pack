@@ -73,6 +73,7 @@ export const watchSessionStubs = (
     const compression = request.compression ?? createZstdCompression();
     const pollIntervalMs = request.pollIntervalMs ?? 750;
     const watchers = new Map<string, ReturnType<typeof watch>>();
+    const restoringPaths = new Set<string>();
 
     const refreshWatchers = (manifests: ReadonlyArray<SessionManifest>): void => {
       const activePaths = new Set<string>();
@@ -129,6 +130,12 @@ export const watchSessionStubs = (
         return;
       }
 
+      // One write fires several fs events; concurrent restores would share one staging path.
+      if (restoringPaths.has(manifest.originalPath)) {
+        return;
+      }
+
+      restoringPaths.add(manifest.originalPath);
       const report = await Effect.runPromise(
         ensureSessionRestored({
           command: 'ensure-restored',
@@ -139,7 +146,9 @@ export const watchSessionStubs = (
           restoreOnLaunchEnabled: true,
           requireLifecycleEnabled: false,
         }),
-      );
+      ).finally(() => {
+        restoringPaths.delete(manifest.originalPath);
+      });
 
       request.onEvent?.({
         sessionId: manifest.sessionId,

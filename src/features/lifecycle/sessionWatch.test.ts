@@ -1,106 +1,160 @@
 import { createHash } from 'node:crypto';
-import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import type * as NodeFs from 'node:fs';
+import { copyFile, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Effect } from 'effect';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { copyCompression } from '../../../tests/archiveFixtures.js';
+import type { CompressionAdapter } from '../archive/archiveWriter.js';
 import { writeSessionManifest } from '../archive/manifestStore.js';
 import { writeArchivedStub } from '../archive/sessionStub.js';
 import { watchSessionStubs } from './sessionWatch.js';
 
+const STUB_CONTENT = `${JSON.stringify({
+  agentSessionPack: 'agent-session-pack-archived-stub',
+  version: 1,
+  sessionId: 'cold',
+  provider: 'codex',
+  sourceKind: 'file',
+})}\n`;
+
+const watchListeners = vi.hoisted(() => new Map<string, () => void>());
+
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof NodeFs>();
+
+  return {
+    ...actual,
+    watch: (path: string, options: NodeFs.WatchOptions, listener: () => void) => {
+      watchListeners.set(path, listener);
+      return actual.watch(path, options, listener);
+    },
+  };
+});
+
+type WatchRun = {
+  readonly events: string[];
+  readonly stop: () => Promise<void>;
+};
+
+const writeArchivedCodexStub = async (
+  home: string,
+): Promise<{ readonly vaultPath: string; readonly filePath: string; readonly content: string }> => {
+  const vaultPath = join(home, '.agent-session-pack');
+  const filePath = join(home, '.codex', 'sessions', 'cold.jsonl');
+  const archivePath = join(vaultPath, 'archives', 'codex', 'cold.jsonl.zst');
+  const content = '{"type":"user","text":"watch restore"}\n';
+
+  await mkdir(join(vaultPath, 'archives', 'codex'), { recursive: true });
+  await mkdir(join(home, '.codex', 'sessions'), { recursive: true });
+  await writeFile(archivePath, content);
+  await Effect.runPromise(
+    writeSessionManifest(join(vaultPath, 'manifests', 'codex', 'cold.json'), {
+      sessionId: 'cold',
+      provider: 'codex',
+      title: 'cold',
+      slug: 'cold',
+      originalPath: filePath,
+      archivePath,
+      sourceSha256: createHash('sha256').update(content).digest('hex'),
+      sourceBytes: Buffer.byteLength(content, 'utf8'),
+      archiveBytes: Buffer.byteLength(content, 'utf8'),
+      archivedAt: '2026-07-01T00:00:00.000Z',
+      sourceKind: 'file',
+    }),
+  );
+  await Effect.runPromise(
+    writeArchivedStub({
+      originalPath: filePath,
+      sessionId: 'cold',
+      provider: 'codex',
+      sourceKind: 'file',
+    }),
+  );
+
+  return { vaultPath, filePath, content };
+};
+
+const startCodexWatch = (vaultPath: string, compression: CompressionAdapter): WatchRun => {
+  const control = { stopped: false };
+  const events: string[] = [];
+  const watchPromise = Effect.runPromise(
+    watchSessionStubs({
+      vaultPath,
+      provider: 'codex',
+      compression,
+      pollIntervalMs: 80,
+      shouldStop: () => control.stopped,
+      onEvent: (event) => {
+        events.push(event.status);
+      },
+    }),
+  );
+
+  return {
+    events,
+    stop: () => {
+      control.stopped = true;
+      return watchPromise;
+    },
+  };
+};
+
 describe('sessionWatch', () => {
   const timers: NodeJS.Timeout[] = [];
+
+  const wait = (ms: number): Promise<void> =>
+    new Promise((resolve) => {
+      timers.push(setTimeout(resolve, ms));
+    });
 
   afterEach(() => {
     for (const timer of timers) {
       clearTimeout(timer);
     }
     timers.length = 0;
+    watchListeners.clear();
   });
 
-  it('materializes a directory stub when non-marker files appear', async () => {
-    const home = await mkdtemp(join(tmpdir(), 'asp-watch-dir-'));
-    const vaultPath = join(home, '.agent-session-pack');
-    const originalPath = join(home, '.grok', 'sessions', 'sid-1');
-    // Use file-kind archive for deterministic copy compression restore into a path.
-    const filePath = join(home, '.codex', 'sessions', 'cold.jsonl');
-    const fileArchive = join(vaultPath, 'archives', 'codex', 'cold.jsonl.zst');
-    const content = '{"type":"user","text":"watch restore"}\n';
-    const sourceSha256 = createHash('sha256').update(content).digest('hex');
+  it('materializes a file stub when the provider opens it', async () => {
+    const home = await mkdtemp(join(tmpdir(), 'asp-watch-file-'));
+    const session = await writeArchivedCodexStub(home);
+    const watchRun = startCodexWatch(session.vaultPath, copyCompression);
 
-    await mkdir(join(vaultPath, 'archives', 'codex'), { recursive: true });
-    await mkdir(join(home, '.codex', 'sessions'), { recursive: true });
-    await writeFile(fileArchive, content);
-    await Effect.runPromise(
-      writeSessionManifest(join(vaultPath, 'manifests', 'codex', 'cold.json'), {
-        sessionId: 'cold',
-        provider: 'codex',
-        title: 'cold',
-        slug: 'cold',
-        originalPath: filePath,
-        archivePath: fileArchive,
-        sourceSha256,
-        sourceBytes: Buffer.byteLength(content, 'utf8'),
-        archiveBytes: Buffer.byteLength(content, 'utf8'),
-        archivedAt: '2026-07-01T00:00:00.000Z',
-        sourceKind: 'file',
-      }),
-    );
-    await Effect.runPromise(
-      writeArchivedStub({
-        originalPath: filePath,
-        sessionId: 'cold',
-        provider: 'codex',
-        sourceKind: 'file',
-      }),
-    );
+    await wait(120);
+    await writeFile(session.filePath, STUB_CONTENT);
+    await wait(350);
+    await watchRun.stop();
 
-    // Directory open path
-    await mkdir(join(vaultPath, 'archives', 'grok'), { recursive: true });
-    const dirArchive = join(vaultPath, 'archives', 'grok', 'sid-1.tar.zst');
-    // For directory sessions, copyCompression decompress writes archive bytes as a single file
-    // to restoredPath; restoreDirectoryArchive needs tar. Use file session for reliable unit proof.
-    void originalPath;
-    void dirArchive;
+    expect(watchRun.events).toContain('restored');
+    await expect(readFile(session.filePath, 'utf8')).resolves.toBe(session.content);
+  });
 
-    let stop = false;
-    const events: string[] = [];
-    const watchPromise = Effect.runPromise(
-      watchSessionStubs({
-        vaultPath,
-        provider: 'codex',
-        compression: copyCompression,
-        pollIntervalMs: 80,
-        shouldStop: () => stop,
-        onEvent: (event) => {
-          events.push(event.status);
-        },
-      }),
-    );
+  it('restores once when several fs events arrive for the same stub', async () => {
+    const home = await mkdtemp(join(tmpdir(), 'asp-watch-burst-'));
+    const session = await writeArchivedCodexStub(home);
+    const decompressedPaths: string[] = [];
+    const countingCompression: CompressionAdapter = {
+      compress: copyCompression.compress,
+      decompress: ({ archivePath, restoredPath }) =>
+        Effect.promise(() => {
+          decompressedPaths.push(restoredPath);
+          return copyFile(archivePath, restoredPath);
+        }),
+    };
+    const watchRun = startCodexWatch(session.vaultPath, countingCompression);
 
-    // Simulate provider opening a file stub (fs event).
-    await new Promise((resolve) => {
-      timers.push(setTimeout(resolve, 120));
-    });
-    await writeFile(
-      filePath,
-      `${JSON.stringify({
-        agentSessionPack: 'agent-session-pack-archived-stub',
-        version: 1,
-        sessionId: 'cold',
-        provider: 'codex',
-        sourceKind: 'file',
-      })}\n`,
-    );
+    await wait(120);
+    const stubListener = watchListeners.get(session.filePath);
+    stubListener?.();
+    stubListener?.();
+    await wait(350);
+    await watchRun.stop();
 
-    await new Promise((resolve) => {
-      timers.push(setTimeout(resolve, 350));
-    });
-    stop = true;
-    await watchPromise;
-
-    expect(events).toContain('restored');
-    await expect(readFile(filePath, 'utf8')).resolves.toBe(content);
+    expect(stubListener).toBeDefined();
+    expect(decompressedPaths).toHaveLength(1);
+    expect(watchRun.events).toEqual(['restored']);
+    await expect(readFile(session.filePath, 'utf8')).resolves.toBe(session.content);
   });
 });

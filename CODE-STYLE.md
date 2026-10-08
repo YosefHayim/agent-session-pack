@@ -128,11 +128,17 @@ export class ProviderStoreMissingError extends Schema.TaggedError<ProviderStoreM
 Providers never write. Provider modules discover and describe native sessions only.
 
 - `src/providers/*`: native store roots, discovery, title/date/id extraction.
-- `src/core/archiveWriter.ts`: create zstd archive and verify restore hash.
-- `src/core/sessionArchive.ts`: pack/unpack workflows, manifests, and remove/restore safety.
-- `src/core/manifestStore.ts`: write/read restore metadata.
-- `src/output/*`: human and JSON rendering.
-- `src/cli/*`: citty commands, Clack TTY prompts, exit mapping.
+- `src/features/archive/archiveWriter.ts`: create zstd archive and verify restore hash.
+- `src/features/archive/manifestStore.ts`: write/read restore metadata.
+- `src/features/pack/packSessions.ts`: pack workflow; removes originals only after verification.
+- `src/features/restore/restoreManifest.ts`: restore one archive without overwriting changed live files.
+- `src/features/<feature>/*Command.ts`: citty commands and exit mapping.
+- `src/features/<feature>/*Output.ts`: human and JSON rendering.
+- `src/features/<feature>/*Flow.ts`: Clack TTY prompts.
+- `src/shared/*`: session model and helpers with two or more feature callers.
+- `src/cli/*`: binary entry, argv routing, interactive menu.
+
+Imports point one way: `cli` -> `features` -> `providers` -> `shared`.
 
 No `utils.ts`, `helpers.ts`, or `common.ts` dumping grounds.
 
@@ -256,8 +262,8 @@ One test: an abstraction earns its place only if it has a second real caller or 
 
 The current proof spike is legacy, not an exemplar. The first real exemplars are:
 
-- `src/cli/commands/scanCommand.ts`
-- `src/core/archiveWriter.ts`
+- `src/features/scan/scanCommand.ts`
+- `src/features/archive/archiveWriter.ts`
 - `src/providers/codex.ts`
 
 ## Dependencies

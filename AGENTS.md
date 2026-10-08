@@ -9,7 +9,7 @@ Agent Session Pack is a CLI-only TypeScript tool for reducing local disk usage f
 - Prefer `agent-session-pack guide --json` or `pnpm guide` when an agent needs the safe command map.
 - Use `pack --max --dry-run` only for curiosity previews; never combine `--max` with `--apply`.
 - Keep provider modules read-only.
-- Centralize destructive behavior in core archive/restore workflows.
+- Centralize destructive behavior in the archive, pack, and restore workflows.
 - Preserve exact source bytes before any original file is removed.
 - Treat Cursor and Devin as backup-only providers until their stores are safe to mutate.
 - Grok and Kimi sessions are multi-file directories; pack/restore whole trees, never only one JSONL.
@@ -43,17 +43,26 @@ Agent Session Pack is a CLI-only TypeScript tool for reducing local disk usage f
 
 ```text
 src/
-  cli/
-    main.ts
-    commands/
-  core/
-  providers/
-  output/
+  cli/           # binary entry, argv routing, interactive menu
+  features/      # one folder per feature: command, workflow, output, tests
+    archive/     # zstd archives, hashes, manifests, vault paths, stubs
+    doctor/
+    evidence/
+    guide/
+    lifecycle/
+    pack/
+    restore/
+    scan/
+    setup/
+  providers/     # read-only native store discovery per agent
+  shared/        # session model and helpers used by two or more features
   **/*.test.ts   # unit tests colocated next to source
 tests/           # shared helpers/fixtures + optional *.integration.test.ts
 examples/hello-world/
 .github/workflows/
 ```
+
+Imports point one way: `cli` -> `features` -> `providers` -> `shared`.
 
 ## Canonical Docs
 

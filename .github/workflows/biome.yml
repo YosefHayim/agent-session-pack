@@ -1,0 +1,15 @@
+name: Biome
+'on':
+  workflow_call: null
+permissions:
+  contents: read
+jobs:
+  biome:
+    name: Biome
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup workspace
+        uses: ./.github/actions/setup
+      - run: pnpm check:ci
+    timeout-minutes: 15

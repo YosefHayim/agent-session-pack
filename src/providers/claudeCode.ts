@@ -1,6 +1,6 @@
 import { join } from 'node:path';
-import { discoverJsonlProviderSessions } from '../core/jsonlProviderDiscovery.js';
-import type { ProviderAdapter } from '../core/sessionStore.js';
+import type { ProviderAdapter } from '../shared/sessionStore.js';
+import { discoverJsonlProviderSessions } from './jsonlProviderDiscovery.js';
 
 /**
  * Archive provider adapter for Claude Code JSONL sessions.

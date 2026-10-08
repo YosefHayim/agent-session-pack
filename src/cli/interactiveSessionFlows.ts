@@ -1,12 +1,12 @@
 import { Effect } from 'effect';
-import type { ProviderInventoryReport } from '../core/providerInventory.js';
-import { resolveDefaultVaultPath } from '../core/sessionArchive.js';
-import { formatBytes } from '../output/byteFormat.js';
+import { resolveDefaultVaultPath } from '../features/archive/sessionArchive.js';
+import { runPackCommand } from '../features/pack/packCommand.js';
+import { runUnpackCommand } from '../features/restore/unpackCommand.js';
+import type { ProviderInventoryReport } from '../features/scan/providerInventory.js';
+import { runScanCommand } from '../features/scan/scanCommand.js';
 import { allProviders } from '../providers/allProviders.js';
-import { runPackCommand } from './commands/packCommand.js';
-import { runScanCommand } from './commands/scanCommand.js';
-import { runUnpackCommand } from './commands/unpackCommand.js';
-import { HOME_NOT_SET_CANCEL_MESSAGE } from './homeEnv.js';
+import { formatBytes } from '../shared/byteFormat.js';
+import { HOME_NOT_SET_CANCEL_MESSAGE } from '../shared/homeEnv.js';
 import {
   DEFAULT_COLD_AFTER,
   DEFAULT_OLDER_THAN_MS,
@@ -14,8 +14,8 @@ import {
   type InteractiveCliRequest,
   loadInventoryWithSpinner,
   runWithSpinner,
-} from './interactiveCliContext.js';
-import type { PromptAdapter } from './promptAdapter.js';
+} from '../shared/interactiveCliContext.js';
+import type { PromptAdapter } from '../shared/promptAdapter.js';
 
 /**
  * Reviews provider sessions with a spinner-backed inventory scan and scan command.
@@ -25,7 +25,7 @@ import type { PromptAdapter } from './promptAdapter.js';
  * @example
  * ```ts
  * import { runReviewSessions } from './interactiveSessionFlows.js';
- * import { clackPromptAdapter } from './promptAdapter.js';
+ * import { clackPromptAdapter } from '../shared/promptAdapter.js';
  *
  * await runReviewSessions({ prompts: clackPromptAdapter });
  * ```
@@ -62,7 +62,7 @@ export const runReviewSessions = async (
  * @example
  * ```ts
  * import { runPackFlow } from './interactiveSessionFlows.js';
- * import { clackPromptAdapter } from './promptAdapter.js';
+ * import { clackPromptAdapter } from '../shared/promptAdapter.js';
  *
  * await runPackFlow({ prompts: clackPromptAdapter });
  * ```
@@ -144,7 +144,7 @@ export const runPackFlow = async (
  * @example
  * ```ts
  * import { runRestoreFlow } from './interactiveSessionFlows.js';
- * import { clackPromptAdapter } from './promptAdapter.js';
+ * import { clackPromptAdapter } from '../shared/promptAdapter.js';
  *
  * await runRestoreFlow({ prompts: clackPromptAdapter });
  * ```

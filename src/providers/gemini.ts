@@ -1,8 +1,8 @@
 import { join } from 'node:path';
 import { Effect } from 'effect';
-import { discoverJsonlProviderSessions } from '../core/jsonlProviderDiscovery.js';
-import type { ProviderAdapter } from '../core/sessionStore.js';
+import type { ProviderAdapter } from '../shared/sessionStore.js';
 import { discoverDirectoryProviderSessions } from './directorySessions.js';
+import { discoverJsonlProviderSessions } from './jsonlProviderDiscovery.js';
 
 /**
  * Archive provider adapter for Gemini CLI local session stores.

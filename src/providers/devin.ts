@@ -9,7 +9,7 @@ import {
   ProviderDiscoveryError,
   type SessionStore,
   slugifyTitle,
-} from '../core/sessionStore.js';
+} from '../shared/sessionStore.js';
 
 const execFileAsync = promisify(execFile);
 

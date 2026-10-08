@@ -1,14 +1,18 @@
 import { Effect } from 'effect';
-import { runDoctorCommand } from './commands/doctorCommand.js';
-import { runSavingsCommand } from './commands/savingsCommand.js';
-import { runFirstSetup } from './firstSetupFlow.js';
+import { runDoctorCommand } from '../features/doctor/doctorCommand.js';
+import { runSavingsCommand } from '../features/evidence/savingsCommand.js';
+import { runFirstSetup } from '../features/setup/firstSetupFlow.js';
 import {
   type InteractiveCliDetectionRequest,
   type InteractiveCliRequest,
   runWithSpinner,
-} from './interactiveCliContext.js';
+} from '../shared/interactiveCliContext.js';
+import {
+  clackPromptAdapter,
+  type PromptAdapter,
+  type PromptOption,
+} from '../shared/promptAdapter.js';
 import { runPackFlow, runRestoreFlow, runReviewSessions } from './interactiveSessionFlows.js';
-import { clackPromptAdapter, type PromptAdapter, type PromptOption } from './promptAdapter.js';
 
 type MainMenuAction = 'doctor' | 'exit' | 'pack' | 'restore' | 'review' | 'savings' | 'setup';
 

@@ -256,7 +256,7 @@ One test: an abstraction earns its place only if it has a second real caller or 
 - `pnpm unpack:all`: non-destructive all-provider restore summary from the vault.
 - Round-trip tests assert SHA-256 byte-exact restore.
 - Dry-run tests assert originals are not touched.
-- Selector tests cover ID, exact name, slug, fuzzy query, provider-prefixed selector, and ambiguity.
+- Selector tests cover ID, ID prefix, exact name, slug, fuzzy words, provider-prefixed selector, exact mode, and ambiguity.
 
 ## Golden Exemplar Targets
 

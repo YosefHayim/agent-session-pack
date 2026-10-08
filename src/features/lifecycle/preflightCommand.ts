@@ -153,6 +153,7 @@ export const runPreflightCommand = (
         command: 'ensure-restored',
         vaultPath,
         selector: sessionId,
+        selectorMatch: 'exact',
         provider,
         compression,
         restoreOnLaunchEnabled: true,

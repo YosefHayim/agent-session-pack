@@ -170,6 +170,8 @@ npx --yes agent-session-pack unpack --all-providers --apply   # everything
 npx --yes agent-session-pack restore SESSION_ID_OR_NAME       # one session
 ```
 
+`restore` and `open` take a session id or its first characters, the name, the slug, or a few words from the name. Add a prefix such as `codex:` to search one agent. If more than one session matches, nothing is restored and the matches are listed.
+
 Prefer a guided menu? Run `npx --yes agent-session-pack` with no arguments in a terminal. To keep the command on your path, install it globally with `npm install -g agent-session-pack`.
 
 ## Commands
@@ -185,8 +187,8 @@ Prefer a guided menu? Run `npx --yes agent-session-pack` with no arguments in a 
 | `pack --dry-run` | Previews cold sessions to pack | No |
 | `pack --apply [--yes]` | Archives, verifies, then removes originals | Yes |
 | `unpack --apply [--yes]` | Restores archived sessions to their original paths | Yes |
-| `restore <selector>` | Restores one session by id, name, or slug | Yes |
-| `open <session>` | Finds a session and restores it if packed | Yes |
+| `restore <selector>` | Restores one session by id, id prefix, name, slug, or words from its name | Yes |
+| `open <session>` | Finds a session the same way and restores it if packed | Yes |
 | `lifecycle enable\|disable\|status` | Installs or removes the auto-restore wrappers | Wrappers and config |
 | `maintain --apply [--yes]` | Re-packs sessions that went cold again | Yes |
 

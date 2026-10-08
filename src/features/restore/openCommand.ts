@@ -31,7 +31,8 @@ export const openCommand = defineCommand({
     },
     session: {
       type: 'positional',
-      description: 'Session id, slug, title, or provider-prefixed selector.',
+      description:
+        'Session id or id prefix, slug, title, fuzzy words, or provider-prefixed selector.',
       required: true,
     },
     json: {
@@ -126,6 +127,7 @@ export const runOpenCommand = (
       command: 'restore',
       vaultPath,
       selector: sessionSelector,
+      selectorMatch: 'fuzzy',
       provider,
       compression,
       restoreOnLaunchEnabled,
@@ -184,6 +186,7 @@ const openExitCode = (report: EnsureRestoredReport): number | undefined => {
   if (
     report.status === 'conflict' ||
     report.status === 'missing-archive' ||
+    report.status === 'ambiguous-selector' ||
     report.status === 'backup-only'
   ) {
     return 2;

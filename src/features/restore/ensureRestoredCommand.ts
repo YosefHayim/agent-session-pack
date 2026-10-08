@@ -121,6 +121,7 @@ export const runEnsureRestoredCommand = (
       command: 'ensure-restored',
       vaultPath,
       selector: sessionSelector,
+      selectorMatch: 'exact',
       provider,
       compression,
       restoreOnLaunchEnabled,
@@ -158,7 +159,11 @@ const ensureRestoredExitCode = (report: EnsureRestoredReport): number | undefine
     return 3;
   }
 
-  if (report.status === 'conflict' || report.status === 'missing-archive') {
+  if (
+    report.status === 'conflict' ||
+    report.status === 'missing-archive' ||
+    report.status === 'ambiguous-selector'
+  ) {
     return 2;
   }
 

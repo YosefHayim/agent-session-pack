@@ -11,17 +11,19 @@ import { readSetupConfig, type SetupConfigFileError } from '../setup/setupConfig
 import { type EnsureRestoredReport, ensureSessionRestored } from './ensureRestored.js';
 
 /**
- * Citty command that restores a packed session by id, name, slug, or picker.
+ * Citty command that restores a packed session by id, id prefix, name, slug, or fuzzy words.
  */
 export const restoreCommand = defineCommand({
   meta: {
     name: 'restore',
-    description: 'Restore a packed session by id, name, slug, or provider-prefixed selector.',
+    description:
+      'Restore a packed session by id, id prefix, name, slug, fuzzy words, or provider-prefixed selector.',
   },
   args: {
     selector: {
       type: 'positional',
-      description: 'Session id, exact name, slug, fuzzy query, or provider-prefixed selector.',
+      description:
+        'Session id or id prefix, exact name, slug, fuzzy words, or provider-prefixed selector.',
     },
     provider: {
       type: 'string',
@@ -127,6 +129,7 @@ export const runRestoreCommand = (
       command: 'restore',
       vaultPath,
       selector,
+      selectorMatch: 'fuzzy',
       provider,
       compression,
       restoreOnLaunchEnabled: setupConfig?.restoreOnLaunch === true,
@@ -162,6 +165,7 @@ const restoreExitCode = (report: EnsureRestoredReport): number | undefined => {
   if (
     report.status === 'conflict' ||
     report.status === 'missing-archive' ||
+    report.status === 'ambiguous-selector' ||
     report.status === 'backup-only'
   ) {
     return 2;

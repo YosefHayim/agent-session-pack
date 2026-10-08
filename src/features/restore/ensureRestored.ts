@@ -1,24 +1,31 @@
-import { Effect } from 'effect';
+import { Effect, Either } from 'effect';
 import type { ProviderId } from '../../shared/sessionModel.js';
 import type { ArchiveFileSystemError } from '../archive/archiveFileSystem.js';
 import type { ArchiveVerificationError, CompressionAdapter } from '../archive/archiveWriter.js';
-import {
-  listVaultSessionManifests,
-  type ManifestStoreError,
-  type SessionManifest,
-} from '../archive/manifestStore.js';
+import { listVaultSessionManifests, type ManifestStoreError } from '../archive/manifestStore.js';
 import { type RestoreOutcome, restoreManifest } from './restoreManifest.js';
+import { resolveSessionSelector, type SelectorMatch } from './sessionSelector.js';
 
 /**
  * Machine-readable status for a single-session ensure-restored or restore attempt.
  */
 export type EnsureRestoredStatus =
   | 'already-present'
+  | 'ambiguous-selector'
   | 'backup-only'
   | 'conflict'
   | 'lifecycle-disabled'
   | 'missing-archive'
   | 'restored';
+
+/**
+ * One session an ambiguous selector could mean.
+ */
+export type SelectorCandidate = {
+  readonly provider: ProviderId;
+  readonly sessionId: string;
+  readonly title: string;
+};
 
 /**
  * Stable report for agent JSON output when ensuring one archived session is live.
@@ -32,6 +39,7 @@ export type EnsureRestoredReport = {
   readonly originalPath: string | undefined;
   readonly archivePath: string | undefined;
   readonly reason: string | undefined;
+  readonly candidates?: ReadonlyArray<SelectorCandidate>;
 };
 
 /**
@@ -41,6 +49,7 @@ export type EnsureSessionRestoredRequest = {
   readonly command: 'ensure-restored' | 'restore';
   readonly vaultPath: string;
   readonly selector: string;
+  readonly selectorMatch: SelectorMatch;
   readonly provider: ProviderId | undefined;
   readonly compression: CompressionAdapter;
   readonly restoreOnLaunchEnabled: boolean;
@@ -66,6 +75,7 @@ export type EnsureSessionRestoredRequest = {
  *     command: 'ensure-restored',
  *     vaultPath: '/vault',
  *     selector: 'cold',
+ *     selectorMatch: 'exact',
  *     provider: 'codex',
  *     compression: createZstdCompression(),
  *     restoreOnLaunchEnabled: true,
@@ -96,13 +106,39 @@ export const ensureSessionRestored = (
     }
 
     const manifests = yield* listVaultSessionManifests(request.vaultPath);
-    const manifest = findSessionManifest({
-      manifests,
-      provider: request.provider,
-      selector: request.selector,
-    });
+    const selection = yield* Effect.either(
+      resolveSessionSelector({
+        selector: request.selector,
+        provider: request.provider,
+        manifests,
+        match: request.selectorMatch,
+      }),
+    );
 
-    if (manifest === undefined) {
+    if (Either.isLeft(selection) && selection.left._tag === 'SessionSelectorAmbiguousError') {
+      const candidates = selection.left.candidates.map((manifest) => ({
+        provider: manifest.provider,
+        sessionId: manifest.sessionId,
+        title: manifest.title,
+      }));
+      const candidateSelectors = candidates
+        .map((candidate) => `${candidate.provider}:${candidate.sessionId}`)
+        .join(', ');
+
+      return {
+        command: request.command,
+        status: 'ambiguous-selector',
+        restoreOnLaunchEnabled: request.restoreOnLaunchEnabled,
+        provider: request.provider,
+        sessionId: undefined,
+        originalPath: undefined,
+        archivePath: undefined,
+        reason: `selector matches ${candidates.length} sessions: ${candidateSelectors}; use a longer selector or provider:id`,
+        candidates,
+      };
+    }
+
+    if (Either.isLeft(selection)) {
       return {
         command: request.command,
         status: 'missing-archive',
@@ -115,6 +151,7 @@ export const ensureSessionRestored = (
       };
     }
 
+    const manifest = selection.right;
     const backupOnlyProviders = request.backupOnlyProviders ?? ['cursor', 'devin'];
 
     if (backupOnlyProviders.includes(manifest.provider)) {
@@ -158,40 +195,4 @@ const ensureRestoredReason = (status: RestoreOutcome): string | undefined => {
   }
 
   return undefined;
-};
-
-const findSessionManifest = (request: {
-  readonly manifests: ReadonlyArray<SessionManifest>;
-  readonly provider: ProviderId | undefined;
-  readonly selector: string;
-}): SessionManifest | undefined => {
-  const trimmedSelector = request.selector.trim();
-  const prefixed = trimmedSelector.match(
-    /^(codex|claude|kiro|cursor|devin|grok|kimi|opencode|gemini):(.+)$/i,
-  );
-  const providerFilter =
-    request.provider ?? (prefixed?.[1]?.toLowerCase() as ProviderId | undefined);
-  const query = (prefixed?.[2] ?? trimmedSelector).trim().toLowerCase();
-
-  if (query.length === 0) {
-    return undefined;
-  }
-
-  const candidates = request.manifests.filter((manifest) => {
-    if (providerFilter !== undefined && manifest.provider !== providerFilter) {
-      return false;
-    }
-
-    return (
-      manifest.sessionId.toLowerCase() === query ||
-      manifest.slug.toLowerCase() === query ||
-      manifest.title.toLowerCase() === query
-    );
-  });
-
-  if (candidates.length !== 1) {
-    return undefined;
-  }
-
-  return candidates[0];
 };

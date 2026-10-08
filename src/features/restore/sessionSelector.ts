@@ -1,18 +1,21 @@
 import { Effect, Schema } from 'effect';
-import { slugifyTitle } from '../../providers/sessionDiscovery.js';
-import {
-  type DiscoveredSession,
-  DiscoveredSessionSchema,
-  type ProviderId,
-  type ProviderIdSchema,
-} from '../../shared/sessionModel.js';
+import { type ProviderId, ProviderIdSchema } from '../../shared/sessionModel.js';
+import { type SessionManifest, SessionManifestSchema } from '../archive/manifestStore.js';
 
 /**
- * Selector text paired with the sessions it should resolve against.
+ * How far a selector reaches: `exact` matches id, name, or slug only; `fuzzy` also tries
+ * id prefixes and then words found in the name or slug.
+ */
+export type SelectorMatch = 'exact' | 'fuzzy';
+
+/**
+ * Selector text paired with the vault manifests it should resolve against.
  */
 export type SessionSelectorRequest = {
   readonly selector: string;
-  readonly sessions: ReadonlyArray<DiscoveredSession>;
+  readonly provider: ProviderId | undefined;
+  readonly manifests: ReadonlyArray<SessionManifest>;
+  readonly match: SelectorMatch;
 };
 
 type ParsedSelector = {
@@ -37,7 +40,7 @@ export class SessionSelectorAmbiguousError extends Schema.TaggedError<SessionSel
   'SessionSelectorAmbiguousError',
   {
     selector: Schema.String,
-    candidates: Schema.Array(DiscoveredSessionSchema),
+    candidates: Schema.Array(SessionManifestSchema),
   },
 ) {}
 
@@ -46,27 +49,40 @@ export class SessionSelectorAmbiguousError extends Schema.TaggedError<SessionSel
  */
 export type SessionSelectorError = SessionSelectorNotFoundError | SessionSelectorAmbiguousError;
 
+const isProviderId = Schema.is(ProviderIdSchema);
+
 /**
- * Resolves a human or agent selector to one session.
+ * Resolves a human or agent selector to one vault manifest.
  *
- * @param request - Selector text and candidate sessions.
- * @returns Effect containing the resolved session or typed selector error.
+ * Exact id, name, or slug matches win. In `fuzzy` mode an id prefix comes next, then
+ * sessions whose name or slug contains every word of the selector.
+ *
+ * @param request - Selector text, optional provider, vault manifests, and match mode.
+ * @returns Effect containing the resolved manifest or a typed selector error.
  * @example
  * ```ts
  * import { resolveSessionSelector } from './sessionSelector.js';
  *
- * const session = await Effect.runPromise(
- *   resolveSessionSelector({ selector: 'codex:fix-login', sessions }),
+ * const manifest = await Effect.runPromise(
+ *   resolveSessionSelector({
+ *     selector: 'codex:fix-login',
+ *     provider: undefined,
+ *     manifests,
+ *     match: 'fuzzy',
+ *   }),
  * );
  * ```
  */
 export const resolveSessionSelector = (
   request: SessionSelectorRequest,
-): Effect.Effect<DiscoveredSession, SessionSelectorError> =>
+): Effect.Effect<SessionManifest, SessionSelectorError> =>
   Effect.gen(function* () {
     const parsed = parseSelector(request.selector);
-    const candidates = filterProvider(request.sessions, parsed.provider);
-    const matches = matchingSessions(parsed.query, candidates);
+    const provider = request.provider ?? parsed.provider;
+    const candidates = request.manifests.filter(
+      (manifest) => provider === undefined || manifest.provider === provider,
+    );
+    const matches = matchingManifests(parsed.query, candidates, request.match);
 
     if (matches.length === 0) {
       return yield* Effect.fail(
@@ -89,60 +105,60 @@ export const resolveSessionSelector = (
   });
 
 const parseSelector = (selector: string): ParsedSelector => {
-  const prefixMatch = selector.match(
-    /^(codex|claude|kiro|cursor|devin|grok|kimi|opencode|gemini):(.+)$/,
-  );
+  const trimmedSelector = selector.trim();
+  const separatorIndex = trimmedSelector.indexOf(':');
+  const prefix = trimmedSelector.slice(0, separatorIndex).toLowerCase();
 
-  if (prefixMatch === null) {
+  if (separatorIndex === -1 || !isProviderId(prefix)) {
     return {
       provider: undefined,
-      query: selector.trim(),
+      query: trimmedSelector.toLowerCase(),
     };
   }
 
   return {
-    provider: prefixMatch[1] as typeof ProviderIdSchema.Type,
-    query: prefixMatch[2].trim(),
+    provider: prefix,
+    query: trimmedSelector
+      .slice(separatorIndex + 1)
+      .trim()
+      .toLowerCase(),
   };
 };
 
-const filterProvider = (
-  sessions: ReadonlyArray<DiscoveredSession>,
-  provider: ProviderId | undefined,
-): ReadonlyArray<DiscoveredSession> => {
-  if (provider === undefined) {
-    return sessions;
-  }
-
-  return sessions.filter((session) => session.provider === provider);
-};
-
-const matchingSessions = (
+const matchingManifests = (
   query: string,
-  sessions: ReadonlyArray<DiscoveredSession>,
-): ReadonlyArray<DiscoveredSession> => {
-  const normalizedQuery = query.toLowerCase();
-  const slugQuery = slugifyTitle(query);
-  const idMatches = sessions.filter((session) => session.id.startsWith(query));
-
-  if (idMatches.length > 0) {
-    return idMatches;
+  candidates: ReadonlyArray<SessionManifest>,
+  match: SelectorMatch,
+): ReadonlyArray<SessionManifest> => {
+  if (query.length === 0) {
+    return [];
   }
 
-  const exactMatches = sessions.filter(
-    (session) =>
-      session.title.toLowerCase() === normalizedQuery || session.slug.toLowerCase() === slugQuery,
+  const exactMatches = candidates.filter((manifest) =>
+    [manifest.sessionId, manifest.slug, manifest.title].some(
+      (name) => name.toLowerCase() === query,
+    ),
   );
 
-  if (exactMatches.length > 0) {
+  if (exactMatches.length > 0 || match === 'exact') {
     return exactMatches;
   }
 
-  const tokens = slugQuery.split('-').filter((token) => token.length > 0);
+  const idPrefixMatches = candidates.filter((manifest) =>
+    manifest.sessionId.toLowerCase().startsWith(query),
+  );
 
-  return sessions.filter((session) =>
-    tokens.every(
-      (token) => session.slug.includes(token) || session.title.toLowerCase().includes(token),
-    ),
+  if (idPrefixMatches.length > 0) {
+    return idPrefixMatches;
+  }
+
+  const words = query.split(/[^a-z0-9]+/).filter((word) => word.length > 0);
+
+  return candidates.filter(
+    (manifest) =>
+      words.length > 0 &&
+      words.every(
+        (word) => manifest.slug.includes(word) || manifest.title.toLowerCase().includes(word),
+      ),
   );
 };

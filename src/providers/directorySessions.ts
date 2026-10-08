@@ -3,12 +3,11 @@ import { basename, join } from 'node:path';
 import { Effect } from 'effect';
 import {
   type DiscoveredSession,
-  measureDirectorySession,
   ProviderDiscoveryError,
   type ProviderId,
   type SessionStore,
-  slugifyTitle,
-} from '../core/sessionStore.js';
+} from '../shared/sessionModel.js';
+import { measureDirectorySession, slugifyTitle } from './sessionDiscovery.js';
 
 /**
  * Marker files that identify a directory-backed provider session.

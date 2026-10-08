@@ -72,7 +72,6 @@
     "pack:dry-run": "tsx src/cli/main.ts pack --all-providers --dry-run",
     "pack:all": "tsx src/cli/main.ts pack --all-providers",
     "unpack:all": "tsx src/cli/main.ts unpack --all-providers",
-    "evidence": "tsx src/cli/main.ts savings",
     "build": "tsup",
     "check:ci": "biome ci . && eslint .",
     "test": "vitest run",

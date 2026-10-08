@@ -1,14 +1,11 @@
 import { join } from 'node:path';
-import {
-  createJsonlProviderAdapter,
-  discoverJsonlProviderSessions,
-} from '../core/jsonlProviderDiscovery.js';
-import type { ProviderAdapter } from '../core/sessionStore.js';
+import type { ProviderAdapter } from '../shared/sessionModel.js';
+import { discoverJsonlProviderSessions } from './jsonlSessions.js';
 
 /**
  * Archive provider adapter for Claude Code JSONL sessions.
  */
-export const claudeCodeProvider: ProviderAdapter = createJsonlProviderAdapter({
+export const claudeCodeProvider: ProviderAdapter = {
   id: 'claude',
   label: 'Claude Code',
   mode: 'archive',
@@ -19,4 +16,4 @@ export const claudeCodeProvider: ProviderAdapter = createJsonlProviderAdapter({
       store,
       excludePathParts: ['subagents'],
     }),
-});
+};

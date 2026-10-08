@@ -1,0 +1,153 @@
+import { defineCommand } from 'citty';
+import { Effect } from 'effect';
+import { allProviders } from '../../providers/allProviders.js';
+import { resolveApplyConfirmation } from '../../shared/applyConfirmation.js';
+import { requireHome } from '../../shared/homeEnv.js';
+import type { ProviderDiscoveryError } from '../../shared/sessionModel.js';
+import type { ArchiveWriteError, CompressionAdapter } from '../archive/archiveWriter.js';
+import type { ManifestStoreError } from '../archive/manifestStore.js';
+import { resolveDefaultVaultPath } from '../archive/vaultPaths.js';
+import { createZstdCompression } from '../archive/zstdCompression.js';
+import { formatHumanPackReport } from '../pack/packOutput.js';
+import { DEFAULT_COLD_AFTER, parseDurationMs } from '../pack/packPlan.js';
+import { packProviderSessions } from '../pack/packSessions.js';
+import {
+  isRestoreOnLaunchEnabled,
+  readSetupConfig,
+  type SetupConfigFileError,
+} from '../setup/setupConfig.js';
+
+/**
+ * Citty command that re-packs cold sessions so storage stays low over time.
+ */
+export const maintainCommand = defineCommand({
+  meta: {
+    name: 'maintain',
+    description:
+      'Pack cold live sessions again (continuous storage). Uses setup coldAfter when lifecycle is enabled.',
+  },
+  args: {
+    apply: {
+      type: 'boolean',
+      description: 'Apply packing after verified archive restore.',
+    },
+    yes: {
+      type: 'boolean',
+      description: 'Confirm apply mode without an interactive prompt.',
+    },
+    'dry-run': {
+      type: 'boolean',
+      description: 'Preview cold candidates without packing.',
+    },
+    json: {
+      type: 'boolean',
+      description: 'Write stable JSON output.',
+    },
+  },
+  run: async ({ args }) => {
+    const confirmed = await resolveApplyConfirmation({
+      action: 'Pack cold sessions for continuous storage maintenance',
+      apply: args.apply,
+      json: args.json,
+      yes: args.yes,
+    });
+
+    await Effect.runPromise(
+      runMaintainCommand({
+        apply: args.apply,
+        confirmed,
+        dryRun: args['dry-run'],
+        json: args.json,
+        yes: args.yes,
+      }),
+    );
+  },
+});
+
+/**
+ * Decoded arguments for maintain.
+ */
+export type MaintainArgs = {
+  readonly apply: boolean | undefined;
+  readonly confirmed?: boolean | undefined;
+  readonly dryRun: boolean | undefined;
+  readonly json: boolean | undefined;
+  readonly yes: boolean | undefined;
+  readonly compression?: CompressionAdapter | undefined;
+  readonly home?: string | undefined;
+  readonly now?: Date | undefined;
+  readonly vaultPath?: string | undefined;
+};
+
+const runMaintainCommand = (
+  args: MaintainArgs,
+): Effect.Effect<
+  void,
+  ArchiveWriteError | ManifestStoreError | ProviderDiscoveryError | SetupConfigFileError
+> =>
+  Effect.gen(function* () {
+    const home = requireHome(args.home);
+
+    if (home === undefined) {
+      return;
+    }
+
+    const setupConfig = yield* readSetupConfig(home);
+
+    if (!isRestoreOnLaunchEnabled(setupConfig)) {
+      process.stderr.write(
+        'Lifecycle is disabled. Run `agent-session-pack lifecycle enable` for continuous maintain, or use `pack` directly.\n',
+      );
+      process.exitCode = 3;
+      return;
+    }
+
+    if (args.apply === true && args.confirmed !== true) {
+      process.stderr.write(
+        'Cancelled. Re-run with --apply and confirm with y (or --yes) to pack cold sessions.\n',
+      );
+      process.exitCode = 2;
+      return;
+    }
+
+    const olderThan = setupConfig?.coldAfter ?? DEFAULT_COLD_AFTER;
+    const coldAfter = olderThan.trim().toLowerCase();
+    const olderThanMs = parseDurationMs(coldAfter);
+    const vaultPath = args.vaultPath ?? setupConfig?.vaultPath ?? resolveDefaultVaultPath(home);
+    const apply = args.apply === true;
+    const archiveProviders = allProviders.filter((provider) => provider.mode === 'archive');
+
+    const report = yield* packProviderSessions({
+      home,
+      vaultPath,
+      providers: archiveProviders,
+      olderThan,
+      olderThanMs,
+      now: args.now ?? new Date(),
+      apply,
+      compression: args.compression ?? createZstdCompression(),
+    });
+
+    if (args.json === true) {
+      process.stdout.write(
+        `${JSON.stringify(
+          {
+            command: 'maintain',
+            lifecycleEnabled: true,
+            olderThan,
+            pack: report,
+          },
+          null,
+          2,
+        )}\n`,
+      );
+      return;
+    }
+
+    process.stdout.write(
+      [
+        `maintain: cold pack (${apply ? 'apply' : 'dry-run'}) olderThan=${olderThan}`,
+        formatHumanPackReport(report, { olderThan }),
+      ].join('\n'),
+    );
+  });

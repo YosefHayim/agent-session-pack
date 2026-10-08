@@ -1,14 +1,11 @@
 import { join } from 'node:path';
-import {
-  createJsonlProviderAdapter,
-  discoverJsonlProviderSessions,
-} from '../core/jsonlProviderDiscovery.js';
-import type { ProviderAdapter } from '../core/sessionStore.js';
+import type { ProviderAdapter } from '../shared/sessionModel.js';
+import { discoverJsonlProviderSessions } from './jsonlSessions.js';
 
 /**
  * Archive provider adapter for Codex JSONL sessions.
  */
-export const codexProvider: ProviderAdapter = createJsonlProviderAdapter({
+export const codexProvider: ProviderAdapter = {
   id: 'codex',
   label: 'Codex',
   mode: 'archive',
@@ -19,4 +16,4 @@ export const codexProvider: ProviderAdapter = createJsonlProviderAdapter({
       store,
       excludePathParts: [],
     }),
-});
+};

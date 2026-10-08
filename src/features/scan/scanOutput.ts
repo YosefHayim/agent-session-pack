@@ -1,0 +1,96 @@
+import { Effect } from 'effect';
+import type { DiscoveredSession } from '../../shared/sessionModel.js';
+import type { ScanReport } from './scanStores.js';
+
+const MAX_TITLE_PREVIEW_LENGTH = 96;
+
+/**
+ * Formats scan output for terminal users.
+ *
+ * @param report - Scan report to render.
+ * @returns Human-readable scan summary.
+ * @example
+ * ```ts
+ * import { formatHumanScan } from './scanOutput.js';
+ *
+ * formatHumanScan(report);
+ * ```
+ */
+export const formatHumanScan = (report: ScanReport): string => {
+  if (report.sessions.length === 0) {
+    return 'No sessions found.';
+  }
+
+  const sessionRows = report.sessions.map(formatSessionRow);
+
+  return [
+    'Found sessions',
+    '',
+    'Provider   Date         Size       Status   Name   Path',
+    ...sessionRows,
+  ].join('\n');
+};
+
+/**
+ * Writes scan output for terminal users.
+ *
+ * @param report - Scan report to render.
+ * @returns Effect completing after output.
+ * @example
+ * ```ts
+ * import { renderHumanScan } from './scanOutput.js';
+ *
+ * renderHumanScan(report);
+ * ```
+ */
+export const renderHumanScan = (report: ScanReport): Effect.Effect<void> =>
+  Effect.sync(() => {
+    console.log(formatHumanScan(report));
+  });
+
+const formatSessionRow = (session: DiscoveredSession): string => {
+  const provider = session.provider.padEnd(10);
+  const date = session.modifiedAt.toISOString().slice(0, 10);
+  const size = `${session.sizeBytes} B`.padEnd(10);
+  const status = formatStatus(session).padEnd(8);
+  const title = formatTitlePreview(session.title);
+
+  return `${provider} ${date}   ${size} ${status} ${title}   ${session.originalPath}`;
+};
+
+const formatStatus = (session: DiscoveredSession): string => {
+  if (session.status !== undefined) {
+    return session.status;
+  }
+
+  return 'live';
+};
+
+const formatTitlePreview = (title: string): string => {
+  const singleLineTitle = title.replace(/\s+/g, ' ').trim();
+
+  if (singleLineTitle.length <= MAX_TITLE_PREVIEW_LENGTH) {
+    return singleLineTitle;
+  }
+
+  return `${singleLineTitle.slice(0, MAX_TITLE_PREVIEW_LENGTH - 3)}...`;
+};
+
+const formatJsonScan = (report: ScanReport): string => `${JSON.stringify(report, null, 2)}\n`;
+
+/**
+ * Writes scan output for agents.
+ *
+ * @param report - Scan report to render.
+ * @returns Effect completing after output.
+ * @example
+ * ```ts
+ * import { renderJsonScan } from './scanOutput.js';
+ *
+ * renderJsonScan(report);
+ * ```
+ */
+export const renderJsonScan = (report: ScanReport): Effect.Effect<void> =>
+  Effect.sync(() => {
+    process.stdout.write(formatJsonScan(report));
+  });

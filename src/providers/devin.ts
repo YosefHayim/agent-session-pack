@@ -56,19 +56,7 @@ export const devinProvider: ProviderAdapter = {
   discover: (store) => discoverDevinProviderSessions(store),
 };
 
-/**
- * Discovers Devin CLI sessions from the local SQLite session store.
- *
- * @param store - Devin CLI storage root.
- * @returns Effect containing backup-only Devin session metadata.
- * @example
- * ```ts
- * import { discoverDevinProviderSessions } from './devin.js';
- *
- * const sessions = discoverDevinProviderSessions(store);
- * ```
- */
-export const discoverDevinProviderSessions = (
+const discoverDevinProviderSessions = (
   store: SessionStore,
 ): Effect.Effect<ReadonlyArray<DiscoveredSession>, ProviderDiscoveryError> =>
   Effect.tryPromise({

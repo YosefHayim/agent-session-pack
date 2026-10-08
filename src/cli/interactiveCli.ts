@@ -10,27 +10,6 @@ import {
 import { runPackFlow, runRestoreFlow, runReviewSessions } from './interactiveSessionFlows.js';
 import { clackPromptAdapter, type PromptAdapter, type PromptOption } from './promptAdapter.js';
 
-/**
- * Re-exports the first-setup wizard for init and menu entrypoints.
- */
-export { runFirstSetup } from './firstSetupFlow.js';
-/**
- * Re-exports interactive request types for callers and tests.
- */
-export type {
-  FirstSetupRequest,
-  InteractiveCliDetectionRequest,
-  InteractiveCliRequest,
-} from './interactiveCliContext.js';
-/**
- * Re-exports prompt adapter types for test doubles and menu option typing.
- */
-export type { PromptAdapter, PromptOption, PromptSpinner } from './promptAdapter.js';
-/**
- * Re-exports the Clack-backed prompt adapter for production TTY flows.
- */
-export { clackPromptAdapter } from './promptAdapter.js';
-
 type MainMenuAction = 'doctor' | 'exit' | 'pack' | 'restore' | 'review' | 'savings' | 'setup';
 
 /**

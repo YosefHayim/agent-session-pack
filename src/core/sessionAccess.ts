@@ -1,4 +1,4 @@
-import { appendFile, mkdir, readFile } from 'node:fs/promises';
+import { appendFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Effect, Schema } from 'effect';
 import type { ProviderId } from './sessionStore.js';
@@ -159,33 +159,6 @@ export const recordSessionAccess = (
 };
 
 /**
- * Reads recent access events from the vault log (best-effort).
- *
- * @param vaultPath - Vault root path.
- * @returns Effect containing access events (empty when missing).
- * @example
- * ```ts
- * import { readSessionAccessLog } from './sessionAccess.js';
- *
- * const events = await Effect.runPromise(readSessionAccessLog('/vault'));
- * ```
- */
-export const readSessionAccessLog = (
-  vaultPath: string,
-): Effect.Effect<ReadonlyArray<SessionAccessEvent>, SessionAccessLogError> => {
-  const path = resolveAccessLogPath(vaultPath);
-
-  return Effect.tryPromise({
-    try: async () => readAccessLogLines(path),
-    catch: (cause) =>
-      new SessionAccessLogError({
-        path,
-        message: String(cause),
-      }),
-  });
-};
-
-/**
  * Returns true when a session was accessed within the cache window.
  *
  * @param request - Hot-cache check fields.
@@ -244,31 +217,6 @@ const addUuidMatches = (found: Set<string>, arg: string): void => {
   }
 };
 
-const readAccessLogLines = async (path: string): Promise<ReadonlyArray<SessionAccessEvent>> => {
-  const content = await readFile(path, 'utf8').catch((cause: unknown) => {
-    if (isEnoent(cause)) {
-      return '';
-    }
-
-    return Promise.reject(cause);
-  });
-
-  if (content.length === 0) {
-    return [];
-  }
-
-  return content
-    .split('\n')
-    .filter((line) => line.trim().length > 0)
-    .map((line) => JSON.parse(line) as SessionAccessEvent)
-    .filter(
-      (parsed) =>
-        typeof parsed.provider === 'string' &&
-        typeof parsed.sessionId === 'string' &&
-        typeof parsed.accessedAt === 'string',
-    );
-};
-
 const isNoiseToken = (token: string): boolean => {
   const lower = token.toLowerCase();
   return (
@@ -285,9 +233,3 @@ const isNoiseToken = (token: string): boolean => {
     lower.endsWith('.js')
   );
 };
-
-const isEnoent = (cause: unknown): boolean =>
-  typeof cause === 'object' &&
-  cause !== null &&
-  'code' in cause &&
-  (cause as { code?: string }).code === 'ENOENT';

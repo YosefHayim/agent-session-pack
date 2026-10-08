@@ -140,48 +140,6 @@ export const directoryStubWasOpened = (path: string): Effect.Effect<boolean, nev
     }
   });
 
-/**
- * Returns the stub marker filename used inside directory sessions.
- *
- * @returns Marker basename.
- * @example
- * ```ts
- * import { archivedStubMarkerFileName } from './sessionStub.js';
- *
- * archivedStubMarkerFileName();
- * ```
- */
-export const archivedStubMarkerFileName = (): string => STUB_MARKER_FILE;
-
-/**
- * Reads stub metadata when present.
- *
- * @param path - Original provider session path.
- * @param sourceKind - File or directory session kind.
- * @returns Effect containing stub metadata or undefined.
- * @example
- * ```ts
- * import { readArchivedStub } from './sessionStub.js';
- *
- * await Effect.runPromise(readArchivedStub('/sessions/abc', 'directory'));
- * ```
- */
-export const readArchivedStub = (
-  path: string,
-  sourceKind: SessionSourceKind,
-): Effect.Effect<ArchivedStub | undefined, never> =>
-  Effect.promise(async () => {
-    try {
-      const content =
-        sourceKind === 'directory'
-          ? await readFile(join(path, STUB_MARKER_FILE), 'utf8')
-          : await readFile(path, 'utf8');
-      return Schema.decodeUnknownSync(ArchivedStubSchema)(JSON.parse(content));
-    } catch {
-      return undefined;
-    }
-  });
-
 const isStubJson = (content: string): boolean => {
   try {
     const parsed = JSON.parse(content) as { agentSessionPack?: string };

@@ -2,7 +2,6 @@ import { Effect } from 'effect';
 import {
   collectJsonlSessions,
   type DiscoveredSession,
-  type ProviderAdapter,
   type ProviderDiscoveryError,
   type ProviderId,
   readSessionTitle,
@@ -55,20 +54,6 @@ export const discoverJsonlProviderSessions = (
 
     return sessions;
   });
-
-/**
- * Builds a provider adapter for JSONL-backed stores.
- *
- * @param adapter - Provider adapter metadata and store behavior.
- * @returns Provider adapter.
- * @example
- * ```ts
- * import { createJsonlProviderAdapter } from '../core/jsonlProviderDiscovery.js';
- *
- * const provider = createJsonlProviderAdapter(adapter);
- * ```
- */
-export const createJsonlProviderAdapter = (adapter: ProviderAdapter): ProviderAdapter => adapter;
 
 const sessionFromFile = (file: {
   readonly provider: ProviderId;

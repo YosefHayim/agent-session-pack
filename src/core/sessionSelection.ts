@@ -32,19 +32,7 @@ export const selectNewestSessionWithinSize = <Session extends SizeBoundSession>(
   return selectSmallestSession(sessions);
 };
 
-/**
- * Selects the newest session by modification time.
- *
- * @param sessions - Candidate sessions.
- * @returns Newest session when one exists.
- * @example
- * ```ts
- * import { selectNewestSession } from './sessionSelection.js';
- *
- * const newest = selectNewestSession(sessions);
- * ```
- */
-export const selectNewestSession = <Session extends { readonly modifiedAt: Date }>(
+const selectNewestSession = <Session extends { readonly modifiedAt: Date }>(
   sessions: ReadonlyArray<Session>,
 ): Session | undefined => {
   const [firstSession, ...remainingSessions] = sessions;

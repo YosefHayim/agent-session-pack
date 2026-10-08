@@ -72,27 +72,7 @@ export type WatchArgs = {
   readonly vaultPath?: string | undefined;
 };
 
-/**
- * Runs session stub watch, optionally following a child provider process.
- *
- * @param args - Provider filter, poll interval, and optional exec argv.
- * @returns Effect that completes when watch stops (child exit or signal).
- * @example
- * ```ts
- * import { Effect } from 'effect';
- * import { runWatchCommand } from './watchCommand.js';
- *
- * await Effect.runPromise(
- *   runWatchCommand({
- *     provider: 'grok',
- *     json: true,
- *     pollMs: '500',
- *     execArgv: [],
- *   }),
- * );
- * ```
- */
-export const runWatchCommand = (
+const runWatchCommand = (
   args: WatchArgs,
 ): Effect.Effect<
   void,

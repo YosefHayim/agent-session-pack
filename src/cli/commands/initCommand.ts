@@ -1,6 +1,6 @@
 import { intro, outro } from '@clack/prompts';
 import { defineCommand } from 'citty';
-import { runFirstSetup } from '../interactiveCli.js';
+import { runFirstSetup } from '../firstSetupFlow.js';
 
 /**
  * Citty command that shows default vault policy and dry-run setup.

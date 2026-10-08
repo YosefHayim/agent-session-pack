@@ -79,27 +79,7 @@ export type MaintainArgs = {
   readonly vaultPath?: string | undefined;
 };
 
-/**
- * Runs continuous storage maintenance (cold pack) when lifecycle is enabled.
- *
- * @param args - Apply/dry-run flags and optional overrides.
- * @returns Effect that writes maintain/pack output.
- * @example
- * ```ts
- * import { Effect } from 'effect';
- * import { runMaintainCommand } from './maintainCommand.js';
- *
- * await Effect.runPromise(
- *   runMaintainCommand({
- *     apply: false,
- *     dryRun: true,
- *     json: true,
- *     yes: false,
- *   }),
- * );
- * ```
- */
-export const runMaintainCommand = (
+const runMaintainCommand = (
   args: MaintainArgs,
 ): Effect.Effect<
   void,

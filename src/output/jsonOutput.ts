@@ -1,20 +1,7 @@
 import { Effect } from 'effect';
 import type { ScanReport } from '../core/sessionStore.js';
 
-/**
- * Formats scan output for agents.
- *
- * @param report - Scan report to render.
- * @returns Stable JSON string.
- * @example
- * ```ts
- * import { formatJsonScan } from './jsonOutput.js';
- *
- * formatJsonScan(report);
- * ```
- */
-export const formatJsonScan = (report: ScanReport): string =>
-  `${JSON.stringify(report, null, 2)}\n`;
+const formatJsonScan = (report: ScanReport): string => `${JSON.stringify(report, null, 2)}\n`;
 
 /**
  * Writes scan output for agents.

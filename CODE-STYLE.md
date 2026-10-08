@@ -131,7 +131,6 @@ Providers never write. Provider modules discover and describe native sessions on
 - `src/core/archiveWriter.ts`: create zstd archive and verify restore hash.
 - `src/core/sessionArchive.ts`: pack/unpack workflows, manifests, and remove/restore safety.
 - `src/core/manifestStore.ts`: write/read restore metadata.
-- `src/core/sessionIndex.ts`: SQLite search/list/cache.
 - `src/output/*`: human and JSON rendering.
 - `src/cli/*`: citty commands, Clack TTY prompts, exit mapping.
 

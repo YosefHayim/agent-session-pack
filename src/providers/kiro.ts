@@ -1,14 +1,11 @@
 import { join } from 'node:path';
-import {
-  createJsonlProviderAdapter,
-  discoverJsonlProviderSessions,
-} from '../core/jsonlProviderDiscovery.js';
+import { discoverJsonlProviderSessions } from '../core/jsonlProviderDiscovery.js';
 import type { ProviderAdapter } from '../core/sessionStore.js';
 
 /**
  * Archive provider adapter for Kiro JSONL sessions.
  */
-export const kiroProvider: ProviderAdapter = createJsonlProviderAdapter({
+export const kiroProvider: ProviderAdapter = {
   id: 'kiro',
   label: 'Kiro',
   mode: 'archive',
@@ -19,4 +16,4 @@ export const kiroProvider: ProviderAdapter = createJsonlProviderAdapter({
       store,
       excludePathParts: [],
     }),
-});
+};

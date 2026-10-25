@@ -76,7 +76,7 @@
     "check:ci": "biome ci . && eslint .",
     "test": "vitest run",
     "test:integration": "vitest run --config vitest.integration.config.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit --incremental --tsBuildInfoFile node_modules/.cache/tsc/agentSessionPack.tsbuildinfo",
     "evidence:local": "tsx src/cli/main.ts savings"
   },
   "engines": {

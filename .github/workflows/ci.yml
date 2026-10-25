@@ -9,11 +9,35 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    name: Changes
+    runs-on: ubuntu-latest
+    outputs:
+      since: ${{ steps.filter.outputs.everything != 'true' && github.event.pull_request.base.sha || '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        if: github.event_name == 'pull_request'
+        with:
+          token: ''
+          filters: |
+            everything:
+              - pnpm-lock.yaml
+              - package.json
+              - biome.json
+              - 'tsconfig*.json'
+              - '*.config.ts'
+              - '.github/**'
+
   biome:
     name: Biome
+    needs: changes
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: pnpm/action-setup@v4
         with:
           version: 10.12.1
@@ -23,7 +47,14 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec biome ci .
+      - name: Lint every file
+        if: needs.changes.outputs.since == ''
+        run: pnpm exec biome ci .
+      - name: Lint the changed files
+        if: needs.changes.outputs.since != ''
+        run: pnpm exec biome ci --changed --since="$SINCE" --no-errors-on-unmatched
+        env:
+          SINCE: ${{ needs.changes.outputs.since }}
 
   typecheck:
     name: Typecheck
@@ -43,9 +74,12 @@ jobs:
 
   test:
     name: Test
+    needs: changes
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: pnpm/action-setup@v4
         with:
           version: 10.12.1
@@ -57,7 +91,14 @@ jobs:
       # archiveReader + devinProvider tests need system binaries
       - run: sudo apt-get update && sudo apt-get install -y zstd sqlite3
       - run: pnpm install --frozen-lockfile
-      - run: pnpm test
+      - name: Test everything
+        if: needs.changes.outputs.since == ''
+        run: pnpm test
+      - name: Test what the changes touch
+        if: needs.changes.outputs.since != ''
+        run: pnpm exec vitest run --changed "$SINCE"
+        env:
+          SINCE: ${{ needs.changes.outputs.since }}
 
   build:
     name: Build
@@ -78,11 +119,12 @@ jobs:
   ciGate:
     name: CI Gate
     runs-on: ubuntu-latest
-    needs: [biome, typecheck, test, build]
+    needs: [changes, biome, typecheck, test, build]
     if: always()
     steps:
       - name: Check required jobs
         run: |
+          if [ "${{ needs.changes.result }}" != "success" ]; then exit 1; fi
           if [ "${{ needs.biome.result }}" != "success" ]; then exit 1; fi
           if [ "${{ needs.typecheck.result }}" != "success" ]; then exit 1; fi
           if [ "${{ needs.test.result }}" != "success" ]; then exit 1; fi

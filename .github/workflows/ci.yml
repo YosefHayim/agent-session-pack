@@ -1,96 +1,51 @@
 name: CI
-
-on:
-  push:
-    branches: [main]
-  pull_request:
-
+'on':
+  pull_request: null
+  workflow_dispatch: null
 permissions:
   contents: read
-
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   changes:
     name: Changes
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
     outputs:
       since: ${{ steps.filter.outputs.everything != 'true' && github.event.pull_request.base.sha || '' }}
+      code: ${{ github.event_name != 'pull_request' || steps.filter.outputs.code == 'true' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
         if: github.event_name == 'pull_request'
         with:
           token: ''
           filters: |
-            everything:
+            everything: &everything
               - pnpm-lock.yaml
               - package.json
-              - biome.json
               - 'tsconfig*.json'
-              - '*.config.ts'
+              - '*.config.*'
               - '.github/**'
-
-  biome:
-    name: Biome
+            code:
+              - *everything
+              - '**/*.{ts,tsx,js,mjs,json,md}'
+  check:
+    name: Test and build
     needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10.12.1
-          run_install: false
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - name: Lint every file
-        if: needs.changes.outputs.since == ''
-        run: pnpm exec biome ci .
-      - name: Lint the changed files
-        if: needs.changes.outputs.since != ''
-        run: pnpm exec biome ci --changed --since="$SINCE" --no-errors-on-unmatched
-        env:
-          SINCE: ${{ needs.changes.outputs.since }}
-
-  typecheck:
-    name: Typecheck
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10.12.1
-          run_install: false
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm typecheck
-
-  test:
-    name: Test
-    needs: changes
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10.12.1
-          run_install: false
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      # archiveReader + devinProvider tests need system binaries
-      - run: sudo apt-get update && sudo apt-get install -y zstd sqlite3
-      - run: pnpm install --frozen-lockfile
+      - name: Install zstd and sqlite3 for the archive reader and Devin provider tests
+        run: sudo apt-get update && sudo apt-get install -y zstd sqlite3
+      - name: Setup workspace
+        uses: ./.github/actions/setup
       - name: Test everything
         if: needs.changes.outputs.since == ''
         run: pnpm test
@@ -99,41 +54,17 @@ jobs:
         run: pnpm exec vitest run --changed "$SINCE"
         env:
           SINCE: ${{ needs.changes.outputs.since }}
-
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10.12.1
-          run_install: false
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-
+      - name: Build
+        run: pnpm build
   ciGate:
     name: CI Gate
-    runs-on: ubuntu-latest
-    needs: [changes, biome, typecheck, test, build]
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    needs:
+      - changes
+      - check
     if: always()
     steps:
-      - name: Check required jobs
-        run: |
-          if [ "${{ needs.changes.result }}" != "success" ]; then exit 1; fi
-          if [ "${{ needs.biome.result }}" != "success" ]; then exit 1; fi
-          if [ "${{ needs.typecheck.result }}" != "success" ]; then exit 1; fi
-          if [ "${{ needs.test.result }}" != "success" ]; then exit 1; fi
-          if [ "${{ needs.build.result }}" != "success" ]; then exit 1; fi
-
-  reportFailure:
-    needs: [ciGate]
-    if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/main'
-    permissions:
-      contents: read
-      issues: write
-    uses: ./.github/workflows/reportFailure.yml
+      - name: Require every check to pass
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1

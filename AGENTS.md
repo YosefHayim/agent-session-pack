@@ -82,3 +82,5 @@ pnpm typecheck
 pnpm test
 pnpm build
 ```
+
+CI runs only test and build, on Linux. `pnpm check:ci` and `pnpm typecheck` run in the pre-push hook; a new worktree needs `pnpm install` before its first push.

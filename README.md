@@ -313,7 +313,7 @@ In the vault at `~/.agent-session-pack`: compressed `.zst` archives plus one JSO
 
 ## Contributing
 
-Contributions are welcome. Fork, branch, add tests, run the checks, commit with [Conventional Commits](https://www.conventionalcommits.org/), and open a PR. Agent and style rules live in [AGENTS.md](AGENTS.md) and [CODE-STYLE.md](CODE-STYLE.md).
+Contributions are welcome. Fork, branch, add tests, run the checks, commit with [Conventional Commits](https://www.conventionalcommits.org/), and open a PR. Agent rules live in [AGENTS.md](AGENTS.md).
 
 ```bash
 pnpm install
@@ -330,7 +330,6 @@ Tests never read or change your real session folders.
 Project docs:
 
 - [PROJECT.md](PROJECT.md) - purpose, users, and non-goals.
-- [CODE-STYLE.md](CODE-STYLE.md) - code style, CLI contract, and test policy.
 - [llms.txt](llms.txt) - a compact project summary for AI agents.
 - [Releases](https://github.com/YosefHayim/agent-session-pack/releases) and the [issue tracker](https://github.com/YosefHayim/agent-session-pack/issues).
 

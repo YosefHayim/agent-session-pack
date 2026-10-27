@@ -19,8 +19,6 @@ Agent Session Pack is a CLI-only TypeScript tool for reducing local disk usage f
 
 ## Conventions
 
-<!-- rules digest - full guide in CODE-STYLE.md; edit there -->
-
 - Use Effect workflows, Effect Schema contracts, and typed Effect errors.
 - Prefer Schema validation at boundaries over custom ad-hoc validators when Schema fits.
 - Export app APIs as arrow const functions with explicit params and return types.
@@ -70,7 +68,6 @@ Root guidance stays compact. Deeper detail lives in dedicated files:
 
 - `PROJECT.md`: purpose, direction, non-goals.
 - `CONTEXT.md` and `LANGUAGE.md`: domain model and vocabulary.
-- `CODE-STYLE.md`: full code style, CLI contract, and test policy.
 
 ## Validation
 

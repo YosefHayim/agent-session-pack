@@ -22,7 +22,6 @@ Agent Session Pack is a CLI-only TypeScript tool for reducing local disk usage f
 - Use Effect workflows, Effect Schema contracts, and typed Effect errors.
 - Prefer Schema validation at boundaries over custom ad-hoc validators when Schema fits.
 - Export app APIs as arrow const functions with explicit params and return types.
-- Add TSDoc to every export (CI-enforced via `eslint-plugin-jsdoc`): functions need summary + `@param` + `@returns` + `@example`; schemas, errors, `defineCommand` objects, and types need a summary only.
 - Use camelCase filenames. Do not add kebab-case source files.
 - Do not add `utils.ts`, `helpers.ts`, or `common.ts`.
 - Module constants are UPPER_SNAKE and sit after imports.
@@ -74,10 +73,10 @@ Root guidance stays compact. Deeper detail lives in dedicated files:
 Run before claiming work is complete:
 
 ```bash
-pnpm check:ci
+pnpm lint
 pnpm typecheck
 pnpm test
 pnpm build
 ```
 
-CI runs only test and build, on Linux. `pnpm check:ci` and `pnpm typecheck` run in the pre-push hook; a new worktree needs `pnpm install` before its first push.
+CI runs only test and build, on Linux. `pnpm lint` and `pnpm typecheck` run in the pre-push hook; a new worktree needs `pnpm install` before its first push.

@@ -27,12 +27,12 @@ import { createPackThresholdPreviews, type PackThresholdPreview } from './packPl
 /**
  * Outcome status reported for one provider during a pack run.
  */
-export type PackSessionStatus = 'backup-only' | 'dry-run' | 'missing' | 'no-candidates' | 'packed';
+type PackSessionStatus = 'backup-only' | 'dry-run' | 'missing' | 'no-candidates' | 'packed';
 
 /**
  * Per-provider pack result row with byte totals and status.
  */
-export type PackSessionRow = {
+type PackSessionRow = {
   readonly provider: ProviderId;
   readonly mode: ProviderMode;
   readonly foundSessions: number;

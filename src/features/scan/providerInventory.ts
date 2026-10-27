@@ -13,12 +13,12 @@ import { ProviderDiscoveryError as ProviderDiscoveryFailure } from '../../shared
 /**
  * Readiness status reported for a provider store during inventory.
  */
-export type ProviderInventoryStatus = 'backup-only' | 'missing' | 'ready';
+type ProviderInventoryStatus = 'backup-only' | 'missing' | 'ready';
 
 /**
  * Read-only inventory row summarizing one provider's sessions and bytes.
  */
-export type ProviderInventoryRow = {
+type ProviderInventoryRow = {
   readonly provider: ProviderId;
   readonly label: string;
   readonly mode: ProviderMode;

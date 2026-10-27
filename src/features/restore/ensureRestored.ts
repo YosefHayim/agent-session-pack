@@ -9,7 +9,7 @@ import { resolveSessionSelector, type SelectorMatch } from './sessionSelector.js
 /**
  * Machine-readable status for a single-session ensure-restored or restore attempt.
  */
-export type EnsureRestoredStatus =
+type EnsureRestoredStatus =
   | 'already-present'
   | 'ambiguous-selector'
   | 'backup-only'
@@ -21,7 +21,7 @@ export type EnsureRestoredStatus =
 /**
  * One session an ambiguous selector could mean.
  */
-export type SelectorCandidate = {
+type SelectorCandidate = {
   readonly provider: ProviderId;
   readonly sessionId: string;
   readonly title: string;

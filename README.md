@@ -317,7 +317,7 @@ Contributions are welcome. Fork, branch, add tests, run the checks, commit with 
 
 ```bash
 pnpm install
-pnpm check:ci     # Biome + ESLint
+pnpm lint         # Biome, then knip
 pnpm typecheck    # TypeScript
 pnpm test         # Vitest, synthetic fixtures only
 pnpm build        # tsup to dist/

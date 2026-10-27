@@ -14,7 +14,7 @@ const STUB_MARKER_FILE = '.agent-session-pack-archived.json';
 /**
  * Schema for archived session stub metadata.
  */
-export const ArchivedStubSchema = Schema.Struct({
+const ArchivedStubSchema = Schema.Struct({
   agentSessionPack: Schema.Literal(ARCHIVED_STUB_KIND),
   version: Schema.Literal(1),
   sessionId: Schema.String,
@@ -25,7 +25,7 @@ export const ArchivedStubSchema = Schema.Struct({
 /**
  * Decoded archived stub metadata.
  */
-export type ArchivedStub = typeof ArchivedStubSchema.Type;
+type ArchivedStub = typeof ArchivedStubSchema.Type;
 
 /**
  * Inputs for writing an archived-session stub.

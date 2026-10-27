@@ -24,7 +24,7 @@ export type PromptOption<Value extends string> = {
 /**
  * Spinner interface used to report long-running interactive work.
  */
-export type PromptSpinner = {
+type PromptSpinner = {
   readonly isCancelled: boolean;
   start: (message?: string) => void;
   stop: (message?: string) => void;

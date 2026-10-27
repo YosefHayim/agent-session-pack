@@ -5,7 +5,7 @@ import { formatHumanAgentGuide, formatJsonAgentGuide } from './agentGuideOutput.
 /**
  * Schema describing the guide command arguments.
  */
-export const GuideArgsSchema = Schema.Struct({
+const GuideArgsSchema = Schema.Struct({
   json: Schema.optional(Schema.Boolean),
 });
 

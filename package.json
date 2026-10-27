@@ -72,7 +72,7 @@
     "pack:all": "tsx src/cli/main.ts pack --all-providers",
     "unpack:all": "tsx src/cli/main.ts unpack --all-providers",
     "build": "tsup",
-    "check:ci": "biome ci . && eslint .",
+    "lint": "biome ci . && knip",
     "test": "vitest run",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "typecheck": "tsc --noEmit --incremental --tsBuildInfoFile node_modules/.cache/tsc/agentSessionPack.tsbuildinfo",
@@ -85,14 +85,11 @@
   "devDependencies": {
     "@biomejs/biome": "^2.5.2",
     "@types/node": "^24.0.0",
-    "eslint": "^10.6.0",
-    "eslint-plugin-jsdoc": "63.0.11",
-    "eslint-plugin-tsdoc": "^0.5.2",
     "husky": "^9.1.7",
+    "knip": "6.43.0",
     "tsup": "^8.5.1",
     "tsx": "^4.20.0",
     "typescript": "^5.8.0",
-    "typescript-eslint": "^8.62.1",
     "vitest": "^3.2.0"
   },
   "dependencies": {

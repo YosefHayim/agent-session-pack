@@ -33,7 +33,7 @@ export type SessionSourceKind = typeof SessionSourceKindSchema.Type;
 /**
  * Schema enumerating how a provider store may be treated.
  */
-export const ProviderModeSchema = Schema.Literal('archive', 'backup-only');
+const ProviderModeSchema = Schema.Literal('archive', 'backup-only');
 
 /**
  * Provider handling mode value.
@@ -43,7 +43,7 @@ export type ProviderMode = typeof ProviderModeSchema.Type;
 /**
  * Schema enumerating lifecycle states a session can occupy.
  */
-export const SessionStatusSchema = Schema.Literal(
+const SessionStatusSchema = Schema.Literal(
   'live',
   'cold',
   'archived',
@@ -53,14 +53,9 @@ export const SessionStatusSchema = Schema.Literal(
 );
 
 /**
- * Session lifecycle status value.
- */
-export type SessionStatus = typeof SessionStatusSchema.Type;
-
-/**
  * Schema describing a session discovered in a provider store.
  */
-export const DiscoveredSessionSchema = Schema.Struct({
+const DiscoveredSessionSchema = Schema.Struct({
   id: Schema.String,
   provider: ProviderIdSchema,
   title: Schema.String,

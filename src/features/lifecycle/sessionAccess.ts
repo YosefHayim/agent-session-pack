@@ -6,7 +6,7 @@ import type { ProviderId } from '../../shared/sessionModel.js';
 /**
  * One recorded session access used to keep recently opened sessions hot.
  */
-export type SessionAccessEvent = {
+type SessionAccessEvent = {
   readonly provider: ProviderId;
   readonly sessionId: string;
   readonly accessedAt: string;

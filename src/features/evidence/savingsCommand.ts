@@ -11,7 +11,7 @@ import { runLocalEvidence } from './localEvidence.js';
 /**
  * Schema describing the savings command arguments.
  */
-export const SavingsArgsSchema = Schema.Struct({
+const SavingsArgsSchema = Schema.Struct({
   provider: Schema.optional(Schema.String),
   json: Schema.optional(Schema.Boolean),
 });

@@ -12,17 +12,12 @@ import { restoreManifest } from './restoreManifest.js';
 /**
  * Outcome status reported for one provider during an unpack run.
  */
-export type UnpackSessionStatus =
-  | 'already-present'
-  | 'conflict'
-  | 'dry-run'
-  | 'no-archives'
-  | 'restored';
+type UnpackSessionStatus = 'already-present' | 'conflict' | 'dry-run' | 'no-archives' | 'restored';
 
 /**
  * Per-provider unpack result row with restore counts and byte totals.
  */
-export type UnpackSessionRow = {
+type UnpackSessionRow = {
   readonly provider: ProviderId;
   readonly archivedSessions: number;
   readonly restoredSessions: number;

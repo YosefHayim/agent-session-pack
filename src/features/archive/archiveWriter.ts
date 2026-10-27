@@ -30,7 +30,7 @@ const execFileAsync = promisify(execFile);
 /**
  * Describes a single-file compression request from source to archive path.
  */
-export type CompressionRequest = {
+type CompressionRequest = {
   readonly sourcePath: string;
   readonly archivePath: string;
 };
@@ -38,7 +38,7 @@ export type CompressionRequest = {
 /**
  * Describes a single-file decompression request from archive to restored path.
  */
-export type DecompressionRequest = {
+type DecompressionRequest = {
   readonly archivePath: string;
   readonly restoredPath: string;
 };

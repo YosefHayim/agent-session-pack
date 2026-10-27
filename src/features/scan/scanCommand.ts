@@ -9,7 +9,7 @@ import { scanStores } from './scanStores.js';
 /**
  * Schema describing the scan command arguments.
  */
-export const ScanArgsSchema = Schema.Struct({
+const ScanArgsSchema = Schema.Struct({
   provider: Schema.optional(Schema.String),
   json: Schema.optional(Schema.Boolean),
 });

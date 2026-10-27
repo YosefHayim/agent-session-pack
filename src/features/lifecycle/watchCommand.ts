@@ -59,7 +59,7 @@ export const watchCommand = defineCommand({
 /**
  * Decoded arguments for watch.
  */
-export type WatchArgs = {
+type WatchArgs = {
   readonly provider: string | undefined;
   readonly json: boolean | undefined;
   readonly pollMs: string | undefined;

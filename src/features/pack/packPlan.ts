@@ -14,7 +14,7 @@ export const DEFAULT_COLD_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
 /**
  * Provider identity and mode considered when building a pack plan.
  */
-export type PackPlanProvider = {
+type PackPlanProvider = {
   readonly id: ProviderId;
   readonly label: string;
   readonly mode: ProviderMode;
@@ -34,7 +34,7 @@ export type PackPlanRequest = {
 /**
  * Per-provider row summarizing scanned, candidate, and byte totals.
  */
-export type PackPlanRow = {
+type PackPlanRow = {
   readonly provider: ProviderId;
   readonly mode: ProviderMode;
   readonly scannedSessions: number;
@@ -56,7 +56,7 @@ export type PackPlan = {
 /**
  * Kind of alternative threshold preview shown as a curiosity tip.
  */
-export type PackThresholdPreviewKind = 'broader' | 'max' | 'safer';
+type PackThresholdPreviewKind = 'broader' | 'max' | 'safer';
 
 /**
  * Aggregate candidate count and byte total for one alternative threshold.

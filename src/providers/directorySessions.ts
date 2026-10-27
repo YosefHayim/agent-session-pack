@@ -12,7 +12,7 @@ import { measureDirectorySession, slugifyTitle } from './sessionDiscovery.js';
 /**
  * Marker files that identify a directory-backed provider session.
  */
-export type DirectorySessionMarkers = ReadonlyArray<string>;
+type DirectorySessionMarkers = ReadonlyArray<string>;
 
 /**
  * Options for discovering directory-backed provider sessions.

@@ -7,7 +7,7 @@ import { ProviderIdSchema } from '../../shared/sessionModel.js';
 /**
  * Schema describing persisted setup configuration.
  */
-export const SetupConfigSchema = Schema.Struct({
+const SetupConfigSchema = Schema.Struct({
   version: Schema.Literal(1),
   providers: Schema.Array(ProviderIdSchema),
   vaultPath: Schema.String,

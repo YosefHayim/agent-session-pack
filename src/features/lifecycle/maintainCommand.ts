@@ -67,7 +67,7 @@ export const maintainCommand = defineCommand({
 /**
  * Decoded arguments for maintain.
  */
-export type MaintainArgs = {
+type MaintainArgs = {
   readonly apply: boolean | undefined;
   readonly confirmed?: boolean | undefined;
   readonly dryRun: boolean | undefined;

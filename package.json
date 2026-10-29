@@ -73,6 +73,7 @@
     "unpack:all": "tsx src/cli/main.ts unpack --all-providers",
     "build": "tsup",
     "lint": "biome ci . && knip",
+    "check": "turbo run lint typecheck test build --output-logs=errors-only",
     "test": "vitest run",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "typecheck": "tsc --noEmit --incremental --tsBuildInfoFile node_modules/.cache/tsc/agentSessionPack.tsbuildinfo",
@@ -89,6 +90,7 @@
     "knip": "6.43.0",
     "tsup": "^8.5.1",
     "tsx": "^4.20.0",
+    "turbo": "2.11.8",
     "typescript": "^5.8.0",
     "vitest": "^3.2.0"
   },

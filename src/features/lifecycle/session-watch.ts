@@ -1,13 +1,13 @@
 import { watch } from 'node:fs';
 import { Effect, Schema } from 'effect';
-import type { ProviderId } from '../../shared/session-model.js';
-import type { ArchiveFileSystemError } from '../archive/file-system.js';
-import type { ManifestStoreError, SessionManifest } from '../archive/manifest-store.js';
-import { listVaultSessionManifests } from '../archive/manifest-store.js';
-import { directoryStubWasOpened, isArchivedStubPath } from '../archive/session-stub.js';
-import type { ArchiveVerificationError, CompressionAdapter } from '../archive/writer.js';
-import { createZstdCompression } from '../archive/zstd-compression.js';
-import { ensureSessionRestored } from '../restore/ensure-restored.js';
+import type { ArchiveFileSystemError } from '@/features/archive/file-system.js';
+import type { ManifestStoreError, SessionManifest } from '@/features/archive/manifest-store.js';
+import { listVaultSessionManifests } from '@/features/archive/manifest-store.js';
+import { directoryStubWasOpened, isArchivedStubPath } from '@/features/archive/session-stub.js';
+import type { ArchiveVerificationError, CompressionAdapter } from '@/features/archive/writer.js';
+import { createZstdCompression } from '@/features/archive/zstd-compression.js';
+import { ensureSessionRestored } from '@/features/restore/ensure-restored.js';
+import type { ProviderId } from '@/shared/session-model.js';
 
 /**
  * Typed error raised when session watch setup fails.

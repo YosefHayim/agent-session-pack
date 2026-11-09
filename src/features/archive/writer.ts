@@ -3,7 +3,7 @@ import { mkdir, readdir, rm, stat } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';
 import { promisify } from 'node:util';
 import { Effect, Schema } from 'effect';
-import type { SessionSourceKind } from '../../shared/session-model.js';
+import type { SessionSourceKind } from '@/shared/session-model.js';
 import {
   ArchiveFileSystemError,
   directorySizeBytes,

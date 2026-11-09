@@ -1,15 +1,15 @@
 import { Effect } from 'effect';
-import { allProviders } from '../../providers/all-providers.js';
-import { formatBytes } from '../../shared/byte-format.js';
-import { HOME_NOT_SET_CANCEL_MESSAGE } from '../../shared/home-env.js';
-import type { InteractiveCliRequest } from '../../shared/interactive-cli-request.js';
-import type { PromptAdapter } from '../../shared/prompt-adapter.js';
-import { resolveDefaultVaultPath } from '../archive/vault-paths.js';
+import { resolveDefaultVaultPath } from '@/features/archive/vault-paths.js';
 import {
   formatProviderInventoryTable,
   loadInventoryWithSpinner,
-} from '../scan/inventory-prompt.js';
-import type { ProviderInventoryReport } from '../scan/provider-inventory.js';
+} from '@/features/scan/inventory-prompt.js';
+import type { ProviderInventoryReport } from '@/features/scan/provider-inventory.js';
+import { allProviders } from '@/providers/all-providers.js';
+import { formatBytes } from '@/shared/byte-format.js';
+import { HOME_NOT_SET_CANCEL_MESSAGE } from '@/shared/home-env.js';
+import type { InteractiveCliRequest } from '@/shared/interactive-cli-request.js';
+import type { PromptAdapter } from '@/shared/prompt-adapter.js';
 import { runPackCommand } from './command.js';
 import { DEFAULT_COLD_AFTER, DEFAULT_COLD_AFTER_MS } from './plan.js';
 
@@ -21,7 +21,7 @@ import { DEFAULT_COLD_AFTER, DEFAULT_COLD_AFTER_MS } from './plan.js';
  * @example
  * ```ts
  * import { runPackFlow } from './flow.js';
- * import { clackPromptAdapter } from '../../shared/prompt-adapter.js';
+ * import { clackPromptAdapter } from '@/shared/prompt-adapter.js';
  *
  * await runPackFlow({ prompts: clackPromptAdapter });
  * ```

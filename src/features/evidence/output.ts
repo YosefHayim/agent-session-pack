@@ -1,5 +1,5 @@
-import { formatBytes } from '../../shared/byte-format.js';
-import { savedPercent } from '../../shared/byte-savings.js';
+import { formatBytes } from '@/shared/byte-format.js';
+import { savedPercent } from '@/shared/byte-savings.js';
 import type { LocalEvidenceEntry, LocalEvidenceReport } from './local-evidence.js';
 
 /**

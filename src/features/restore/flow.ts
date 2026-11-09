@@ -1,7 +1,7 @@
 import { Effect } from 'effect';
-import type { InteractiveCliRequest } from '../../shared/interactive-cli-request.js';
-import type { PromptAdapter } from '../../shared/prompt-adapter.js';
-import { runWithSpinner } from '../../shared/spinner-task.js';
+import type { InteractiveCliRequest } from '@/shared/interactive-cli-request.js';
+import type { PromptAdapter } from '@/shared/prompt-adapter.js';
+import { runWithSpinner } from '@/shared/spinner-task.js';
 import { runUnpackCommand } from './unpack-command.js';
 
 /**
@@ -12,7 +12,7 @@ import { runUnpackCommand } from './unpack-command.js';
  * @example
  * ```ts
  * import { runRestoreFlow } from './flow.js';
- * import { clackPromptAdapter } from '../../shared/prompt-adapter.js';
+ * import { clackPromptAdapter } from '@/shared/prompt-adapter.js';
  *
  * await runRestoreFlow({ prompts: clackPromptAdapter });
  * ```

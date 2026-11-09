@@ -1,5 +1,5 @@
-import { sumSessionBytes } from '../../shared/byte-savings.js';
-import type { DiscoveredSession, ProviderId, ProviderMode } from '../../shared/session-model.js';
+import { sumSessionBytes } from '@/shared/byte-savings.js';
+import type { DiscoveredSession, ProviderId, ProviderMode } from '@/shared/session-model.js';
 
 /**
  * Default cold threshold: sessions untouched this long are pack candidates.

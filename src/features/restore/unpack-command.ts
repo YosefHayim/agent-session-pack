@@ -1,14 +1,14 @@
 import { defineCommand } from 'citty';
 import { Effect } from 'effect';
-import { selectProviders } from '../../providers/flag.js';
-import { resolveApplyConfirmation } from '../../shared/apply-confirmation.js';
-import { requireHome } from '../../shared/home-env.js';
-import type { ProviderAdapter } from '../../shared/session-model.js';
-import type { ArchiveFileSystemError } from '../archive/file-system.js';
-import type { ManifestStoreError } from '../archive/manifest-store.js';
-import { resolveDefaultVaultPath } from '../archive/vault-paths.js';
-import type { ArchiveVerificationError, CompressionAdapter } from '../archive/writer.js';
-import { createZstdCompression } from '../archive/zstd-compression.js';
+import type { ArchiveFileSystemError } from '@/features/archive/file-system.js';
+import type { ManifestStoreError } from '@/features/archive/manifest-store.js';
+import { resolveDefaultVaultPath } from '@/features/archive/vault-paths.js';
+import type { ArchiveVerificationError, CompressionAdapter } from '@/features/archive/writer.js';
+import { createZstdCompression } from '@/features/archive/zstd-compression.js';
+import { selectProviders } from '@/providers/flag.js';
+import { resolveApplyConfirmation } from '@/shared/apply-confirmation.js';
+import { requireHome } from '@/shared/home-env.js';
+import type { ProviderAdapter } from '@/shared/session-model.js';
 import { formatHumanUnpackReport } from './unpack-output.js';
 import { unpackProviderSessions } from './unpack-sessions.js';
 

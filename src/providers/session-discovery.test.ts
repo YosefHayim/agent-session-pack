@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Effect, Either } from 'effect';
 import { describe, expect, it } from 'vitest';
-import { ProviderDiscoveryError } from '../shared/session-model.js';
+import { ProviderDiscoveryError } from '@/shared/session-model.js';
 import {
   collectJsonlSessions,
   measureDirectorySession,

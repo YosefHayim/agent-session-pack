@@ -1,7 +1,7 @@
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { Effect, Schema } from 'effect';
-import type { ProviderId, SessionSourceKind } from '../../shared/session-model.js';
+import type { ProviderId, SessionSourceKind } from '@/shared/session-model.js';
 import { ArchiveFileSystemError } from './file-system.js';
 
 /**

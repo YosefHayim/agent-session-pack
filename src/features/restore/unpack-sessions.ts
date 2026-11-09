@@ -1,12 +1,12 @@
 import { Effect } from 'effect';
-import type { ProviderAdapter, ProviderId } from '../../shared/session-model.js';
-import { type ArchiveFileSystemError, statPath } from '../archive/file-system.js';
+import { type ArchiveFileSystemError, statPath } from '@/features/archive/file-system.js';
 import {
   listVaultSessionManifests,
   type ManifestStoreError,
   type SessionManifest,
-} from '../archive/manifest-store.js';
-import type { ArchiveVerificationError, CompressionAdapter } from '../archive/writer.js';
+} from '@/features/archive/manifest-store.js';
+import type { ArchiveVerificationError, CompressionAdapter } from '@/features/archive/writer.js';
+import type { ProviderAdapter, ProviderId } from '@/shared/session-model.js';
 import { restoreManifest } from './manifest.js';
 
 /**
@@ -59,7 +59,7 @@ export type UnpackProviderSessionsRequest = {
  * @example
  * ```ts
  * import { unpackProviderSessions } from './unpack-sessions.js';
- * import { createZstdCompression } from '../archive/zstd-compression.js';
+ * import { createZstdCompression } from '@/features/archive/zstd-compression.js';
  *
  * const report = await Effect.runPromise(
  *   unpackProviderSessions({

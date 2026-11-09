@@ -1,5 +1,5 @@
-import { formatBytes } from '../../shared/byte-format.js';
-import { formatStatus, formatTouched } from '../../shared/report-cells.js';
+import { formatBytes } from '@/shared/byte-format.js';
+import { formatStatus, formatTouched } from '@/shared/report-cells.js';
 import type { UnpackSessionsReport } from './unpack-sessions.js';
 
 /**

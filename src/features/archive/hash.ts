@@ -3,7 +3,7 @@ import { createReadStream } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
 import { Effect } from 'effect';
-import type { SessionSourceKind } from '../../shared/session-model.js';
+import type { SessionSourceKind } from '@/shared/session-model.js';
 import { ArchiveFileSystemError, resolveSourceKind } from './file-system.js';
 
 /**

@@ -1,5 +1,5 @@
 import { Effect } from 'effect';
-import type { DiscoveredSession } from '../../shared/session-model.js';
+import type { DiscoveredSession } from '@/shared/session-model.js';
 import type { ScanReport } from './stores.js';
 
 const MAX_TITLE_PREVIEW_LENGTH = 96;

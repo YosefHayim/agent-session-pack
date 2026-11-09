@@ -1,6 +1,6 @@
 import { Effect } from 'effect';
 import { describe, expect, it } from 'vitest';
-import type { SessionManifest } from '../archive/manifest-store.js';
+import type { SessionManifest } from '@/features/archive/manifest-store.js';
 import {
   resolveSessionSelector,
   SessionSelectorAmbiguousError,

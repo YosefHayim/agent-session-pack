@@ -1,5 +1,22 @@
 import { Effect } from 'effect';
-import { savedPercent, sumSessionBytes } from '../../shared/byte-savings.js';
+import { pathExists, removePath } from '@/features/archive/file-system.js';
+import {
+  type ManifestStoreError,
+  writeSessionManifest,
+} from '@/features/archive/manifest-store.js';
+import { writeArchivedStub } from '@/features/archive/session-stub.js';
+import {
+  archivePathForSession,
+  manifestPathForSession,
+  verificationPathForSession,
+} from '@/features/archive/vault-paths.js';
+import {
+  type ArchiveWriteError,
+  type CompressionAdapter,
+  removeOriginalSession,
+  writeVerifiedArchive,
+} from '@/features/archive/writer.js';
+import { savedPercent, sumSessionBytes } from '@/shared/byte-savings.js';
 import type {
   DiscoveredSession,
   ProviderAdapter,
@@ -7,21 +24,7 @@ import type {
   ProviderId,
   ProviderMode,
   SessionSourceKind,
-} from '../../shared/session-model.js';
-import { pathExists, removePath } from '../archive/file-system.js';
-import { type ManifestStoreError, writeSessionManifest } from '../archive/manifest-store.js';
-import { writeArchivedStub } from '../archive/session-stub.js';
-import {
-  archivePathForSession,
-  manifestPathForSession,
-  verificationPathForSession,
-} from '../archive/vault-paths.js';
-import {
-  type ArchiveWriteError,
-  type CompressionAdapter,
-  removeOriginalSession,
-  writeVerifiedArchive,
-} from '../archive/writer.js';
+} from '@/shared/session-model.js';
 import { createPackThresholdPreviews, type PackThresholdPreview } from './plan.js';
 
 /**
@@ -80,7 +83,7 @@ export type PackProviderSessionsRequest = {
  * @example
  * ```ts
  * import { packProviderSessions } from './sessions.js';
- * import { createZstdCompression } from '../archive/zstd-compression.js';
+ * import { createZstdCompression } from '@/features/archive/zstd-compression.js';
  *
  * const report = await Effect.runPromise(
  *   packProviderSessions({

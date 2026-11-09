@@ -1,6 +1,6 @@
 import { Effect, Schema } from 'effect';
-import { type ProviderId, ProviderIdSchema } from '../../shared/session-model.js';
-import { type SessionManifest, SessionManifestSchema } from '../archive/manifest-store.js';
+import { type SessionManifest, SessionManifestSchema } from '@/features/archive/manifest-store.js';
+import { type ProviderId, ProviderIdSchema } from '@/shared/session-model.js';
 
 /**
  * How far a selector reaches: `exact` matches id, name, or slug only; `fuzzy` also tries

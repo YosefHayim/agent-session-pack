@@ -1,17 +1,17 @@
 import { cp, mkdir, rm } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import { Effect } from 'effect';
+import { sha256Path } from '@/features/archive/hash.js';
+import { type ArchiveWriteError, writeVerifiedArchive } from '@/features/archive/writer.js';
+import { createZstdCompression } from '@/features/archive/zstd-compression.js';
+import { discoverStoreSessions } from '@/features/scan/stores.js';
 import type {
   ProviderAdapter,
   ProviderDiscoveryError,
   ProviderId,
   ProviderMode,
   SessionSourceKind,
-} from '../../shared/session-model.js';
-import { sha256Path } from '../archive/hash.js';
-import { type ArchiveWriteError, writeVerifiedArchive } from '../archive/writer.js';
-import { createZstdCompression } from '../archive/zstd-compression.js';
-import { discoverStoreSessions } from '../scan/stores.js';
+} from '@/shared/session-model.js';
 import { selectNewestSessionWithinSize } from './sample.js';
 
 const MAX_ARCHIVE_EVIDENCE_SOURCE_BYTES = 25 * 1024 * 1024;
@@ -72,7 +72,7 @@ export type LocalEvidenceRequest = {
  * @example
  * ```ts
  * import { runLocalEvidence } from './local-evidence.js';
- * import { allProviders } from '../../providers/all-providers.js';
+ * import { allProviders } from '@/providers/all-providers.js';
  *
  * const report = await Effect.runPromise(
  *   runLocalEvidence({
@@ -184,7 +184,7 @@ const discoverProviderSessions = (
   provider: ProviderAdapter,
   roots: ReadonlyArray<string>,
 ): Effect.Effect<
-  ReadonlyArray<import('../../shared/session-model.js').DiscoveredSession>,
+  ReadonlyArray<import('@/shared/session-model.js').DiscoveredSession>,
   ProviderDiscoveryError
 > =>
   Effect.gen(function* () {

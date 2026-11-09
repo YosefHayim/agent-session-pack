@@ -1,8 +1,8 @@
 import { copyFile, mkdir, utimes, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Effect } from 'effect';
-import type { CompressionAdapter } from '../src/features/archive/writer.js';
-import type { ProviderAdapter } from '../src/shared/session-model.js';
+import type { CompressionAdapter } from '@/features/archive/writer.js';
+import type { ProviderAdapter } from '@/shared/session-model.js';
 
 /**
  * Compression adapter for tests that copies bytes instead of compressing them.

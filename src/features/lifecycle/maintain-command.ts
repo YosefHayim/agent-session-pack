@@ -1,21 +1,21 @@
 import { defineCommand } from 'citty';
 import { Effect } from 'effect';
-import { allProviders } from '../../providers/all-providers.js';
-import { resolveApplyConfirmation } from '../../shared/apply-confirmation.js';
-import { requireHome } from '../../shared/home-env.js';
-import type { ProviderDiscoveryError } from '../../shared/session-model.js';
-import type { ManifestStoreError } from '../archive/manifest-store.js';
-import { resolveDefaultVaultPath } from '../archive/vault-paths.js';
-import type { ArchiveWriteError, CompressionAdapter } from '../archive/writer.js';
-import { createZstdCompression } from '../archive/zstd-compression.js';
-import { formatHumanPackReport } from '../pack/output.js';
-import { DEFAULT_COLD_AFTER, parseDurationMs } from '../pack/plan.js';
-import { packProviderSessions } from '../pack/sessions.js';
+import type { ManifestStoreError } from '@/features/archive/manifest-store.js';
+import { resolveDefaultVaultPath } from '@/features/archive/vault-paths.js';
+import type { ArchiveWriteError, CompressionAdapter } from '@/features/archive/writer.js';
+import { createZstdCompression } from '@/features/archive/zstd-compression.js';
+import { formatHumanPackReport } from '@/features/pack/output.js';
+import { DEFAULT_COLD_AFTER, parseDurationMs } from '@/features/pack/plan.js';
+import { packProviderSessions } from '@/features/pack/sessions.js';
 import {
   isRestoreOnLaunchEnabled,
   readSetupConfig,
   type SetupConfigFileError,
-} from '../setup/config.js';
+} from '@/features/setup/config.js';
+import { allProviders } from '@/providers/all-providers.js';
+import { resolveApplyConfirmation } from '@/shared/apply-confirmation.js';
+import { requireHome } from '@/shared/home-env.js';
+import type { ProviderDiscoveryError } from '@/shared/session-model.js';
 
 /**
  * Citty command that re-packs cold sessions so storage stays low over time.

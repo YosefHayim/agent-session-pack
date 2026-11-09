@@ -1,7 +1,7 @@
 import { copyFile, mkdir, readdir, rm, stat } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { Effect, Schema } from 'effect';
-import type { SessionSourceKind } from '../../shared/session-model.js';
+import type { SessionSourceKind } from '@/shared/session-model.js';
 
 /**
  * Typed error raised when an archive file system operation fails.

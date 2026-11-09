@@ -1,17 +1,17 @@
 import { defineCommand } from 'citty';
 import { Effect } from 'effect';
-import { parseOptionalProvider } from '../../providers/flag.js';
-import { requireHome } from '../../shared/home-env.js';
-import type { ArchiveFileSystemError } from '../archive/file-system.js';
-import type { ManifestStoreError } from '../archive/manifest-store.js';
-import { resolveDefaultVaultPath } from '../archive/vault-paths.js';
-import type { ArchiveVerificationError, CompressionAdapter } from '../archive/writer.js';
-import { createZstdCompression } from '../archive/zstd-compression.js';
+import type { ArchiveFileSystemError } from '@/features/archive/file-system.js';
+import type { ManifestStoreError } from '@/features/archive/manifest-store.js';
+import { resolveDefaultVaultPath } from '@/features/archive/vault-paths.js';
+import type { ArchiveVerificationError, CompressionAdapter } from '@/features/archive/writer.js';
+import { createZstdCompression } from '@/features/archive/zstd-compression.js';
 import {
   isRestoreOnLaunchEnabled,
   readSetupConfig,
   type SetupConfigFileError,
-} from '../setup/config.js';
+} from '@/features/setup/config.js';
+import { parseOptionalProvider } from '@/providers/flag.js';
+import { requireHome } from '@/shared/home-env.js';
 import { type EnsureRestoredReport, ensureSessionRestored } from './ensure-restored.js';
 
 /**

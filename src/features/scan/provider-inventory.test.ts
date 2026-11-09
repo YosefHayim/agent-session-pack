@@ -3,8 +3,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Effect } from 'effect';
 import { describe, expect, it } from 'vitest';
-import { codexProvider } from '../../providers/codex.js';
-import type { ProviderAdapter } from '../../shared/session-model.js';
+import { codexProvider } from '@/providers/codex.js';
+import type { ProviderAdapter } from '@/shared/session-model.js';
 import { inspectProviderInventory } from './provider-inventory.js';
 
 const now = new Date('2026-07-06T12:00:00.000Z');

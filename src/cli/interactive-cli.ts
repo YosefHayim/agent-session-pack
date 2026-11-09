@@ -1,17 +1,17 @@
 import { Effect } from 'effect';
-import { runDoctorCommand } from '../features/doctor/command.js';
-import { runSavingsCommand } from '../features/evidence/savings-command.js';
-import { runPackFlow } from '../features/pack/flow.js';
-import { runRestoreFlow } from '../features/restore/flow.js';
-import { runReviewSessions } from '../features/scan/review-flow.js';
-import { runFirstSetup } from '../features/setup/first-setup-flow.js';
-import type { InteractiveCliRequest } from '../shared/interactive-cli-request.js';
+import { runDoctorCommand } from '@/features/doctor/command.js';
+import { runSavingsCommand } from '@/features/evidence/savings-command.js';
+import { runPackFlow } from '@/features/pack/flow.js';
+import { runRestoreFlow } from '@/features/restore/flow.js';
+import { runReviewSessions } from '@/features/scan/review-flow.js';
+import { runFirstSetup } from '@/features/setup/first-setup-flow.js';
+import type { InteractiveCliRequest } from '@/shared/interactive-cli-request.js';
 import {
   clackPromptAdapter,
   type PromptAdapter,
   type PromptOption,
-} from '../shared/prompt-adapter.js';
-import { runWithSpinner } from '../shared/spinner-task.js';
+} from '@/shared/prompt-adapter.js';
+import { runWithSpinner } from '@/shared/spinner-task.js';
 
 type MainMenuAction = 'doctor' | 'exit' | 'pack' | 'restore' | 'review' | 'savings' | 'setup';
 

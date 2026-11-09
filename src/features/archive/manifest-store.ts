@@ -1,7 +1,7 @@
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { Effect, Schema } from 'effect';
-import { ProviderIdSchema, SessionSourceKindSchema } from '../../shared/session-model.js';
+import { ProviderIdSchema, SessionSourceKindSchema } from '@/shared/session-model.js';
 
 /**
  * Schema describing the restore manifest recorded for an archived session.

@@ -4,8 +4,8 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   ARCHIVED_STUB_KIND,
-  directoryStubWasOpened,
   isArchivedStubPath,
+  isDirectoryStubOpened,
   writeArchivedStub,
 } from './session-stub.js';
 
@@ -37,10 +37,10 @@ describe('session stubs', () => {
     });
 
     await expect(isArchivedStubPath(originalPath, 'directory')).resolves.toBe(true);
-    await expect(directoryStubWasOpened(originalPath)).resolves.toBe(false);
+    await expect(isDirectoryStubOpened(originalPath)).resolves.toBe(false);
 
     await mkdir(originalPath, { recursive: true });
     await writeFile(join(originalPath, 'chat_history.jsonl'), 'x\n');
-    await expect(directoryStubWasOpened(originalPath)).resolves.toBe(true);
+    await expect(isDirectoryStubOpened(originalPath)).resolves.toBe(true);
   });
 });

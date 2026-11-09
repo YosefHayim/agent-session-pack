@@ -3,10 +3,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  createAccessLogPath,
   extractSessionIdsFromArgv,
+  isSessionAccessedSince,
   recordSessionAccess,
-  resolveAccessLogPath,
-  wasSessionAccessedSince,
 } from './session-access.js';
 
 describe('sessionAccess', () => {
@@ -31,7 +31,7 @@ describe('sessionAccess', () => {
       accessedAt: now,
     });
 
-    const logPath = resolveAccessLogPath(vaultPath);
+    const logPath = createAccessLogPath(vaultPath);
     const lines = (await readFile(logPath, 'utf8')).trim().split('\n');
     expect(JSON.parse(lines[0] ?? '{}')).toMatchObject({
       provider: 'codex',
@@ -39,7 +39,7 @@ describe('sessionAccess', () => {
     });
 
     expect(
-      wasSessionAccessedSince({
+      isSessionAccessedSince({
         events: [
           {
             provider: 'codex',

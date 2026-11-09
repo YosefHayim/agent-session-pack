@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import { defineCommand } from 'citty';
-import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
+import { createDefaultVaultPath } from '@/archive/vault-paths.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
 import type { CommandOutcome } from '@/command-outcome.js';
@@ -75,7 +75,7 @@ const runWatchCommand = async (args: WatchArgs): Promise<CommandOutcome> => {
 
   const setupConfig = await readSetupConfig(home);
 
-  const vaultPath = args.vaultPath ?? setupConfig?.vaultPath ?? resolveDefaultVaultPath(home);
+  const vaultPath = args.vaultPath ?? setupConfig?.vaultPath ?? createDefaultVaultPath(home);
   const pollIntervalMs = parsePollMs(args.pollMs);
   const compression = args.compression ?? createZstdCompression();
   const json = args.json === true;
@@ -103,14 +103,14 @@ const runWatchCommand = async (args: WatchArgs): Promise<CommandOutcome> => {
       stop = true;
     });
   } else {
-    const onSignal = (): void => {
+    const requestWatchStop = (): void => {
       stop = true;
     };
-    process.once('SIGINT', onSignal);
-    process.once('SIGTERM', onSignal);
+    process.once('SIGINT', requestWatchStop);
+    process.once('SIGTERM', requestWatchStop);
   }
 
-  const onEvent = (event: SessionWatchEvent): void => {
+  const writeWatchEvent = (event: SessionWatchEvent): void => {
     if (json) {
       process.stdout.write(`${JSON.stringify({ command: 'watch', ...event })}\n`);
       return;
@@ -133,7 +133,7 @@ const runWatchCommand = async (args: WatchArgs): Promise<CommandOutcome> => {
     compression,
     pollIntervalMs,
     shouldStop: () => stop,
-    onEvent,
+    onEvent: writeWatchEvent,
   });
 
   return { exitCode: childExitCode ?? 0 };

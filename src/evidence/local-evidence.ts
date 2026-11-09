@@ -1,6 +1,6 @@
 import { cp, mkdir, rm } from 'node:fs/promises';
 import { basename, join } from 'node:path';
-import { sha256Path } from '@/archive/hash.js';
+import { readSha256Path } from '@/archive/hash.js';
 import { writeVerifiedArchive } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
 import { discoverStoreSessions } from '@/scan/stores.js';
@@ -127,7 +127,7 @@ export const runLocalEvidence = async (
       compression,
       sourceKind,
     });
-    const originalSha256 = await sha256Path(selected.originalPath, sourceKind);
+    const originalSha256 = await readSha256Path(selected.originalPath, sourceKind);
 
     evidence.push({
       provider: provider.id,
@@ -135,7 +135,7 @@ export const runLocalEvidence = async (
       sampledSources: 1,
       mode: provider.mode,
       sourceKind,
-      titlePreview: formatTitlePreview(selected.title),
+      titlePreview: createTitlePreview(selected.title),
       originalPath: selected.originalPath,
       fixturePath,
       archivePath,
@@ -178,7 +178,7 @@ const discoverProviderSessions = async (
   return discovered;
 };
 
-const formatTitlePreview = (title: string): string => {
+const createTitlePreview = (title: string): string => {
   const singleLineTitle = title.replace(/\s+/g, ' ').trim();
 
   const isTitleShortEnough = singleLineTitle.length <= MAX_TITLE_PREVIEW_LENGTH;

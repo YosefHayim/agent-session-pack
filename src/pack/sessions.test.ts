@@ -18,27 +18,27 @@ describe('packProviderSessions', () => {
     const now = new Date('2026-07-06T12:00:00.000Z');
     const olderThanMs = 24 * 60 * 60 * 1000;
 
-    const coldSession = await writeColdSession(
+    const coldSession = await writeColdSession({
       home,
-      join('.codex', 'sessions', '2026', '06', '01'),
-      'cold.jsonl',
-      '{"type":"user","text":"cold session"}\n',
-      coldModifiedAt,
-    );
-    const warmSession = await writeColdSession(
+      relativeDir: join('.codex', 'sessions', '2026', '06', '01'),
+      fileName: 'cold.jsonl',
+      content: '{"type":"user","text":"cold session"}\n',
+      modifiedAt: coldModifiedAt,
+    });
+    const warmSession = await writeColdSession({
       home,
-      join('.claude', 'projects', 'demo'),
-      'warm.jsonl',
-      '{"type":"user","text":"warm session"}\n',
-      warmModifiedAt,
-    );
-    const backupSession = await writeColdSession(
+      relativeDir: join('.claude', 'projects', 'demo'),
+      fileName: 'warm.jsonl',
+      content: '{"type":"user","text":"warm session"}\n',
+      modifiedAt: warmModifiedAt,
+    });
+    const backupSession = await writeColdSession({
       home,
-      join('.cursor', 'projects', 'demo'),
-      'backup.jsonl',
-      '{"type":"user","text":"backup only"}\n',
-      coldModifiedAt,
-    );
+      relativeDir: join('.cursor', 'projects', 'demo'),
+      fileName: 'backup.jsonl',
+      content: '{"type":"user","text":"backup only"}\n',
+      modifiedAt: coldModifiedAt,
+    });
 
     const coldDiscovered: DiscoveredSession = {
       id: 'cold',

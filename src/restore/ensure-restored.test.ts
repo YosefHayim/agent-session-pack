@@ -17,13 +17,13 @@ describe('ensureSessionRestored', () => {
     const now = new Date('2026-07-06T12:00:00.000Z');
     const coldModifiedAt = new Date('2026-06-01T12:00:00.000Z');
     const content = '{"type":"user","text":"ensure restored"}\n';
-    const session = await writeColdSession(
+    const session = await writeColdSession({
       home,
-      join('.codex', 'sessions', '2026', '06', '01'),
-      'ensure-session.jsonl',
+      relativeDir: join('.codex', 'sessions', '2026', '06', '01'),
+      fileName: 'ensure-session.jsonl',
       content,
-      coldModifiedAt,
-    );
+      modifiedAt: coldModifiedAt,
+    });
 
     const discovered: DiscoveredSession = {
       id: 'ensure-session',

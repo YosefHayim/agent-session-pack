@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { writeSessionDirectory } from './fixtures.js';
-import { sha256Directory, sha256File, sha256Path } from './hash.js';
+import { readSha256Directory, readSha256File, readSha256Path } from './hash.js';
 
 const createWorkspace = (): Promise<string> =>
   mkdtemp(join(tmpdir(), 'agent-session-pack-archive-hash-'));
@@ -15,11 +15,11 @@ describe('archiveHash', () => {
     await writeFile(filePath, '{"type":"user","text":"hash"}\n');
     const directoryPath = await writeSessionDirectory(workspace);
 
-    const fileDigest = await sha256File(filePath);
-    const directoryDigest = await sha256Directory(directoryPath);
-    const pathFileDigest = await sha256Path(filePath, 'file');
-    const pathDirectoryDigest = await sha256Path(directoryPath, 'directory');
-    const autoDirectoryDigest = await sha256Path(directoryPath);
+    const fileDigest = await readSha256File(filePath);
+    const directoryDigest = await readSha256Directory(directoryPath);
+    const pathFileDigest = await readSha256Path(filePath, 'file');
+    const pathDirectoryDigest = await readSha256Path(directoryPath, 'directory');
+    const autoDirectoryDigest = await readSha256Path(directoryPath);
 
     expect(pathFileDigest).toBe(fileDigest);
     expect(pathDirectoryDigest).toBe(directoryDigest);
@@ -30,6 +30,6 @@ describe('archiveHash', () => {
     const workspace = await createWorkspace();
     const missingPath = join(workspace, 'missing.jsonl');
 
-    await expect(sha256File(missingPath)).rejects.toThrow(missingPath);
+    await expect(readSha256File(missingPath)).rejects.toThrow(missingPath);
   });
 });

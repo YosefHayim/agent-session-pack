@@ -3,7 +3,7 @@ import type { CommandOutcome } from '@/command-outcome.js';
 import { requireHome } from '@/home-env.js';
 import { selectProviders } from '@/providers/flag.js';
 import type { SessionStore } from '@/session-model.js';
-import { renderHumanScan, renderJsonScan } from './output.js';
+import { writeHumanScan, writeJsonScan } from './output.js';
 import { scanStores } from './stores.js';
 
 /**
@@ -39,11 +39,11 @@ export const runScanCommand = async (args: ScanArgs): Promise<CommandOutcome> =>
   const isJsonRequested = args.json === true;
 
   if (isJsonRequested) {
-    renderJsonScan(report);
+    writeJsonScan(report);
     return { exitCode: providerExitCode };
   }
 
-  renderHumanScan(report);
+  writeHumanScan(report);
   return { exitCode: providerExitCode };
 };
 

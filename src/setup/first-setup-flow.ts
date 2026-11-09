@@ -4,7 +4,7 @@ import { DEFAULT_COLD_AFTER, DEFAULT_COLD_AFTER_MS } from '@/pack/plan.js';
 import type { PromptAdapter } from '@/prompt-adapter.js';
 import { clackPromptAdapter, type PromptOption } from '@/prompt-adapter.js';
 import { allProviders } from '@/providers/all-providers.js';
-import { formatProviderInventoryTable, loadInventoryWithSpinner } from '@/scan/inventory-prompt.js';
+import { createProviderInventoryTable, loadInventoryWithSpinner } from '@/scan/inventory-prompt.js';
 import type { ProviderInventoryReport } from '@/scan/provider-inventory.js';
 import type { ProviderAdapter, ProviderId } from '@/session-model.js';
 import { validateVaultPath, writeSetupConfig } from './config.js';
@@ -47,7 +47,7 @@ export const runFirstSetup = async (request: FirstSetupRequest = {}): Promise<Fl
     prompts.intro('Agent Session Pack setup');
   }
 
-  prompts.note(firstSetupCopy());
+  prompts.note(readFirstSetupCopy());
 
   const providers = request.providers ?? allProviders;
   const olderThanMs = request.olderThanMs ?? DEFAULT_COLD_AFTER_MS;
@@ -62,9 +62,9 @@ export const runFirstSetup = async (request: FirstSetupRequest = {}): Promise<Fl
     stopMessage: 'Scanned provider stores.',
   });
 
-  prompts.note(formatProviderInventoryTable(inventory), 'Detected providers');
+  prompts.note(createProviderInventoryTable(inventory), 'Detected providers');
 
-  const selectedProviders = await promptProviderSelection({
+  const selectedProviders = await askProviderSelection({
     inventory,
     prompts,
   });
@@ -75,7 +75,7 @@ export const runFirstSetup = async (request: FirstSetupRequest = {}): Promise<Fl
     return 'cancelled';
   }
 
-  const coldAfter = await promptColdThreshold(prompts);
+  const coldAfter = await askColdThreshold(prompts);
 
   const isColdAfterMissing = coldAfter == null;
   if (isColdAfterMissing) {
@@ -83,7 +83,7 @@ export const runFirstSetup = async (request: FirstSetupRequest = {}): Promise<Fl
     return 'cancelled';
   }
 
-  const vaultPath = await promptVaultPath({
+  const vaultPath = await askVaultPath({
     home,
     prompts,
     providers,
@@ -96,7 +96,7 @@ export const runFirstSetup = async (request: FirstSetupRequest = {}): Promise<Fl
   }
 
   prompts.note(
-    formatSetupSummary({
+    createSetupSummary({
       coldAfter,
       providers: selectedProviders,
       vaultPath,
@@ -128,15 +128,15 @@ export const runFirstSetup = async (request: FirstSetupRequest = {}): Promise<Fl
     },
   });
 
-  prompts.outro(formatSetupSavedCopy());
+  prompts.outro(createSetupSavedCopy());
   return 'saved';
 };
 
-const promptProviderSelection = async (request: {
+const askProviderSelection = async (request: {
   readonly inventory: ProviderInventoryReport;
   readonly prompts: PromptAdapter;
 }): Promise<ReadonlyArray<ProviderId> | undefined> => {
-  const options = request.inventory.rows.map(providerPromptOption);
+  const options = request.inventory.rows.map(createProviderPromptOption);
 
   while (true) {
     const selectedProviders = await request.prompts.multiselect<ProviderId>({
@@ -159,7 +159,7 @@ const promptProviderSelection = async (request: {
   }
 };
 
-const promptColdThreshold = async (prompts: PromptAdapter): Promise<string | undefined> => {
+const askColdThreshold = async (prompts: PromptAdapter): Promise<string | undefined> => {
   const choice = await prompts.select<ColdThresholdChoice>({
     message: 'When is a session considered cold?',
     options: [
@@ -195,7 +195,7 @@ const promptColdThreshold = async (prompts: PromptAdapter): Promise<string | und
   return custom;
 };
 
-const promptVaultPath = async (request: {
+const askVaultPath = async (request: {
   readonly home: string;
   readonly prompts: PromptAdapter;
   readonly providers: ReadonlyArray<ProviderAdapter>;
@@ -232,10 +232,10 @@ const promptVaultPath = async (request: {
     });
   }
 
-  return promptCustomVaultPath(request);
+  return askCustomVaultPath(request);
 };
 
-const promptCustomVaultPath = async (request: {
+const askCustomVaultPath = async (request: {
   readonly home: string;
   readonly prompts: PromptAdapter;
   readonly providers: ReadonlyArray<ProviderAdapter>;
@@ -289,7 +289,7 @@ const validateVaultPathInput = async (request: {
   }
 };
 
-const providerPromptOption = (
+const createProviderPromptOption = (
   inventoryRow: ProviderInventoryReport['rows'][number],
 ): PromptOption<ProviderId> => {
   const isCodexRow = inventoryRow.provider === 'codex';
@@ -362,7 +362,7 @@ const providerPromptOption = (
   };
 };
 
-const formatSetupSummary = (summary: {
+const createSetupSummary = (summary: {
   readonly providers: ReadonlyArray<ProviderId>;
   readonly vaultPath: string;
   readonly coldAfter: string;
@@ -383,7 +383,7 @@ const formatSetupSummary = (summary: {
  *
  * @returns Human next-step copy for local, one-off, and installed usage.
  */
-const formatSetupSavedCopy = (): string =>
+const createSetupSavedCopy = (): string =>
   [
     'Setup saved.',
     '',
@@ -395,7 +395,7 @@ const formatSetupSavedCopy = (): string =>
     'Then choose "Check savings" or "Pack cold sessions".',
   ].join('\n');
 
-const firstSetupCopy = (): string =>
+const readFirstSetupCopy = (): string =>
   [
     'This setup writes Agent Session Pack config only.',
     'It does not pack, delete, or restore session files.',

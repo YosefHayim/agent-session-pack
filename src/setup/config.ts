@@ -2,7 +2,7 @@ import { constants, type Stats } from 'node:fs';
 import { access, mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { z } from 'zod';
-import { rethrowAsError } from '@/rethrow-as-error.js';
+import { throwWrappedError } from '@/rethrow-as-error.js';
 import { ProviderIdSchema } from '@/session-model.js';
 
 /**
@@ -76,7 +76,7 @@ export const expandHomePath = (path: string, home: string): string => {
 /**
  * Resolves the setup config pointer stored below the default Agent Session Pack directory.
  */
-export const resolveConfigPath = (home: string): string =>
+export const createConfigPath = (home: string): string =>
   join(home, '.agent-session-pack', 'config.json');
 
 /**
@@ -106,7 +106,7 @@ export const validateVaultPath = async (
     throw new Error('Vault path cannot be inside a provider session store.');
   }
 
-  const targetStat = await statOptional(path);
+  const targetStat = await readStatOptional(path);
 
   const isTargetFound = targetStat != null;
 
@@ -123,8 +123,8 @@ export const validateVaultPath = async (
  * Reads saved setup config when it exists, or undefined when setup has not run.
  */
 export const readSetupConfig = async (home: string): Promise<SetupConfig | undefined> => {
-  const configPath = resolveConfigPath(home);
-  const configText = await readConfigText(configPath).catch(rethrowAsError);
+  const configPath = createConfigPath(home);
+  const configText = await readConfigText(configPath).catch(throwWrappedError);
 
   const isConfigMissing = configText == null;
 
@@ -139,23 +139,25 @@ export const readSetupConfig = async (home: string): Promise<SetupConfig | undef
  * Writes setup config and creates the selected vault directory.
  */
 export const writeSetupConfig = async (request: WriteSetupConfigRequest): Promise<void> => {
-  const configPath = resolveConfigPath(request.home);
-  await mkdir(dirname(configPath), { recursive: true }).catch(rethrowAsError);
-  await mkdir(request.config.vaultPath, { recursive: true }).catch(rethrowAsError);
-  await writeFile(configPath, `${JSON.stringify(request.config, null, 2)}\n`).catch(rethrowAsError);
+  const configPath = createConfigPath(request.home);
+  await mkdir(dirname(configPath), { recursive: true }).catch(throwWrappedError);
+  await mkdir(request.config.vaultPath, { recursive: true }).catch(throwWrappedError);
+  await writeFile(configPath, `${JSON.stringify(request.config, null, 2)}\n`).catch(
+    throwWrappedError,
+  );
 };
 
 const readConfigText = async (configPath: string): Promise<string | null> => {
   try {
     return await readFile(configPath, 'utf8');
   } catch (cause) {
-    const isConfigMissing = errorCode(cause) === 'ENOENT';
+    const isConfigMissing = readErrorCode(cause) === 'ENOENT';
 
     if (isConfigMissing) {
       return null;
     }
 
-    return rethrowAsError(cause);
+    return throwWrappedError(cause);
   }
 };
 
@@ -174,7 +176,7 @@ const assertExistingVaultDirectory = async (request: {
 
 const assertNewVaultParent = async (path: string): Promise<void> => {
   const parentPath = dirname(path);
-  const parentStat = await statOptional(parentPath);
+  const parentStat = await readStatOptional(parentPath);
 
   const isParentMissing = parentStat == null;
 
@@ -191,11 +193,11 @@ const assertNewVaultParent = async (path: string): Promise<void> => {
   await assertWritable(parentPath);
 };
 
-const statOptional = async (path: string): Promise<Stats | undefined> => {
+const readStatOptional = async (path: string): Promise<Stats | undefined> => {
   try {
     return await stat(path);
   } catch (cause) {
-    const isPathMissing = errorCode(cause) === 'ENOENT';
+    const isPathMissing = readErrorCode(cause) === 'ENOENT';
 
     if (isPathMissing) {
       return undefined;
@@ -227,7 +229,7 @@ const isPathInsideOrSame = (path: string, parentPath: string): boolean => {
   return !isAbsolute(relativePath);
 };
 
-const errorCode = (cause: unknown): string | undefined => {
+const readErrorCode = (cause: unknown): string | undefined => {
   const isCauseNotObject = typeof cause !== 'object' || cause === null;
   if (isCauseNotObject) {
     return undefined;

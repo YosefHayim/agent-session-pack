@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { rethrowAsError } from '@/rethrow-as-error.js';
+import { throwWrappedError } from '@/rethrow-as-error.js';
 import type { CompressionAdapter } from './writer.js';
 
 const ZSTD_BINARY = 'zstd';
@@ -39,7 +39,7 @@ export const createZstdCompression = (): CompressionAdapter => ({
       ZSTD_OUTPUT_FLAG,
       archivePath,
     ];
-    await execFileAsync(ZSTD_BINARY, compressArgs).catch(rethrowAsError);
+    await execFileAsync(ZSTD_BINARY, compressArgs).catch(throwWrappedError);
   },
   decompress: async ({ archivePath, restoredPath }) => {
     // Decompress archivePath to restoredPath: quiet, force overwrite.
@@ -51,6 +51,6 @@ export const createZstdCompression = (): CompressionAdapter => ({
       ZSTD_OUTPUT_FLAG,
       restoredPath,
     ];
-    await execFileAsync(ZSTD_BINARY, decompressArgs).catch(rethrowAsError);
+    await execFileAsync(ZSTD_BINARY, decompressArgs).catch(throwWrappedError);
   },
 });

@@ -36,13 +36,13 @@ type ParsedSelector = {
  * Exact id, name, or slug matches win. In `fuzzy` mode an id prefix comes next, then
  * sessions whose name or slug contains every word of the selector.
  */
-export const resolveSessionSelector = (request: SessionSelectorRequest): SessionSelection => {
+export const findSessionSelector = (request: SessionSelectorRequest): SessionSelection => {
   const parsed = parseSelector(request.selector);
   const provider = request.provider ?? parsed.provider;
   const candidates = request.manifests.filter(
     (manifest) => provider === undefined || manifest.provider === provider,
   );
-  const matches = matchingManifests(parsed.query, candidates, request.match);
+  const matches = listMatchingManifests(parsed.query, candidates, request.match);
   const isNoMatch = matches.length === 0;
   const isAmbiguous = matches.length > 1;
 
@@ -83,7 +83,7 @@ const parseSelector = (selector: string): ParsedSelector => {
   };
 };
 
-const matchingManifests = (
+const listMatchingManifests = (
   query: string,
   candidates: ReadonlyArray<SessionManifest>,
   match: SelectorMatch,

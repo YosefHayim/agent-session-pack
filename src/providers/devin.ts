@@ -65,11 +65,11 @@ const discoverDevinSessions = async (root: string): Promise<ReadonlyArray<Discov
   const isSessionListEmpty = devinSessionRows.length === 0;
 
   if (isSessionListEmpty) {
-    return [sessionFromDatabaseSnapshot(dbPath, dbStat.size, dbStat.mtime)];
+    return [readSessionFromDatabaseSnapshot(dbPath, dbStat.size, dbStat.mtime)];
   }
 
   return devinSessionRows.map((devinSessionRow) =>
-    sessionFromDevinRow(devinSessionRow, dbPath, dbStat.size),
+    readSessionFromDevinRow(devinSessionRow, dbPath, dbStat.size),
   );
 };
 
@@ -101,7 +101,7 @@ const readDevinSessionRows = async (dbPath: string): Promise<ReadonlyArray<Devin
   }
 };
 
-const sessionFromDevinRow = (
+const readSessionFromDevinRow = (
   devinSessionRow: DevinSessionRow,
   dbPath: string,
   dbBytes: number,
@@ -115,14 +115,14 @@ const sessionFromDevinRow = (
     title: devinSessionRow.title,
     slug: slugifyTitle(devinSessionRow.title),
     originalPath: dbPath,
-    createdAt: dateFromDevinTimestamp(devinSessionRow.createdAt),
-    modifiedAt: dateFromDevinTimestamp(devinSessionRow.modifiedAt),
+    createdAt: readDateFromDevinTimestamp(devinSessionRow.createdAt),
+    modifiedAt: readDateFromDevinTimestamp(devinSessionRow.modifiedAt),
     sizeBytes,
     status: 'live',
   };
 };
 
-const sessionFromDatabaseSnapshot = (
+const readSessionFromDatabaseSnapshot = (
   dbPath: string,
   dbBytes: number,
   modifiedAt: Date,
@@ -137,7 +137,7 @@ const sessionFromDatabaseSnapshot = (
   status: 'live',
 });
 
-const dateFromDevinTimestamp = (timestamp: number): Date => {
+const readDateFromDevinTimestamp = (timestamp: number): Date => {
   const isMillisecondTimestamp = timestamp > 9_999_999_999;
 
   if (isMillisecondTimestamp) {

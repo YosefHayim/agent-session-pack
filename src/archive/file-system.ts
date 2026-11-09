@@ -1,7 +1,7 @@
 import type { Dirent } from 'node:fs';
 import { copyFile, mkdir, readdir, rm, stat } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import { rethrowAsError } from '@/rethrow-as-error.js';
+import { throwWrappedError } from '@/rethrow-as-error.js';
 import type { SessionSourceKind } from '@/session-model.js';
 
 const isMissingPathError = (cause: unknown): boolean =>
@@ -20,7 +20,7 @@ export const readDirectoryEntries = async (directory: string): Promise<Dirent[]>
       return [];
     }
 
-    return rethrowAsError(cause);
+    return throwWrappedError(cause);
   }
 };
 
@@ -31,22 +31,22 @@ export const measureSourceBytes = async (
   path: string,
   sourceKind?: SessionSourceKind,
 ): Promise<number> => {
-  const kind = await resolveSourceKind(path, sourceKind);
+  const kind = await findSourceKind(path, sourceKind);
 
   const isFileSource = kind === 'file';
 
   if (isFileSource) {
-    const fileStat = await statPath(path);
+    const fileStat = await readStatPath(path);
     return fileStat.size;
   }
 
-  return directorySizeBytes(path);
+  return readDirectorySizeBytes(path);
 };
 
 /**
  * Resolves whether a session path is a file or a directory, trusting a known kind.
  */
-export const resolveSourceKind = async (
+export const findSourceKind = async (
   path: string,
   sourceKind: SessionSourceKind | undefined,
 ): Promise<SessionSourceKind> => {
@@ -56,7 +56,7 @@ export const resolveSourceKind = async (
     return sourceKind;
   }
 
-  const pathStat = await stat(path).catch(rethrowAsError);
+  const pathStat = await stat(path).catch(throwWrappedError);
   const isPathDirectory = pathStat.isDirectory();
   return isPathDirectory ? 'directory' : 'file';
 };
@@ -64,7 +64,7 @@ export const resolveSourceKind = async (
 /**
  * Sums the bytes of every file under a directory.
  */
-export const directorySizeBytes = async (path: string): Promise<number> => {
+export const readDirectorySizeBytes = async (path: string): Promise<number> => {
   let sizeBytes = 0;
 
   const walk = async (directory: string): Promise<void> => {
@@ -89,7 +89,7 @@ export const directorySizeBytes = async (path: string): Promise<number> => {
     }
   };
 
-  await walk(path).catch(rethrowAsError);
+  await walk(path).catch(throwWrappedError);
   return sizeBytes;
 };
 
@@ -97,43 +97,44 @@ export const directorySizeBytes = async (path: string): Promise<number> => {
  * Creates the parent directory of a path when missing.
  */
 export const ensureParentDirectory = async (path: string): Promise<void> => {
-  await mkdir(dirname(path), { recursive: true }).catch(rethrowAsError);
+  await mkdir(dirname(path), { recursive: true }).catch(throwWrappedError);
 };
 
 /**
  * Creates a directory and its parents when missing.
  */
 export const ensureDirectory = async (path: string): Promise<void> => {
-  await mkdir(path, { recursive: true }).catch(rethrowAsError);
+  await mkdir(path, { recursive: true }).catch(throwWrappedError);
 };
 
 /**
  * Removes a file or directory tree, ignoring a missing path.
  */
 export const removePath = async (path: string): Promise<void> => {
-  await rm(path, { force: true, recursive: true }).catch(rethrowAsError);
+  await rm(path, { force: true, recursive: true }).catch(throwWrappedError);
 };
 
 /**
  * Reads file system stats for a path.
  */
-export const statPath = (path: string): Promise<{ readonly size: number }> =>
-  stat(path).catch(rethrowAsError);
+export const readStatPath = (path: string): Promise<{ readonly size: number }> =>
+  stat(path).catch(throwWrappedError);
 
 /**
  * Checks whether a path exists.
  */
-export const pathExists = async (path: string): Promise<boolean> => {
-  const isPathFound = await stat(path).then(
-    () => true,
-    () => false,
-  );
-  return isPathFound;
+export const isPathOnDisk = async (path: string): Promise<boolean> => {
+  try {
+    await stat(path);
+    return true;
+  } catch {
+    return false;
+  }
 };
 
 /**
  * Copies one file to a destination path.
  */
 export const copyPath = async (sourcePath: string, destinationPath: string): Promise<void> => {
-  await copyFile(sourcePath, destinationPath).catch(rethrowAsError);
+  await copyFile(sourcePath, destinationPath).catch(throwWrappedError);
 };

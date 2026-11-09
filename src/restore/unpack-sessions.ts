@@ -1,4 +1,4 @@
-import { statPath } from '@/archive/file-system.js';
+import { readStatPath } from '@/archive/file-system.js';
 import { listVaultSessionManifests, type SessionManifest } from '@/archive/manifest-store.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import type { ProviderAdapter, ProviderId } from '@/session-model.js';
@@ -90,7 +90,7 @@ export const unpackProviderSessions = async (
       archiveBytes,
       restoredBytes: restored.restoredBytes,
       touchedOriginals: restored.restoredSessions > 0,
-      status: unpackStatus(restored),
+      status: readUnpackStatus(restored),
       reason: hasConflictSessions ? 'live file differs from manifest hash' : undefined,
     });
   }
@@ -169,7 +169,7 @@ const archiveBytesForManifest = async (manifest: SessionManifest): Promise<numbe
     return knownArchiveBytes;
   }
 
-  const archiveStats = await statPath(manifest.archivePath);
+  const archiveStats = await readStatPath(manifest.archivePath);
   return archiveStats.size;
 };
 
@@ -205,7 +205,7 @@ const createDryRunUnpackRow = (
   reason: '--apply required to restore originals',
 });
 
-const unpackStatus = (restored: {
+const readUnpackStatus = (restored: {
   readonly alreadyPresentSessions: number;
   readonly conflictSessions: number;
   readonly restoredSessions: number;

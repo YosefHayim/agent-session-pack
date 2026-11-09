@@ -1,6 +1,6 @@
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import { rethrowAsError } from '@/rethrow-as-error.js';
+import { throwWrappedError } from '@/rethrow-as-error.js';
 import type { ProviderId, SessionSourceKind } from '@/session-model.js';
 
 /**
@@ -44,15 +44,15 @@ export const writeArchivedStub = async (request: WriteArchivedStubRequest): Prom
   const isDirectorySource = request.sourceKind === 'directory';
 
   if (isDirectorySource) {
-    await mkdir(request.originalPath, { recursive: true }).catch(rethrowAsError);
+    await mkdir(request.originalPath, { recursive: true }).catch(throwWrappedError);
     await writeFile(join(request.originalPath, STUB_MARKER_FILE), body, 'utf8').catch(
-      rethrowAsError,
+      throwWrappedError,
     );
     return;
   }
 
-  await mkdir(dirname(request.originalPath), { recursive: true }).catch(rethrowAsError);
-  await writeFile(request.originalPath, body, 'utf8').catch(rethrowAsError);
+  await mkdir(dirname(request.originalPath), { recursive: true }).catch(throwWrappedError);
+  await writeFile(request.originalPath, body, 'utf8').catch(throwWrappedError);
 };
 
 /**
@@ -81,7 +81,7 @@ export const isArchivedStubPath = async (
 /**
  * Returns true when a directory stub has been touched beyond the marker (provider open signal).
  */
-export const directoryStubWasOpened = async (path: string): Promise<boolean> => {
+export const isDirectoryStubOpened = async (path: string): Promise<boolean> => {
   try {
     const entries = await readdir(path);
     return entries.some((entry) => entry !== STUB_MARKER_FILE);

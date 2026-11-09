@@ -1,4 +1,4 @@
-import { formatBytes } from '@/byte-format.js';
+import { describeBytes } from '@/byte-format.js';
 import type { PromptAdapter } from '@/prompt-adapter.js';
 import type { ProviderAdapter } from '@/session-model.js';
 import { runWithSpinner } from '@/spinner-task.js';
@@ -62,12 +62,12 @@ export const loadInventoryWithSpinner = (
  * @returns Multi-line table string, or a empty-store message.
  * @example
  * ```ts
- * import { formatProviderInventoryTable } from './inventory-prompt.js';
+ * import { createProviderInventoryTable } from './inventory-prompt.js';
  *
- * const table = formatProviderInventoryTable({ rows: [] });
+ * const table = createProviderInventoryTable({ rows: [] });
  * ```
  */
-export const formatProviderInventoryTable = (report: ProviderInventoryReport): string => {
+export const createProviderInventoryTable = (report: ProviderInventoryReport): string => {
   const isReportRowsEmpty = report.rows.length === 0;
   if (isReportRowsEmpty) {
     return 'No provider stores found.';
@@ -75,11 +75,11 @@ export const formatProviderInventoryTable = (report: ProviderInventoryReport): s
 
   return [
     'Provider   Mode         Sessions   Cold   Guarded recent   Size       Path',
-    ...report.rows.map(formatProviderInventoryRow),
+    ...report.rows.map(createProviderInventoryRow),
   ].join('\n');
 };
 
-const formatProviderInventoryRow = (
+const createProviderInventoryRow = (
   inventoryRow: ProviderInventoryReport['rows'][number],
 ): string => {
   const provider = inventoryRow.provider.padEnd(10);
@@ -87,7 +87,7 @@ const formatProviderInventoryRow = (
   const sessions = String(inventoryRow.sessions).padStart(8);
   const cold = String(inventoryRow.coldSessions).padStart(6);
   const guarded = String(inventoryRow.guardedRecentSessions).padStart(16);
-  const size = formatBytes(inventoryRow.candidateBytes).padEnd(10);
+  const size = describeBytes(inventoryRow.candidateBytes).padEnd(10);
   const path = inventoryRow.paths.join(', ');
 
   return `${provider} ${mode} ${sessions}   ${cold}   ${guarded}   ${size} ${path}`;

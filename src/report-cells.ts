@@ -5,12 +5,12 @@
  * @returns `yes` or `no`.
  * @example
  * ```ts
- * import { formatTouched } from './report-cells.js';
+ * import { describeTouched } from './report-cells.js';
  *
- * formatTouched(false);
+ * describeTouched(false);
  * ```
  */
-export const formatTouched = (touched: boolean): string => (touched ? 'yes' : 'no');
+export const describeTouched = (touched: boolean): string => (touched ? 'yes' : 'no');
 
 /**
  * Formats a report row status with its optional reason.
@@ -20,12 +20,12 @@ export const formatTouched = (touched: boolean): string => (touched ? 'yes' : 'n
  * @returns Status text, with the reason in parentheses when present.
  * @example
  * ```ts
- * import { formatStatus } from './report-cells.js';
+ * import { describeStatus } from './report-cells.js';
  *
- * formatStatus('dry-run', '--apply required');
+ * describeStatus('dry-run', '--apply required');
  * ```
  */
-export const formatStatus = (status: string, reason: string | undefined): string => {
+export const describeStatus = (status: string, reason: string | undefined): string => {
   const isReasonMissing = reason == null;
   if (isReasonMissing) {
     return status;

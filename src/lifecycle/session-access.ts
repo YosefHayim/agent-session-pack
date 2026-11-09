@@ -43,12 +43,12 @@ const FLAG_NAMES = new Set(['--session', '--session-id', '--resume', 'resume', '
  * @returns Absolute wrappers bin path.
  * @example
  * ```ts
- * import { resolveWrappersBinPath } from './session-access.js';
+ * import { createWrappersBinPath } from './session-access.js';
  *
- * resolveWrappersBinPath('/Users/me/.agent-session-pack');
+ * createWrappersBinPath('/Users/me/.agent-session-pack');
  * ```
  */
-export const resolveWrappersBinPath = (vaultPath: string): string => join(vaultPath, 'bin');
+export const createWrappersBinPath = (vaultPath: string): string => join(vaultPath, 'bin');
 
 /**
  * Resolves the session access log path under the vault.
@@ -57,12 +57,12 @@ export const resolveWrappersBinPath = (vaultPath: string): string => join(vaultP
  * @returns Absolute access log path.
  * @example
  * ```ts
- * import { resolveAccessLogPath } from './session-access.js';
+ * import { createAccessLogPath } from './session-access.js';
  *
- * resolveAccessLogPath('/Users/me/.agent-session-pack');
+ * createAccessLogPath('/Users/me/.agent-session-pack');
  * ```
  */
-export const resolveAccessLogPath = (vaultPath: string): string =>
+export const createAccessLogPath = (vaultPath: string): string =>
   join(vaultPath, 'access-log.jsonl');
 
 /**
@@ -114,7 +114,7 @@ export const extractSessionIdsFromArgv = (argv: ReadonlyArray<string>): Readonly
  * @param request - Access write fields for vault logging.
  */
 export const recordSessionAccess = async (request: RecordSessionAccessRequest): Promise<void> => {
-  const path = resolveAccessLogPath(request.vaultPath);
+  const path = createAccessLogPath(request.vaultPath);
   const event: SessionAccessEvent = {
     provider: request.provider,
     sessionId: request.sessionId,
@@ -136,9 +136,9 @@ export const recordSessionAccess = async (request: RecordSessionAccessRequest): 
  * @returns True when the session is still hot.
  * @example
  * ```ts
- * import { wasSessionAccessedSince } from './session-access.js';
+ * import { isSessionAccessedSince } from './session-access.js';
  *
- * wasSessionAccessedSince({
+ * isSessionAccessedSince({
  *   events,
  *   provider: 'codex',
  *   sessionId: 'cold',
@@ -146,7 +146,7 @@ export const recordSessionAccess = async (request: RecordSessionAccessRequest): 
  * });
  * ```
  */
-export const wasSessionAccessedSince = (request: SessionHotCheckRequest): boolean =>
+export const isSessionAccessedSince = (request: SessionHotCheckRequest): boolean =>
   request.events.some(
     (event) =>
       event.provider === request.provider &&

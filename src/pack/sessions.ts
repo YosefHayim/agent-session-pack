@@ -1,17 +1,17 @@
-import { pathExists, removePath } from '@/archive/file-system.js';
+import { isPathOnDisk, removePath } from '@/archive/file-system.js';
 import { writeSessionManifest } from '@/archive/manifest-store.js';
 import { writeArchivedStub } from '@/archive/session-stub.js';
 import {
   archivePathForSession,
-  manifestPathForSession,
-  verificationPathForSession,
+  createSessionManifestPath,
+  createSessionVerificationPath,
 } from '@/archive/vault-paths.js';
 import {
   type CompressionAdapter,
   removeOriginalSession,
   writeVerifiedArchive,
 } from '@/archive/writer.js';
-import { savedPercent, sumSessionBytes } from '@/byte-savings.js';
+import { calculateSavedPercent, sumSessionBytes } from '@/byte-savings.js';
 import type {
   DiscoveredSession,
   ProviderAdapter,
@@ -154,7 +154,7 @@ const discoverExistingProviderSessions = async (request: {
   let existingRoots = 0;
 
   for (const root of roots) {
-    const doesRootExist = await pathExists(root);
+    const doesRootExist = await isPathOnDisk(root);
     const isRootMissing = !doesRootExist;
 
     if (isRootMissing) {
@@ -193,10 +193,10 @@ const archiveCandidateSessions = async (request: {
   let packedSessions = 0;
 
   for (const session of request.candidates) {
-    const sourceKind = sessionSourceKind(session);
+    const sourceKind = readSessionSourceKind(session);
     const archivePath = archivePathForSession(request.vaultPath, session, sourceKind);
-    const restoredPath = verificationPathForSession(request.vaultPath, session, sourceKind);
-    const manifestPath = manifestPathForSession(request.vaultPath, session);
+    const restoredPath = createSessionVerificationPath(request.vaultPath, session, sourceKind);
+    const manifestPath = createSessionManifestPath(request.vaultPath, session);
     const archived = await writeVerifiedArchive({
       sessionId: session.id,
       sourcePath: session.originalPath,
@@ -327,11 +327,11 @@ const createPackedRow = (request: {
   beforeBytes: request.beforeBytes,
   archiveBytes: request.archiveBytes,
   savedBytes: request.beforeBytes - request.archiveBytes,
-  savedPercent: savedPercent(request.beforeBytes, request.archiveBytes),
+  savedPercent: calculateSavedPercent(request.beforeBytes, request.archiveBytes),
   touchedOriginals: request.packedSessions > 0,
   status: 'packed',
   reason: undefined,
 });
 
-const sessionSourceKind = (session: DiscoveredSession): SessionSourceKind =>
+const readSessionSourceKind = (session: DiscoveredSession): SessionSourceKind =>
   session.sourceKind ?? 'file';

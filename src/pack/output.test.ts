@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatHumanPackPlan } from './output.js';
+import { createHumanPackPlan } from './output.js';
 import { createPackPlan } from './plan.js';
 
 describe('human pack output', () => {
@@ -23,7 +23,7 @@ describe('human pack output', () => {
       providers: [{ id: 'codex', label: 'Codex', mode: 'archive' }],
     });
 
-    const output = formatHumanPackPlan(plan, { olderThan: '7d' });
+    const output = createHumanPackPlan(plan, { olderThan: '7d' });
 
     expect(output).toContain('Re-run with --apply to pack cold sessions.');
     expect(output).not.toContain('Apply is intentionally blocked');
@@ -69,7 +69,7 @@ describe('human pack output', () => {
       providers: [{ id: 'codex', label: 'Codex', mode: 'archive' }],
     });
 
-    const output = formatHumanPackPlan(plan, { olderThan: '7d' });
+    const output = createHumanPackPlan(plan, { olderThan: '7d' });
 
     expect(output).toContain('What if:');
     expect(output).toContain('safer       --older-than 14d  1 session   100 B source');

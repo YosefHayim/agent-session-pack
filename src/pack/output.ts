@@ -1,6 +1,6 @@
-import { formatBytes } from '@/byte-format.js';
-import { savedPercent } from '@/byte-savings.js';
-import { formatStatus, formatTouched } from '@/report-cells.js';
+import { describeBytes } from '@/byte-format.js';
+import { calculateSavedPercent } from '@/byte-savings.js';
+import { describeStatus, describeTouched } from '@/report-cells.js';
 import type { PackPlan } from './plan.js';
 import type { PackSessionsReport } from './sessions.js';
 
@@ -19,12 +19,12 @@ export type PackPlanOutputOptions = {
  * @returns Human-readable dry-run table.
  * @example
  * ```ts
- * import { formatHumanPackPlan } from './output.js';
+ * import { createHumanPackPlan } from './output.js';
  *
- * formatHumanPackPlan(plan, { olderThan: '7d' });
+ * createHumanPackPlan(plan, { olderThan: '7d' });
  * ```
  */
-export const formatHumanPackPlan = (plan: PackPlan, options: PackPlanOutputOptions): string => {
+export const createHumanPackPlan = (plan: PackPlan, options: PackPlanOutputOptions): string => {
   const totalBeforeBytes = plan.rows.reduce(
     (totalBytes, packPlanRow) => totalBytes + packPlanRow.beforeBytes,
     0,
@@ -37,11 +37,11 @@ export const formatHumanPackPlan = (plan: PackPlan, options: PackPlanOutputOptio
     'No files changed. Cleanup is 0 B until --apply is enabled and runs.',
     '',
     'Provider   Mode         Found   Candidates   Before     After dry-run   Cleanup',
-    ...plan.rows.map(formatPackPlanRow),
+    ...plan.rows.map(createPackPlanRow),
     '--------   ----         -----   ----------   ------     -------------   -------',
-    `${'total'.padEnd(10)} ${''.padEnd(12)} ${''.padStart(5)}   ${''.padStart(10)}   ${formatBytes(totalBeforeBytes).padEnd(10)} ${formatBytes(totalBeforeBytes).padEnd(15)} ${formatBytes(0)}`,
+    `${'total'.padEnd(10)} ${''.padEnd(12)} ${''.padStart(5)}   ${''.padStart(10)}   ${describeBytes(totalBeforeBytes).padEnd(10)} ${describeBytes(totalBeforeBytes).padEnd(15)} ${describeBytes(0)}`,
     '',
-    ...formatThresholdPreviewBlock(plan.thresholdPreviews),
+    ...createThresholdPreviewBlock(plan.thresholdPreviews),
     '',
     'Backup-only providers are scanned for visibility but skipped for cleanup.',
     'Re-run with --apply to pack cold sessions.',
@@ -55,12 +55,12 @@ export const formatHumanPackPlan = (plan: PackPlan, options: PackPlanOutputOptio
  * @returns Stable JSON output.
  * @example
  * ```ts
- * import { formatJsonPackPlan } from './output.js';
+ * import { createJsonPackPlan } from './output.js';
  *
- * formatJsonPackPlan(plan);
+ * createJsonPackPlan(plan);
  * ```
  */
-export const formatJsonPackPlan = (plan: PackPlan): string => `${JSON.stringify(plan, null, 2)}\n`;
+export const createJsonPackPlan = (plan: PackPlan): string => `${JSON.stringify(plan, null, 2)}\n`;
 
 /**
  * Formats a pack report for terminal users.
@@ -70,16 +70,16 @@ export const formatJsonPackPlan = (plan: PackPlan): string => `${JSON.stringify(
  * @returns Human-readable pack table.
  * @example
  * ```ts
- * import { formatHumanPackReport } from './output.js';
+ * import { createHumanPackReport } from './output.js';
  *
- * formatHumanPackReport(report, { olderThan: '7d' });
+ * createHumanPackReport(report, { olderThan: '7d' });
  * ```
  */
-export const formatHumanPackReport = (
+export const createHumanPackReport = (
   report: PackSessionsReport,
   options: PackPlanOutputOptions,
 ): string => {
-  const totals = packTotals(report);
+  const totals = sumPackTotals(report);
 
   return [
     'Pack all providers',
@@ -92,11 +92,11 @@ export const formatHumanPackReport = (
       : 'No files changed. Re-run with --apply to pack cold sessions.',
     '',
     'Provider   Sessions  Mode         Candidates  Packed  Before     Archive    Saved      Saved %  Touch  Status',
-    ...report.rows.map(formatPackReportRow),
+    ...report.rows.map(createPackReportRow),
     '--------   --------  ----         ----------  ------  ------     -------    -----      -------  -----  ------',
-    `${'total'.padEnd(10)} ${String(totals.foundSessions).padEnd(9)} ${''.padEnd(12)} ${String(totals.candidateSessions).padStart(10)}  ${String(totals.packedSessions).padStart(6)}  ${formatBytes(totals.beforeBytes).padEnd(10)} ${formatMaybeBytes(totals.archiveBytes).padEnd(10)} ${formatMaybeBytes(totals.savedBytes).padEnd(10)} ${formatMaybePercent(totals.savedPercent).padEnd(8)} ${formatTouched(totals.touchedOriginals).padEnd(6)} ${report.apply ? 'applied' : 'dry-run'}`,
+    `${'total'.padEnd(10)} ${String(totals.foundSessions).padEnd(9)} ${''.padEnd(12)} ${String(totals.candidateSessions).padStart(10)}  ${String(totals.packedSessions).padStart(6)}  ${describeBytes(totals.beforeBytes).padEnd(10)} ${describeOptionalBytes(totals.archiveBytes).padEnd(10)} ${describeOptionalBytes(totals.savedBytes).padEnd(10)} ${describeOptionalPercent(totals.savedPercent).padEnd(8)} ${describeTouched(totals.touchedOriginals).padEnd(6)} ${report.apply ? 'applied' : 'dry-run'}`,
     '',
-    ...formatThresholdPreviewBlock(report.thresholdPreviews),
+    ...createThresholdPreviewBlock(report.thresholdPreviews),
   ].join('\n');
 };
 
@@ -107,27 +107,27 @@ export const formatHumanPackReport = (
  * @returns JSON output.
  * @example
  * ```ts
- * import { formatJsonPackReport } from './output.js';
+ * import { createJsonPackReport } from './output.js';
  *
- * formatJsonPackReport(report);
+ * createJsonPackReport(report);
  * ```
  */
-export const formatJsonPackReport = (report: PackSessionsReport): string =>
+export const createJsonPackReport = (report: PackSessionsReport): string =>
   `${JSON.stringify(report, null, 2)}\n`;
 
-const formatPackPlanRow = (packPlanRow: PackPlan['rows'][number]): string => {
+const createPackPlanRow = (packPlanRow: PackPlan['rows'][number]): string => {
   const provider = packPlanRow.provider.padEnd(10);
   const mode = packPlanRow.mode.padEnd(12);
   const found = String(packPlanRow.scannedSessions).padStart(5);
   const candidates = String(packPlanRow.candidateSessions).padStart(10);
-  const before = formatBytes(packPlanRow.beforeBytes).padEnd(10);
-  const after = formatBytes(packPlanRow.afterDryRunBytes).padEnd(15);
-  const cleanup = formatBytes(packPlanRow.cleanupBytes);
+  const before = describeBytes(packPlanRow.beforeBytes).padEnd(10);
+  const after = describeBytes(packPlanRow.afterDryRunBytes).padEnd(15);
+  const cleanup = describeBytes(packPlanRow.cleanupBytes);
 
   return `${provider} ${mode} ${found}   ${candidates}   ${before} ${after} ${cleanup}`;
 };
 
-const formatThresholdPreviewBlock = (
+const createThresholdPreviewBlock = (
   previews: PackPlan['thresholdPreviews'],
 ): ReadonlyArray<string> => {
   const isPreviewsEmpty = previews.length === 0;
@@ -138,17 +138,17 @@ const formatThresholdPreviewBlock = (
   return [
     'What if:',
     ...previews.map((preview) => {
-      const label = formatThresholdPreviewLabel(preview.kind).padEnd(11);
-      const command = formatThresholdPreviewCommand(preview).padEnd(17);
-      const sessions = formatSessionCount(preview.candidateSessions).padEnd(11);
+      const label = createThresholdPreviewLabel(preview.kind).padEnd(11);
+      const command = createThresholdPreviewCommand(preview).padEnd(17);
+      const sessions = describeSessionCount(preview.candidateSessions).padEnd(11);
 
-      return `${label} ${command} ${sessions} ${formatBytes(preview.beforeBytes)} source`;
+      return `${label} ${command} ${sessions} ${describeBytes(preview.beforeBytes)} source`;
     }),
     'Tip: use --max --dry-run to preview every archive-mode session without touching files.',
   ];
 };
 
-const formatThresholdPreviewLabel = (
+const createThresholdPreviewLabel = (
   kind: PackPlan['thresholdPreviews'][number]['kind'],
 ): string => {
   const isKindSafer = kind === 'safer';
@@ -164,7 +164,7 @@ const formatThresholdPreviewLabel = (
   return 'max preview';
 };
 
-const formatThresholdPreviewCommand = (preview: PackPlan['thresholdPreviews'][number]): string => {
+const createThresholdPreviewCommand = (preview: PackPlan['thresholdPreviews'][number]): string => {
   const isPreviewKindMax = preview.kind === 'max';
   if (isPreviewKindMax) {
     return '--max --dry-run';
@@ -173,7 +173,7 @@ const formatThresholdPreviewCommand = (preview: PackPlan['thresholdPreviews'][nu
   return `--older-than ${preview.olderThan}`;
 };
 
-const formatSessionCount = (sessions: number): string => {
+const describeSessionCount = (sessions: number): string => {
   const isSingleSession = sessions === 1;
   if (isSingleSession) {
     return '1 session';
@@ -182,22 +182,22 @@ const formatSessionCount = (sessions: number): string => {
   return `${sessions} sessions`;
 };
 
-const formatPackReportRow = (packSessionRow: PackSessionsReport['rows'][number]): string => {
+const createPackReportRow = (packSessionRow: PackSessionsReport['rows'][number]): string => {
   const provider = packSessionRow.provider.padEnd(10);
   const sessions = String(packSessionRow.foundSessions).padEnd(9);
   const mode = packSessionRow.mode.padEnd(12);
   const candidates = String(packSessionRow.candidateSessions).padStart(10);
   const packed = String(packSessionRow.packedSessions).padStart(6);
-  const before = formatBytes(packSessionRow.beforeBytes).padEnd(10);
-  const archive = formatMaybeBytes(packSessionRow.archiveBytes).padEnd(10);
-  const saved = formatMaybeBytes(packSessionRow.savedBytes).padEnd(10);
-  const savedPercent = formatMaybePercent(packSessionRow.savedPercent).padEnd(8);
-  const touched = formatTouched(packSessionRow.touchedOriginals).padEnd(6);
+  const before = describeBytes(packSessionRow.beforeBytes).padEnd(10);
+  const archive = describeOptionalBytes(packSessionRow.archiveBytes).padEnd(10);
+  const saved = describeOptionalBytes(packSessionRow.savedBytes).padEnd(10);
+  const savedPercent = describeOptionalPercent(packSessionRow.savedPercent).padEnd(8);
+  const touched = describeTouched(packSessionRow.touchedOriginals).padEnd(6);
 
-  return `${provider} ${sessions} ${mode} ${candidates}  ${packed}  ${before} ${archive} ${saved} ${savedPercent} ${touched} ${formatStatus(packSessionRow.status, packSessionRow.reason)}`;
+  return `${provider} ${sessions} ${mode} ${candidates}  ${packed}  ${before} ${archive} ${saved} ${savedPercent} ${touched} ${describeStatus(packSessionRow.status, packSessionRow.reason)}`;
 };
 
-const packTotals = (
+const sumPackTotals = (
   report: PackSessionsReport,
 ): {
   readonly archiveBytes: number | undefined;
@@ -233,7 +233,9 @@ const packTotals = (
       0,
     ),
     savedBytes,
-    savedPercent: isArchiveBytesMissing ? undefined : savedPercent(beforeBytes, archiveBytes),
+    savedPercent: isArchiveBytesMissing
+      ? undefined
+      : calculateSavedPercent(beforeBytes, archiveBytes),
     touchedOriginals: report.rows.some((packSessionRow) => packSessionRow.touchedOriginals),
   };
 };
@@ -253,16 +255,16 @@ const sumMaybe = (values: ReadonlyArray<number | undefined>): number | undefined
   return totalBytes;
 };
 
-const formatMaybeBytes = (bytes: number | undefined): string => {
+const describeOptionalBytes = (bytes: number | undefined): string => {
   const isBytesMissing = bytes == null;
   if (isBytesMissing) {
     return 'pending';
   }
 
-  return formatBytes(bytes);
+  return describeBytes(bytes);
 };
 
-const formatMaybePercent = (percent: number | undefined): string => {
+const describeOptionalPercent = (percent: number | undefined): string => {
   const isPercentMissing = percent == null;
   if (isPercentMissing) {
     return 'pending';

@@ -1,7 +1,7 @@
 import { watch } from 'node:fs';
 import type { SessionManifest } from '@/archive/manifest-store.js';
 import { listVaultSessionManifests } from '@/archive/manifest-store.js';
-import { directoryStubWasOpened, isArchivedStubPath } from '@/archive/session-stub.js';
+import { isArchivedStubPath, isDirectoryStubOpened } from '@/archive/session-stub.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
 import { ensureSessionRestored } from '@/restore/ensure-restored.js';
@@ -93,14 +93,13 @@ export const watchSessionStubs = async (request: WatchSessionStubsRequest): Prom
       return;
     }
 
-    const isDirectoryEventWithoutForce = !forceFromFsEvent && sourceKind === 'directory';
-    if (isDirectoryEventWithoutForce) {
-      const opened = await directoryStubWasOpened(manifest.originalPath);
+    const isDirectoryStubCheckNeeded = !forceFromFsEvent && sourceKind === 'directory';
+    const isStubOpenedWhenChecked =
+      isDirectoryStubCheckNeeded && (await isDirectoryStubOpened(manifest.originalPath));
+    const isDirectoryStubClosed = isDirectoryStubCheckNeeded && !isStubOpenedWhenChecked;
 
-      const isStubUnopened = !opened;
-      if (isStubUnopened) {
-        return;
-      }
+    if (isDirectoryStubClosed) {
+      return;
     }
 
     const isFileEventWithoutForce = !forceFromFsEvent && sourceKind === 'file';

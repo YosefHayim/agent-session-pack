@@ -1,13 +1,13 @@
 import { defineCommand } from 'citty';
-import { resolveApplyConfirmation } from '@/apply-confirmation.js';
-import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
+import { askApplyConfirmation } from '@/apply-confirmation.js';
+import { createDefaultVaultPath } from '@/archive/vault-paths.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
 import type { CommandOutcome } from '@/command-outcome.js';
 import { requireHome } from '@/home-env.js';
 import { selectProviders } from '@/providers/flag.js';
 import type { ProviderAdapter } from '@/session-model.js';
-import { formatHumanUnpackReport } from './unpack-output.js';
+import { createHumanUnpackReport } from './unpack-output.js';
 import { unpackProviderSessions } from './unpack-sessions.js';
 
 /**
@@ -42,7 +42,7 @@ export const unpackCommand = defineCommand({
     },
   },
   run: async ({ args }) => {
-    const confirmed = await resolveApplyConfirmation({
+    const confirmed = await askApplyConfirmation({
       action: 'Restore archived sessions for the selected providers',
       apply: args.apply,
       json: args.json,
@@ -99,7 +99,7 @@ export const runUnpackCommand = async (args: UnpackArgs): Promise<CommandOutcome
   const { providers, isProviderUnknown } = selectProviders(args.provider, args.providers);
   const providerExitCode = isProviderUnknown ? 2 : 0;
   const report = await unpackProviderSessions({
-    vaultPath: args.vaultPath ?? resolveDefaultVaultPath(home),
+    vaultPath: args.vaultPath ?? createDefaultVaultPath(home),
     providers,
     apply: args.apply === true,
     compression: args.compression ?? createZstdCompression(),
@@ -111,6 +111,6 @@ export const runUnpackCommand = async (args: UnpackArgs): Promise<CommandOutcome
     return { exitCode: providerExitCode };
   }
 
-  process.stdout.write(`${formatHumanUnpackReport(report)}\n`);
+  process.stdout.write(`${createHumanUnpackReport(report)}\n`);
   return { exitCode: providerExitCode };
 };

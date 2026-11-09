@@ -1,6 +1,6 @@
 import { chmod, mkdir, readdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { resolveWrappersBinPath } from './session-access.js';
+import { createWrappersBinPath } from './session-access.js';
 
 const WRAPPER_PROVIDERS: ReadonlyArray<string> = [
   'codex',
@@ -29,7 +29,7 @@ export type InstallLifecycleWrappersRequest = {
 export const installLifecycleWrappers = async (
   request: InstallLifecycleWrappersRequest,
 ): Promise<string> => {
-  const binPath = resolveWrappersBinPath(request.vaultPath);
+  const binPath = createWrappersBinPath(request.vaultPath);
 
   try {
     await mkdir(binPath, { recursive: true });
@@ -43,7 +43,7 @@ export const installLifecycleWrappers = async (
 const writeProviderWrappers = async (binPath: string, cliEntrypoint: string): Promise<void> => {
   for (const provider of WRAPPER_PROVIDERS) {
     const wrapperPath = join(binPath, provider);
-    const script = buildWrapperScript({
+    const script = createWrapperScript({
       provider,
       cliEntrypoint,
       binPath,
@@ -59,7 +59,7 @@ const writeProviderWrappers = async (binPath: string, cliEntrypoint: string): Pr
  * @param vaultPath - Vault root path.
  */
 export const uninstallLifecycleWrappers = async (vaultPath: string): Promise<void> => {
-  const binPath = resolveWrappersBinPath(vaultPath);
+  const binPath = createWrappersBinPath(vaultPath);
 
   try {
     const entries = await listWrapperEntries(binPath);
@@ -88,7 +88,7 @@ const listWrapperEntries = async (binPath: string): Promise<string[]> => {
   }
 };
 
-const buildWrapperScript = (request: {
+const createWrapperScript = (request: {
   readonly provider: string;
   readonly cliEntrypoint: string;
   readonly binPath: string;

@@ -10,18 +10,18 @@ const MAX_TITLE_PREVIEW_LENGTH = 96;
  * @returns Human-readable scan summary.
  * @example
  * ```ts
- * import { formatHumanScan } from './output.js';
+ * import { createHumanScan } from './output.js';
  *
- * formatHumanScan(report);
+ * createHumanScan(report);
  * ```
  */
-export const formatHumanScan = (report: ScanReport): string => {
+export const createHumanScan = (report: ScanReport): string => {
   const isReportSessionsEmpty = report.sessions.length === 0;
   if (isReportSessionsEmpty) {
     return 'No sessions found.';
   }
 
-  const sessionRows = report.sessions.map(formatSessionRow);
+  const sessionRows = report.sessions.map(createSessionRow);
 
   return [
     'Found sessions',
@@ -36,21 +36,21 @@ export const formatHumanScan = (report: ScanReport): string => {
  *
  * @param report - Scan report to render.
  */
-export const renderHumanScan = (report: ScanReport): void => {
-  console.log(formatHumanScan(report));
+export const writeHumanScan = (report: ScanReport): void => {
+  console.log(createHumanScan(report));
 };
 
-const formatSessionRow = (session: DiscoveredSession): string => {
+const createSessionRow = (session: DiscoveredSession): string => {
   const provider = session.provider.padEnd(10);
   const date = session.modifiedAt.toISOString().slice(0, 10);
   const size = `${session.sizeBytes} B`.padEnd(10);
-  const status = formatStatus(session).padEnd(8);
-  const title = formatTitlePreview(session.title);
+  const status = describeSessionStatus(session).padEnd(8);
+  const title = createTitlePreview(session.title);
 
   return `${provider} ${date}   ${size} ${status} ${title}   ${session.originalPath}`;
 };
 
-const formatStatus = (session: DiscoveredSession): string => {
+const describeSessionStatus = (session: DiscoveredSession): string => {
   const isSessionStatusKnown = session.status != null;
   if (isSessionStatusKnown) {
     return session.status;
@@ -59,7 +59,7 @@ const formatStatus = (session: DiscoveredSession): string => {
   return 'live';
 };
 
-const formatTitlePreview = (title: string): string => {
+const createTitlePreview = (title: string): string => {
   const singleLineTitle = title.replace(/\s+/g, ' ').trim();
 
   const isTitleShortEnough = singleLineTitle.length <= MAX_TITLE_PREVIEW_LENGTH;
@@ -70,13 +70,13 @@ const formatTitlePreview = (title: string): string => {
   return `${singleLineTitle.slice(0, MAX_TITLE_PREVIEW_LENGTH - 3)}...`;
 };
 
-const formatJsonScan = (report: ScanReport): string => `${JSON.stringify(report, null, 2)}\n`;
+const createJsonScan = (report: ScanReport): string => `${JSON.stringify(report, null, 2)}\n`;
 
 /**
  * Writes scan output for agents.
  *
  * @param report - Scan report to render.
  */
-export const renderJsonScan = (report: ScanReport): void => {
-  process.stdout.write(formatJsonScan(report));
+export const writeJsonScan = (report: ScanReport): void => {
+  process.stdout.write(createJsonScan(report));
 };

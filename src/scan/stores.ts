@@ -1,5 +1,5 @@
 import { stat } from 'node:fs/promises';
-import { rethrowAsError } from '@/rethrow-as-error.js';
+import { throwWrappedError } from '@/rethrow-as-error.js';
 import type { DiscoveredSession, ProviderAdapter, SessionStore } from '@/session-model.js';
 
 /**
@@ -44,13 +44,13 @@ export const scanStores = async (request: ScanRequest): Promise<ScanReport> => {
  */
 export const isPathPresent = async (path: string): Promise<boolean> => {
   const pathStat = await stat(path).catch((cause: unknown) => {
-    const isPathMissing = fileSystemErrorCode(cause) === 'ENOENT';
+    const isPathMissing = readFileSystemErrorCode(cause) === 'ENOENT';
 
     if (isPathMissing) {
       return undefined;
     }
 
-    return rethrowAsError(cause);
+    return throwWrappedError(cause);
   });
 
   return pathStat != null;
@@ -81,7 +81,7 @@ export const discoverStoreSessions = async (
   }
 };
 
-const fileSystemErrorCode = (cause: unknown): string | undefined => {
+const readFileSystemErrorCode = (cause: unknown): string | undefined => {
   const hasNoErrorCode = typeof cause !== 'object' || cause === null || !('code' in cause);
   if (hasNoErrorCode) {
     return undefined;

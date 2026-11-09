@@ -122,12 +122,12 @@ const AGENT_GUIDE: AgentGuide = {
  * @returns Human-readable agent command guide.
  * @example
  * ```ts
- * import { formatHumanAgentGuide } from './agent-guide-output.js';
+ * import { createHumanAgentGuide } from './agent-guide-output.js';
  *
- * formatHumanAgentGuide();
+ * createHumanAgentGuide();
  * ```
  */
-export const formatHumanAgentGuide = (): string =>
+export const createHumanAgentGuide = (): string =>
   [
     'Agent-first quickstart',
     '',
@@ -165,9 +165,9 @@ export const formatHumanAgentGuide = (): string =>
  * @returns Machine-readable agent command guide.
  * @example
  * ```ts
- * import { formatJsonAgentGuide } from './agent-guide-output.js';
+ * import { createJsonAgentGuide } from './agent-guide-output.js';
  *
- * formatJsonAgentGuide();
+ * createJsonAgentGuide();
  * ```
  */
-export const formatJsonAgentGuide = (): string => `${JSON.stringify(AGENT_GUIDE, null, 2)}\n`;
+export const createJsonAgentGuide = (): string => `${JSON.stringify(AGENT_GUIDE, null, 2)}\n`;

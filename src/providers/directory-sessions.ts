@@ -38,7 +38,7 @@ export const discoverDirectoryProviderSessions = async (
 
   for (const directory of directories) {
     const sessionId =
-      options.sessionIdFromDirectory?.(directory) ?? defaultSessionIdFromDirectory(directory);
+      options.sessionIdFromDirectory?.(directory) ?? readDefaultSessionIdFromDirectory(directory);
 
     const isSessionActive = options.activeSessionIds?.has(sessionId) === true;
 
@@ -101,7 +101,7 @@ const readDirectoryTitle = async (request: {
   }
 };
 
-const defaultSessionIdFromDirectory = (path: string): string => {
+const readDefaultSessionIdFromDirectory = (path: string): string => {
   const name = basename(path);
   const uuidMatch = name.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
 
@@ -136,7 +136,7 @@ const collectSessionDirectories = async (
       return;
     }
 
-    const hasSessionMarkers = await directoryHasMarkers(directory, options.markers);
+    const hasSessionMarkers = await hasDirectoryMarkers(directory, options.markers);
     if (hasSessionMarkers) {
       found.push(directory);
       return;
@@ -182,19 +182,25 @@ const readChildEntries = async (directory: string): Promise<ReadonlyArray<Dirent
   }
 };
 
-const isDirectoryPath = (path: string): Promise<boolean> =>
-  stat(path).then(
-    (pathStat) => pathStat.isDirectory(),
-    () => false,
-  );
+const isDirectoryPath = async (path: string): Promise<boolean> => {
+  try {
+    const pathStat = await stat(path);
+    return pathStat.isDirectory();
+  } catch {
+    return false;
+  }
+};
 
-const isFilePath = (path: string): Promise<boolean> =>
-  stat(path).then(
-    (pathStat) => pathStat.isFile(),
-    () => false,
-  );
+const isFilePath = async (path: string): Promise<boolean> => {
+  try {
+    const pathStat = await stat(path);
+    return pathStat.isFile();
+  } catch {
+    return false;
+  }
+};
 
-const directoryHasMarkers = async (
+const hasDirectoryMarkers = async (
   directory: string,
   markers: DirectorySessionMarkers,
 ): Promise<boolean> => {

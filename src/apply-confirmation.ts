@@ -17,9 +17,9 @@ export type ApplyConfirmationRequest = {
  * @returns Confirmation state for the command workflow.
  * @example
  * ```ts
- * import { resolveApplyConfirmation } from './apply-confirmation.js';
+ * import { askApplyConfirmation } from './apply-confirmation.js';
  *
- * const confirmed = await resolveApplyConfirmation({
+ * const confirmed = await askApplyConfirmation({
  *   action: 'Pack cold sessions',
  *   apply: true,
  *   json: false,
@@ -27,7 +27,7 @@ export type ApplyConfirmationRequest = {
  * });
  * ```
  */
-export const resolveApplyConfirmation = async (
+export const askApplyConfirmation = async (
   request: ApplyConfirmationRequest,
 ): Promise<boolean | undefined> => {
   const isApplyNotRequested = request.apply !== true;

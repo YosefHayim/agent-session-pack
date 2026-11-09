@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty';
 import type { CommandOutcome } from '@/command-outcome.js';
-import { formatHumanAgentGuide, formatJsonAgentGuide } from './agent-guide-output.js';
+import { createHumanAgentGuide, createJsonAgentGuide } from './agent-guide-output.js';
 
 /**
  * Arguments for the guide command.
@@ -16,11 +16,11 @@ export const runGuideCommand = async (args: GuideArgs): Promise<CommandOutcome> 
   const isJsonRequested = args.json === true;
 
   if (isJsonRequested) {
-    process.stdout.write(formatJsonAgentGuide());
+    process.stdout.write(createJsonAgentGuide());
     return { exitCode: 0 };
   }
 
-  process.stdout.write(`${formatHumanAgentGuide()}\n`);
+  process.stdout.write(`${createHumanAgentGuide()}\n`);
   return { exitCode: 0 };
 };
 

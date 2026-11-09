@@ -8,10 +8,10 @@ import { join } from 'node:path';
  * @returns Directory for copied local evidence files.
  * @example
  * ```ts
- * import { resolveEvidenceWorkRoot } from './work-root.js';
+ * import { createEvidenceWorkRoot } from './work-root.js';
  *
- * const workRoot = resolveEvidenceWorkRoot(process.cwd(), 'run-123');
+ * const workRoot = createEvidenceWorkRoot(process.cwd(), 'run-123');
  * ```
  */
-export const resolveEvidenceWorkRoot = (cwd: string, runId: string): string =>
+export const createEvidenceWorkRoot = (cwd: string, runId: string): string =>
   join(cwd, '.vault-test', 'evidence-local', runId);

@@ -5,8 +5,8 @@ import { describe, expect, it } from 'vitest';
 import {
   collectJsonlSessions,
   measureDirectorySession,
+  readSessionIdFromPath,
   readSessionTitle,
-  sessionIdFromPath,
   slugifyTitle,
 } from './session-discovery.js';
 
@@ -23,12 +23,12 @@ describe('sessionDiscovery', () => {
 
   it('extracts UUID session ids when present and otherwise uses the basename', () => {
     expect(
-      sessionIdFromPath(
+      readSessionIdFromPath(
         '/sessions/rollout-2026-05-04T03-05-27-019df04d-dc23-7751-bcd1-d03b60116746.jsonl',
       ),
     ).toBe('019df04d-dc23-7751-bcd1-d03b60116746');
-    expect(sessionIdFromPath('/sessions/plain-session.jsonl')).toBe('plain-session');
-    expect(sessionIdFromPath('/sessions/no-extension')).toBe('no-extension');
+    expect(readSessionIdFromPath('/sessions/plain-session.jsonl')).toBe('plain-session');
+    expect(readSessionIdFromPath('/sessions/no-extension')).toBe('no-extension');
   });
 
   it('collects nested JSONL files and honors exclude path parts', async () => {

@@ -1,11 +1,11 @@
-import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
-import { formatBytes } from '@/byte-format.js';
+import { createDefaultVaultPath } from '@/archive/vault-paths.js';
+import { describeBytes } from '@/byte-format.js';
 import type { CommandOutcome } from '@/command-outcome.js';
 import { HOME_NOT_SET_CANCEL_MESSAGE } from '@/home-env.js';
 import type { InteractiveCliRequest } from '@/interactive-cli-request.js';
 import type { PromptAdapter } from '@/prompt-adapter.js';
 import { allProviders } from '@/providers/all-providers.js';
-import { formatProviderInventoryTable, loadInventoryWithSpinner } from '@/scan/inventory-prompt.js';
+import { createProviderInventoryTable, loadInventoryWithSpinner } from '@/scan/inventory-prompt.js';
 import type { ProviderInventoryReport } from '@/scan/provider-inventory.js';
 import { runPackCommand } from './command.js';
 import { DEFAULT_COLD_AFTER, DEFAULT_COLD_AFTER_MS } from './plan.js';
@@ -44,7 +44,7 @@ export const runPackFlow = async (
     stopMessage: 'Scanned provider stores.',
   });
 
-  request.prompts.note(formatProviderInventoryTable(inventory), 'Pack cold sessions');
+  request.prompts.note(createProviderInventoryTable(inventory), 'Pack cold sessions');
 
   const shouldPreview = await request.prompts.confirm({
     message: 'Continue with dry-run preview?',
@@ -69,7 +69,7 @@ export const runPackFlow = async (
   });
 
   const shouldApply = await request.prompts.confirm({
-    message: formatPackApplyQuestion(inventory, home),
+    message: createPackApplyQuestion(inventory, home),
     initialValue: false,
   });
 
@@ -92,7 +92,7 @@ export const runPackFlow = async (
   return applyOutcome;
 };
 
-const formatPackApplyQuestion = (inventory: ProviderInventoryReport, home: string): string => {
+const createPackApplyQuestion = (inventory: ProviderInventoryReport, home: string): string => {
   const candidateSessions = inventory.rows.reduce(
     (totalSessions, inventoryRow) => totalSessions + inventoryRow.coldSessions,
     0,
@@ -110,9 +110,9 @@ const formatPackApplyQuestion = (inventory: ProviderInventoryReport, home: strin
     'Apply pack now?',
     '',
     `This will archive ${candidateSessions} cold sessions from ${providerNames || 'no providers'} into:`,
-    resolveDefaultVaultPath(home),
+    createDefaultVaultPath(home),
     '',
-    `Candidate size: ${formatBytes(candidateBytes)}`,
+    `Candidate size: ${describeBytes(candidateBytes)}`,
     'Original files are removed only after archive write, restore verification, and manifest write.',
   ].join('\n');
 };

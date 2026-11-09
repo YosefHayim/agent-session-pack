@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import type { PromptAdapter, PromptOption } from '@/prompt-adapter.js';
 import type { ProviderAdapter } from '@/session-model.js';
 import { runFirstSetup } from '@/setup/first-setup-flow.js';
-import { createMainMenuOptions, shouldRunInteractiveCli } from './interactive-cli.js';
+import { canRunInteractiveCli, createMainMenuOptions } from './interactive-cli.js';
 
 const createWorkspace = (): Promise<string> =>
   mkdtemp(join(tmpdir(), 'agent-session-pack-interactive-'));
@@ -92,21 +92,21 @@ const createProvider = (root: string): ProviderAdapter => ({
 describe('interactive CLI flow', () => {
   it('runs only for bare TTY invocations', () => {
     expect(
-      shouldRunInteractiveCli({
+      canRunInteractiveCli({
         argv: ['node', 'main.js'],
         stdinIsTty: true,
         stdoutIsTty: true,
       }),
     ).toBe(true);
     expect(
-      shouldRunInteractiveCli({
+      canRunInteractiveCli({
         argv: ['node', 'main.js', 'scan'],
         stdinIsTty: true,
         stdoutIsTty: true,
       }),
     ).toBe(false);
     expect(
-      shouldRunInteractiveCli({
+      canRunInteractiveCli({
         argv: ['node', 'main.js'],
         stdinIsTty: false,
         stdoutIsTty: true,

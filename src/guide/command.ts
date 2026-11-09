@@ -1,41 +1,26 @@
 import { defineCommand } from 'citty';
-import { Effect, Schema } from 'effect';
 import { formatHumanAgentGuide, formatJsonAgentGuide } from './agent-guide-output.js';
 
 /**
- * Schema describing the guide command arguments.
+ * Arguments for the guide command.
  */
-const GuideArgsSchema = Schema.Struct({
-  json: Schema.optional(Schema.Boolean),
-});
+export interface GuideArgs {
+  readonly json?: boolean;
+}
 
 /**
- * Decoded arguments for the guide command.
+ * Writes the agent guide, as JSON when requested.
  */
-export type GuideArgs = typeof GuideArgsSchema.Type;
+export const runGuideCommand = async (args: GuideArgs): Promise<void> => {
+  const isJsonRequested = args.json === true;
 
-/**
- * Runs the agent guide command.
- *
- * @param args - Decoded command-line arguments.
- * @returns Effect that writes guide output.
- * @example
- * ```ts
- * import { Effect } from 'effect';
- * import { runGuideCommand } from './command.js';
- *
- * await Effect.runPromise(runGuideCommand({ json: true }));
- * ```
- */
-export const runGuideCommand = (args: GuideArgs): Effect.Effect<void> =>
-  Effect.sync(() => {
-    if (args.json === true) {
-      process.stdout.write(formatJsonAgentGuide());
-      return;
-    }
+  if (isJsonRequested) {
+    process.stdout.write(formatJsonAgentGuide());
+    return;
+  }
 
-    process.stdout.write(`${formatHumanAgentGuide()}\n`);
-  });
+  process.stdout.write(`${formatHumanAgentGuide()}\n`);
+};
 
 /**
  * Citty command that shows safe commands for agents and automation.
@@ -52,10 +37,8 @@ export const guideCommand = defineCommand({
     },
   },
   run: async ({ args }) => {
-    await Effect.runPromise(
-      runGuideCommand({
-        json: args.json,
-      }),
-    );
+    await runGuideCommand({
+      json: args.json,
+    });
   },
 });

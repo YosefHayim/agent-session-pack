@@ -1,4 +1,3 @@
-import { Effect } from 'effect';
 import { runDoctorCommand } from '@/doctor/command.js';
 import { runSavingsCommand } from '@/evidence/savings-command.js';
 import type { InteractiveCliRequest } from '@/interactive-cli-request.js';
@@ -25,16 +24,6 @@ export type InteractiveCliDetectionRequest = {
  *
  * @param request - Normalized argv and terminal state.
  * @returns True when no command or flags were provided in a TTY.
- * @example
- * ```ts
- * import { shouldRunInteractiveCli } from './interactive-cli.js';
- *
- * const interactive = shouldRunInteractiveCli({
- *   argv: ['node', 'cli.js'],
- *   stdinIsTty: true,
- *   stdoutIsTty: true,
- * });
- * ```
  */
 export const shouldRunInteractiveCli = (request: InteractiveCliDetectionRequest): boolean => {
   if (!request.stdinIsTty || !request.stdoutIsTty) {
@@ -48,12 +37,6 @@ export const shouldRunInteractiveCli = (request: InteractiveCliDetectionRequest)
  * Builds the main interactive menu options with Clack hint copy.
  *
  * @returns Main menu options.
- * @example
- * ```ts
- * import { createMainMenuOptions } from './interactive-cli.js';
- *
- * const options = createMainMenuOptions();
- * ```
  */
 export const createMainMenuOptions = (): ReadonlyArray<PromptOption<MainMenuAction>> => [
   {
@@ -98,12 +81,6 @@ export const createMainMenuOptions = (): ReadonlyArray<PromptOption<MainMenuActi
  *
  * @param request - Optional test overrides for prompts, home, providers, and time.
  * @returns Promise that resolves after the selected action completes.
- * @example
- * ```ts
- * import { runInteractiveCli } from './interactive-cli.js';
- *
- * await runInteractiveCli();
- * ```
  */
 export const runInteractiveCli = async (request: InteractiveCliRequest = {}): Promise<void> => {
   const prompts = request.prompts ?? clackPromptAdapter;
@@ -146,7 +123,7 @@ const runInteractiveAction = async (
       prompts: request.prompts,
       startMessage: 'Checking savings...',
       stopMessage: 'Savings check complete.',
-      task: () => Effect.runPromise(runSavingsCommand({})),
+      task: () => runSavingsCommand({}),
     });
     request.prompts.outro('Original sessions touched: no');
     return;

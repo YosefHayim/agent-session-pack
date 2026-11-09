@@ -1,4 +1,3 @@
-import { Effect } from 'effect';
 import type { InteractiveCliRequest } from '@/interactive-cli-request.js';
 import type { PromptAdapter } from '@/prompt-adapter.js';
 import { runWithSpinner } from '@/spinner-task.js';
@@ -9,13 +8,6 @@ import { runUnpackCommand } from './unpack-command.js';
  *
  * @param request - Interactive request plus resolved prompt adapter.
  * @returns Promise that resolves after restore preview or apply completes.
- * @example
- * ```ts
- * import { runRestoreFlow } from './flow.js';
- * import { clackPromptAdapter } from '@/prompt-adapter.js';
- *
- * await runRestoreFlow({ prompts: clackPromptAdapter });
- * ```
  */
 export const runRestoreFlow = async (
   request: InteractiveCliRequest & { readonly prompts: PromptAdapter },
@@ -35,16 +27,14 @@ export const runRestoreFlow = async (
     startMessage: 'Scanning vault manifests...',
     stopMessage: 'Scanned vault manifests.',
     task: () =>
-      Effect.runPromise(
-        runUnpackCommand({
-          allProviders: true,
-          apply: false,
-          json: false,
-          provider: undefined,
-          yes: false,
-          confirmed: undefined,
-        }),
-      ),
+      runUnpackCommand({
+        allProviders: true,
+        apply: false,
+        json: false,
+        provider: undefined,
+        yes: false,
+        confirmed: undefined,
+      }),
   });
 
   const shouldApply = await request.prompts.confirm({
@@ -57,14 +47,12 @@ export const runRestoreFlow = async (
     return;
   }
 
-  await Effect.runPromise(
-    runUnpackCommand({
-      allProviders: true,
-      apply: true,
-      json: false,
-      provider: undefined,
-      yes: true,
-      confirmed: true,
-    }),
-  );
+  await runUnpackCommand({
+    allProviders: true,
+    apply: true,
+    json: false,
+    provider: undefined,
+    yes: true,
+    confirmed: true,
+  });
 };

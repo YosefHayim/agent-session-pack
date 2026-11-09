@@ -1,7 +1,5 @@
-import { Effect, Either } from 'effect';
 import { listVaultSessionManifests } from '@/archive/manifest-store.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
-import { promiseAsEffect } from '@/effect-bridge.js';
 import type { ProviderId } from '@/session-model.js';
 import { type RestoreOutcome, restoreManifest } from './manifest.js';
 import { resolveSessionSelector, type SelectorMatch } from './session-selector.js';
@@ -62,125 +60,103 @@ export type EnsureSessionRestoredRequest = {
  * Restores one archived session when missing, or reports already-present / conflict.
  *
  * Manual `restore` always applies. `ensure-restored` only applies when lifecycle is enabled.
- *
- * @param request - Selector, vault, compression, and lifecycle gate.
- * @returns Effect containing a stable ensure-restored report.
- * @example
- * ```ts
- * import { ensureSessionRestored } from './ensure-restored.js';
- * import { createZstdCompression } from '@/archive/zstd-compression.js';
- *
- * const report = await Effect.runPromise(
- *   ensureSessionRestored({
- *     command: 'ensure-restored',
- *     vaultPath: '/vault',
- *     selector: 'cold',
- *     selectorMatch: 'exact',
- *     provider: 'codex',
- *     compression: createZstdCompression(),
- *     restoreOnLaunchEnabled: true,
- *     requireLifecycleEnabled: true,
- *   }),
- * );
- * ```
  */
-export const ensureSessionRestored = (
+export const ensureSessionRestored = async (
   request: EnsureSessionRestoredRequest,
-): Effect.Effect<EnsureRestoredReport, Error> =>
-  Effect.gen(function* () {
-    if (request.requireLifecycleEnabled && !request.restoreOnLaunchEnabled) {
-      return {
-        command: request.command,
-        status: 'lifecycle-disabled',
-        restoreOnLaunchEnabled: false,
-        provider: request.provider,
-        sessionId: undefined,
-        originalPath: undefined,
-        archivePath: undefined,
-        reason:
-          'restore-on-launch is disabled; enable with `agent-session-pack lifecycle enable` or use `unpack` / `restore` manually',
-      };
-    }
+): Promise<EnsureRestoredReport> => {
+  const isLifecycleDisabled = request.requireLifecycleEnabled && !request.restoreOnLaunchEnabled;
 
-    const manifests = yield* promiseAsEffect(() => listVaultSessionManifests(request.vaultPath));
-    const selection = yield* Effect.either(
-      resolveSessionSelector({
-        selector: request.selector,
-        provider: request.provider,
-        manifests,
-        match: request.selectorMatch,
-      }),
-    );
+  if (isLifecycleDisabled) {
+    return {
+      command: request.command,
+      status: 'lifecycle-disabled',
+      restoreOnLaunchEnabled: false,
+      provider: request.provider,
+      sessionId: undefined,
+      originalPath: undefined,
+      archivePath: undefined,
+      reason:
+        'restore-on-launch is disabled; enable with `agent-session-pack lifecycle enable` or use `unpack` / `restore` manually',
+    };
+  }
 
-    if (Either.isLeft(selection) && selection.left._tag === 'SessionSelectorAmbiguousError') {
-      const candidates = selection.left.candidates.map((manifest) => ({
-        provider: manifest.provider,
-        sessionId: manifest.sessionId,
-        title: manifest.title,
-      }));
-      const candidateSelectors = candidates
-        .map((candidate) => `${candidate.provider}:${candidate.sessionId}`)
-        .join(', ');
+  const manifests = await listVaultSessionManifests(request.vaultPath);
+  const selection = resolveSessionSelector({
+    selector: request.selector,
+    provider: request.provider,
+    manifests,
+    match: request.selectorMatch,
+  });
 
-      return {
-        command: request.command,
-        status: 'ambiguous-selector',
-        restoreOnLaunchEnabled: request.restoreOnLaunchEnabled,
-        provider: request.provider,
-        sessionId: undefined,
-        originalPath: undefined,
-        archivePath: undefined,
-        reason: `selector matches ${candidates.length} sessions: ${candidateSelectors}; use a longer selector or provider:id`,
-        candidates,
-      };
-    }
-
-    if (Either.isLeft(selection)) {
-      return {
-        command: request.command,
-        status: 'missing-archive',
-        restoreOnLaunchEnabled: request.restoreOnLaunchEnabled,
-        provider: request.provider,
-        sessionId: undefined,
-        originalPath: undefined,
-        archivePath: undefined,
-        reason: 'no vault manifest matched the selector',
-      };
-    }
-
-    const manifest = selection.right;
-    const backupOnlyProviders = request.backupOnlyProviders ?? ['cursor', 'devin'];
-
-    if (backupOnlyProviders.includes(manifest.provider)) {
-      return {
-        command: request.command,
-        status: 'backup-only',
-        restoreOnLaunchEnabled: request.restoreOnLaunchEnabled,
-        provider: manifest.provider,
-        sessionId: manifest.sessionId,
-        originalPath: manifest.originalPath,
-        archivePath: manifest.archivePath,
-        reason: 'backup-only provider stores are not mutated',
-      };
-    }
-
-    const outcome = yield* restoreManifest({
-      compression: request.compression,
-      manifest,
-      vaultPath: request.vaultPath,
-    });
+  if (selection.status === 'ambiguous') {
+    const candidates = selection.candidates.map((manifest) => ({
+      provider: manifest.provider,
+      sessionId: manifest.sessionId,
+      title: manifest.title,
+    }));
+    const candidateSelectors = candidates
+      .map((candidate) => `${candidate.provider}:${candidate.sessionId}`)
+      .join(', ');
 
     return {
       command: request.command,
-      status: outcome,
+      status: 'ambiguous-selector',
+      restoreOnLaunchEnabled: request.restoreOnLaunchEnabled,
+      provider: request.provider,
+      sessionId: undefined,
+      originalPath: undefined,
+      archivePath: undefined,
+      reason: `selector matches ${candidates.length} sessions: ${candidateSelectors}; use a longer selector or provider:id`,
+      candidates,
+    };
+  }
+
+  if (selection.status === 'not-found') {
+    return {
+      command: request.command,
+      status: 'missing-archive',
+      restoreOnLaunchEnabled: request.restoreOnLaunchEnabled,
+      provider: request.provider,
+      sessionId: undefined,
+      originalPath: undefined,
+      archivePath: undefined,
+      reason: 'no vault manifest matched the selector',
+    };
+  }
+
+  const manifest = selection.manifest;
+  const backupOnlyProviders = request.backupOnlyProviders ?? ['cursor', 'devin'];
+
+  if (backupOnlyProviders.includes(manifest.provider)) {
+    return {
+      command: request.command,
+      status: 'backup-only',
       restoreOnLaunchEnabled: request.restoreOnLaunchEnabled,
       provider: manifest.provider,
       sessionId: manifest.sessionId,
       originalPath: manifest.originalPath,
       archivePath: manifest.archivePath,
-      reason: ensureRestoredReason(outcome),
+      reason: 'backup-only provider stores are not mutated',
     };
+  }
+
+  const outcome = await restoreManifest({
+    compression: request.compression,
+    manifest,
+    vaultPath: request.vaultPath,
   });
+
+  return {
+    command: request.command,
+    status: outcome,
+    restoreOnLaunchEnabled: request.restoreOnLaunchEnabled,
+    provider: manifest.provider,
+    sessionId: manifest.sessionId,
+    originalPath: manifest.originalPath,
+    archivePath: manifest.archivePath,
+    reason: ensureRestoredReason(outcome),
+  };
+};
 
 const ensureRestoredReason = (status: RestoreOutcome): string | undefined => {
   if (status === 'conflict') {

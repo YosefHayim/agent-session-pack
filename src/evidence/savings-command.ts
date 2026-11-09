@@ -1,5 +1,4 @@
 import { defineCommand } from 'citty';
-import { Effect, Schema } from 'effect';
 import { requireHome } from '@/home-env.js';
 import { selectProviders } from '@/providers/flag.js';
 import { runLocalEvidence } from './local-evidence.js';
@@ -7,53 +6,39 @@ import { formatHumanEvidenceReport, formatJsonEvidenceReport } from './output.js
 import { resolveEvidenceWorkRoot } from './work-root.js';
 
 /**
- * Schema describing the savings command arguments.
+ * Arguments for the savings command.
  */
-const SavingsArgsSchema = Schema.Struct({
-  provider: Schema.optional(Schema.String),
-  json: Schema.optional(Schema.Boolean),
-});
+export interface SavingsArgs {
+  readonly provider?: string;
+  readonly json?: boolean;
+}
 
 /**
- * Decoded arguments for the savings command.
+ * Runs copy-only local savings proof against provider sessions and writes the report.
  */
-export type SavingsArgs = typeof SavingsArgsSchema.Type;
+export const runSavingsCommand = async (args: SavingsArgs): Promise<void> => {
+  const home = requireHome();
+  const isHomeMissing = home === undefined;
 
-/**
- * Runs copy-only local savings proof against provider sessions.
- *
- * @param args - Decoded command-line arguments.
- * @returns Effect that writes savings output.
- * @example
- * ```ts
- * import { Effect } from 'effect';
- * import { runSavingsCommand } from './savings-command.js';
- *
- * await Effect.runPromise(runSavingsCommand({ json: true }));
- * ```
- */
-export const runSavingsCommand = (args: SavingsArgs): Effect.Effect<void, Error> =>
-  Effect.gen(function* () {
-    const home = requireHome();
+  if (isHomeMissing) {
+    return;
+  }
 
-    if (home === undefined) {
-      return;
-    }
-
-    const providers = selectProviders(args.provider);
-    const report = yield* runLocalEvidence({
-      home,
-      workRoot: resolveEvidenceWorkRoot(process.cwd(), String(process.pid)),
-      providers,
-    });
-
-    if (args.json === true) {
-      process.stdout.write(formatJsonEvidenceReport(report));
-      return;
-    }
-
-    process.stdout.write(`${formatHumanEvidenceReport(report)}\n`);
+  const providers = selectProviders(args.provider);
+  const report = await runLocalEvidence({
+    home,
+    workRoot: resolveEvidenceWorkRoot(process.cwd(), String(process.pid)),
+    providers,
   });
+  const isJsonRequested = args.json === true;
+
+  if (isJsonRequested) {
+    process.stdout.write(formatJsonEvidenceReport(report));
+    return;
+  }
+
+  process.stdout.write(`${formatHumanEvidenceReport(report)}\n`);
+};
 
 /**
  * Citty command that shows copy-only local before/after compression proof.
@@ -76,12 +61,10 @@ export const savingsCommand = defineCommand({
     },
   },
   run: async ({ args }) => {
-    await Effect.runPromise(
-      runSavingsCommand({
-        provider: args.provider,
-        json: args.json,
-      }),
-    );
+    await runSavingsCommand({
+      provider: args.provider,
+      json: args.json,
+    });
   },
 });
 
@@ -106,11 +89,9 @@ export const checkCommand = defineCommand({
     },
   },
   run: async ({ args }) => {
-    await Effect.runPromise(
-      runSavingsCommand({
-        provider: args.provider,
-        json: args.json,
-      }),
-    );
+    await runSavingsCommand({
+      provider: args.provider,
+      json: args.json,
+    });
   },
 });

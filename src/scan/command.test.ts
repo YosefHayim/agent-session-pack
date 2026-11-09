@@ -1,7 +1,6 @@
 import { mkdir, mkdtemp, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Effect } from 'effect';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { runScanCommand, scanCommand } from './command.js';
 
@@ -56,7 +55,7 @@ describe('scan command', () => {
   it('exits with code 1 when HOME is unset', async () => {
     delete process.env.HOME;
 
-    await Effect.runPromise(runScanCommand({ json: true }));
+    await runScanCommand({ json: true });
 
     expect(process.exitCode).toBe(1);
     const stderr = stderrWrites.join('');
@@ -69,7 +68,7 @@ describe('scan command', () => {
     const home = await createWorkspace();
     process.env.HOME = home;
 
-    await Effect.runPromise(runScanCommand({ provider: 'not-a-provider', json: true }));
+    await runScanCommand({ provider: 'not-a-provider', json: true });
 
     expect(process.exitCode).toBe(2);
     expect(stderrWrites.join('')).toContain('Unknown provider: not-a-provider');
@@ -80,7 +79,7 @@ describe('scan command', () => {
     await mkdir(join(home, '.codex', 'sessions'), { recursive: true });
     process.env.HOME = home;
 
-    await Effect.runPromise(runScanCommand({ provider: 'codex', json: true }));
+    await runScanCommand({ provider: 'codex', json: true });
 
     const payload = JSON.parse(stdoutWrites.join('')) as {
       readonly sessions: ReadonlyArray<unknown>;
@@ -93,7 +92,7 @@ describe('scan command', () => {
     const home = await createWorkspace();
     process.env.HOME = home;
 
-    await Effect.runPromise(runScanCommand({ json: true }));
+    await runScanCommand({ json: true });
 
     const payload = JSON.parse(stdoutWrites.join('')) as {
       readonly sessions: ReadonlyArray<unknown>;
@@ -108,7 +107,7 @@ describe('scan command', () => {
     const session = await writeCodexSession(home);
     process.env.HOME = home;
 
-    await Effect.runPromise(runScanCommand({ provider: 'codex', json: true }));
+    await runScanCommand({ provider: 'codex', json: true });
 
     const payload = JSON.parse(stdoutWrites.join('')) as {
       readonly sessions: ReadonlyArray<{
@@ -126,7 +125,7 @@ describe('scan command', () => {
     await mkdir(join(home, '.codex', 'sessions'), { recursive: true });
     process.env.HOME = home;
 
-    await Effect.runPromise(runScanCommand({ provider: 'codex', json: undefined }));
+    await runScanCommand({ provider: 'codex', json: undefined });
 
     expect(stdoutWrites.join('')).toContain('No sessions found.');
   });

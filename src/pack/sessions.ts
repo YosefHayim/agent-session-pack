@@ -1,4 +1,3 @@
-import { Effect } from 'effect';
 import { pathExists, removePath } from '@/archive/file-system.js';
 import { writeSessionManifest } from '@/archive/manifest-store.js';
 import { writeArchivedStub } from '@/archive/session-stub.js';
@@ -13,7 +12,6 @@ import {
   writeVerifiedArchive,
 } from '@/archive/writer.js';
 import { savedPercent, sumSessionBytes } from '@/byte-savings.js';
-import { promiseAsEffect } from '@/effect-bridge.js';
 import type {
   DiscoveredSession,
   ProviderAdapter,
@@ -73,204 +71,171 @@ export type PackProviderSessionsRequest = {
 
 /**
  * Packs cold sessions for the selected providers into the vault.
- *
- * @param request - Provider selection, compression, vault, and cold threshold.
- * @returns Effect containing a provider-level archive report.
- * @example
- * ```ts
- * import { packProviderSessions } from './sessions.js';
- * import { createZstdCompression } from '@/archive/zstd-compression.js';
- *
- * const report = await Effect.runPromise(
- *   packProviderSessions({
- *     home: process.env.HOME ?? '',
- *     vaultPath: '/vault',
- *     providers,
- *     olderThan: '168h',
- *     olderThanMs: 168 * 60 * 60 * 1000,
- *     now: new Date(),
- *     apply: false,
- *     compression: createZstdCompression(),
- *   }),
- * );
- * ```
  */
-export const packProviderSessions = (
+export const packProviderSessions = async (
   request: PackProviderSessionsRequest,
-): Effect.Effect<PackSessionsReport, Error> =>
-  Effect.gen(function* () {
-    const packSessionRows: PackSessionRow[] = [];
-    const packableSessions: DiscoveredSession[] = [];
-    const cutoffTime = request.now.getTime() - request.olderThanMs;
+): Promise<PackSessionsReport> => {
+  const packSessionRows: PackSessionRow[] = [];
+  const packableSessions: DiscoveredSession[] = [];
+  const cutoffTime = request.now.getTime() - request.olderThanMs;
 
-    for (const provider of request.providers) {
-      const sessions = yield* discoverExistingProviderSessions({
-        home: request.home,
-        provider,
-      });
+  for (const provider of request.providers) {
+    const sessions = await discoverExistingProviderSessions({
+      home: request.home,
+      provider,
+    });
 
-      if (sessions === undefined) {
-        packSessionRows.push(createMissingPackRow(provider));
-        continue;
-      }
-
-      if (provider.mode === 'backup-only') {
-        packSessionRows.push(createBackupOnlyPackRow(provider, sessions.length));
-        continue;
-      }
-
-      packableSessions.push(...sessions);
-
-      const candidates = sessions.filter((session) => session.modifiedAt.getTime() < cutoffTime);
-
-      if (candidates.length === 0) {
-        packSessionRows.push(createNoCandidatesPackRow(provider, sessions.length));
-        continue;
-      }
-
-      if (request.apply === false) {
-        packSessionRows.push(createDryRunPackRow(provider, sessions.length, candidates));
-        continue;
-      }
-
-      const archived = yield* archiveCandidateSessions({
-        candidates,
-        compression: request.compression,
-        now: request.now,
-        vaultPath: request.vaultPath,
-      });
-
-      packSessionRows.push(
-        createPackedRow({
-          provider,
-          foundSessions: sessions.length,
-          packedSessions: archived.packedSessions,
-          beforeBytes: archived.beforeBytes,
-          archiveBytes: archived.archiveBytes,
-        }),
-      );
+    if (sessions === undefined) {
+      packSessionRows.push(createMissingPackRow(provider));
+      continue;
     }
 
-    return {
-      command: 'pack',
-      apply: request.apply,
-      vaultPath: request.vaultPath,
-      rows: packSessionRows,
-      thresholdPreviews: createPackThresholdPreviews({
-        now: request.now,
-        olderThan: request.olderThan,
-        olderThanMs: request.olderThanMs,
-        sessions: packableSessions,
-      }),
-    };
-  });
+    if (provider.mode === 'backup-only') {
+      packSessionRows.push(createBackupOnlyPackRow(provider, sessions.length));
+      continue;
+    }
 
-const discoverExistingProviderSessions = (request: {
+    packableSessions.push(...sessions);
+
+    const candidates = sessions.filter((session) => session.modifiedAt.getTime() < cutoffTime);
+
+    if (candidates.length === 0) {
+      packSessionRows.push(createNoCandidatesPackRow(provider, sessions.length));
+      continue;
+    }
+
+    if (request.apply === false) {
+      packSessionRows.push(createDryRunPackRow(provider, sessions.length, candidates));
+      continue;
+    }
+
+    const archived = await archiveCandidateSessions({
+      candidates,
+      compression: request.compression,
+      now: request.now,
+      vaultPath: request.vaultPath,
+    });
+
+    packSessionRows.push(
+      createPackedRow({
+        provider,
+        foundSessions: sessions.length,
+        packedSessions: archived.packedSessions,
+        beforeBytes: archived.beforeBytes,
+        archiveBytes: archived.archiveBytes,
+      }),
+    );
+  }
+
+  return {
+    command: 'pack',
+    apply: request.apply,
+    vaultPath: request.vaultPath,
+    rows: packSessionRows,
+    thresholdPreviews: createPackThresholdPreviews({
+      now: request.now,
+      olderThan: request.olderThan,
+      olderThanMs: request.olderThanMs,
+      sessions: packableSessions,
+    }),
+  };
+};
+
+const discoverExistingProviderSessions = async (request: {
   readonly home: string;
   readonly provider: ProviderAdapter;
-}): Effect.Effect<ReadonlyArray<DiscoveredSession> | undefined, Error> =>
-  Effect.gen(function* () {
-    const roots = request.provider.defaultRoots(request.home);
-    const sessions: DiscoveredSession[] = [];
-    let existingRoots = 0;
+}): Promise<ReadonlyArray<DiscoveredSession> | undefined> => {
+  const roots = request.provider.defaultRoots(request.home);
+  const sessions: DiscoveredSession[] = [];
+  let existingRoots = 0;
 
-    for (const root of roots) {
-      const exists = yield* promiseAsEffect(() => pathExists(root));
+  for (const root of roots) {
+    const isRootPresent = await pathExists(root);
 
-      if (!exists) {
-        continue;
-      }
-
-      existingRoots += 1;
-      const discovered = yield* promiseAsEffect(() =>
-        request.provider.discover({
-          provider: request.provider.id,
-          path: root,
-        }),
-      );
-      sessions.push(...discovered);
+    if (!isRootPresent) {
+      continue;
     }
 
-    if (existingRoots === 0) {
-      return undefined;
-    }
+    existingRoots += 1;
+    const discovered = await request.provider.discover({
+      provider: request.provider.id,
+      path: root,
+    });
+    sessions.push(...discovered);
+  }
 
-    return sessions;
-  });
+  const hasNoExistingRoot = existingRoots === 0;
 
-const archiveCandidateSessions = (request: {
+  if (hasNoExistingRoot) {
+    return undefined;
+  }
+
+  return sessions;
+};
+
+const archiveCandidateSessions = async (request: {
   readonly candidates: ReadonlyArray<DiscoveredSession>;
   readonly compression: CompressionAdapter;
   readonly now: Date;
   readonly vaultPath: string;
-}): Effect.Effect<
-  {
-    readonly archiveBytes: number;
-    readonly beforeBytes: number;
-    readonly packedSessions: number;
-  },
-  Error
-> =>
-  Effect.gen(function* () {
-    let archiveBytes = 0;
-    let beforeBytes = 0;
-    let packedSessions = 0;
+}): Promise<{
+  readonly archiveBytes: number;
+  readonly beforeBytes: number;
+  readonly packedSessions: number;
+}> => {
+  let archiveBytes = 0;
+  let beforeBytes = 0;
+  let packedSessions = 0;
 
-    for (const session of request.candidates) {
-      const sourceKind = sessionSourceKind(session);
-      const archivePath = archivePathForSession(request.vaultPath, session, sourceKind);
-      const restoredPath = verificationPathForSession(request.vaultPath, session, sourceKind);
-      const manifestPath = manifestPathForSession(request.vaultPath, session);
-      const archived = yield* promiseAsEffect(() =>
-        writeVerifiedArchive({
-          sessionId: session.id,
-          sourcePath: session.originalPath,
-          archivePath,
-          restoredPath,
-          apply: false,
-          compression: request.compression,
-          sourceKind,
-        }),
-      );
+  for (const session of request.candidates) {
+    const sourceKind = sessionSourceKind(session);
+    const archivePath = archivePathForSession(request.vaultPath, session, sourceKind);
+    const restoredPath = verificationPathForSession(request.vaultPath, session, sourceKind);
+    const manifestPath = manifestPathForSession(request.vaultPath, session);
+    const archived = await writeVerifiedArchive({
+      sessionId: session.id,
+      sourcePath: session.originalPath,
+      archivePath,
+      restoredPath,
+      apply: false,
+      compression: request.compression,
+      sourceKind,
+    });
 
-      yield* promiseAsEffect(() =>
-        writeSessionManifest(manifestPath, {
-          sessionId: session.id,
-          provider: session.provider,
-          title: session.title,
-          slug: session.slug,
-          originalPath: session.originalPath,
-          archivePath,
-          sourceSha256: archived.sourceSha256,
-          sourceBytes: archived.sourceBytes,
-          archiveBytes: archived.archiveBytes,
-          archivedAt: request.now.toISOString(),
-          sourceKind,
-        }),
-      );
-      yield* promiseAsEffect(() => removeOriginalSession(session.originalPath));
-      // Leave a tiny listable stub so GUIs can still see the session; watch materializes on open.
-      yield* promiseAsEffect(() =>
-        writeArchivedStub({
-          originalPath: session.originalPath,
-          sessionId: session.id,
-          provider: session.provider,
-          sourceKind,
-        }),
-      );
-      yield* promiseAsEffect(() => removePath(restoredPath));
+    await writeSessionManifest(manifestPath, {
+      sessionId: session.id,
+      provider: session.provider,
+      title: session.title,
+      slug: session.slug,
+      originalPath: session.originalPath,
+      archivePath,
+      sourceSha256: archived.sourceSha256,
+      sourceBytes: archived.sourceBytes,
+      archiveBytes: archived.archiveBytes,
+      archivedAt: request.now.toISOString(),
+      sourceKind,
+    });
+    await removeOriginalSession(session.originalPath);
+    // Leave a tiny listable stub so GUIs can still see the session; watch materializes on open.
+    await writeArchivedStub({
+      originalPath: session.originalPath,
+      sessionId: session.id,
+      provider: session.provider,
+      sourceKind,
+    });
+    await removePath(restoredPath);
 
-      archiveBytes += archived.archiveBytes;
-      beforeBytes += archived.sourceBytes;
-      packedSessions += 1;
-    }
+    archiveBytes += archived.archiveBytes;
+    beforeBytes += archived.sourceBytes;
+    packedSessions += 1;
+  }
 
-    return {
-      archiveBytes,
-      beforeBytes,
-      packedSessions,
-    };
-  });
+  return {
+    archiveBytes,
+    beforeBytes,
+    packedSessions,
+  };
+};
 
 const createMissingPackRow = (provider: ProviderAdapter): PackSessionRow => ({
   provider: provider.id,

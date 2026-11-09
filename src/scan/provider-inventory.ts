@@ -1,13 +1,11 @@
-import { stat } from 'node:fs/promises';
-import { Effect } from 'effect';
 import { sumSessionBytes } from '@/byte-savings.js';
-import { promiseAsEffect } from '@/effect-bridge.js';
 import type {
   DiscoveredSession,
   ProviderAdapter,
   ProviderId,
   ProviderMode,
 } from '@/session-model.js';
+import { isPathPresent } from './stores.js';
 
 /**
  * Readiness status reported for a provider store during inventory.
@@ -49,49 +47,31 @@ export type ProviderInventoryRequest = {
 
 /**
  * Inspects provider stores for human-facing setup and pack decisions.
- *
- * @param request - Home, providers, cold threshold, and current time.
- * @returns Provider-level read-only inventory report.
- * @example
- * ```ts
- * import { inspectProviderInventory } from './provider-inventory.js';
- * import { allProviders } from '@/providers/all-providers.js';
- *
- * const report = await Effect.runPromise(
- *   inspectProviderInventory({
- *     home: process.env.HOME ?? '',
- *     providers: allProviders,
- *     olderThanMs: 168 * 60 * 60 * 1000,
- *     now: new Date(),
- *   }),
- * );
- * ```
  */
-export const inspectProviderInventory = (
+export const inspectProviderInventory = async (
   request: ProviderInventoryRequest,
-): Effect.Effect<ProviderInventoryReport, Error> =>
-  Effect.gen(function* () {
-    const inventoryRows: ProviderInventoryRow[] = [];
-    const cutoffTime = request.now.getTime() - request.olderThanMs;
+): Promise<ProviderInventoryReport> => {
+  const inventoryRows: ProviderInventoryRow[] = [];
+  const cutoffTime = request.now.getTime() - request.olderThanMs;
 
-    for (const provider of request.providers) {
-      const discovered = yield* discoverProviderRoots({
-        home: request.home,
+  for (const provider of request.providers) {
+    const discovered = await discoverProviderRoots({
+      home: request.home,
+      provider,
+    });
+
+    inventoryRows.push(
+      createInventoryRow({
+        cutoffTime,
+        paths: discovered.existingRoots.length > 0 ? discovered.existingRoots : discovered.roots,
         provider,
-      });
+        sessions: discovered.sessions,
+      }),
+    );
+  }
 
-      inventoryRows.push(
-        createInventoryRow({
-          cutoffTime,
-          paths: discovered.existingRoots.length > 0 ? discovered.existingRoots : discovered.roots,
-          provider,
-          sessions: discovered.sessions,
-        }),
-      );
-    }
-
-    return { rows: inventoryRows };
-  });
+  return { rows: inventoryRows };
+};
 
 type ProviderRootDiscovery = {
   readonly roots: ReadonlyArray<string>;
@@ -104,55 +84,50 @@ type RootDiscovery = {
   readonly sessions: ReadonlyArray<DiscoveredSession>;
 };
 
-const discoverProviderRoots = (request: {
+const discoverProviderRoots = async (request: {
   readonly home: string;
   readonly provider: ProviderAdapter;
-}): Effect.Effect<ProviderRootDiscovery, Error> =>
-  Effect.gen(function* () {
-    const roots = request.provider.defaultRoots(request.home);
-    const discoveredRoots = yield* Effect.all(
-      roots.map((root) =>
-        discoverProviderRoot({
-          provider: request.provider,
-          root,
-        }),
-      ),
-    );
-    const existingRoots = discoveredRoots.filter(isRootDiscovery);
+}): Promise<ProviderRootDiscovery> => {
+  const roots = request.provider.defaultRoots(request.home);
+  const discoveredRoots: Array<RootDiscovery | undefined> = [];
 
-    return {
-      roots,
-      existingRoots: existingRoots.map((root) => root.root),
-      sessions: existingRoots.flatMap((root) => root.sessions),
-    };
-  });
+  for (const root of roots) {
+    const rootDiscovery = await discoverProviderRoot({
+      provider: request.provider,
+      root,
+    });
+    discoveredRoots.push(rootDiscovery);
+  }
 
-const discoverProviderRoot = (request: {
+  const existingRoots = discoveredRoots.filter(isRootDiscovery);
+
+  return {
+    roots,
+    existingRoots: existingRoots.map((root) => root.root),
+    sessions: existingRoots.flatMap((root) => root.sessions),
+  };
+};
+
+const discoverProviderRoot = async (request: {
   readonly provider: ProviderAdapter;
   readonly root: string;
-}): Effect.Effect<RootDiscovery | undefined, Error> =>
-  Effect.gen(function* () {
-    const exists = yield* pathExists({
-      provider: request.provider,
-      path: request.root,
-    });
+}): Promise<RootDiscovery | undefined> => {
+  const isRootPresent = await isPathPresent(request.root);
 
-    if (!exists) {
-      return undefined;
-    }
+  if (!isRootPresent) {
+    return undefined;
+  }
 
-    const sessions = yield* promiseAsEffect(() =>
-      request.provider.discover({
-        provider: request.provider.id,
-        path: request.root,
-      }),
-    );
-
-    return {
-      root: request.root,
-      sessions,
-    };
+  const sessions = await request.provider.discover({
+    provider: request.provider.id,
+    path: request.root,
   });
+
+  return {
+    root: request.root,
+    sessions,
+  };
+};
 
 const createInventoryRow = (request: {
   readonly cutoffTime: number;
@@ -208,36 +183,5 @@ const createInventoryRow = (request: {
   };
 };
 
-const pathExists = (request: {
-  readonly provider: ProviderAdapter;
-  readonly path: string;
-}): Effect.Effect<boolean, Error> =>
-  Effect.tryPromise({
-    try: async () => {
-      const entry = await stat(request.path).catch((cause: unknown) => {
-        if (errorCode(cause) === 'ENOENT') {
-          return undefined;
-        }
-
-        return Promise.reject(cause);
-      });
-
-      return entry !== undefined;
-    },
-    catch: (cause) => new Error(String(cause), { cause }),
-  });
-
 const isRootDiscovery = (discovery: RootDiscovery | undefined): discovery is RootDiscovery =>
   discovery !== undefined;
-
-const errorCode = (cause: unknown): string | undefined => {
-  if (typeof cause !== 'object' || cause === null) {
-    return undefined;
-  }
-
-  if (!('code' in cause)) {
-    return undefined;
-  }
-
-  return String(cause.code);
-};

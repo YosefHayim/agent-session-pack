@@ -1,7 +1,6 @@
 import { mkdir, mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Effect } from 'effect';
 import { describe, expect, it } from 'vitest';
 import type { ProviderAdapter } from '@/session-model.js';
 import { runLocalEvidence } from './local-evidence.js';
@@ -20,7 +19,7 @@ describe('local evidence', () => {
       mode: 'archive',
       defaultRoots: () => [storePath],
       discover: () =>
-        Effect.succeed([
+        Promise.resolve([
           {
             id: 'oversized',
             provider: 'codex',
@@ -34,13 +33,11 @@ describe('local evidence', () => {
         ]),
     };
 
-    const report = await Effect.runPromise(
-      runLocalEvidence({
-        home: workspace,
-        workRoot: join(workspace, 'proof'),
-        providers: [provider],
-      }),
-    );
+    const report = await runLocalEvidence({
+      home: workspace,
+      workRoot: join(workspace, 'proof'),
+      providers: [provider],
+    });
 
     expect(report.evidence).toEqual([
       {

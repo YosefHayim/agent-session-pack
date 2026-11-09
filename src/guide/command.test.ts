@@ -1,5 +1,4 @@
 import { runCommand } from 'citty';
-import { Effect } from 'effect';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { guideCommand, runGuideCommand } from './command.js';
 
@@ -21,7 +20,7 @@ describe('guide command', () => {
   });
 
   it('writes stable JSON guide without prompting', async () => {
-    await Effect.runPromise(runGuideCommand({ json: true }));
+    await runGuideCommand({ json: true });
 
     const payload = JSON.parse(writes.join(''));
     expect(payload).toMatchObject({
@@ -37,7 +36,7 @@ describe('guide command', () => {
   });
 
   it('writes human guide text by default', async () => {
-    await Effect.runPromise(runGuideCommand({ json: undefined }));
+    await runGuideCommand({ json: undefined });
 
     expect(writes.join('')).toContain('Agent-first quickstart');
     expect(writes.join('')).toContain('Prefer explicit subcommands with --json.');

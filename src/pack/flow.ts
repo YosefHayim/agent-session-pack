@@ -1,4 +1,3 @@
-import { Effect } from 'effect';
 import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
 import { formatBytes } from '@/byte-format.js';
 import { HOME_NOT_SET_CANCEL_MESSAGE } from '@/home-env.js';
@@ -55,18 +54,16 @@ export const runPackFlow = async (
     return;
   }
 
-  await Effect.runPromise(
-    runPackCommand({
-      allProviders: true,
-      apply: false,
-      dryRun: true,
-      json: false,
-      olderThan: DEFAULT_COLD_AFTER,
-      provider: undefined,
-      yes: false,
-      confirmed: undefined,
-    }),
-  );
+  await runPackCommand({
+    allProviders: true,
+    apply: false,
+    dryRun: true,
+    json: false,
+    olderThan: DEFAULT_COLD_AFTER,
+    provider: undefined,
+    yes: false,
+    confirmed: undefined,
+  });
 
   const shouldApply = await request.prompts.confirm({
     message: formatPackApplyQuestion(inventory, home),
@@ -78,18 +75,16 @@ export const runPackFlow = async (
     return;
   }
 
-  await Effect.runPromise(
-    runPackCommand({
-      allProviders: true,
-      apply: true,
-      dryRun: false,
-      json: false,
-      olderThan: DEFAULT_COLD_AFTER,
-      provider: undefined,
-      yes: true,
-      confirmed: true,
-    }),
-  );
+  await runPackCommand({
+    allProviders: true,
+    apply: true,
+    dryRun: false,
+    json: false,
+    olderThan: DEFAULT_COLD_AFTER,
+    provider: undefined,
+    yes: true,
+    confirmed: true,
+  });
 };
 
 const formatPackApplyQuestion = (inventory: ProviderInventoryReport, home: string): string => {

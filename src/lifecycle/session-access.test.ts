@@ -1,7 +1,6 @@
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Effect } from 'effect';
 import { describe, expect, it } from 'vitest';
 import {
   extractSessionIdsFromArgv,
@@ -25,14 +24,12 @@ describe('sessionAccess', () => {
     const vaultPath = await mkdtemp(join(tmpdir(), 'asp-access-'));
     const now = new Date('2026-07-07T12:00:00.000Z');
 
-    await Effect.runPromise(
-      recordSessionAccess({
-        vaultPath,
-        provider: 'codex',
-        sessionId: 'cold',
-        accessedAt: now,
-      }),
-    );
+    await recordSessionAccess({
+      vaultPath,
+      provider: 'codex',
+      sessionId: 'cold',
+      accessedAt: now,
+    });
 
     const logPath = resolveAccessLogPath(vaultPath);
     const lines = (await readFile(logPath, 'utf8')).trim().split('\n');

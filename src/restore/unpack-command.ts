@@ -1,5 +1,4 @@
 import { defineCommand } from 'citty';
-import { Effect } from 'effect';
 import { resolveApplyConfirmation } from '@/apply-confirmation.js';
 import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
@@ -49,16 +48,14 @@ export const unpackCommand = defineCommand({
       yes: args.yes,
     });
 
-    await Effect.runPromise(
-      runUnpackCommand({
-        allProviders: args['all-providers'],
-        apply: args.apply,
-        confirmed,
-        json: args.json,
-        provider: args.provider,
-        yes: args.yes,
-      }),
-    );
+    await runUnpackCommand({
+      allProviders: args['all-providers'],
+      apply: args.apply,
+      confirmed,
+      json: args.json,
+      provider: args.provider,
+      yes: args.yes,
+    });
   },
 });
 
@@ -82,51 +79,32 @@ export type UnpackArgs = {
  * Runs the unpack command for human and agent callers.
  *
  * @param args - Decoded command-line arguments.
- * @returns Effect that writes unpack output.
- * @example
- * ```ts
- * import { Effect } from 'effect';
- * import { runUnpackCommand } from './unpack-command.js';
- *
- * await Effect.runPromise(
- *   runUnpackCommand({
- *     allProviders: true,
- *     apply: false,
- *     json: false,
- *     provider: undefined,
- *     yes: false,
- *   }),
- * );
- * ```
  */
-export const runUnpackCommand = (args: UnpackArgs): Effect.Effect<void, Error> =>
-  Effect.gen(function* () {
-    const home = requireHome(args.home);
+export const runUnpackCommand = async (args: UnpackArgs): Promise<void> => {
+  const home = requireHome(args.home);
 
-    if (home === undefined) {
-      return;
-    }
+  if (home === undefined) {
+    return;
+  }
 
-    if (args.apply === true && args.confirmed !== true) {
-      process.stderr.write(
-        'Cancelled. Re-run with --apply and confirm with y to unpack sessions.\n',
-      );
-      process.stderr.write('\n');
-      process.exitCode = 2;
-      return;
-    }
+  if (args.apply === true && args.confirmed !== true) {
+    process.stderr.write('Cancelled. Re-run with --apply and confirm with y to unpack sessions.\n');
+    process.stderr.write('\n');
+    process.exitCode = 2;
+    return;
+  }
 
-    const report = yield* unpackProviderSessions({
-      vaultPath: args.vaultPath ?? resolveDefaultVaultPath(home),
-      providers: args.providers ?? selectProviders(args.provider),
-      apply: args.apply === true,
-      compression: args.compression ?? createZstdCompression(),
-    });
-
-    if (args.json === true) {
-      process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
-      return;
-    }
-
-    process.stdout.write(`${formatHumanUnpackReport(report)}\n`);
+  const report = await unpackProviderSessions({
+    vaultPath: args.vaultPath ?? resolveDefaultVaultPath(home),
+    providers: args.providers ?? selectProviders(args.provider),
+    apply: args.apply === true,
+    compression: args.compression ?? createZstdCompression(),
   });
+
+  if (args.json === true) {
+    process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+    return;
+  }
+
+  process.stdout.write(`${formatHumanUnpackReport(report)}\n`);
+};

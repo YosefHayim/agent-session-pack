@@ -1,4 +1,3 @@
-import { Effect } from 'effect';
 import { formatBytes } from '@/byte-format.js';
 import type { PromptAdapter } from '@/prompt-adapter.js';
 import type { ProviderAdapter } from '@/session-model.js';
@@ -48,14 +47,12 @@ export const loadInventoryWithSpinner = (
     startMessage: request.startMessage,
     stopMessage: request.stopMessage,
     task: () =>
-      Effect.runPromise(
-        inspectProviderInventory({
-          home: request.home,
-          providers: request.providers,
-          olderThanMs: request.olderThanMs,
-          now: request.now,
-        }),
-      ),
+      inspectProviderInventory({
+        home: request.home,
+        providers: request.providers,
+        olderThanMs: request.olderThanMs,
+        now: request.now,
+      }),
   });
 
 /**

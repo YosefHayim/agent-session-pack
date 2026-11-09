@@ -1,106 +1,82 @@
 import { stat } from 'node:fs/promises';
-import { Effect } from 'effect';
-import { promiseAsEffect } from '@/effect-bridge.js';
+import { rethrowAsError } from '@/rethrow-as-error.js';
 import type { DiscoveredSession, ProviderAdapter, SessionStore } from '@/session-model.js';
 
 /**
  * Stores and providers to inspect during a scan.
  */
-export type ScanRequest = {
+export interface ScanRequest {
   readonly stores: ReadonlyArray<SessionStore>;
   readonly providers: ReadonlyArray<ProviderAdapter>;
-};
+}
 
 /**
  * Aggregated sessions discovered across all scanned stores.
  */
-export type ScanReport = {
+export interface ScanReport {
   readonly sessions: ReadonlyArray<DiscoveredSession>;
+}
+
+/**
+ * Scans each store with its provider and returns every session found.
+ */
+export const scanStores = async (request: ScanRequest): Promise<ScanReport> => {
+  const sessions: DiscoveredSession[] = [];
+
+  for (const store of request.stores) {
+    const provider = request.providers.find((adapter) => adapter.id === store.provider);
+    const isProviderMissing = provider === undefined;
+
+    if (isProviderMissing) {
+      continue;
+    }
+
+    const storeSessions = await discoverStoreSessions(provider, store);
+    sessions.push(...storeSessions);
+  }
+
+  return { sessions };
 };
 
 /**
- * Scans stores by delegating discovery to read-only providers.
- *
- * @param request - Providers and stores to scan.
- * @returns Scan report containing all discovered sessions.
- * @example
- * ```ts
- * import { scanStores } from './stores.js';
- *
- * const report = await Effect.runPromise(scanStores({ stores, providers }));
- * ```
+ * Reports whether a path exists, treating only a missing path as absent.
  */
-export const scanStores = (request: ScanRequest): Effect.Effect<ScanReport, Error> =>
-  Effect.gen(function* () {
-    const discovered = yield* Effect.all(
-      request.stores.map((store) => {
-        const provider = request.providers.find((adapter) => adapter.id === store.provider);
+export const isPathPresent = async (path: string): Promise<boolean> => {
+  const pathStat = await stat(path).catch((cause: unknown) => {
+    const isPathMissing = fileSystemErrorCode(cause) === 'ENOENT';
 
-        if (provider === undefined) {
-          return Effect.succeed<ReadonlyArray<DiscoveredSession>>([]);
-        }
+    if (isPathMissing) {
+      return undefined;
+    }
 
-        return discoverStoreSessions(provider, store);
-      }),
-    );
-
-    return {
-      sessions: discovered.flat(),
-    };
+    return rethrowAsError(cause);
   });
 
-/**
- * Discovers sessions only when a provider store exists.
- *
- * @param provider - Read-only provider adapter for the store.
- * @param store - Provider store path to inspect.
- * @returns Discovered sessions, or an empty collection when the store is absent.
- * @example
- * ```ts
- * import { discoverStoreSessions } from './stores.js';
- *
- * const sessions = await Effect.runPromise(discoverStoreSessions(provider, store));
- * ```
- */
-export const discoverStoreSessions = (
+  return pathStat !== undefined;
+};
+
+export const discoverStoreSessions = async (
   provider: ProviderAdapter,
   store: SessionStore,
-): Effect.Effect<ReadonlyArray<DiscoveredSession>, Error> =>
-  Effect.gen(function* () {
-    const exists = yield* providerStoreExists(store);
+): Promise<ReadonlyArray<DiscoveredSession>> => {
+  const isStorePresent = await isPathPresent(store.path);
 
-    if (!exists) {
+  if (!isStorePresent) {
+    return [];
+  }
+
+  try {
+    return await provider.discover(store);
+  } catch (discoveryError) {
+    const isStorePresentAfterFailure = await isPathPresent(store.path);
+
+    if (!isStorePresentAfterFailure) {
       return [];
     }
 
-    return yield* promiseAsEffect(() => provider.discover(store)).pipe(
-      Effect.catchAll((discoveryError) =>
-        Effect.flatMap(providerStoreExists(store), (stillExists) => {
-          if (!stillExists) {
-            return Effect.succeed<ReadonlyArray<DiscoveredSession>>([]);
-          }
-
-          return Effect.fail(discoveryError);
-        }),
-      ),
-    );
-  });
-
-const providerStoreExists = (store: SessionStore): Effect.Effect<boolean, Error> =>
-  Effect.tryPromise({
-    try: async () => {
-      const storeStat = await stat(store.path).catch((cause: unknown) => {
-        if (fileSystemErrorCode(cause) === 'ENOENT') {
-          return undefined;
-        }
-
-        return Promise.reject(cause);
-      });
-
-      return storeStat !== undefined;
-    },
-    catch: (cause) => new Error(String(cause), { cause }),
-  });
+    throw discoveryError;
+  }
+};
 
 const fileSystemErrorCode = (cause: unknown): string | undefined => {
   if (typeof cause !== 'object' || cause === null || !('code' in cause)) {

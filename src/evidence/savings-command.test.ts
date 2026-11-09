@@ -1,7 +1,6 @@
 import { mkdir, mkdtemp, rm, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Effect } from 'effect';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { checkCommand, runSavingsCommand, savingsCommand } from './savings-command.js';
 
@@ -57,7 +56,7 @@ describe('savings command', () => {
   it('exits with code 1 when HOME is unset', async () => {
     delete process.env.HOME;
 
-    await Effect.runPromise(runSavingsCommand({ json: true }));
+    await runSavingsCommand({ json: true });
 
     expect(process.exitCode).toBe(1);
     const stderr = stderrWrites.join('');
@@ -70,7 +69,7 @@ describe('savings command', () => {
     const home = await createWorkspace();
     process.env.HOME = home;
 
-    await Effect.runPromise(runSavingsCommand({ provider: 'nope', json: true }));
+    await runSavingsCommand({ provider: 'nope', json: true });
 
     expect(process.exitCode).toBe(2);
     expect(stderrWrites.join('')).toContain('Unknown provider: nope');
@@ -80,7 +79,7 @@ describe('savings command', () => {
     const home = await createWorkspace();
     process.env.HOME = home;
 
-    await Effect.runPromise(runSavingsCommand({ provider: 'codex', json: true }));
+    await runSavingsCommand({ provider: 'codex', json: true });
 
     const payload = JSON.parse(stdoutWrites.join('')) as {
       readonly workRoot: string;
@@ -95,7 +94,7 @@ describe('savings command', () => {
     const home = await createWorkspace();
     process.env.HOME = home;
 
-    await Effect.runPromise(runSavingsCommand({ provider: 'codex', json: undefined }));
+    await runSavingsCommand({ provider: 'codex', json: undefined });
 
     expect(stdoutWrites.join('')).toContain('No eligible sessions found.');
     expect(stdoutWrites.join('')).toContain('Local evidence');
@@ -106,7 +105,7 @@ describe('savings command', () => {
     const sessionPath = await writeCodexSession(home);
     process.env.HOME = home;
 
-    await Effect.runPromise(runSavingsCommand({ provider: 'codex', json: true }));
+    await runSavingsCommand({ provider: 'codex', json: true });
 
     const payload = JSON.parse(stdoutWrites.join('')) as {
       readonly scope: string;

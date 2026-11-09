@@ -1,7 +1,6 @@
 import { mkdir, mkdtemp, readFile, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Effect } from 'effect';
 import { describe, expect, it } from 'vitest';
 import { copyCompression, createArchiveProvider, writeColdSession } from '@/archive/fixtures.js';
 import {
@@ -27,45 +26,41 @@ describe('unpackProviderSessions', () => {
 
     await mkdir(join(vaultPath, 'archives', 'codex'), { recursive: true });
     await writeFile(archivePath, content);
-    await Effect.runPromise(
-      writeSessionManifest(manifestPath, {
-        sessionId: 'cold',
-        provider: 'codex',
-        title: 'archived',
-        slug: 'archived',
-        originalPath,
-        archivePath,
-        sourceSha256: 'deadbeef',
-        sourceBytes: Buffer.byteLength(content, 'utf8'),
-        archiveBytes: Buffer.byteLength(content, 'utf8'),
-        archivedAt: '2026-07-01T00:00:00.000Z',
-        sourceKind: 'file',
-      }),
-    );
+    await writeSessionManifest(manifestPath, {
+      sessionId: 'cold',
+      provider: 'codex',
+      title: 'archived',
+      slug: 'archived',
+      originalPath,
+      archivePath,
+      sourceSha256: 'deadbeef',
+      sourceBytes: Buffer.byteLength(content, 'utf8'),
+      archiveBytes: Buffer.byteLength(content, 'utf8'),
+      archivedAt: '2026-07-01T00:00:00.000Z',
+      sourceKind: 'file',
+    });
 
     const providers: ReadonlyArray<ProviderAdapter> = [
       createArchiveProvider({
         id: 'codex',
         mode: 'archive',
         rootRelative: join('.codex', 'sessions'),
-        discover: () => Effect.succeed([]),
+        discover: () => Promise.resolve([]),
       }),
       createArchiveProvider({
         id: 'claude',
         mode: 'archive',
         rootRelative: join('.claude', 'projects'),
-        discover: () => Effect.succeed([]),
+        discover: () => Promise.resolve([]),
       }),
     ];
 
-    const report = await Effect.runPromise(
-      unpackProviderSessions({
-        vaultPath,
-        providers,
-        apply: false,
-        compression: copyCompression,
-      }),
-    );
+    const report = await unpackProviderSessions({
+      vaultPath,
+      providers,
+      apply: false,
+      compression: copyCompression,
+    });
 
     expect(report.command).toBe('unpack');
     expect(report.apply).toBe(false);
@@ -91,11 +86,9 @@ describe('unpackProviderSessions', () => {
     );
 
     await expect(stat(originalPath)).rejects.toMatchObject({ code: 'ENOENT' });
-    const manifests = await Effect.runPromise(
-      listSessionManifestPaths(join(vaultPath, 'manifests')),
-    );
+    const manifests = await listSessionManifestPaths(join(vaultPath, 'manifests'));
     expect(manifests).toEqual([manifestPath]);
-    const manifest = await Effect.runPromise(readSessionManifest(manifestPath));
+    const manifest = await readSessionManifest(manifestPath);
     expect(manifest.sessionId).toBe('cold');
   });
 
@@ -129,22 +122,20 @@ describe('unpackProviderSessions', () => {
         id: 'codex',
         mode: 'archive',
         rootRelative: join('.codex', 'sessions'),
-        discover: () => Effect.succeed([discovered]),
+        discover: () => Promise.resolve([discovered]),
       }),
     ];
 
-    const packReport = await Effect.runPromise(
-      packProviderSessions({
-        home,
-        vaultPath,
-        providers,
-        olderThan: '7d',
-        olderThanMs: 7 * 24 * 60 * 60 * 1000,
-        now,
-        apply: true,
-        compression: copyCompression,
-      }),
-    );
+    const packReport = await packProviderSessions({
+      home,
+      vaultPath,
+      providers,
+      olderThan: '7d',
+      olderThanMs: 7 * 24 * 60 * 60 * 1000,
+      now,
+      apply: true,
+      compression: copyCompression,
+    });
 
     expect(packReport.rows).toEqual([
       expect.objectContaining({
@@ -160,14 +151,12 @@ describe('unpackProviderSessions', () => {
     };
     expect(stubAfterPack.agentSessionPack).toBe('agent-session-pack-archived-stub');
 
-    const unpackReport = await Effect.runPromise(
-      unpackProviderSessions({
-        vaultPath,
-        providers,
-        apply: true,
-        compression: copyCompression,
-      }),
-    );
+    const unpackReport = await unpackProviderSessions({
+      vaultPath,
+      providers,
+      apply: true,
+      compression: copyCompression,
+    });
 
     expect(unpackReport.rows).toEqual([
       expect.objectContaining({
@@ -179,14 +168,12 @@ describe('unpackProviderSessions', () => {
     ]);
     await expect(readFile(session.path, 'utf8')).resolves.toBe(content);
 
-    const alreadyPresent = await Effect.runPromise(
-      unpackProviderSessions({
-        vaultPath,
-        providers,
-        apply: true,
-        compression: copyCompression,
-      }),
-    );
+    const alreadyPresent = await unpackProviderSessions({
+      vaultPath,
+      providers,
+      apply: true,
+      compression: copyCompression,
+    });
 
     expect(alreadyPresent.rows).toEqual([
       expect.objectContaining({

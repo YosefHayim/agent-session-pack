@@ -2,7 +2,6 @@ import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Effect } from 'effect';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { copyCompression } from '@/archive/fixtures.js';
 import { writeSessionManifest } from '@/archive/manifest-store.js';
@@ -24,21 +23,19 @@ const writeArchivedSession = async (
 
   await mkdir(join(vaultPath, 'archives', 'codex'), { recursive: true });
   await writeFile(archivePath, content);
-  await Effect.runPromise(
-    writeSessionManifest(join(vaultPath, 'manifests', 'codex', `${request.sessionId}.json`), {
-      sessionId: request.sessionId,
-      provider: 'codex',
-      title: request.title,
-      slug: request.title.toLowerCase().replaceAll(' ', '-'),
-      originalPath,
-      archivePath,
-      sourceSha256: createHash('sha256').update(content).digest('hex'),
-      sourceBytes: Buffer.byteLength(content, 'utf8'),
-      archiveBytes: Buffer.byteLength(content, 'utf8'),
-      archivedAt: '2026-07-01T00:00:00.000Z',
-      sourceKind: 'file',
-    }),
-  );
+  await writeSessionManifest(join(vaultPath, 'manifests', 'codex', `${request.sessionId}.json`), {
+    sessionId: request.sessionId,
+    provider: 'codex',
+    title: request.title,
+    slug: request.title.toLowerCase().replaceAll(' ', '-'),
+    originalPath,
+    archivePath,
+    sourceSha256: createHash('sha256').update(content).digest('hex'),
+    sourceBytes: Buffer.byteLength(content, 'utf8'),
+    archiveBytes: Buffer.byteLength(content, 'utf8'),
+    archivedAt: '2026-07-01T00:00:00.000Z',
+    sourceKind: 'file',
+  });
 
   return { originalPath, content };
 };
@@ -67,15 +64,13 @@ describe('restore command', () => {
   });
 
   it('exits with code 2 when selector is missing', async () => {
-    await Effect.runPromise(
-      runRestoreCommand({
-        selector: undefined,
-        provider: undefined,
-        to: undefined,
-        json: true,
-        home: '/tmp/synthetic-home',
-      }),
-    );
+    await runRestoreCommand({
+      selector: undefined,
+      provider: undefined,
+      to: undefined,
+      json: true,
+      home: '/tmp/synthetic-home',
+    });
 
     expect(stderrWrites.join('')).toContain(
       'Missing selector. Use agent-session-pack restore <selector>.',
@@ -92,17 +87,15 @@ describe('restore command', () => {
       title: 'manual restore',
     });
 
-    await Effect.runPromise(
-      runRestoreCommand({
-        home,
-        vaultPath,
-        selector: 'codex:cold',
-        provider: undefined,
-        to: 'original',
-        json: true,
-        compression: copyCompression,
-      }),
-    );
+    await runRestoreCommand({
+      home,
+      vaultPath,
+      selector: 'codex:cold',
+      provider: undefined,
+      to: 'original',
+      json: true,
+      compression: copyCompression,
+    });
 
     expect(process.exitCode).toBeUndefined();
     expect(JSON.parse(stdoutWrites.join(''))).toMatchObject({
@@ -124,16 +117,14 @@ describe('restore command', () => {
     });
     await writeArchivedSession({ home, sessionId: 'cold-b2', title: 'Fix login api' });
 
-    await Effect.runPromise(
-      runRestoreCommand({
-        home,
-        selector: 'cold-a',
-        provider: undefined,
-        to: undefined,
-        json: true,
-        compression: copyCompression,
-      }),
-    );
+    await runRestoreCommand({
+      home,
+      selector: 'cold-a',
+      provider: undefined,
+      to: undefined,
+      json: true,
+      compression: copyCompression,
+    });
 
     expect(process.exitCode).toBeUndefined();
     expect(JSON.parse(stdoutWrites.join(''))).toMatchObject({
@@ -153,16 +144,14 @@ describe('restore command', () => {
     });
     await writeArchivedSession({ home, sessionId: 'cold-b2', title: 'Fix login api' });
 
-    await Effect.runPromise(
-      runRestoreCommand({
-        home,
-        selector: 'fix login',
-        provider: undefined,
-        to: undefined,
-        json: true,
-        compression: copyCompression,
-      }),
-    );
+    await runRestoreCommand({
+      home,
+      selector: 'fix login',
+      provider: undefined,
+      to: undefined,
+      json: true,
+      compression: copyCompression,
+    });
 
     expect(process.exitCode).toBe(2);
     expect(JSON.parse(stdoutWrites.join(''))).toMatchObject({

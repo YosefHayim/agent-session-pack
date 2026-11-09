@@ -1,7 +1,6 @@
 import { mkdir, mkdtemp, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Effect } from 'effect';
 import { describe, expect, it } from 'vitest';
 import type { PromptAdapter, PromptOption } from '@/prompt-adapter.js';
 import type { ProviderAdapter } from '@/session-model.js';
@@ -77,7 +76,7 @@ const createProvider = (root: string): ProviderAdapter => ({
   mode: 'archive',
   defaultRoots: () => [root],
   discover: () =>
-    Effect.succeed([
+    Promise.resolve([
       {
         id: 'codex-session',
         provider: 'codex',

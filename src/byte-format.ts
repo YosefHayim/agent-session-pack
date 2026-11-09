@@ -8,12 +8,12 @@ const BYTE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB'] as const;
  * @returns Human-readable byte count.
  * @example
  * ```ts
- * import { formatBytes } from './byte-format.js';
+ * import { createBytes } from './byte-format.js';
  *
- * formatBytes(2048);
+ * createBytes(2048);
  * ```
  */
-export const formatBytes = (bytes: number): string => {
+export const createBytes = (bytes: number): string => {
   const isBelowUnit = bytes < BYTES_PER_UNIT;
   if (isBelowUnit) {
     return `${bytes} B`;

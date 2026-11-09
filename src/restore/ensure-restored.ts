@@ -2,7 +2,7 @@ import { listVaultSessionManifests } from '@/archive/manifest-store.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import type { ProviderId } from '@/session-model.js';
 import { type RestoreOutcome, restoreManifest } from './manifest.js';
-import { resolveSessionSelector, type SelectorMatch } from './session-selector.js';
+import { findSessionSelector, type SelectorMatch } from './session-selector.js';
 
 /**
  * Machine-readable status for a single-session ensure-restored or restore attempt.
@@ -81,7 +81,7 @@ export const ensureSessionRestored = async (
   }
 
   const manifests = await listVaultSessionManifests(request.vaultPath);
-  const selection = resolveSessionSelector({
+  const selection = findSessionSelector({
     selector: request.selector,
     provider: request.provider,
     manifests,

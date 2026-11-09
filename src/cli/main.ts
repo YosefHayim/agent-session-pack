@@ -17,7 +17,7 @@ import { scanCommand } from '@/scan/command.js';
 import { listCommand } from '@/scan/list-command.js';
 import { initCommand } from '@/setup/init-command.js';
 import packageJson from '../../package.json' with { type: 'json' };
-import { runInteractiveCli, shouldRunInteractiveCli } from './interactive-cli.js';
+import { canRunInteractiveCli, runInteractiveCli } from './interactive-cli.js';
 import { rewriteCommandFlagAliases } from './main-args.js';
 import { isCliEntrypoint } from './main-entrypoint.js';
 
@@ -118,7 +118,7 @@ const runCli = async (rawArgs: string[]): Promise<CommandOutcome> => {
 };
 
 const runEntrypoint = async (rawArgs: string[]): Promise<CommandOutcome> => {
-  const isInteractiveRun = shouldRunInteractiveCli({
+  const isInteractiveRun = canRunInteractiveCli({
     argv: process.argv,
     stdinIsTty: process.stdin.isTTY === true,
     stdoutIsTty: process.stdout.isTTY === true,

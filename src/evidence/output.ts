@@ -1,5 +1,5 @@
-import { formatBytes } from '@/byte-format.js';
-import { savedPercent } from '@/byte-savings.js';
+import { createBytes } from '@/byte-format.js';
+import { readSavedPercent } from '@/byte-savings.js';
 import type { LocalEvidenceEntry, LocalEvidenceReport } from './local-evidence.js';
 
 /**
@@ -9,12 +9,12 @@ import type { LocalEvidenceEntry, LocalEvidenceReport } from './local-evidence.j
  * @returns Human-readable before and after table.
  * @example
  * ```ts
- * import { formatHumanEvidenceReport } from './output.js';
+ * import { createHumanEvidenceReport } from './output.js';
  *
- * formatHumanEvidenceReport(report);
+ * createHumanEvidenceReport(report);
  * ```
  */
-export const formatHumanEvidenceReport = (report: LocalEvidenceReport): string => {
+export const createHumanEvidenceReport = (report: LocalEvidenceReport): string => {
   const isReportEvidenceEmpty = report.evidence.length === 0;
   if (isReportEvidenceEmpty) {
     return [
@@ -39,7 +39,7 @@ export const formatHumanEvidenceReport = (report: LocalEvidenceReport): string =
   const isNothingSampledInTotal = totalSampledSources === 0;
   const totalSavedPercent = isNothingSampledInTotal
     ? undefined
-    : savedPercent(totalSourceBytes, totalArchiveBytes);
+    : readSavedPercent(totalSourceBytes, totalArchiveBytes);
 
   return [
     'Local evidence',
@@ -49,9 +49,9 @@ export const formatHumanEvidenceReport = (report: LocalEvidenceReport): string =
     'Proof bytes are not a whole-store estimate.',
     '',
     'Provider      Discovered  Samples  Mode         Proof before  Proof after  Saved    Exact   Touched',
-    ...report.evidence.map(formatEvidenceRow),
+    ...report.evidence.map(createEvidenceRow),
     '------------- -----------  -------- ----------- ------------- ------------ -------- ------- -------',
-    `${'sample total'.padEnd(13)} ${String(totalFoundSessions).padEnd(11)} ${String(totalSampledSources).padEnd(8)} ${''.padEnd(12)} ${formatMaybeBytes(totalSourceBytes, totalSampledSources).padEnd(13)} ${formatMaybeBytes(totalArchiveBytes, totalSampledSources).padEnd(12)} ${formatMaybePercent(totalSavedPercent).padEnd(8)} ${''.padEnd(7)} ${touchedOriginals ? 'yes' : 'no'}`,
+    `${'sample total'.padEnd(13)} ${String(totalFoundSessions).padEnd(11)} ${String(totalSampledSources).padEnd(8)} ${''.padEnd(12)} ${createMaybeBytes(totalSourceBytes, totalSampledSources).padEnd(13)} ${createMaybeBytes(totalArchiveBytes, totalSampledSources).padEnd(12)} ${createMaybePercent(totalSavedPercent).padEnd(8)} ${''.padEnd(7)} ${touchedOriginals ? 'yes' : 'no'}`,
     '',
     `Original sessions touched: ${touchedOriginals ? 'yes' : 'no'}`,
     `Work root: ${report.workRoot}`,
@@ -65,23 +65,23 @@ export const formatHumanEvidenceReport = (report: LocalEvidenceReport): string =
  * @returns Stable JSON output.
  * @example
  * ```ts
- * import { formatJsonEvidenceReport } from './output.js';
+ * import { createJsonEvidenceReport } from './output.js';
  *
- * formatJsonEvidenceReport(report);
+ * createJsonEvidenceReport(report);
  * ```
  */
-export const formatJsonEvidenceReport = (report: LocalEvidenceReport): string =>
+export const createJsonEvidenceReport = (report: LocalEvidenceReport): string =>
   `${JSON.stringify(report, null, 2)}\n`;
 
-const formatEvidenceRow = (entry: LocalEvidenceEntry): string => {
+const createEvidenceRow = (entry: LocalEvidenceEntry): string => {
   const provider = entry.provider.padEnd(13);
   const foundSessions = String(entry.foundSessions).padEnd(11);
   const sampledSources = String(entry.sampledSources).padEnd(8);
   const mode = entry.mode.padEnd(12);
-  const before = formatOptionalBytes(entry.sourceBytes).padEnd(13);
-  const after = formatOptionalBytes(entry.archiveBytes).padEnd(12);
-  const saved = formatMaybePercent(entry.savedPercent).padEnd(8);
-  const exact = formatExact(entry.byteExact).padEnd(7);
+  const before = createOptionalBytes(entry.sourceBytes).padEnd(13);
+  const after = createOptionalBytes(entry.archiveBytes).padEnd(12);
+  const saved = createMaybePercent(entry.savedPercent).padEnd(8);
+  const exact = createExact(entry.byteExact).padEnd(7);
   const touched = entry.originalTouched ? 'yes' : 'no';
 
   return `${provider} ${foundSessions} ${sampledSources} ${mode} ${before} ${after} ${saved} ${exact} ${touched}`;
@@ -92,24 +92,24 @@ const sumEvidenceBytes = (
   key: 'archiveBytes' | 'sourceBytes',
 ): number => evidence.reduce((totalBytes, entry) => totalBytes + (entry[key] ?? 0), 0);
 
-const formatOptionalBytes = (bytes: number | undefined): string => {
+const createOptionalBytes = (bytes: number | undefined): string => {
   const isBytesMissing = bytes == null;
-  return isBytesMissing ? '-' : formatBytes(bytes);
+  return isBytesMissing ? '-' : createBytes(bytes);
 };
 
-const formatMaybeBytes = (bytes: number, sampledSources: number): string => {
+const createMaybeBytes = (bytes: number, sampledSources: number): string => {
   const isNothingSampled = sampledSources === 0;
-  return isNothingSampled ? '-' : formatBytes(bytes);
+  return isNothingSampled ? '-' : createBytes(bytes);
 };
 
-const formatPercent = (percent: number): string => `${percent.toFixed(1)}%`;
+const createPercent = (percent: number): string => `${percent.toFixed(1)}%`;
 
-const formatMaybePercent = (percent: number | undefined): string => {
+const createMaybePercent = (percent: number | undefined): string => {
   const isPercentMissing = percent == null;
-  return isPercentMissing ? '-' : formatPercent(percent);
+  return isPercentMissing ? '-' : createPercent(percent);
 };
 
-const formatExact = (byteExact: boolean | undefined): string => {
+const createExact = (byteExact: boolean | undefined): string => {
   const isByteExactMissing = byteExact == null;
   if (isByteExactMissing) {
     return '-';

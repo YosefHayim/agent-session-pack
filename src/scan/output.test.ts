@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatHumanScan } from './output.js';
+import { createHumanScan } from './output.js';
 import type { ScanReport } from './stores.js';
 
 describe('human scan output', () => {
@@ -22,7 +22,7 @@ describe('human scan output', () => {
       ],
     };
 
-    const output = formatHumanScan(report);
+    const output = createHumanScan(report);
     const rows = output.split('\n');
 
     expect(rows).toHaveLength(4);

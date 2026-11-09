@@ -2,7 +2,7 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { resolveConfigPath } from '@/setup/config.js';
+import { createConfigPath } from '@/setup/config.js';
 import { runLifecycleCommand } from './command.js';
 
 describe('lifecycle command', () => {
@@ -52,7 +52,7 @@ describe('lifecycle command', () => {
     expect(enabled.wrappersBin).toContain('.agent-session-pack');
     expect(enabled.pathHint).toContain('PATH=');
 
-    const configPath = resolveConfigPath(home);
+    const configPath = createConfigPath(home);
     const config = JSON.parse(await readFile(configPath, 'utf8')) as {
       restoreOnLaunch: boolean;
     };

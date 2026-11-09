@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { copyCompression, writeSessionDirectory } from './fixtures.js';
-import { sha256Directory } from './hash.js';
+import { readSha256Directory } from './hash.js';
 import {
   type CompressionAdapter,
   removeOriginalSession,
@@ -72,7 +72,7 @@ describe('archiveWriter', () => {
       compression: copyCompression,
     });
 
-    const originalSha256 = await sha256Directory(originalPath);
+    const originalSha256 = await readSha256Directory(originalPath);
     expect(originalSha256).toBe(archive.sourceSha256);
     await expect(readFile(join(originalPath, 'updates.jsonl'), 'utf8')).resolves.toContain('hello');
     await expect(stat(restoreWorkPath)).rejects.toMatchObject({ code: 'ENOENT' });
@@ -247,7 +247,7 @@ describe('archive round trip', () => {
     await writeFile(join(sourcePath, 'updates.jsonl'), '{"type":"user","text":"hello"}\n');
     await writeFile(join(sourcePath, 'terminal', 'call.log'), 'log-bytes\n');
 
-    const sourceSha256 = await sha256Directory(sourcePath);
+    const sourceSha256 = await readSha256Directory(sourcePath);
     const archive = await writeVerifiedArchive({
       sessionId: 'session-dir-1',
       sourcePath,
@@ -258,7 +258,7 @@ describe('archive round trip', () => {
       sourceKind: 'directory',
     });
 
-    const restoredSha256 = await sha256Directory(restoredPath);
+    const restoredSha256 = await readSha256Directory(restoredPath);
     expect(archive.sourceKind).toBe('directory');
     expect(archive.removedOriginal).toBe(false);
     expect(archive.sourceSha256).toBe(sourceSha256);

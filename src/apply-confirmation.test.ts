@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { resolveApplyConfirmation } from './apply-confirmation.js';
+import { askApplyConfirmation } from './apply-confirmation.js';
 
 describe('apply confirmation contract', () => {
   const originalStdinIsTty = process.stdin.isTTY;
@@ -30,7 +30,7 @@ describe('apply confirmation contract', () => {
 
   it('returns undefined when apply is not requested', async () => {
     await expect(
-      resolveApplyConfirmation({
+      askApplyConfirmation({
         action: 'Pack cold sessions',
         apply: undefined,
         json: true,
@@ -41,7 +41,7 @@ describe('apply confirmation contract', () => {
 
   it('returns true for --apply --yes without prompting', async () => {
     await expect(
-      resolveApplyConfirmation({
+      askApplyConfirmation({
         action: 'Pack cold sessions',
         apply: true,
         json: false,
@@ -52,7 +52,7 @@ describe('apply confirmation contract', () => {
 
   it('returns false for --apply --json without --yes (no-prompt contract)', async () => {
     await expect(
-      resolveApplyConfirmation({
+      askApplyConfirmation({
         action: 'Pack cold sessions',
         apply: true,
         json: true,
@@ -63,7 +63,7 @@ describe('apply confirmation contract', () => {
 
   it('returns false for --apply on non-TTY without --yes', async () => {
     await expect(
-      resolveApplyConfirmation({
+      askApplyConfirmation({
         action: 'Restore archived sessions',
         apply: true,
         json: undefined,

@@ -1,8 +1,8 @@
 import type { DiscoveredSession, ProviderId, SessionStore } from '@/session-model.js';
 import {
   collectJsonlSessions,
+  readSessionIdFromPath,
   readSessionTitle,
-  sessionIdFromPath,
   slugifyTitle,
 } from './session-discovery.js';
 
@@ -29,7 +29,7 @@ export const discoverJsonlProviderSessions = async (
   for (const file of files) {
     const title = await readSessionTitle(file.path);
     sessions.push(
-      sessionFromFile({
+      readSessionFromFile({
         provider: options.provider,
         path: file.path,
         title,
@@ -42,14 +42,14 @@ export const discoverJsonlProviderSessions = async (
   return sessions;
 };
 
-const sessionFromFile = (file: {
+const readSessionFromFile = (file: {
   readonly provider: ProviderId;
   readonly path: string;
   readonly title: string;
   readonly sizeBytes: number;
   readonly modifiedAt: Date;
 }): DiscoveredSession => ({
-  id: sessionIdFromPath(file.path),
+  id: readSessionIdFromPath(file.path),
   provider: file.provider,
   title: file.title,
   slug: slugifyTitle(file.title),

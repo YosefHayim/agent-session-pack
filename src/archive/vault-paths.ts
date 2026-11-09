@@ -9,12 +9,12 @@ import type { SessionManifest } from './manifest-store.js';
  * @returns Default Agent Session Pack vault path.
  * @example
  * ```ts
- * import { resolveDefaultVaultPath } from './vault-paths.js';
+ * import { createDefaultVaultPath } from './vault-paths.js';
  *
- * const vaultPath = resolveDefaultVaultPath(process.env.HOME ?? '');
+ * const vaultPath = createDefaultVaultPath(process.env.HOME ?? '');
  * ```
  */
-export const resolveDefaultVaultPath = (home: string): string => join(home, '.agent-session-pack');
+export const createDefaultVaultPath = (home: string): string => join(home, '.agent-session-pack');
 
 /**
  * Builds the vault archive path for a session.
@@ -41,7 +41,7 @@ export const archivePathForSession = (
     vaultPath,
     'archives',
     session.provider,
-    `${safePathSegment(session.id)}.${extension}`,
+    `${createSafePathSegment(session.id)}.${extension}`,
   );
 };
 
@@ -53,13 +53,13 @@ export const archivePathForSession = (
  * @returns Manifest JSON path.
  * @example
  * ```ts
- * import { manifestPathForSession } from './vault-paths.js';
+ * import { createSessionManifestPath } from './vault-paths.js';
  *
- * const manifestPath = manifestPathForSession('/vault', session);
+ * const manifestPath = createSessionManifestPath('/vault', session);
  * ```
  */
-export const manifestPathForSession = (vaultPath: string, session: DiscoveredSession): string =>
-  join(vaultPath, 'manifests', session.provider, `${safePathSegment(session.id)}.json`);
+export const createSessionManifestPath = (vaultPath: string, session: DiscoveredSession): string =>
+  join(vaultPath, 'manifests', session.provider, `${createSafePathSegment(session.id)}.json`);
 
 /**
  * Builds the scratch path where an archive is restored for hash verification.
@@ -70,22 +70,22 @@ export const manifestPathForSession = (vaultPath: string, session: DiscoveredSes
  * @returns Verification path under the vault.
  * @example
  * ```ts
- * import { verificationPathForSession } from './vault-paths.js';
+ * import { createSessionVerificationPath } from './vault-paths.js';
  *
- * const verifyPath = verificationPathForSession('/vault', session, 'file');
+ * const verifyPath = createSessionVerificationPath('/vault', session, 'file');
  * ```
  */
-export const verificationPathForSession = (
+export const createSessionVerificationPath = (
   vaultPath: string,
   session: DiscoveredSession,
   sourceKind: SessionSourceKind,
 ): string => {
   const isSourceDirectory = sourceKind === 'directory';
   if (isSourceDirectory) {
-    return join(vaultPath, 'verify', session.provider, safePathSegment(session.id));
+    return join(vaultPath, 'verify', session.provider, createSafePathSegment(session.id));
   }
 
-  return join(vaultPath, 'verify', session.provider, `${safePathSegment(session.id)}.jsonl`);
+  return join(vaultPath, 'verify', session.provider, `${createSafePathSegment(session.id)}.jsonl`);
 };
 
 /**
@@ -109,18 +109,18 @@ export const restorePathForManifest = (
 ): string => {
   const isSourceDirectory = sourceKind === 'directory';
   if (isSourceDirectory) {
-    return join(vaultPath, 'restore', manifest.provider, safePathSegment(manifest.sessionId));
+    return join(vaultPath, 'restore', manifest.provider, createSafePathSegment(manifest.sessionId));
   }
 
   return join(
     vaultPath,
     'restore',
     manifest.provider,
-    `${safePathSegment(manifest.sessionId)}.jsonl`,
+    `${createSafePathSegment(manifest.sessionId)}.jsonl`,
   );
 };
 
-const safePathSegment = (value: string): string => {
+const createSafePathSegment = (value: string): string => {
   const segment = value
     .toLowerCase()
     .replace(/[^a-z0-9._-]+/g, '-')

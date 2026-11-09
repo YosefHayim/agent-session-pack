@@ -98,13 +98,13 @@ describe('unpackProviderSessions', () => {
     const now = new Date('2026-07-06T12:00:00.000Z');
     const coldModifiedAt = new Date('2026-06-01T12:00:00.000Z');
     const content = '{"type":"user","text":"apply pack unpack"}\n';
-    const session = await writeColdSession(
+    const session = await writeColdSession({
       home,
-      join('.codex', 'sessions', '2026', '06', '01'),
-      'apply-session.jsonl',
+      relativeDir: join('.codex', 'sessions', '2026', '06', '01'),
+      fileName: 'apply-session.jsonl',
       content,
-      coldModifiedAt,
-    );
+      modifiedAt: coldModifiedAt,
+    });
 
     const discovered: DiscoveredSession = {
       id: 'apply-session',

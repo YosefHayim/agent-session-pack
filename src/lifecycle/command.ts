@@ -1,5 +1,5 @@
 import { defineCommand } from 'citty';
-import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
+import { createDefaultVaultPath } from '@/archive/vault-paths.js';
 import type { CommandOutcome } from '@/command-outcome.js';
 import { requireHome } from '@/home-env.js';
 import { DEFAULT_COLD_AFTER } from '@/pack/plan.js';
@@ -9,7 +9,7 @@ import {
   type SetupConfig,
   writeSetupConfig,
 } from '@/setup/config.js';
-import { resolveWrappersBinPath } from './session-access.js';
+import { createWrappersBinPath } from './session-access.js';
 import { installLifecycleWrappers, uninstallLifecycleWrappers } from './wrappers.js';
 
 /**
@@ -76,8 +76,8 @@ export const runLifecycleCommand = async (args: LifecycleArgs): Promise<CommandO
 
   const existingConfig = await readSetupConfig(home);
   const now = args.now ?? new Date();
-  const vaultPath = existingConfig?.vaultPath ?? resolveDefaultVaultPath(home);
-  const wrappersBin = resolveWrappersBinPath(vaultPath);
+  const vaultPath = existingConfig?.vaultPath ?? createDefaultVaultPath(home);
+  const wrappersBin = createWrappersBinPath(vaultPath);
   const cliEntrypoint = args.cliEntrypoint ?? pickCliEntrypoint();
   const isJsonOutput = args.json === true;
 
@@ -100,7 +100,7 @@ export const runLifecycleCommand = async (args: LifecycleArgs): Promise<CommandO
     return { exitCode: 0 };
   }
 
-  const nextConfig = buildLifecycleConfig({
+  const nextConfig = createLifecycleConfig({
     existingConfig,
     home,
     now,
@@ -128,8 +128,8 @@ export const runLifecycleCommand = async (args: LifecycleArgs): Promise<CommandO
       restoreCacheAfter: nextConfig.restoreCacheAfter,
       coldAfter: nextConfig.coldAfter,
       vaultPath: nextConfig.vaultPath,
-      wrappersBin: resolveWrappersBinPath(nextConfig.vaultPath),
-      pathHint: `export PATH="${resolveWrappersBinPath(nextConfig.vaultPath)}:$PATH"`,
+      wrappersBin: createWrappersBinPath(nextConfig.vaultPath),
+      pathHint: `export PATH="${createWrappersBinPath(nextConfig.vaultPath)}:$PATH"`,
       configPresent: true,
       action,
       openCommand: 'agent-session-pack open --provider <id> <session> --json',
@@ -140,14 +140,14 @@ export const runLifecycleCommand = async (args: LifecycleArgs): Promise<CommandO
   return { exitCode: 0 };
 };
 
-const buildLifecycleConfig = (request: {
+const createLifecycleConfig = (request: {
   readonly existingConfig: SetupConfig | undefined;
   readonly home: string;
   readonly now: Date;
   readonly restoreOnLaunch: boolean;
 }): SetupConfig => {
   const timestamp = request.now.toISOString();
-  const vaultPath = request.existingConfig?.vaultPath ?? resolveDefaultVaultPath(request.home);
+  const vaultPath = request.existingConfig?.vaultPath ?? createDefaultVaultPath(request.home);
 
   const isExistingConfigMissing = request.existingConfig === undefined;
   if (isExistingConfigMissing) {

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { formatHumanEvidenceReport } from './output.js';
+import { createHumanEvidenceReport } from './output.js';
 
 describe('human evidence output', () => {
   it('renders local proof as a compact before and after table', () => {
-    const output = formatHumanEvidenceReport({
+    const output = createHumanEvidenceReport({
       scope: 'sampled-copy-proof',
       workRoot: '/tmp/agent-session-pack/evidence',
       evidence: [

@@ -1,5 +1,5 @@
-import { formatBytes } from '@/byte-format.js';
-import { formatStatus, formatTouched } from '@/report-cells.js';
+import { createBytes } from '@/byte-format.js';
+import { createStatus, createTouched } from '@/report-cells.js';
 import type { UnpackSessionsReport } from './unpack-sessions.js';
 
 /**
@@ -9,13 +9,13 @@ import type { UnpackSessionsReport } from './unpack-sessions.js';
  * @returns Human-readable unpack table.
  * @example
  * ```ts
- * import { formatHumanUnpackReport } from './unpack-output.js';
+ * import { createHumanUnpackReport } from './unpack-output.js';
  *
- * formatHumanUnpackReport(report);
+ * createHumanUnpackReport(report);
  * ```
  */
-export const formatHumanUnpackReport = (report: UnpackSessionsReport): string => {
-  const totals = unpackTotals(report);
+export const createHumanUnpackReport = (report: UnpackSessionsReport): string => {
+  const totals = readUnpackTotals(report);
 
   return [
     'Unpack all providers',
@@ -27,27 +27,27 @@ export const formatHumanUnpackReport = (report: UnpackSessionsReport): string =>
       : 'No files changed. Re-run with --apply to restore archived sessions.',
     '',
     'Provider   Archived  Restored  Present  Conflicts  Before     Archive    Restored   Touch  Status',
-    ...report.rows.map(formatUnpackReportRow),
+    ...report.rows.map(createUnpackReportRow),
     '--------   --------  --------  -------  ---------  ------     -------    --------   -----  ------',
-    `${'total'.padEnd(10)} ${String(totals.archivedSessions).padEnd(9)} ${String(totals.restoredSessions).padEnd(9)} ${String(totals.alreadyPresentSessions).padEnd(8)} ${String(totals.conflictSessions).padEnd(10)} ${formatBytes(totals.beforeBytes).padEnd(10)} ${formatBytes(totals.archiveBytes).padEnd(10)} ${formatBytes(totals.restoredBytes).padEnd(10)} ${formatTouched(totals.touchedOriginals).padEnd(6)} ${report.apply ? 'applied' : 'dry-run'}`,
+    `${'total'.padEnd(10)} ${String(totals.archivedSessions).padEnd(9)} ${String(totals.restoredSessions).padEnd(9)} ${String(totals.alreadyPresentSessions).padEnd(8)} ${String(totals.conflictSessions).padEnd(10)} ${createBytes(totals.beforeBytes).padEnd(10)} ${createBytes(totals.archiveBytes).padEnd(10)} ${createBytes(totals.restoredBytes).padEnd(10)} ${createTouched(totals.touchedOriginals).padEnd(6)} ${report.apply ? 'applied' : 'dry-run'}`,
   ].join('\n');
 };
 
-const formatUnpackReportRow = (unpackSessionRow: UnpackSessionsReport['rows'][number]): string => {
+const createUnpackReportRow = (unpackSessionRow: UnpackSessionsReport['rows'][number]): string => {
   const provider = unpackSessionRow.provider.padEnd(10);
   const archived = String(unpackSessionRow.archivedSessions).padEnd(9);
   const restored = String(unpackSessionRow.restoredSessions).padEnd(9);
   const present = String(unpackSessionRow.alreadyPresentSessions).padEnd(8);
   const conflicts = String(unpackSessionRow.conflictSessions).padEnd(10);
-  const before = formatBytes(unpackSessionRow.beforeBytes).padEnd(10);
-  const archive = formatBytes(unpackSessionRow.archiveBytes).padEnd(10);
-  const restoredBytes = formatBytes(unpackSessionRow.restoredBytes).padEnd(10);
-  const touched = formatTouched(unpackSessionRow.touchedOriginals).padEnd(6);
+  const before = createBytes(unpackSessionRow.beforeBytes).padEnd(10);
+  const archive = createBytes(unpackSessionRow.archiveBytes).padEnd(10);
+  const restoredBytes = createBytes(unpackSessionRow.restoredBytes).padEnd(10);
+  const touched = createTouched(unpackSessionRow.touchedOriginals).padEnd(6);
 
-  return `${provider} ${archived} ${restored} ${present} ${conflicts} ${before} ${archive} ${restoredBytes} ${touched} ${formatStatus(unpackSessionRow.status, unpackSessionRow.reason)}`;
+  return `${provider} ${archived} ${restored} ${present} ${conflicts} ${before} ${archive} ${restoredBytes} ${touched} ${createStatus(unpackSessionRow.status, unpackSessionRow.reason)}`;
 };
 
-const unpackTotals = (
+const readUnpackTotals = (
   report: UnpackSessionsReport,
 ): {
   readonly alreadyPresentSessions: number;

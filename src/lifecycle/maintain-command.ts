@@ -1,11 +1,11 @@
 import { defineCommand } from 'citty';
-import { resolveApplyConfirmation } from '@/apply-confirmation.js';
-import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
+import { askApplyConfirmation } from '@/apply-confirmation.js';
+import { createDefaultVaultPath } from '@/archive/vault-paths.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
 import type { CommandOutcome } from '@/command-outcome.js';
 import { requireHome } from '@/home-env.js';
-import { formatHumanPackReport } from '@/pack/output.js';
+import { createHumanPackReport } from '@/pack/output.js';
 import { DEFAULT_COLD_AFTER, parseDurationMs } from '@/pack/plan.js';
 import { packProviderSessions } from '@/pack/sessions.js';
 import { allProviders } from '@/providers/all-providers.js';
@@ -39,7 +39,7 @@ export const maintainCommand = defineCommand({
     },
   },
   run: async ({ args }) => {
-    const confirmed = await resolveApplyConfirmation({
+    const confirmed = await askApplyConfirmation({
       action: 'Pack cold sessions for continuous storage maintenance',
       apply: args.apply,
       json: args.json,
@@ -100,7 +100,7 @@ const runMaintainCommand = async (args: MaintainArgs): Promise<CommandOutcome> =
   const olderThan = setupConfig?.coldAfter ?? DEFAULT_COLD_AFTER;
   const coldAfter = olderThan.trim().toLowerCase();
   const olderThanMs = parseDurationMs(coldAfter);
-  const vaultPath = args.vaultPath ?? setupConfig?.vaultPath ?? resolveDefaultVaultPath(home);
+  const vaultPath = args.vaultPath ?? setupConfig?.vaultPath ?? createDefaultVaultPath(home);
   const apply = args.apply === true;
   const archiveProviders = allProviders.filter((provider) => provider.mode === 'archive');
 
@@ -135,7 +135,7 @@ const runMaintainCommand = async (args: MaintainArgs): Promise<CommandOutcome> =
   process.stdout.write(
     [
       `maintain: cold pack (${apply ? 'apply' : 'dry-run'}) olderThan=${olderThan}`,
-      formatHumanPackReport(report, { olderThan }),
+      createHumanPackReport(report, { olderThan }),
     ].join('\n'),
   );
   return { exitCode: 0 };

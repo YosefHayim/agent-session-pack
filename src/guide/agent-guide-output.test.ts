@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { formatHumanAgentGuide, formatJsonAgentGuide } from './agent-guide-output.js';
+import { createHumanAgentGuide, createJsonAgentGuide } from './agent-guide-output.js';
 
 describe('agent guide output', () => {
   it('shows a safe non-interactive command path for coding agents', () => {
-    const output = formatHumanAgentGuide();
+    const output = createHumanAgentGuide();
 
     expect(output).toContain('Agent-first quickstart');
     expect(output).toContain('Prefer explicit subcommands with --json.');
@@ -27,7 +27,7 @@ describe('agent guide output', () => {
   });
 
   it('formats a stable JSON guide for agents', () => {
-    const guide = JSON.parse(formatJsonAgentGuide());
+    const guide = JSON.parse(createJsonAgentGuide());
 
     expect(guide).toMatchObject({
       name: 'agent-session-pack',

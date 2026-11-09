@@ -23,12 +23,12 @@ export const sumSessionBytes = (sessions: ReadonlyArray<DiscoveredSession>): num
  * @returns Saved percent, or 0 when the source is empty.
  * @example
  * ```ts
- * import { savedPercent } from './byte-savings.js';
+ * import { readSavedPercent } from './byte-savings.js';
  *
- * savedPercent(1000, 250);
+ * readSavedPercent(1000, 250);
  * ```
  */
-export const savedPercent = (sourceBytes: number, archiveBytes: number): number => {
+export const readSavedPercent = (sourceBytes: number, archiveBytes: number): number => {
   const isSourceEmpty = sourceBytes === 0;
   if (isSourceEmpty) {
     return 0;

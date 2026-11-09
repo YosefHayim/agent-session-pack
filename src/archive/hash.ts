@@ -2,35 +2,39 @@ import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
-import { rethrowAsError } from '@/rethrow-as-error.js';
+import { throwWrappedError } from '@/rethrow-as-error.js';
 import type { SessionSourceKind } from '@/session-model.js';
-import { resolveSourceKind } from './file-system.js';
+import { findSourceKind } from './file-system.js';
 
 /**
  * Hashes a file as SHA-256.
  */
-export const sha256File = (path: string): Promise<string> => hashFile(path).catch(rethrowAsError);
+export const readSha256File = (path: string): Promise<string> =>
+  hashFile(path).catch(throwWrappedError);
 
 /**
  * Hashes a file or directory tree as SHA-256.
  */
-export const sha256Path = async (path: string, sourceKind?: SessionSourceKind): Promise<string> => {
-  const kind = await resolveSourceKind(path, sourceKind);
+export const readSha256Path = async (
+  path: string,
+  sourceKind?: SessionSourceKind,
+): Promise<string> => {
+  const kind = await findSourceKind(path, sourceKind);
 
   const isDirectorySource = kind === 'directory';
 
   if (isDirectorySource) {
-    return sha256Directory(path);
+    return readSha256Directory(path);
   }
 
-  return sha256File(path);
+  return readSha256File(path);
 };
 
 /**
  * Hashes every file under a directory into one stable content digest.
  */
-export const sha256Directory = (path: string): Promise<string> =>
-  hashDirectoryTree(path).catch(rethrowAsError);
+export const readSha256Directory = (path: string): Promise<string> =>
+  hashDirectoryTree(path).catch(throwWrappedError);
 
 const hashDirectoryTree = async (root: string): Promise<string> => {
   const files: string[] = [];

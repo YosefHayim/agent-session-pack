@@ -191,15 +191,15 @@ export const createPackThresholdPreviews = (
   return [
     createThresholdPreview({
       kind: 'safer',
-      olderThan: formatDuration(safer),
-      olderThanMs: durationMs(safer),
+      olderThan: createDuration(safer),
+      olderThanMs: readDurationMs(safer),
       now: request.now,
       sessions: request.sessions,
     }),
     createThresholdPreview({
       kind: 'broader',
-      olderThan: formatDuration(broader),
-      olderThanMs: durationMs(broader),
+      olderThan: createDuration(broader),
+      olderThanMs: readDurationMs(broader),
       now: request.now,
       sessions: request.sessions,
     }),
@@ -240,7 +240,7 @@ export const parseDurationMs = (duration: string): number => {
     return DEFAULT_COLD_AFTER_MS;
   }
 
-  return durationMs(parsed);
+  return readDurationMs(parsed);
 };
 
 const createThresholdPreview = (request: {
@@ -313,7 +313,7 @@ const halveDuration = (duration: Duration): Duration => {
   };
 };
 
-const durationMs = (duration: Duration): number => {
+const readDurationMs = (duration: Duration): number => {
   const isDurationInHours = duration.unit === 'h';
   if (isDurationInHours) {
     return duration.value * 60 * 60 * 1000;
@@ -327,4 +327,4 @@ const durationMs = (duration: Duration): number => {
   return duration.value * 24 * 60 * 60 * 1000;
 };
 
-const formatDuration = (duration: Duration): string => `${duration.value}${duration.unit}`;
+const createDuration = (duration: Duration): string => `${duration.value}${duration.unit}`;

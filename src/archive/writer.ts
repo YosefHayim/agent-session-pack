@@ -2,17 +2,17 @@ import { execFile } from 'node:child_process';
 import { cp, mkdir, readdir, rename, rm, stat } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';
 import { promisify } from 'node:util';
-import { rethrowAsError } from '@/rethrow-as-error.js';
+import { throwWrappedError } from '@/rethrow-as-error.js';
 import type { SessionSourceKind } from '@/session-model.js';
 import {
-  directorySizeBytes,
   ensureDirectory,
   ensureParentDirectory,
+  findSourceKind,
+  readDirectorySizeBytes,
+  readStatPath,
   removePath,
-  resolveSourceKind,
-  statPath,
 } from './file-system.js';
-import { sha256Directory, sha256File } from './hash.js';
+import { readSha256Directory, readSha256File } from './hash.js';
 
 const TAR_BINARY = 'tar';
 
@@ -77,7 +77,7 @@ export type VerifiedArchive = {
 export const writeVerifiedArchive = async (
   request: ArchiveWriteRequest,
 ): Promise<VerifiedArchive> => {
-  const sourceKind = await resolveSourceKind(request.sourcePath, request.sourceKind);
+  const sourceKind = await findSourceKind(request.sourcePath, request.sourceKind);
 
   const isDirectorySource = sourceKind === 'directory';
 
@@ -92,19 +92,19 @@ export const writeVerifiedArchive = async (
  * Removes an original session file or directory after verification has passed.
  */
 export const removeOriginalSession = async (path: string): Promise<void> => {
-  const pathStat = await stat(path).catch(rethrowAsError);
+  const pathStat = await stat(path).catch(throwWrappedError);
   await rm(path, {
     force: false,
     recursive: pathStat.isDirectory(),
-  }).catch(rethrowAsError);
+  }).catch(throwWrappedError);
 };
 
 const writeVerifiedFileArchive = async (request: ArchiveWriteRequest): Promise<VerifiedArchive> => {
   await ensureParentDirectory(request.archivePath);
   await ensureParentDirectory(request.restoredPath);
 
-  const sourceStat = await statPath(request.sourcePath);
-  const sourceSha256 = await sha256File(request.sourcePath);
+  const sourceStat = await readStatPath(request.sourcePath);
+  const sourceSha256 = await readSha256File(request.sourcePath);
 
   await request.compression.compress({
     sourcePath: request.sourcePath,
@@ -115,7 +115,7 @@ const writeVerifiedFileArchive = async (request: ArchiveWriteRequest): Promise<V
     restoredPath: request.restoredPath,
   });
 
-  const restoredSha256 = await sha256File(request.restoredPath);
+  const restoredSha256 = await readSha256File(request.restoredPath);
 
   const isRestoreMismatched = sourceSha256 !== restoredSha256;
 
@@ -123,7 +123,7 @@ const writeVerifiedFileArchive = async (request: ArchiveWriteRequest): Promise<V
     throwVerificationMismatch({ sessionId: request.sessionId, sourceSha256, restoredSha256 });
   }
 
-  const archiveStat = await statPath(request.archivePath);
+  const archiveStat = await readStatPath(request.archivePath);
 
   const isRemovalRequested = request.apply === true;
 
@@ -151,8 +151,8 @@ const writeVerifiedDirectoryArchive = async (
   await removePath(request.restoredPath);
   await ensureParentDirectory(request.restoredPath);
 
-  const sourceBytes = await directorySizeBytes(request.sourcePath);
-  const sourceSha256 = await sha256Directory(request.sourcePath);
+  const sourceBytes = await readDirectorySizeBytes(request.sourcePath);
+  const sourceSha256 = await readSha256Directory(request.sourcePath);
   const tarPath = `${request.archivePath}.tar`;
   const restoredTarPath = `${request.restoredPath}.tar`;
 
@@ -173,7 +173,7 @@ const writeVerifiedDirectoryArchive = async (
     destinationPath: request.restoredPath,
   });
 
-  const restoredSha256 = await sha256Directory(request.restoredPath);
+  const restoredSha256 = await readSha256Directory(request.restoredPath);
 
   const isRestoreMismatched = sourceSha256 !== restoredSha256;
 
@@ -181,7 +181,7 @@ const writeVerifiedDirectoryArchive = async (
     throwVerificationMismatch({ sessionId: request.sessionId, sourceSha256, restoredSha256 });
   }
 
-  const archiveStat = await statPath(request.archivePath);
+  const archiveStat = await readStatPath(request.archivePath);
 
   await removePath(tarPath);
   await removePath(restoredTarPath);
@@ -235,7 +235,7 @@ export const restoreDirectoryArchive = async (request: DirectoryRestoreRequest):
     destinationPath: request.restoredPath,
   });
 
-  const restoredSha256 = await sha256Directory(request.restoredPath);
+  const restoredSha256 = await readSha256Directory(request.restoredPath);
 
   const isRestoredMismatched = restoredSha256 !== request.expectedSha256;
 
@@ -250,7 +250,7 @@ export const restoreDirectoryArchive = async (request: DirectoryRestoreRequest):
   await movePath(request.restoredPath, request.originalPath);
   await removePath(restoredTarPath);
 
-  const originalSha256 = await sha256Directory(request.originalPath);
+  const originalSha256 = await readSha256Directory(request.originalPath);
 
   const isOriginalMismatched = originalSha256 !== request.expectedSha256;
 
@@ -277,7 +277,7 @@ const createTarArchive = async (request: {
   readonly sourcePath: string;
   readonly tarPath: string;
 }): Promise<void> => {
-  await mkdir(dirname(request.tarPath), { recursive: true }).catch(rethrowAsError);
+  await mkdir(dirname(request.tarPath), { recursive: true }).catch(throwWrappedError);
   // Pack sourcePath into tarPath: create archive from parent so the leaf name is the top entry.
   const createTarArgs = [
     TAR_CREATE_FLAG,
@@ -287,7 +287,7 @@ const createTarArchive = async (request: {
     dirname(request.sourcePath),
     basename(request.sourcePath),
   ];
-  await execFileAsync(TAR_BINARY, createTarArgs).catch(rethrowAsError);
+  await execFileAsync(TAR_BINARY, createTarArgs).catch(throwWrappedError);
 };
 
 const extractTarArchive = async (request: {
@@ -298,10 +298,10 @@ const extractTarArchive = async (request: {
   const leaf = basename(request.destinationPath);
   const extractRoot = join(parent, `.extract-${leaf}`);
 
-  await mkdir(parent, { recursive: true }).catch(rethrowAsError);
-  await rm(request.destinationPath, { recursive: true, force: true }).catch(rethrowAsError);
-  await rm(extractRoot, { recursive: true, force: true }).catch(rethrowAsError);
-  await mkdir(extractRoot, { recursive: true }).catch(rethrowAsError);
+  await mkdir(parent, { recursive: true }).catch(throwWrappedError);
+  await rm(request.destinationPath, { recursive: true, force: true }).catch(throwWrappedError);
+  await rm(extractRoot, { recursive: true, force: true }).catch(throwWrappedError);
+  await mkdir(extractRoot, { recursive: true }).catch(throwWrappedError);
 
   // Extract tarPath into extractRoot: unpack archive contents under the staging directory.
   const extractTarArgs = [
@@ -311,10 +311,10 @@ const extractTarArchive = async (request: {
     TAR_CHANGE_DIR_FLAG,
     extractRoot,
   ];
-  await execFileAsync(TAR_BINARY, extractTarArgs).catch(rethrowAsError);
+  await execFileAsync(TAR_BINARY, extractTarArgs).catch(throwWrappedError);
 
   const extractedEntries = await readdir(extractRoot, { withFileTypes: true }).catch(
-    rethrowAsError,
+    throwWrappedError,
   );
   const onlyEntry = extractedEntries[0];
 
@@ -325,23 +325,29 @@ const extractTarArchive = async (request: {
   }
 
   const extractedPath = join(extractRoot, onlyEntry.name);
-  await rm(request.destinationPath, { recursive: true, force: true }).catch(rethrowAsError);
+  await rm(request.destinationPath, { recursive: true, force: true }).catch(throwWrappedError);
   await movePath(extractedPath, request.destinationPath);
-  await rm(extractRoot, { recursive: true, force: true }).catch(rethrowAsError);
+  await rm(extractRoot, { recursive: true, force: true }).catch(throwWrappedError);
+};
+
+const isRenameFailing = async (sourcePath: string, destinationPath: string): Promise<boolean> => {
+  try {
+    await rename(sourcePath, destinationPath);
+    return false;
+  } catch {
+    return true;
+  }
 };
 
 const movePath = async (sourcePath: string, destinationPath: string): Promise<void> => {
-  await mkdir(dirname(destinationPath), { recursive: true }).catch(rethrowAsError);
-  await rm(destinationPath, { recursive: true, force: true }).catch(rethrowAsError);
+  await mkdir(dirname(destinationPath), { recursive: true }).catch(throwWrappedError);
+  await rm(destinationPath, { recursive: true, force: true }).catch(throwWrappedError);
 
   // A rename fails across devices, so copy and delete the source instead.
-  const isRenameFailed = await rename(sourcePath, destinationPath).then(
-    () => false,
-    () => true,
-  );
+  const isRenameFailed = await isRenameFailing(sourcePath, destinationPath);
 
   if (isRenameFailed) {
-    await cp(sourcePath, destinationPath, { recursive: true }).catch(rethrowAsError);
-    await rm(sourcePath, { recursive: true, force: true }).catch(rethrowAsError);
+    await cp(sourcePath, destinationPath, { recursive: true }).catch(throwWrappedError);
+    await rm(sourcePath, { recursive: true, force: true }).catch(throwWrappedError);
   }
 };

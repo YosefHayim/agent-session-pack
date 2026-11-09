@@ -3,8 +3,8 @@ import type { CommandOutcome } from '@/command-outcome.js';
 import { requireHome } from '@/home-env.js';
 import { selectProviders } from '@/providers/flag.js';
 import { runLocalEvidence } from './local-evidence.js';
-import { formatHumanEvidenceReport, formatJsonEvidenceReport } from './output.js';
-import { resolveEvidenceWorkRoot } from './work-root.js';
+import { createHumanEvidenceReport, createJsonEvidenceReport } from './output.js';
+import { createEvidenceWorkRoot } from './work-root.js';
 
 /**
  * Arguments for the savings command.
@@ -30,18 +30,18 @@ export const runSavingsCommand = async (args: SavingsArgs): Promise<CommandOutco
   const providerExitCode = isProviderUnknown ? 2 : 0;
   const report = await runLocalEvidence({
     home,
-    workRoot: resolveEvidenceWorkRoot(process.cwd(), String(process.pid)),
+    workRoot: createEvidenceWorkRoot(process.cwd(), String(process.pid)),
     providers,
   });
 
   const isJsonRequested = args.json === true;
 
   if (isJsonRequested) {
-    process.stdout.write(formatJsonEvidenceReport(report));
+    process.stdout.write(createJsonEvidenceReport(report));
     return { exitCode: providerExitCode };
   }
 
-  process.stdout.write(`${formatHumanEvidenceReport(report)}\n`);
+  process.stdout.write(`${createHumanEvidenceReport(report)}\n`);
   return { exitCode: providerExitCode };
 };
 

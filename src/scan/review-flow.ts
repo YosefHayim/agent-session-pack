@@ -5,7 +5,7 @@ import { DEFAULT_COLD_AFTER_MS } from '@/pack/plan.js';
 import type { PromptAdapter } from '@/prompt-adapter.js';
 import { allProviders } from '@/providers/all-providers.js';
 import { runScanCommand } from './command.js';
-import { formatProviderInventoryTable, loadInventoryWithSpinner } from './inventory-prompt.js';
+import { createProviderInventoryTable, loadInventoryWithSpinner } from './inventory-prompt.js';
 
 /**
  * Reviews provider sessions with a spinner-backed inventory scan and scan command.
@@ -41,6 +41,6 @@ export const runReviewSessions = async (
     stopMessage: 'Scanned provider stores.',
   });
 
-  request.prompts.note(formatProviderInventoryTable(inventory), 'Provider sessions');
+  request.prompts.note(createProviderInventoryTable(inventory), 'Provider sessions');
   return runScanCommand({});
 };

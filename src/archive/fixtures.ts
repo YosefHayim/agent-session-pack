@@ -62,13 +62,21 @@ export const createArchiveProvider = (request: ArchiveProviderRequest): Provider
  * const session = await writeColdSession(home, '.codex/sessions', 'cold.jsonl', '{}\n', coldDate);
  * ```
  */
-export const writeColdSession = async (
-  home: string,
-  relativeDir: string,
-  fileName: string,
-  content: string,
-  modifiedAt: Date,
-): Promise<{ readonly path: string; readonly content: string }> => {
+export interface WriteColdSessionDetails {
+  home: string;
+  relativeDir: string;
+  fileName: string;
+  content: string;
+  modifiedAt: Date;
+}
+
+export const writeColdSession = async ({
+  home,
+  relativeDir,
+  fileName,
+  content,
+  modifiedAt,
+}: WriteColdSessionDetails): Promise<{ readonly path: string; readonly content: string }> => {
   const sessionDir = join(home, relativeDir);
   const sessionPath = join(sessionDir, fileName);
   await mkdir(sessionDir, { recursive: true });

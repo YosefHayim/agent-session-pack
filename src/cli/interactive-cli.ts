@@ -26,7 +26,7 @@ export type InteractiveCliDetectionRequest = {
  * @param request - Normalized argv and terminal state.
  * @returns True when no command or flags were provided in a TTY.
  */
-export const shouldRunInteractiveCli = (request: InteractiveCliDetectionRequest): boolean => {
+export const canRunInteractiveCli = (request: InteractiveCliDetectionRequest): boolean => {
   const isNotInteractiveTerminal = !request.stdinIsTty || !request.stdoutIsTty;
   if (isNotInteractiveTerminal) {
     return false;
@@ -89,7 +89,7 @@ export const runInteractiveCli = async (
 ): Promise<CommandOutcome> => {
   const prompts = request.prompts ?? clackPromptAdapter;
   prompts.intro('Agent Session Pack');
-  prompts.note(firstScreenCopy());
+  prompts.note(readFirstScreenCopy());
 
   const action = await prompts.select({
     message: 'What do you want to do?',
@@ -154,7 +154,7 @@ const runInteractiveAction = async (
   return runDoctorCommand({});
 };
 
-const firstScreenCopy = (): string =>
+const readFirstScreenCopy = (): string =>
   [
     'Compress old local AI-agent sessions without breaking resume.',
     '',

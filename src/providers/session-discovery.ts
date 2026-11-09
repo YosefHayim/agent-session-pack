@@ -140,7 +140,7 @@ export const slugifyTitle = (title: string): string => {
 /**
  * Extracts a provider session id from a file path: the UUID when present, else the basename.
  */
-export const sessionIdFromPath = (path: string): string => {
+export const readSessionIdFromPath = (path: string): string => {
   const fileName = basename(path, extname(path));
   const idMatch = fileName.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
 
@@ -169,7 +169,7 @@ const readSessionTitleFromFile = async (path: string): Promise<string> => {
     const text = streamChunkToString(chunk);
     bytesRead += Buffer.byteLength(text, 'utf8');
 
-    const scan = titleFromDelimitedLines(`${carry}${text}`);
+    const scan = readTitleFromDelimitedLines(`${carry}${text}`);
 
     const hasScanTitle = scan.title.length > 0;
     if (hasScanTitle) {
@@ -186,7 +186,7 @@ const readSessionTitleFromFile = async (path: string): Promise<string> => {
     }
   }
 
-  const finalTitle = titleFromJsonLine(carry);
+  const finalTitle = readTitleFromJsonLine(carry);
 
   const hasTitle = finalTitle.length > 0;
   if (hasTitle) {
@@ -205,7 +205,7 @@ const streamChunkToString = (chunk: string | Buffer): string => {
   return chunk.toString('utf8');
 };
 
-const titleFromDelimitedLines = (
+const readTitleFromDelimitedLines = (
   content: string,
 ): { readonly title: string; readonly rest: string } => {
   const lines = content.split(/\r?\n/);
@@ -220,7 +220,7 @@ const titleFromDelimitedLines = (
   }
 
   for (const line of lines) {
-    const title = titleFromJsonLine(line);
+    const title = readTitleFromJsonLine(line);
 
     const hasTitle = title.length > 0;
     if (hasTitle) {
@@ -237,7 +237,7 @@ const titleFromDelimitedLines = (
   };
 };
 
-const titleFromJsonLine = (line: string): string => {
+const readTitleFromJsonLine = (line: string): string => {
   try {
     const event = JSON.parse(line) as {
       readonly type?: unknown;

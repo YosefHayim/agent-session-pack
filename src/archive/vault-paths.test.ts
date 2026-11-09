@@ -1,10 +1,10 @@
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { resolveDefaultVaultPath } from './vault-paths.js';
+import { createDefaultVaultPath } from './vault-paths.js';
 
 describe('vaultPaths', () => {
   it('resolves the default vault path under the home directory', () => {
-    expect(resolveDefaultVaultPath('/Users/synthetic')).toBe(
+    expect(createDefaultVaultPath('/Users/synthetic')).toBe(
       join('/Users/synthetic', '.agent-session-pack'),
     );
   });

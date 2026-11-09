@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty';
-import { resolveApplyConfirmation } from '@/apply-confirmation.js';
-import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
+import { askApplyConfirmation } from '@/apply-confirmation.js';
+import { createDefaultVaultPath } from '@/archive/vault-paths.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
 import type { CommandOutcome } from '@/command-outcome.js';
@@ -9,13 +9,13 @@ import { selectProviders } from '@/providers/flag.js';
 import { scanStores } from '@/scan/stores.js';
 import type { ProviderAdapter, SessionStore } from '@/session-model.js';
 import {
-  formatHumanPackPlan,
-  formatHumanPackReport,
-  formatJsonPackPlan,
-  formatJsonPackReport,
+  createHumanPackPlan,
+  createHumanPackReport,
+  createJsonPackPlan,
+  createJsonPackReport,
 } from './output.js';
 import { createPackPlan, DEFAULT_COLD_AFTER, parseDurationMs } from './plan.js';
-import { packProviderSessions } from './sessions.js';
+import { type PackSessionsReport, packProviderSessions } from './sessions.js';
 
 /**
  * Citty command that packs cold sessions after verified archive restore.
@@ -64,7 +64,7 @@ export const packCommand = defineCommand({
     const isMaxApplyRequested = args.max === true && args.apply === true;
     const confirmed = isMaxApplyRequested
       ? false
-      : await resolveApplyConfirmation({
+      : await askApplyConfirmation({
           action: 'Pack cold sessions for the selected providers',
           apply: args.apply,
           json: args.json,
@@ -141,10 +141,10 @@ export const runPackCommand = async (args: PackArgs): Promise<CommandOutcome> =>
   const { providers, isProviderUnknown } = selectProviders(args.provider, args.providers);
   const providerExitCode = isProviderUnknown ? 2 : 0;
 
-  if (shouldUseArchiveWorkflow(args)) {
+  if (canUseArchiveWorkflow(args)) {
     const report = await packProviderSessions({
       home,
-      vaultPath: args.vaultPath ?? resolveDefaultVaultPath(home),
+      vaultPath: args.vaultPath ?? createDefaultVaultPath(home),
       providers,
       olderThan,
       olderThanMs,
@@ -153,12 +153,7 @@ export const runPackCommand = async (args: PackArgs): Promise<CommandOutcome> =>
       compression: args.compression ?? createZstdCompression(),
     });
 
-    if (isJsonOutput) {
-      process.stdout.write(formatJsonPackReport(report));
-      return { exitCode: providerExitCode };
-    }
-
-    process.stdout.write(`${formatHumanPackReport(report, { olderThan })}\n`);
+    writeArchiveReport({ report, olderThan, isJsonOutput });
     return { exitCode: providerExitCode };
   }
 
@@ -182,15 +177,33 @@ export const runPackCommand = async (args: PackArgs): Promise<CommandOutcome> =>
   });
 
   if (isJsonOutput) {
-    process.stdout.write(formatJsonPackPlan(plan));
+    process.stdout.write(createJsonPackPlan(plan));
     return { exitCode: providerExitCode };
   }
 
-  process.stdout.write(`${formatHumanPackPlan(plan, { olderThan })}\n`);
+  process.stdout.write(`${createHumanPackPlan(plan, { olderThan })}\n`);
   return { exitCode: providerExitCode };
 };
 
-const shouldUseArchiveWorkflow = (args: PackArgs): boolean => {
+type ArchiveReportDetails = {
+  readonly report: PackSessionsReport;
+  readonly olderThan: string;
+  readonly isJsonOutput: boolean;
+};
+
+const writeArchiveReport = (details: ArchiveReportDetails): void => {
+  const isJsonRequested = details.isJsonOutput;
+  if (isJsonRequested) {
+    process.stdout.write(createJsonPackReport(details.report));
+    return;
+  }
+
+  process.stdout.write(
+    `${createHumanPackReport(details.report, { olderThan: details.olderThan })}\n`,
+  );
+};
+
+const canUseArchiveWorkflow = (args: PackArgs): boolean => {
   const isApplyRequested = args.apply === true;
   if (isApplyRequested) {
     return true;

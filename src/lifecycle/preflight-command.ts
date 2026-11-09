@@ -1,5 +1,5 @@
 import { defineCommand } from 'citty';
-import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
+import { createDefaultVaultPath } from '@/archive/vault-paths.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
 import type { CommandOutcome } from '@/command-outcome.js';
@@ -78,7 +78,7 @@ export const runPreflightCommand = async (args: PreflightArgs): Promise<CommandO
 
   const setupConfig = await readSetupConfig(home);
   const restoreOnLaunchEnabled = isRestoreOnLaunchEnabled(setupConfig);
-  const vaultPath = args.vaultPath ?? setupConfig?.vaultPath ?? resolveDefaultVaultPath(home);
+  const vaultPath = args.vaultPath ?? setupConfig?.vaultPath ?? createDefaultVaultPath(home);
   const compression = args.compression ?? createZstdCompression();
   const now = args.now ?? new Date();
   const sessionIds = extractSessionIdsFromArgv(args.passthroughArgv);

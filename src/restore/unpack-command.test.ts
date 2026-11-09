@@ -12,13 +12,13 @@ const createWorkspace = (): Promise<string> =>
 const createColdCodexSession = (
   home: string,
 ): Promise<{ readonly path: string; readonly content: string }> =>
-  writeColdSession(
+  writeColdSession({
     home,
-    join('.codex', 'sessions', '2026', '06', '01'),
-    'session-old.jsonl',
-    '{"type":"user","text":"pack every provider"}\n',
-    new Date('2026-06-01T12:00:00.000Z'),
-  );
+    relativeDir: join('.codex', 'sessions', '2026', '06', '01'),
+    fileName: 'session-old.jsonl',
+    content: '{"type":"user","text":"pack every provider"}\n',
+    modifiedAt: new Date('2026-06-01T12:00:00.000Z'),
+  });
 
 describe('unpackCommand', () => {
   const originalHome = process.env.HOME;

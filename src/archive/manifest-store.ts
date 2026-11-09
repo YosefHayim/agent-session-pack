@@ -84,16 +84,19 @@ const collectManifestPaths = async (root: string): Promise<ReadonlyArray<string>
   for (const entry of entries) {
     const entryPath = join(root, entry.name);
 
-    if (entry.isDirectory()) {
+    const isDirectoryEntry = entry.isDirectory();
+    if (isDirectoryEntry) {
       paths.push(...(await collectManifestPaths(entryPath)));
       continue;
     }
 
-    if (!entry.isFile()) {
+    const isNotFile = !entry.isFile();
+    if (isNotFile) {
       continue;
     }
 
-    if (!entry.name.endsWith('.json')) {
+    const isNotNameEndsWith = !entry.name.endsWith('.json');
+    if (isNotNameEndsWith) {
       continue;
     }
 

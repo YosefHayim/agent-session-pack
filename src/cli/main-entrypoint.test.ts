@@ -4,7 +4,8 @@ import { isCliEntrypoint } from './main-entrypoint.js';
 describe('CLI entrypoint detection', () => {
   it('accepts npm bin symlinks that resolve to the built module path', () => {
     const realpath = (path: string): string => {
-      if (path === '/prefix/bin/agent-session-pack') {
+      const isInstalledBinPath = path === '/prefix/bin/agent-session-pack';
+      if (isInstalledBinPath) {
         return '/package/dist/cli/main.js';
       }
 

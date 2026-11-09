@@ -74,20 +74,23 @@ type MaintainArgs = {
 const runMaintainCommand = async (args: MaintainArgs): Promise<CommandOutcome> => {
   const home = requireHome(args.home);
 
-  if (home === undefined) {
+  const isHomeMissing = home == null;
+  if (isHomeMissing) {
     return { exitCode: 1 };
   }
 
   const setupConfig = await readSetupConfig(home);
 
-  if (!isRestoreOnLaunchEnabled(setupConfig)) {
+  const isRestoreOnLaunchOff = !isRestoreOnLaunchEnabled(setupConfig);
+  if (isRestoreOnLaunchOff) {
     process.stderr.write(
       'Lifecycle is disabled. Run `agent-session-pack lifecycle enable` for continuous maintain, or use `pack` directly.\n',
     );
     return { exitCode: 1 };
   }
 
-  if (args.apply === true && args.confirmed !== true) {
+  const isApplyUnconfirmed = args.apply === true && args.confirmed !== true;
+  if (isApplyUnconfirmed) {
     process.stderr.write(
       'Cancelled. Re-run with --apply and confirm with y (or --yes) to pack cold sessions.\n',
     );
@@ -112,7 +115,8 @@ const runMaintainCommand = async (args: MaintainArgs): Promise<CommandOutcome> =
     compression: args.compression ?? createZstdCompression(),
   });
 
-  if (args.json === true) {
+  const isJsonOutput = args.json === true;
+  if (isJsonOutput) {
     process.stdout.write(
       `${JSON.stringify(
         {

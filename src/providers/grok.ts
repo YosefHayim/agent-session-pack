@@ -33,20 +33,23 @@ const readActiveGrokSessionIds = async (path: string): Promise<ReadonlySet<strin
     const content = await readFile(path, 'utf8');
     const parsed = JSON.parse(content) as unknown;
 
-    if (!Array.isArray(parsed)) {
+    const isNotParsedArray = !Array.isArray(parsed);
+    if (isNotParsedArray) {
       return new Set();
     }
 
     const ids = parsed
       .map((entry) => {
-        if (typeof entry !== 'object' || entry === null) {
+        const isEntryNotObject = typeof entry !== 'object' || entry === null;
+        if (isEntryNotObject) {
           return undefined;
         }
 
         const sessionId = (entry as { readonly session_id?: unknown }).session_id;
-        return typeof sessionId === 'string' ? sessionId : undefined;
+        const isSessionIdTypeString = typeof sessionId === 'string';
+        return isSessionIdTypeString ? sessionId : undefined;
       })
-      .filter((sessionId): sessionId is string => sessionId !== undefined);
+      .filter((sessionId): sessionId is string => sessionId != null);
 
     return new Set(ids);
   } catch {
@@ -57,26 +60,33 @@ const readActiveGrokSessionIds = async (path: string): Promise<ReadonlySet<strin
 const readGrokSessionTitle = async (directory: string): Promise<string> => {
   const summary = await readJsonFile(join(directory, 'summary.json'));
 
-  if (typeof summary === 'object' && summary !== null) {
-    const record = summary as {
-      readonly session_summary?: unknown;
-      readonly info?: { readonly cwd?: unknown; readonly id?: unknown };
-      readonly agent_name?: unknown;
-    };
+  const isSummaryMissing = typeof summary !== 'object' || summary === null;
+  if (isSummaryMissing) {
+    return basename(directory);
+  }
 
-    if (typeof record.session_summary === 'string' && record.session_summary.trim().length > 0) {
-      return record.session_summary.trim();
-    }
+  const record = summary as {
+    readonly session_summary?: unknown;
+    readonly info?: { readonly cwd?: unknown; readonly id?: unknown };
+    readonly agent_name?: unknown;
+  };
 
-    if (typeof record.agent_name === 'string' && record.agent_name.trim().length > 0) {
-      const cwd =
-        typeof record.info?.cwd === 'string' ? basename(record.info.cwd) : basename(directory);
-      return `${record.agent_name} @ ${cwd}`;
-    }
+  const hasSessionSummary =
+    typeof record.session_summary === 'string' && record.session_summary.trim().length > 0;
+  if (hasSessionSummary) {
+    return record.session_summary.trim();
+  }
 
-    if (typeof record.info?.cwd === 'string' && record.info.cwd.trim().length > 0) {
-      return basename(record.info.cwd);
-    }
+  const hasAgentName = typeof record.agent_name === 'string' && record.agent_name.trim().length > 0;
+  if (hasAgentName) {
+    const isInfoCwdText = typeof record.info?.cwd === 'string';
+    const cwd = isInfoCwdText ? basename(record.info.cwd) : basename(directory);
+    return `${record.agent_name} @ ${cwd}`;
+  }
+
+  const hasInfoCwd = typeof record.info?.cwd === 'string' && record.info.cwd.trim().length > 0;
+  if (hasInfoCwd) {
+    return basename(record.info.cwd);
   }
 
   return basename(directory);

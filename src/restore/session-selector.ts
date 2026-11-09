@@ -64,9 +64,10 @@ const parseSelector = (selector: string): ParsedSelector => {
   const trimmedSelector = selector.trim();
   const separatorIndex = trimmedSelector.indexOf(':');
   const prefix = trimmedSelector.slice(0, separatorIndex).toLowerCase();
-  const isPrefixProvider = separatorIndex !== -1 && isProviderId(prefix);
 
-  if (!isPrefixProvider) {
+  const isNotPrefixProvider = separatorIndex === -1 || !isProviderId(prefix);
+
+  if (isNotPrefixProvider) {
     return {
       provider: undefined,
       query: trimmedSelector.toLowerCase(),
@@ -87,7 +88,8 @@ const matchingManifests = (
   candidates: ReadonlyArray<SessionManifest>,
   match: SelectorMatch,
 ): ReadonlyArray<SessionManifest> => {
-  if (query.length === 0) {
+  const isQueryEmpty = query.length === 0;
+  if (isQueryEmpty) {
     return [];
   }
 
@@ -97,7 +99,8 @@ const matchingManifests = (
     ),
   );
 
-  if (exactMatches.length > 0 || match === 'exact') {
+  const hasExactMatch = exactMatches.length > 0 || match === 'exact';
+  if (hasExactMatch) {
     return exactMatches;
   }
 
@@ -105,7 +108,8 @@ const matchingManifests = (
     manifest.sessionId.toLowerCase().startsWith(query),
   );
 
-  if (idPrefixMatches.length > 0) {
+  const hasIdPrefixMatch = idPrefixMatches.length > 0;
+  if (hasIdPrefixMatch) {
     return idPrefixMatches;
   }
 

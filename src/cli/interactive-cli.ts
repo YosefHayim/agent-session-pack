@@ -27,7 +27,8 @@ export type InteractiveCliDetectionRequest = {
  * @returns True when no command or flags were provided in a TTY.
  */
 export const shouldRunInteractiveCli = (request: InteractiveCliDetectionRequest): boolean => {
-  if (!request.stdinIsTty || !request.stdoutIsTty) {
+  const isTerminalMissing = !request.stdinIsTty || !request.stdoutIsTty;
+  if (isTerminalMissing) {
     return false;
   }
 
@@ -95,7 +96,8 @@ export const runInteractiveCli = async (
     options: createMainMenuOptions(),
   });
 
-  if (prompts.isCancel(action) || action === 'exit') {
+  const isActionCancelOrExit = prompts.isCancel(action) || action === 'exit';
+  if (isActionCancelOrExit) {
     prompts.outro('No files changed.');
     return { exitCode: 0 };
   }
@@ -113,7 +115,8 @@ const runInteractiveAction = async (
     readonly prompts: PromptAdapter;
   },
 ): Promise<CommandOutcome> => {
-  if (request.action === 'setup') {
+  const isRequestActionSetup = request.action === 'setup';
+  if (isRequestActionSetup) {
     await runFirstSetup({
       ...request,
       showIntro: false,
@@ -121,7 +124,8 @@ const runInteractiveAction = async (
     return { exitCode: 0 };
   }
 
-  if (request.action === 'savings') {
+  const isRequestActionSavings = request.action === 'savings';
+  if (isRequestActionSavings) {
     const savingsOutcome = await runWithSpinner({
       prompts: request.prompts,
       startMessage: 'Checking savings...',
@@ -132,15 +136,18 @@ const runInteractiveAction = async (
     return savingsOutcome;
   }
 
-  if (request.action === 'review') {
+  const isRequestActionReview = request.action === 'review';
+  if (isRequestActionReview) {
     return runReviewSessions(request);
   }
 
-  if (request.action === 'pack') {
+  const isRequestActionPack = request.action === 'pack';
+  if (isRequestActionPack) {
     return runPackFlow(request);
   }
 
-  if (request.action === 'restore') {
+  const isRequestActionRestore = request.action === 'restore';
+  if (isRequestActionRestore) {
     return runRestoreFlow(request);
   }
 

@@ -30,19 +30,24 @@ export type ApplyConfirmationRequest = {
 export const resolveApplyConfirmation = async (
   request: ApplyConfirmationRequest,
 ): Promise<boolean | undefined> => {
-  if (request.apply !== true) {
+  const isRequestApplyNotTrue = request.apply !== true;
+  if (isRequestApplyNotTrue) {
     return undefined;
   }
 
-  if (request.yes === true) {
+  const isRequestYesTrue = request.yes === true;
+  if (isRequestYesTrue) {
     return true;
   }
 
-  if (request.json === true) {
+  const isRequestTrue = request.json === true;
+  if (isRequestTrue) {
     return false;
   }
 
-  if (process.stdin.isTTY !== true || process.stdout.isTTY !== true) {
+  const isInteractiveTerminalMissing =
+    process.stdin.isTTY !== true || process.stdout.isTTY !== true;
+  if (isInteractiveTerminalMissing) {
     return false;
   }
 

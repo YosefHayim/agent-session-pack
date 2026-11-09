@@ -22,6 +22,7 @@ export const geminiProvider: ProviderAdapter = {
       maxDepth: 5,
       excludedNames: ['bin', 'node_modules', 'extensions'],
     });
+
     const isDirectorySessionFound = directorySessions.length > 0;
 
     if (isDirectorySessionFound) {

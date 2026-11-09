@@ -85,12 +85,14 @@ export const packProviderSessions = async (
       provider,
     });
 
-    if (sessions === undefined) {
+    const isSessionsMissing = sessions == null;
+    if (isSessionsMissing) {
       packSessionRows.push(createMissingPackRow(provider));
       continue;
     }
 
-    if (provider.mode === 'backup-only') {
+    const isProviderModeBackupOnly = provider.mode === 'backup-only';
+    if (isProviderModeBackupOnly) {
       packSessionRows.push(createBackupOnlyPackRow(provider, sessions.length));
       continue;
     }
@@ -99,12 +101,14 @@ export const packProviderSessions = async (
 
     const candidates = sessions.filter((session) => session.modifiedAt.getTime() < cutoffTime);
 
-    if (candidates.length === 0) {
+    const isCandidatesEmpty = candidates.length === 0;
+    if (isCandidatesEmpty) {
       packSessionRows.push(createNoCandidatesPackRow(provider, sessions.length));
       continue;
     }
 
-    if (request.apply === false) {
+    const isRequestApplyFalse = request.apply === false;
+    if (isRequestApplyFalse) {
       packSessionRows.push(createDryRunPackRow(provider, sessions.length, candidates));
       continue;
     }
@@ -150,9 +154,9 @@ const discoverExistingProviderSessions = async (request: {
   let existingRoots = 0;
 
   for (const root of roots) {
-    const isRootPresent = await pathExists(root);
+    const isNotRootPresent = !(await pathExists(root));
 
-    if (!isRootPresent) {
+    if (isNotRootPresent) {
       continue;
     }
 

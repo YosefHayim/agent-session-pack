@@ -25,6 +25,7 @@ export type RestoreManifestRequest = {
  */
 export const restoreManifest = async (request: RestoreManifestRequest): Promise<RestoreOutcome> => {
   const sourceKind = manifestSourceKind(request.manifest);
+
   const isOriginalPresent = await pathExists(request.manifest.originalPath);
 
   if (isOriginalPresent) {
@@ -33,16 +34,18 @@ export const restoreManifest = async (request: RestoreManifestRequest): Promise<
       sourceKind,
       sourceSha256: request.manifest.sourceSha256,
     });
-    const isRestoreStillNeeded = liveOutcome === 'continue-restore';
 
-    if (!isRestoreStillNeeded) {
+    const isNotRestoreStillNeeded = liveOutcome !== 'continue-restore';
+
+    if (isNotRestoreStillNeeded) {
       return liveOutcome;
     }
   }
 
   const restoredPath = restorePathForManifest(request.vaultPath, request.manifest, sourceKind);
 
-  if (sourceKind === 'directory') {
+  const isKindDirectory = sourceKind === 'directory';
+  if (isKindDirectory) {
     await restoreDirectoryArchive({
       sessionId: request.manifest.sessionId,
       archivePath: request.manifest.archivePath,
@@ -61,6 +64,7 @@ export const restoreManifest = async (request: RestoreManifestRequest): Promise<
   });
 
   const restoredSha256 = await sha256File(restoredPath);
+
   const isRestoredMismatched = restoredSha256 !== request.manifest.sourceSha256;
 
   if (isRestoredMismatched) {
@@ -75,6 +79,7 @@ export const restoreManifest = async (request: RestoreManifestRequest): Promise<
   await copyPath(restoredPath, request.manifest.originalPath);
 
   const originalSha256 = await sha256File(request.manifest.originalPath);
+
   const isOriginalMismatched = originalSha256 !== request.manifest.sourceSha256;
 
   if (isOriginalMismatched) {
@@ -103,6 +108,7 @@ const resolveLiveOriginalOutcome = async (request: {
   }
 
   const existingSha256 = await sha256Path(request.originalPath, request.sourceKind);
+
   const isSameContent = existingSha256 === request.sourceSha256;
 
   if (isSameContent) {

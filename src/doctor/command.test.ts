@@ -33,6 +33,7 @@ describe('doctor command', () => {
     if (payload.zstd.available) {
       expect(typeof payload.zstd.version).toBe('string');
     }
+
     if (payload.sqlite3.available) {
       expect(typeof payload.sqlite3.version).toBe('string');
     }

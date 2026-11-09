@@ -64,13 +64,15 @@ export type OpenArgs = {
 export const runOpenCommand = async (args: OpenArgs): Promise<CommandOutcome> => {
   const home = requireHome(args.home);
 
-  if (home === undefined) {
+  const isHomeMissing = home == null;
+  if (isHomeMissing) {
     return { exitCode: 1 };
   }
 
   const sessionSelector = args.session?.trim() ?? '';
 
-  if (sessionSelector.length === 0) {
+  const isSessionSelectorEmpty = sessionSelector.length === 0;
+  if (isSessionSelectorEmpty) {
     process.stderr.write(
       'Missing session. Use agent-session-pack open [--provider codex] <session>.\n',
     );
@@ -79,7 +81,8 @@ export const runOpenCommand = async (args: OpenArgs): Promise<CommandOutcome> =>
 
   const provider = parseOptionalProvider(args.provider);
 
-  if (args.provider !== undefined && provider === undefined) {
+  const isProviderPresentAndProviderMissing = args.provider != null && provider === undefined;
+  if (isProviderPresentAndProviderMissing) {
     process.stderr.write(`Unknown provider: ${args.provider}\n`);
     return { exitCode: 2 };
   }
@@ -104,11 +107,11 @@ export const runOpenCommand = async (args: OpenArgs): Promise<CommandOutcome> =>
     requireLifecycleEnabled: false,
   });
 
-  if (
+  const isSessionOpenable =
     (report.status === 'restored' || report.status === 'already-present') &&
     report.provider !== undefined &&
-    report.sessionId !== undefined
-  ) {
+    report.sessionId != null;
+  if (isSessionOpenable) {
     await recordSessionAccess({
       vaultPath,
       provider: report.provider,
@@ -137,28 +140,34 @@ const writeOpenOutput = (
     return;
   }
 
+  const isReportProviderMissing = report.provider === undefined;
+  const isReportSessionIdMissing = report.sessionId == null;
+  const isReportOriginalPathMissing = report.originalPath == null;
+  const isReportReasonMissing = report.reason == null;
   const lines = [
     `open: ${report.status}`,
-    report.provider === undefined ? undefined : `provider: ${report.provider}`,
-    report.sessionId === undefined ? undefined : `session: ${report.sessionId}`,
-    report.originalPath === undefined ? undefined : `originalPath: ${report.originalPath}`,
-    report.reason === undefined ? undefined : `reason: ${report.reason}`,
-  ].filter((line): line is string => line !== undefined);
+    isReportProviderMissing ? undefined : `provider: ${report.provider}`,
+    isReportSessionIdMissing ? undefined : `session: ${report.sessionId}`,
+    isReportOriginalPathMissing ? undefined : `originalPath: ${report.originalPath}`,
+    isReportReasonMissing ? undefined : `reason: ${report.reason}`,
+  ].filter((line): line is string => line != null);
 
   process.stdout.write(`${lines.join('\n')}\n`);
 };
 
 const openExitCode = (report: EnsureRestoredReport): number => {
-  if (report.status === 'restored' || report.status === 'already-present') {
+  const isReportStatusRestoredOrAlreadyPresent =
+    report.status === 'restored' || report.status === 'already-present';
+  if (isReportStatusRestoredOrAlreadyPresent) {
     return 0;
   }
 
-  if (
+  const isRestoreBlocked =
     report.status === 'conflict' ||
     report.status === 'missing-archive' ||
     report.status === 'ambiguous-selector' ||
-    report.status === 'backup-only'
-  ) {
+    report.status === 'backup-only';
+  if (isRestoreBlocked) {
     return 2;
   }
 

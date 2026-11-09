@@ -40,6 +40,7 @@ export const writeArchivedStub = async (request: WriteArchivedStubRequest): Prom
     sourceKind: request.sourceKind,
   };
   const body = `${JSON.stringify(stub, null, 2)}\n`;
+
   const isDirectorySource = request.sourceKind === 'directory';
 
   if (isDirectorySource) {

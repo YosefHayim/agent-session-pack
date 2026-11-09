@@ -84,11 +84,13 @@ export type UnpackArgs = {
 export const runUnpackCommand = async (args: UnpackArgs): Promise<CommandOutcome> => {
   const home = requireHome(args.home);
 
-  if (home === undefined) {
+  const isHomeMissing = home == null;
+  if (isHomeMissing) {
     return { exitCode: 1 };
   }
 
-  if (args.apply === true && args.confirmed !== true) {
+  const isApplyUnconfirmed = args.apply === true && args.confirmed !== true;
+  if (isApplyUnconfirmed) {
     process.stderr.write('Cancelled. Re-run with --apply and confirm with y to unpack sessions.\n');
     process.stderr.write('\n');
     return { exitCode: 2 };
@@ -103,7 +105,8 @@ export const runUnpackCommand = async (args: UnpackArgs): Promise<CommandOutcome
     compression: args.compression ?? createZstdCompression(),
   });
 
-  if (args.json === true) {
+  const isJsonOutput = args.json === true;
+  if (isJsonOutput) {
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
     return { exitCode: providerExitCode };
   }

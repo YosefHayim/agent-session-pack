@@ -78,6 +78,7 @@ export const writeVerifiedArchive = async (
   request: ArchiveWriteRequest,
 ): Promise<VerifiedArchive> => {
   const sourceKind = await resolveSourceKind(request.sourcePath, request.sourceKind);
+
   const isDirectorySource = sourceKind === 'directory';
 
   if (isDirectorySource) {
@@ -115,6 +116,7 @@ const writeVerifiedFileArchive = async (request: ArchiveWriteRequest): Promise<V
   });
 
   const restoredSha256 = await sha256File(request.restoredPath);
+
   const isRestoreMismatched = sourceSha256 !== restoredSha256;
 
   if (isRestoreMismatched) {
@@ -122,6 +124,7 @@ const writeVerifiedFileArchive = async (request: ArchiveWriteRequest): Promise<V
   }
 
   const archiveStat = await statPath(request.archivePath);
+
   const isRemovalRequested = request.apply === true;
 
   if (isRemovalRequested) {
@@ -171,6 +174,7 @@ const writeVerifiedDirectoryArchive = async (
   });
 
   const restoredSha256 = await sha256Directory(request.restoredPath);
+
   const isRestoreMismatched = sourceSha256 !== restoredSha256;
 
   if (isRestoreMismatched) {
@@ -232,6 +236,7 @@ export const restoreDirectoryArchive = async (request: DirectoryRestoreRequest):
   });
 
   const restoredSha256 = await sha256Directory(request.restoredPath);
+
   const isRestoredMismatched = restoredSha256 !== request.expectedSha256;
 
   if (isRestoredMismatched) {
@@ -246,6 +251,7 @@ export const restoreDirectoryArchive = async (request: DirectoryRestoreRequest):
   await removePath(restoredTarPath);
 
   const originalSha256 = await sha256Directory(request.originalPath);
+
   const isOriginalMismatched = originalSha256 !== request.expectedSha256;
 
   if (isOriginalMismatched) {
@@ -311,9 +317,10 @@ const extractTarArchive = async (request: {
     rethrowAsError,
   );
   const onlyEntry = extractedEntries[0];
-  const isSingleTopLevelEntry = extractedEntries.length === 1 && onlyEntry !== undefined;
 
-  if (!isSingleTopLevelEntry) {
+  const isNotSingleEntry = extractedEntries.length !== 1 || onlyEntry == null;
+
+  if (isNotSingleEntry) {
     throw new Error(`expected one top-level entry in tar archive: ${request.tarPath}`);
   }
 

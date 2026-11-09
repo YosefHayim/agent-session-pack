@@ -31,17 +31,20 @@ const COMMAND_FLAG_ALIASES: Readonly<Record<string, string>> = {
 export const rewriteCommandFlagAliases = (argv: ReadonlyArray<string>): ReadonlyArray<string> => {
   const [runtimePath, entrypointPath, firstArg, ...remainingArgs] = argv;
 
-  if (runtimePath === undefined || entrypointPath === undefined || firstArg === undefined) {
+  const isInvocationIncomplete = runtimePath == null || entrypointPath == null || firstArg == null;
+  if (isInvocationIncomplete) {
     return argv;
   }
 
-  if (firstArg === '--') {
+  const isFirstArgEmpty = firstArg === '--';
+  if (isFirstArgEmpty) {
     return [runtimePath, entrypointPath, ...remainingArgs];
   }
 
   const aliasedCommand = COMMAND_FLAG_ALIASES[firstArg];
 
-  if (aliasedCommand === undefined) {
+  const isAliasedCommandMissing = aliasedCommand == null;
+  if (isAliasedCommandMissing) {
     return argv;
   }
 

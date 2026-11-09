@@ -25,7 +25,8 @@ export const selectNewestSessionWithinSize = <Session extends SizeBoundSession>(
 ): Session | undefined => {
   const eligibleSessions = sessions.filter((session) => session.sizeBytes <= maxSizeBytes);
 
-  if (eligibleSessions.length > 0) {
+  const hasEligibleSessions = eligibleSessions.length > 0;
+  if (hasEligibleSessions) {
     return selectNewestSession(eligibleSessions);
   }
 
@@ -37,12 +38,14 @@ const selectNewestSession = <Session extends { readonly modifiedAt: Date }>(
 ): Session | undefined => {
   const [firstSession, ...remainingSessions] = sessions;
 
-  if (firstSession === undefined) {
+  const isFirstSessionMissing = firstSession === undefined;
+  if (isFirstSessionMissing) {
     return undefined;
   }
 
   return remainingSessions.reduce((selected, session) => {
-    if (session.modifiedAt > selected.modifiedAt) {
+    const isModifiedLater = session.modifiedAt > selected.modifiedAt;
+    if (isModifiedLater) {
       return session;
     }
 
@@ -55,12 +58,14 @@ const selectSmallestSession = <Session extends { readonly sizeBytes: number }>(
 ): Session | undefined => {
   const [firstSession, ...remainingSessions] = sessions;
 
-  if (firstSession === undefined) {
+  const isFirstSessionMissing = firstSession === undefined;
+  if (isFirstSessionMissing) {
     return undefined;
   }
 
   return remainingSessions.reduce((selected, session) => {
-    if (session.sizeBytes < selected.sizeBytes) {
+    const isSmallerThanSelected = session.sizeBytes < selected.sizeBytes;
+    if (isSmallerThanSelected) {
       return session;
     }
 

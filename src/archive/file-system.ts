@@ -32,6 +32,7 @@ export const measureSourceBytes = async (
   sourceKind?: SessionSourceKind,
 ): Promise<number> => {
   const kind = await resolveSourceKind(path, sourceKind);
+
   const isFileSource = kind === 'file';
 
   if (isFileSource) {
@@ -56,7 +57,8 @@ export const resolveSourceKind = async (
   }
 
   const pathStat = await stat(path).catch(rethrowAsError);
-  return pathStat.isDirectory() ? 'directory' : 'file';
+  const isDirectoryPathStat = pathStat.isDirectory();
+  return isDirectoryPathStat ? 'directory' : 'file';
 };
 
 /**
@@ -71,12 +73,14 @@ export const directorySizeBytes = async (path: string): Promise<number> => {
     for (const entry of entries) {
       const entryPath = join(directory, entry.name);
 
-      if (entry.isDirectory()) {
+      const isDirectoryEntry = entry.isDirectory();
+      if (isDirectoryEntry) {
         await walk(entryPath);
         continue;
       }
 
-      if (!entry.isFile()) {
+      const isNotFile = !entry.isFile();
+      if (isNotFile) {
         continue;
       }
 

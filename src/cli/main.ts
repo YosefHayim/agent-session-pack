@@ -67,6 +67,7 @@ interface UsageTarget {
 
 const pickUsageTarget = (rawArgs: string[]): UsageTarget => {
   const subCommandName = rawArgs.find((arg) => Object.hasOwn(subCommands, arg));
+
   const isThereNoSubCommandName = subCommandName == null;
 
   if (isThereNoSubCommandName) {
@@ -74,10 +75,11 @@ const pickUsageTarget = (rawArgs: string[]): UsageTarget => {
   }
 
   const subCommandReply = subCommands[subCommandName];
-  const isPlainCommand =
-    typeof subCommandReply === 'object' && !(subCommandReply instanceof Promise);
 
-  if (!isPlainCommand) {
+  const isNotPlainCommand =
+    typeof subCommandReply !== 'object' || subCommandReply instanceof Promise;
+
+  if (isNotPlainCommand) {
     throw new Error(`Subcommand ${subCommandName} is not a command object.`);
   }
 
@@ -105,9 +107,10 @@ const runCli = async (rawArgs: string[]): Promise<CommandOutcome> => {
 
   const commandRun = await runCommand(mainCommand, { rawArgs });
   const commandResult = commandRun.result;
-  const isOutcomeReply = isCommandOutcome(commandResult);
 
-  if (!isOutcomeReply) {
+  const isNotOutcomeReply = !isCommandOutcome(commandResult);
+
+  if (isNotOutcomeReply) {
     throw new Error('Command finished without an exit code.');
   }
 
@@ -151,6 +154,7 @@ const runEntrypointReportingErrors = async (rawArgs: string[]): Promise<CommandO
 };
 
 const entrypointPath = process.argv[1];
+
 const modulePath = fileURLToPath(import.meta.url);
 
 if (isCliEntrypoint(entrypointPath, modulePath)) {

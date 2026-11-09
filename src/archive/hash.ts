@@ -16,6 +16,7 @@ export const sha256File = (path: string): Promise<string> => hashFile(path).catc
  */
 export const sha256Path = async (path: string, sourceKind?: SessionSourceKind): Promise<string> => {
   const kind = await resolveSourceKind(path, sourceKind);
+
   const isDirectorySource = kind === 'directory';
 
   if (isDirectorySource) {
@@ -41,12 +42,14 @@ const hashDirectoryTree = async (root: string): Promise<string> => {
     for (const entry of sorted) {
       const entryPath = join(directory, entry.name);
 
-      if (entry.isDirectory()) {
+      const isDirectoryEntry = entry.isDirectory();
+      if (isDirectoryEntry) {
         await walk(entryPath);
         continue;
       }
 
-      if (!entry.isFile()) {
+      const isNotFile = !entry.isFile();
+      if (isNotFile) {
         continue;
       }
 

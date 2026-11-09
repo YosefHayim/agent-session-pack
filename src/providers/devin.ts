@@ -55,11 +55,13 @@ const discoverDevinSessions = async (root: string): Promise<ReadonlyArray<Discov
   const dbPath = join(root, 'sessions.db');
   const dbStat = await readStatOrNull(dbPath);
 
-  if (dbStat === null) {
+  const isDbStatMissing = dbStat === null;
+  if (isDbStatMissing) {
     return [];
   }
 
   const devinSessionRows = await readDevinSessionRows(dbPath);
+
   const isSessionListEmpty = devinSessionRows.length === 0;
 
   if (isSessionListEmpty) {
@@ -85,6 +87,7 @@ const readDevinSessionRows = async (dbPath: string): Promise<ReadonlyArray<Devin
     const output = await execFileAsync('sqlite3', ['-json', dbPath, DEVIN_SESSIONS_SQL]);
     const parsed = JSON.parse(output.stdout) as unknown;
     const decodedReply = DevinSessionRowsSchema.safeParse(parsed);
+
     const isDecodeFailed = !decodedReply.success;
 
     if (isDecodeFailed) {

@@ -39,6 +39,7 @@ export const discoverDirectoryProviderSessions = async (
   for (const directory of directories) {
     const sessionId =
       options.sessionIdFromDirectory?.(directory) ?? defaultSessionIdFromDirectory(directory);
+
     const isSessionActive = options.activeSessionIds?.has(sessionId) === true;
 
     if (isSessionActive) {
@@ -85,7 +86,8 @@ const readDirectoryTitle = async (request: {
   readonly sessionId: string;
   readonly titleFromDirectory?: (path: string) => Promise<string>;
 }): Promise<string> => {
-  if (request.titleFromDirectory === undefined) {
+  const isTitleFromDirectoryMissing = request.titleFromDirectory == null;
+  if (isTitleFromDirectoryMissing) {
     return request.sessionId;
   }
 
@@ -103,7 +105,8 @@ const defaultSessionIdFromDirectory = (path: string): string => {
   const name = basename(path);
   const uuidMatch = name.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
 
-  if (uuidMatch !== null) {
+  const isUuidPresent = uuidMatch != null;
+  if (isUuidPresent) {
     return uuidMatch[0];
   }
 
@@ -118,40 +121,46 @@ const collectSessionDirectories = async (
     readonly excludedNames: ReadonlyArray<string>;
   },
 ): Promise<ReadonlyArray<string>> => {
-  const isRootDirectory = await isDirectoryPath(root);
+  const isNotRootDirectory = !(await isDirectoryPath(root));
 
-  if (!isRootDirectory) {
+  if (isNotRootDirectory) {
     return [];
   }
 
   const found: string[] = [];
 
   const walk = async (directory: string, depth: number): Promise<void> => {
-    if (depth > options.maxDepth) {
+    const isDepthAboveMaxDepth = depth > options.maxDepth;
+    if (isDepthAboveMaxDepth) {
       return;
     }
 
-    if (await directoryHasMarkers(directory, options.markers)) {
+    const hasSessionMarkers = await directoryHasMarkers(directory, options.markers);
+    if (hasSessionMarkers) {
       found.push(directory);
       return;
     }
 
-    if (depth === options.maxDepth) {
+    const isDepthEqualsMaxDepth = depth === options.maxDepth;
+    if (isDepthEqualsMaxDepth) {
       return;
     }
 
     const entries = await readChildEntries(directory);
 
     for (const entry of entries) {
-      if (!entry.isDirectory()) {
+      const isNotDirectory = !entry.isDirectory();
+      if (isNotDirectory) {
         continue;
       }
 
-      if (options.excludedNames.includes(entry.name)) {
+      const isNameInExcludedNames = options.excludedNames.includes(entry.name);
+      if (isNameInExcludedNames) {
         continue;
       }
 
-      if (entry.name.startsWith('.')) {
+      const isNameStartsWithEmpty = entry.name.startsWith('.');
+      if (isNameStartsWithEmpty) {
         continue;
       }
 
@@ -190,6 +199,7 @@ const directoryHasMarkers = async (
 ): Promise<boolean> => {
   for (const marker of markers) {
     const markerPath = join(directory, marker);
+
     const isMarkerFound = await isFilePath(markerPath);
 
     if (isMarkerFound) {

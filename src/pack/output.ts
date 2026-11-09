@@ -130,7 +130,8 @@ const formatPackPlanRow = (packPlanRow: PackPlan['rows'][number]): string => {
 const formatThresholdPreviewBlock = (
   previews: PackPlan['thresholdPreviews'],
 ): ReadonlyArray<string> => {
-  if (previews.length === 0) {
+  const isPreviewsEmpty = previews.length === 0;
+  if (isPreviewsEmpty) {
     return [];
   }
 
@@ -150,11 +151,13 @@ const formatThresholdPreviewBlock = (
 const formatThresholdPreviewLabel = (
   kind: PackPlan['thresholdPreviews'][number]['kind'],
 ): string => {
-  if (kind === 'safer') {
+  const isKindSafer = kind === 'safer';
+  if (isKindSafer) {
     return 'safer';
   }
 
-  if (kind === 'broader') {
+  const isKindBroader = kind === 'broader';
+  if (isKindBroader) {
     return 'broader';
   }
 
@@ -162,7 +165,8 @@ const formatThresholdPreviewLabel = (
 };
 
 const formatThresholdPreviewCommand = (preview: PackPlan['thresholdPreviews'][number]): string => {
-  if (preview.kind === 'max') {
+  const isPreviewKindMax = preview.kind === 'max';
+  if (isPreviewKindMax) {
     return '--max --dry-run';
   }
 
@@ -170,7 +174,8 @@ const formatThresholdPreviewCommand = (preview: PackPlan['thresholdPreviews'][nu
 };
 
 const formatSessionCount = (sessions: number): string => {
-  if (sessions === 1) {
+  const isSessions1 = sessions === 1;
+  if (isSessions1) {
     return '1 session';
   }
 
@@ -209,7 +214,8 @@ const packTotals = (
     (totalBytes, packSessionRow) => totalBytes + packSessionRow.beforeBytes,
     0,
   );
-  const savedBytes = archiveBytes === undefined ? undefined : beforeBytes - archiveBytes;
+  const isArchiveBytesMissing = archiveBytes == null;
+  const savedBytes = isArchiveBytesMissing ? undefined : beforeBytes - archiveBytes;
 
   return {
     archiveBytes,
@@ -227,13 +233,14 @@ const packTotals = (
       0,
     ),
     savedBytes,
-    savedPercent: archiveBytes === undefined ? undefined : savedPercent(beforeBytes, archiveBytes),
+    savedPercent: isArchiveBytesMissing ? undefined : savedPercent(beforeBytes, archiveBytes),
     touchedOriginals: report.rows.some((packSessionRow) => packSessionRow.touchedOriginals),
   };
 };
 
 const sumMaybe = (values: ReadonlyArray<number | undefined>): number | undefined => {
-  if (values.some((value) => value === undefined)) {
+  const hasMissingValue = values.some((value) => value == null);
+  if (hasMissingValue) {
     return undefined;
   }
 
@@ -247,7 +254,8 @@ const sumMaybe = (values: ReadonlyArray<number | undefined>): number | undefined
 };
 
 const formatMaybeBytes = (bytes: number | undefined): string => {
-  if (bytes === undefined) {
+  const isBytesMissing = bytes == null;
+  if (isBytesMissing) {
     return 'pending';
   }
 
@@ -255,7 +263,8 @@ const formatMaybeBytes = (bytes: number | undefined): string => {
 };
 
 const formatMaybePercent = (percent: number | undefined): string => {
-  if (percent === undefined) {
+  const isPercentMissing = percent == null;
+  if (isPercentMissing) {
     return 'pending';
   }
 

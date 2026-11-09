@@ -42,22 +42,26 @@ export const collectJsonlSessions = async (
   const files: JsonlSessionFile[] = [];
 
   for (const entry of entries) {
-    if (options.excludePathParts.includes(entry.name)) {
+    const isExcludedName = options.excludePathParts.includes(entry.name);
+    if (isExcludedName) {
       continue;
     }
 
     const entryPath = join(root, entry.name);
 
-    if (entry.isDirectory()) {
+    const isDirectoryEntry = entry.isDirectory();
+    if (isDirectoryEntry) {
       files.push(...(await collectJsonlSessions(entryPath, options)));
       continue;
     }
 
-    if (!entry.isFile()) {
+    const isNotFile = !entry.isFile();
+    if (isNotFile) {
       continue;
     }
 
-    if (!entry.name.endsWith('.jsonl')) {
+    const isNotNameEndsWithJsonl = !entry.name.endsWith('.jsonl');
+    if (isNotNameEndsWithJsonl) {
       continue;
     }
 
@@ -86,19 +90,22 @@ export const measureDirectorySession = async (path: string): Promise<DirectorySe
     for (const entry of entries) {
       const entryPath = join(directory, entry.name);
 
-      if (entry.isDirectory()) {
+      const isDirectoryEntry = entry.isDirectory();
+      if (isDirectoryEntry) {
         await walk(entryPath);
         continue;
       }
 
-      if (!entry.isFile()) {
+      const isNotFile = !entry.isFile();
+      if (isNotFile) {
         continue;
       }
 
       const fileStat = await stat(entryPath);
       sizeBytes += fileStat.size;
 
-      if (fileStat.mtime.getTime() > modifiedAt.getTime()) {
+      const isFileNewer = fileStat.mtime.getTime() > modifiedAt.getTime();
+      if (isFileNewer) {
         modifiedAt = fileStat.mtime;
       }
     }
@@ -122,7 +129,8 @@ export const slugifyTitle = (title: string): string => {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
 
-  if (slug.length === 0) {
+  const isSlugEmpty = slug.length === 0;
+  if (isSlugEmpty) {
     return 'untitled-session';
   }
 
@@ -136,7 +144,8 @@ export const sessionIdFromPath = (path: string): string => {
   const fileName = basename(path, extname(path));
   const idMatch = fileName.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
 
-  if (idMatch !== null) {
+  const isIdPresent = idMatch != null;
+  if (isIdPresent) {
     return idMatch[0];
   }
 
@@ -162,14 +171,16 @@ const readSessionTitleFromFile = async (path: string): Promise<string> => {
 
     const scan = titleFromDelimitedLines(`${carry}${text}`);
 
-    if (scan.title.length > 0) {
+    const isScanTitleNotEmpty = scan.title.length > 0;
+    if (isScanTitleNotEmpty) {
       stream.destroy();
       return scan.title;
     }
 
     carry = scan.rest;
 
-    if (bytesRead >= TITLE_SEARCH_LIMIT_BYTES) {
+    const isSearchLimitReached = bytesRead >= TITLE_SEARCH_LIMIT_BYTES;
+    if (isSearchLimitReached) {
       stream.destroy();
       return basename(path, extname(path));
     }
@@ -177,7 +188,8 @@ const readSessionTitleFromFile = async (path: string): Promise<string> => {
 
   const finalTitle = titleFromJsonLine(carry);
 
-  if (finalTitle.length > 0) {
+  const isTitleNotEmpty = finalTitle.length > 0;
+  if (isTitleNotEmpty) {
     return finalTitle;
   }
 
@@ -185,7 +197,8 @@ const readSessionTitleFromFile = async (path: string): Promise<string> => {
 };
 
 const streamChunkToString = (chunk: string | Buffer): string => {
-  if (typeof chunk === 'string') {
+  const isChunkTypeString = typeof chunk === 'string';
+  if (isChunkTypeString) {
     return chunk;
   }
 
@@ -198,7 +211,8 @@ const titleFromDelimitedLines = (
   const lines = content.split(/\r?\n/);
   const rest = lines.pop();
 
-  if (rest === undefined) {
+  const isRestMissing = rest == null;
+  if (isRestMissing) {
     return {
       title: '',
       rest: '',
@@ -208,7 +222,8 @@ const titleFromDelimitedLines = (
   for (const line of lines) {
     const title = titleFromJsonLine(line);
 
-    if (title.length > 0) {
+    const isTitleNotEmpty = title.length > 0;
+    if (isTitleNotEmpty) {
       return {
         title,
         rest,
@@ -230,21 +245,26 @@ const titleFromJsonLine = (line: string): string => {
       readonly message?: unknown;
     };
 
-    if (event.type !== 'user') {
+    const isEventTypeNotUser = event.type !== 'user';
+    if (isEventTypeNotUser) {
       return '';
     }
 
-    if (typeof event.text === 'string') {
+    const isEventTypeString = typeof event.text === 'string';
+    if (isEventTypeString) {
       return event.text;
     }
 
-    if (typeof event.message !== 'object' || event.message === null) {
+    const isEventMessageTypeNotObjectOrMissing =
+      typeof event.message !== 'object' || event.message === null;
+    if (isEventMessageTypeNotObjectOrMissing) {
       return '';
     }
 
     const message = event.message as { readonly content?: unknown };
 
-    if (typeof message.content === 'string') {
+    const isMessageTypeString = typeof message.content === 'string';
+    if (isMessageTypeString) {
       return message.content;
     }
 

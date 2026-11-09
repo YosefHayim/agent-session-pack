@@ -60,11 +60,13 @@ export type WriteSetupConfigRequest = {
  * Expands a user-entered path against the current home directory.
  */
 export const expandHomePath = (path: string, home: string): string => {
-  if (path === '~') {
+  const isPathEmpty = path === '~';
+  if (isPathEmpty) {
     return home;
   }
 
-  if (path.startsWith('~/')) {
+  const isPathStartsWithEmpty = path.startsWith('~/');
+  if (isPathStartsWithEmpty) {
     return join(home, path.slice(2));
   }
 
@@ -84,6 +86,7 @@ export const validateVaultPath = async (
   request: VaultPathValidationRequest,
 ): Promise<ValidatedVaultPath> => {
   const trimmedPath = request.inputPath.trim();
+
   const isPathEmpty = trimmedPath.length === 0;
 
   if (isPathEmpty) {
@@ -94,6 +97,7 @@ export const validateVaultPath = async (
   const providerRoots = request.providerRoots.map((providerRoot) =>
     expandHomePath(providerRoot, request.home),
   );
+
   const isInsideProviderStore = providerRoots.some((providerRoot) =>
     isPathInsideOrSame(path, providerRoot),
   );
@@ -103,7 +107,8 @@ export const validateVaultPath = async (
   }
 
   const targetStat = await statOptional(path);
-  const isTargetFound = targetStat !== undefined;
+
+  const isTargetFound = targetStat != null;
 
   if (isTargetFound) {
     await assertExistingVaultDirectory({ path, targetStat });
@@ -120,7 +125,8 @@ export const validateVaultPath = async (
 export const readSetupConfig = async (home: string): Promise<SetupConfig | undefined> => {
   const configPath = resolveConfigPath(home);
   const configText = await readConfigText(configPath).catch(rethrowAsError);
-  const isConfigMissing = configText === null;
+
+  const isConfigMissing = configText == null;
 
   if (isConfigMissing) {
     return undefined;
@@ -157,9 +163,9 @@ const assertExistingVaultDirectory = async (request: {
   readonly path: string;
   readonly targetStat: Stats;
 }): Promise<void> => {
-  const isTargetDirectory = request.targetStat.isDirectory();
+  const isNotTargetDirectory = !request.targetStat.isDirectory();
 
-  if (!isTargetDirectory) {
+  if (isNotTargetDirectory) {
     throw new Error('Vault path exists but is not a directory.');
   }
 
@@ -169,15 +175,16 @@ const assertExistingVaultDirectory = async (request: {
 const assertNewVaultParent = async (path: string): Promise<void> => {
   const parentPath = dirname(path);
   const parentStat = await statOptional(parentPath);
-  const isParentMissing = parentStat === undefined;
+
+  const isParentMissing = parentStat == null;
 
   if (isParentMissing) {
     throw new Error('Vault parent directory does not exist.');
   }
 
-  const isParentDirectory = parentStat.isDirectory();
+  const isNotParentDirectory = !parentStat.isDirectory();
 
-  if (!isParentDirectory) {
+  if (isNotParentDirectory) {
     throw new Error('Vault parent path exists but is not a directory.');
   }
 
@@ -207,11 +214,13 @@ const assertWritable = async (path: string): Promise<void> => {
 const isPathInsideOrSame = (path: string, parentPath: string): boolean => {
   const relativePath = relative(resolve(parentPath), resolve(path));
 
-  if (relativePath.length === 0) {
+  const isRelativePathEmpty = relativePath.length === 0;
+  if (isRelativePathEmpty) {
     return true;
   }
 
-  if (relativePath.startsWith('..')) {
+  const isRelativePathStartsWithEmpty = relativePath.startsWith('..');
+  if (isRelativePathStartsWithEmpty) {
     return false;
   }
 
@@ -219,11 +228,13 @@ const isPathInsideOrSame = (path: string, parentPath: string): boolean => {
 };
 
 const errorCode = (cause: unknown): string | undefined => {
-  if (typeof cause !== 'object' || cause === null) {
+  const isCauseNotObject = typeof cause !== 'object' || cause === null;
+  if (isCauseNotObject) {
     return undefined;
   }
 
-  if (!('code' in cause)) {
+  const hasNoErrorCode = !('code' in cause);
+  if (hasNoErrorCode) {
     return undefined;
   }
 

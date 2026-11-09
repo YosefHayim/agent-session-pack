@@ -60,18 +60,24 @@ type WatchArgs = {
 const runWatchCommand = async (args: WatchArgs): Promise<CommandOutcome> => {
   const home = requireHome(args.home);
 
-  if (home === undefined) {
+  const isHomeMissing = home == null;
+  if (isHomeMissing) {
     return { exitCode: 1 };
   }
 
   const provider = parseOptionalProvider(args.provider);
-  if (args.provider !== undefined && provider === undefined) {
+
+  const isProviderNotFound = args.provider != null && provider === undefined;
+  if (isProviderNotFound) {
     process.stderr.write(`Unknown provider: ${args.provider}\n`);
     return { exitCode: 2 };
   }
 
   const setupConfig = await readSetupConfig(home);
-  if (!isRestoreOnLaunchEnabled(setupConfig) && args.execArgv.length === 0) {
+
+  const isRestoreOnLaunchOffWithoutExecArgs =
+    !isRestoreOnLaunchEnabled(setupConfig) && args.execArgv.length === 0;
+  if (isRestoreOnLaunchOffWithoutExecArgs) {
     // Allow explicit watch even if disabled when following a child; wrappers enable lifecycle first.
   }
 
@@ -83,9 +89,12 @@ const runWatchCommand = async (args: WatchArgs): Promise<CommandOutcome> => {
   let childExitCode: number | undefined;
   let stop = false;
 
-  if (args.execArgv.length > 0) {
+  const isExecArgvNotEmpty = args.execArgv.length > 0;
+  if (isExecArgvNotEmpty) {
     const [command, ...commandArgs] = args.execArgv;
-    if (command === undefined) {
+
+    const isCommandMissing = command == null;
+    if (isCommandMissing) {
       process.stderr.write('Missing command after -- for watch --exec.\n');
       return { exitCode: 2 };
     }
@@ -116,9 +125,11 @@ const runWatchCommand = async (args: WatchArgs): Promise<CommandOutcome> => {
     process.stderr.write(`watch: ${event.provider}/${event.sessionId} → ${event.status}\n`);
   };
 
-  if (!json && args.execArgv.length === 0) {
+  const isHumanWatchWithoutExec = !json && args.execArgv.length === 0;
+  if (isHumanWatchWithoutExec) {
+    const isProviderMissing = provider === undefined;
     process.stderr.write(
-      `watch: monitoring stubs under vault ${vaultPath}${provider === undefined ? '' : ` for ${provider}`} (Ctrl+C to stop)\n`,
+      `watch: monitoring stubs under vault ${vaultPath}${isProviderMissing ? '' : ` for ${provider}`} (Ctrl+C to stop)\n`,
     );
   }
 
@@ -136,7 +147,9 @@ const runWatchCommand = async (args: WatchArgs): Promise<CommandOutcome> => {
 
 const extractExecArgs = (rawArgs: ReadonlyArray<string>): ReadonlyArray<string> => {
   const separator = rawArgs.indexOf('--');
-  if (separator === -1) {
+
+  const isSeparatorEqualsMinus1 = separator === -1;
+  if (isSeparatorEqualsMinus1) {
     return [];
   }
 
@@ -144,12 +157,15 @@ const extractExecArgs = (rawArgs: ReadonlyArray<string>): ReadonlyArray<string> 
 };
 
 const parsePollMs = (value: string | undefined): number => {
-  if (value === undefined) {
+  const isValueMissing = value == null;
+  if (isValueMissing) {
     return 750;
   }
 
   const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed < 100) {
+
+  const isPollIntervalInvalid = !Number.isFinite(parsed) || parsed < 100;
+  if (isPollIntervalInvalid) {
     return 750;
   }
 

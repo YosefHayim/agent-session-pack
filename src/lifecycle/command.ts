@@ -1,4 +1,3 @@
-import { fileURLToPath } from 'node:url';
 import { defineCommand } from 'citty';
 import { Effect } from 'effect';
 import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
@@ -94,7 +93,7 @@ export const runLifecycleCommand = (
     const now = args.now ?? new Date();
     const vaultPath = existingConfig?.vaultPath ?? resolveDefaultVaultPath(home);
     const wrappersBin = resolveWrappersBinPath(vaultPath);
-    const cliEntrypoint = args.cliEntrypoint ?? resolveDefaultCliEntrypoint();
+    const cliEntrypoint = args.cliEntrypoint ?? pickCliEntrypoint();
 
     if (action === 'status') {
       writeLifecycleStatus(
@@ -182,12 +181,16 @@ const buildLifecycleConfig = (request: {
   };
 };
 
-const resolveDefaultCliEntrypoint = (): string => {
-  try {
-    return fileURLToPath(new URL('../main.js', import.meta.url));
-  } catch {
+// The wrappers must run the script that is running now. In the build this module is bundled into dist/cli/main.js.
+const pickCliEntrypoint = (): string => {
+  const runningScriptPath = process.argv[1];
+  const isThereNoRunningScript = runningScriptPath == null;
+
+  if (isThereNoRunningScript) {
     return 'agent-session-pack';
   }
+
+  return runningScriptPath;
 };
 
 const writeLifecycleStatus = (

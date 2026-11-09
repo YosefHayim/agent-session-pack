@@ -121,7 +121,8 @@ const collectSessionDirectories = async (
     readonly excludedNames: ReadonlyArray<string>;
   },
 ): Promise<ReadonlyArray<string>> => {
-  const isNotRootDirectory = !(await isDirectoryPath(root));
+  const isRootDirectory = await isDirectoryPath(root);
+  const isNotRootDirectory = !isRootDirectory;
 
   if (isNotRootDirectory) {
     return [];
@@ -141,8 +142,8 @@ const collectSessionDirectories = async (
       return;
     }
 
-    const isDepthEqualsMaxDepth = depth === options.maxDepth;
-    if (isDepthEqualsMaxDepth) {
+    const isAtMaxDepth = depth === options.maxDepth;
+    if (isAtMaxDepth) {
       return;
     }
 

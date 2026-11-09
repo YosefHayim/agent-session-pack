@@ -86,7 +86,8 @@ export const watchSessionStubs = async (request: WatchSessionStubsRequest): Prom
   ): Promise<void> => {
     const sourceKind = manifest.sourceKind ?? 'file';
 
-    const isNotStub = !(await isArchivedStubPath(manifest.originalPath, sourceKind));
+    const isPathArchivedStub = await isArchivedStubPath(manifest.originalPath, sourceKind);
+    const isNotStub = !isPathArchivedStub;
 
     if (isNotStub) {
       return;
@@ -96,8 +97,8 @@ export const watchSessionStubs = async (request: WatchSessionStubsRequest): Prom
     if (isDirectoryEventWithoutForce) {
       const opened = await directoryStubWasOpened(manifest.originalPath);
 
-      const isOpenedMissing = !opened;
-      if (isOpenedMissing) {
+      const isStubUnopened = !opened;
+      if (isStubUnopened) {
         return;
       }
     }

@@ -150,8 +150,8 @@ const promptProviderSelection = async (request: {
       return undefined;
     }
 
-    const isSelectedProvidersNotEmpty = selectedProviders.length > 0;
-    if (isSelectedProvidersNotEmpty) {
+    const hasSelectedProviders = selectedProviders.length > 0;
+    if (hasSelectedProviders) {
       return selectedProviders;
     }
 

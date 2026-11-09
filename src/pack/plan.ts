@@ -172,8 +172,8 @@ export const createPackThresholdPreviews = (
 ): ReadonlyArray<PackThresholdPreview> => {
   const duration = parseDuration(request.olderThan);
 
-  const isDurationMissingOr0 = duration == null || duration.value === 0;
-  if (isDurationMissingOr0) {
+  const isDurationZeroOrUnset = duration == null || duration.value === 0;
+  if (isDurationZeroOrUnset) {
     return [
       createThresholdPreview({
         kind: 'max',

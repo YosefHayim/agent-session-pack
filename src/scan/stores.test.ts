@@ -30,8 +30,8 @@ describe('scanStores', () => {
       mode: 'archive',
       defaultRoots: (home) => [join(home, '.codex', 'sessions')],
       discover: (store) => {
-        const isStorePathEqualsCodexRoot = store.path === codexRoot;
-        return Promise.resolve(isStorePathEqualsCodexRoot ? [session] : []);
+        const isCodexStore = store.path === codexRoot;
+        return Promise.resolve(isCodexStore ? [session] : []);
       },
     };
 

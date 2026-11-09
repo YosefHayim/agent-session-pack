@@ -162,8 +162,8 @@ export const runPreflightCommand = async (args: PreflightArgs): Promise<CommandO
 const extractPassthroughArgv = (rawArgs: ReadonlyArray<string>): ReadonlyArray<string> => {
   const separatorIndex = rawArgs.indexOf('--');
 
-  const isSeparatorIndexEqualsMinus1 = separatorIndex === -1;
-  if (isSeparatorIndexEqualsMinus1) {
+  const isSeparatorNotFound = separatorIndex === -1;
+  if (isSeparatorNotFound) {
     // Everything after subcommand name flags; drop known flags.
     return rawArgs.filter(
       (arg, index, all) =>

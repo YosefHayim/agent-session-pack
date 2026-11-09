@@ -27,8 +27,8 @@ export type InteractiveCliDetectionRequest = {
  * @returns True when no command or flags were provided in a TTY.
  */
 export const shouldRunInteractiveCli = (request: InteractiveCliDetectionRequest): boolean => {
-  const isTerminalMissing = !request.stdinIsTty || !request.stdoutIsTty;
-  if (isTerminalMissing) {
+  const isNotInteractiveTerminal = !request.stdinIsTty || !request.stdoutIsTty;
+  if (isNotInteractiveTerminal) {
     return false;
   }
 

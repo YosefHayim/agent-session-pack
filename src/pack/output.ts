@@ -174,8 +174,8 @@ const formatThresholdPreviewCommand = (preview: PackPlan['thresholdPreviews'][nu
 };
 
 const formatSessionCount = (sessions: number): string => {
-  const isSessions1 = sessions === 1;
-  if (isSessions1) {
+  const isSingleSession = sessions === 1;
+  if (isSingleSession) {
     return '1 session';
   }
 

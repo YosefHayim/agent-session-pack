@@ -27,8 +27,8 @@ export const formatBytes = (bytes: number): string => {
     unitIndex += 1;
   }
 
-  const isAtLeast100 = value >= 100;
-  if (isAtLeast100) {
+  const hasThreeOrMoreDigits = value >= 100;
+  if (hasThreeOrMoreDigits) {
     return `${value.toFixed(0)} ${BYTE_UNITS[unitIndex]}`;
   }
 

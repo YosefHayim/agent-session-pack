@@ -171,8 +171,8 @@ const readSessionTitleFromFile = async (path: string): Promise<string> => {
 
     const scan = titleFromDelimitedLines(`${carry}${text}`);
 
-    const isScanTitleNotEmpty = scan.title.length > 0;
-    if (isScanTitleNotEmpty) {
+    const hasScanTitle = scan.title.length > 0;
+    if (hasScanTitle) {
       stream.destroy();
       return scan.title;
     }
@@ -188,8 +188,8 @@ const readSessionTitleFromFile = async (path: string): Promise<string> => {
 
   const finalTitle = titleFromJsonLine(carry);
 
-  const isTitleNotEmpty = finalTitle.length > 0;
-  if (isTitleNotEmpty) {
+  const hasTitle = finalTitle.length > 0;
+  if (hasTitle) {
     return finalTitle;
   }
 
@@ -222,8 +222,8 @@ const titleFromDelimitedLines = (
   for (const line of lines) {
     const title = titleFromJsonLine(line);
 
-    const isTitleNotEmpty = title.length > 0;
-    if (isTitleNotEmpty) {
+    const hasTitle = title.length > 0;
+    if (hasTitle) {
       return {
         title,
         rest,

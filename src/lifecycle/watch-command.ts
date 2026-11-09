@@ -84,15 +84,15 @@ const runWatchCommand = async (args: WatchArgs): Promise<CommandOutcome> => {
   let stop = false;
 
   // Watch runs even when restore on launch is off; wrappers enable lifecycle first.
-  const isExecArgvNotEmpty = args.execArgv.length > 0;
+  const hasExecCommand = args.execArgv.length > 0;
   const [command, ...commandArgs] = args.execArgv;
-  const isExecCommandMissing = isExecArgvNotEmpty && command == null;
+  const isExecCommandMissing = hasExecCommand && command == null;
   if (isExecCommandMissing) {
     process.stderr.write('Missing command after -- for watch --exec.\n');
     return { exitCode: 2 };
   }
 
-  if (isExecArgvNotEmpty) {
+  if (hasExecCommand) {
     const child = spawn(command, commandArgs, {
       stdio: 'inherit',
       env: process.env,
@@ -121,7 +121,7 @@ const runWatchCommand = async (args: WatchArgs): Promise<CommandOutcome> => {
 
   const isHumanWatchWithoutExec = !json && args.execArgv.length === 0;
   if (isHumanWatchWithoutExec) {
-    const isProviderMissing = provider === undefined;
+    const isProviderMissing = provider == null;
     process.stderr.write(
       `watch: monitoring stubs under vault ${vaultPath}${isProviderMissing ? '' : ` for ${provider}`} (Ctrl+C to stop)\n`,
     );
@@ -142,8 +142,8 @@ const runWatchCommand = async (args: WatchArgs): Promise<CommandOutcome> => {
 const extractExecArgs = (rawArgs: ReadonlyArray<string>): ReadonlyArray<string> => {
   const separator = rawArgs.indexOf('--');
 
-  const isSeparatorEqualsMinus1 = separator === -1;
-  if (isSeparatorEqualsMinus1) {
+  const isSeparatorNotFound = separator === -1;
+  if (isSeparatorNotFound) {
     return [];
   }
 

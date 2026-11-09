@@ -36,8 +36,8 @@ export const formatHumanEvidenceReport = (report: LocalEvidenceReport): string =
     0,
   );
   const touchedOriginals = report.evidence.some((entry) => entry.originalTouched);
-  const isTotalSampledSources0 = totalSampledSources === 0;
-  const totalSavedPercent = isTotalSampledSources0
+  const isNothingSampledInTotal = totalSampledSources === 0;
+  const totalSavedPercent = isNothingSampledInTotal
     ? undefined
     : savedPercent(totalSourceBytes, totalArchiveBytes);
 
@@ -98,8 +98,8 @@ const formatOptionalBytes = (bytes: number | undefined): string => {
 };
 
 const formatMaybeBytes = (bytes: number, sampledSources: number): string => {
-  const isSampledSources0 = sampledSources === 0;
-  return isSampledSources0 ? '-' : formatBytes(bytes);
+  const isNothingSampled = sampledSources === 0;
+  return isNothingSampled ? '-' : formatBytes(bytes);
 };
 
 const formatPercent = (percent: number): string => `${percent.toFixed(1)}%`;

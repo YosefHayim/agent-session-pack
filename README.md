@@ -118,7 +118,7 @@ I want to free disk space used by my local AI coding-agent sessions with
 Agent Session Pack (https://github.com/YosefHayim/agent-session-pack).
 
 Please:
-1. Check that Node.js 20+ and zstd are installed. If zstd is missing, tell me how to install it on my OS.
+1. Check that Node.js 22+ and zstd are installed. If zstd is missing, tell me how to install it on my OS.
 2. Run: npx --yes agent-session-pack guide --json
    and follow its safe command map.
 3. Run: npx --yes agent-session-pack check --json
@@ -134,7 +134,7 @@ Please:
 
 ### 1. Check requirements
 
-- [Node.js](https://nodejs.org/en) 20 or newer.
+- [Node.js](https://nodejs.org/en) 22 or newer.
 - [`zstd`](https://facebook.github.io/zstd/) on your `PATH` for proof, pack, and restore.
 - `sqlite3` only if you use Devin.
 - `HOME` set in your shell (normal on macOS and Linux; see [`.env.example`](.env.example)).
@@ -317,10 +317,11 @@ Contributions are welcome. Fork, branch, add tests, run the checks, commit with 
 
 ```bash
 pnpm install
-pnpm lint         # Biome, then knip
-pnpm typecheck    # TypeScript
-pnpm test         # Vitest, synthetic fixtures only
-pnpm build        # tsup to dist/
+pnpm check        # lint, typecheck, test and build through Turborepo
+pnpm lint:fix     # write the Biome fixes
+pnpm test:watch   # Vitest in watch mode; tests use synthetic fixtures only
+pnpm dev          # run the CLI from source, e.g. pnpm dev doctor
+pnpm prod         # build, then run the built CLI
 ```
 
 Tests never read or change your real session folders.

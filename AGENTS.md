@@ -5,8 +5,8 @@ Agent Session Pack is a CLI-only TypeScript tool for reducing local disk usage f
 ## Working Rules
 
 - Do not touch real AI session directories in normal tests.
-- Real local evidence runs must be explicit through `pnpm savings`, `pnpm evidence:local`, or `agent-session-pack check`.
-- Prefer `agent-session-pack guide --json` or `pnpm guide` when an agent needs the safe command map.
+- Real local evidence runs must be explicit through `pnpm dev:savings` or `agent-session-pack check`.
+- Prefer `agent-session-pack guide --json` or `pnpm dev:guide` when an agent needs the safe command map.
 - Use `pack --max --dry-run` only for curiosity previews; never combine `--max` with `--apply`.
 - Keep provider modules read-only.
 - Centralize destructive behavior in the archive, pack, and restore workflows.
@@ -19,21 +19,8 @@ Agent Session Pack is a CLI-only TypeScript tool for reducing local disk usage f
 
 ## Conventions
 
-- Use Effect workflows, Effect Schema contracts, and typed Effect errors.
-- Prefer Schema validation at boundaries over custom ad-hoc validators when Schema fits.
-- Export app APIs as arrow const functions with explicit params and return types.
-- Use camelCase filenames. Do not add kebab-case source files.
-- Do not add `utils.ts`, `helpers.ts`, or `common.ts`.
-- Module constants are UPPER_SNAKE and sit after imports.
-- No `index.ts` barrels; import concrete modules.
-- No vague locals (`result`, `data`, `payload`, `body`, `response`, `row`) when a domain name exists.
-- No `normalize*` wrappers; inline trivial defaults (`x ?? default`) or name helpers by domain purpose.
-- No over-engineering: an abstraction needs a second caller or a real domain name, else inline it. No no-op/identity wrappers, one-use wrappers, or cross-file copy-pasted micro-helpers.
-- Do not use raw `throw new Error()` in domain/application code.
-- Do not use normal tests against real home session directories.
-- Unit tests colocated next to source (`src/**/*.test.ts`); `tests/` only for shared helpers/fixtures and optional integration tests.
-- Use `@clack/prompts` only for TTY interaction.
 - Use `citty` for commands and argument parsing.
+- Use `@clack/prompts` only for TTY interaction.
 - Use stable JSON output for agents and compact tables for humans.
 
 ## Repo Layout
@@ -73,10 +60,7 @@ Root guidance stays compact. Deeper detail lives in dedicated files:
 Run before claiming work is complete:
 
 ```bash
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm build
+pnpm check
 ```
 
-CI runs only test and build, on Linux. `pnpm lint` and `pnpm typecheck` run in the pre-push hook; a new worktree needs `pnpm install` before its first push.
+`pnpm check` runs lint, typecheck, test and build through Turborepo. Public CI runs test and build on pushes to `main`. A pre-commit hook runs Biome on staged files; a new worktree needs `pnpm install` before its first commit.

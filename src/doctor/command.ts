@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { defineCommand } from 'citty';
+import type { CommandOutcome } from '@/command-outcome.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -28,17 +29,18 @@ export type DoctorArgs = {
  * await runDoctorCommand({ json: true });
  * ```
  */
-export const runDoctorCommand = async (args: DoctorArgs): Promise<void> => {
+export const runDoctorCommand = async (args: DoctorArgs): Promise<CommandOutcome> => {
   const zstd = await checkCommand('zstd', ['--version']);
   const sqlite3 = await checkCommand('sqlite3', ['--version']);
 
   if (args.json === true) {
     process.stdout.write(`${JSON.stringify({ sqlite3, zstd })}\n`);
-    return;
+    return { exitCode: 0 };
   }
 
   process.stdout.write(`zstd: ${zstd.available ? zstd.version : 'missing'}\n`);
   process.stdout.write(`sqlite3: ${sqlite3.available ? sqlite3.version : 'missing'}\n`);
+  return { exitCode: 0 };
 };
 
 /**
@@ -56,7 +58,7 @@ export const doctorCommand = defineCommand({
     },
   },
   run: async ({ args }) => {
-    await runDoctorCommand({
+    return runDoctorCommand({
       json: args.json,
     });
   },

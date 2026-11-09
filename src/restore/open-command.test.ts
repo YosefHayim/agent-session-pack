@@ -12,7 +12,6 @@ describe('open command', () => {
 
   beforeEach(() => {
     stdoutWrites.length = 0;
-    process.exitCode = undefined;
     vi.spyOn(process.stdout, 'write').mockImplementation((chunk) => {
       stdoutWrites.push(String(chunk));
       return true;
@@ -21,7 +20,6 @@ describe('open command', () => {
   });
 
   afterEach(() => {
-    process.exitCode = undefined;
     vi.restoreAllMocks();
   });
 
@@ -49,7 +47,7 @@ describe('open command', () => {
       sourceKind: 'file',
     });
 
-    await runOpenCommand({
+    const commandOutcome = await runOpenCommand({
       home,
       vaultPath,
       provider: 'codex',
@@ -59,7 +57,7 @@ describe('open command', () => {
       now: new Date('2026-07-07T00:00:00.000Z'),
     });
 
-    expect(process.exitCode).toBeUndefined();
+    expect(commandOutcome.exitCode).toBe(0);
     expect(JSON.parse(stdoutWrites.join(''))).toMatchObject({
       command: 'open',
       status: 'restored',

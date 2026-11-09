@@ -1,3 +1,4 @@
+import type { CommandOutcome } from '@/command-outcome.js';
 import { HOME_NOT_SET_CANCEL_MESSAGE } from '@/home-env.js';
 import type { InteractiveCliRequest } from '@/interactive-cli-request.js';
 import { DEFAULT_COLD_AFTER_MS } from '@/pack/plan.js';
@@ -21,12 +22,12 @@ import { formatProviderInventoryTable, loadInventoryWithSpinner } from './invent
  */
 export const runReviewSessions = async (
   request: InteractiveCliRequest & { readonly prompts: PromptAdapter },
-): Promise<void> => {
+): Promise<CommandOutcome> => {
   const home = request.home ?? process.env.HOME;
 
   if (home === undefined) {
     request.prompts.cancel(HOME_NOT_SET_CANCEL_MESSAGE);
-    return;
+    return { exitCode: 0 };
   }
 
   const inventory = await loadInventoryWithSpinner({
@@ -40,5 +41,5 @@ export const runReviewSessions = async (
   });
 
   request.prompts.note(formatProviderInventoryTable(inventory), 'Provider sessions');
-  await runScanCommand({});
+  return runScanCommand({});
 };

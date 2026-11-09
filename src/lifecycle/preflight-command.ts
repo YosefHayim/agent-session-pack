@@ -2,6 +2,7 @@ import { defineCommand } from 'citty';
 import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
+import type { CommandOutcome } from '@/command-outcome.js';
 import { requireHome } from '@/home-env.js';
 import { type EnsureRestoredReport, ensureSessionRestored } from '@/restore/ensure-restored.js';
 import { type ProviderId, ProviderIdSchema } from '@/session-model.js';
@@ -31,7 +32,7 @@ export const preflightCommand = defineCommand({
   },
   run: async ({ args, rawArgs }) => {
     const passthrough = extractPassthroughArgv(rawArgs);
-    await runPreflightCommand({
+    return runPreflightCommand({
       json: args.json,
       provider: args.provider,
       passthroughArgv: passthrough,
@@ -59,19 +60,18 @@ export type PreflightArgs = {
  *
  * @param args - Provider, passthrough argv, and output flags.
  */
-export const runPreflightCommand = async (args: PreflightArgs): Promise<void> => {
+export const runPreflightCommand = async (args: PreflightArgs): Promise<CommandOutcome> => {
   const home = requireHome(args.home);
 
   if (home === undefined) {
-    return;
+    return { exitCode: 1 };
   }
 
   const provider = parseProvider(args.provider);
 
   if (provider === undefined) {
     process.stderr.write(`Unknown or missing provider: ${args.provider ?? ''}\n`);
-    process.exitCode = 2;
-    return;
+    return { exitCode: 2 };
   }
 
   const setupConfig = await readSetupConfig(home);
@@ -94,7 +94,7 @@ export const runPreflightCommand = async (args: PreflightArgs): Promise<void> =>
       },
       isJsonOutput,
     );
-    return;
+    return { exitCode: 0 };
   }
 
   if (sessionIds.length === 0) {
@@ -109,7 +109,7 @@ export const runPreflightCommand = async (args: PreflightArgs): Promise<void> =>
       },
       isJsonOutput,
     );
-    return;
+    return { exitCode: 0 };
   }
 
   const restores: EnsureRestoredReport[] = [];
@@ -150,6 +150,7 @@ export const runPreflightCommand = async (args: PreflightArgs): Promise<void> =>
     },
     isJsonOutput,
   );
+  return { exitCode: 0 };
 };
 
 const extractPassthroughArgv = (rawArgs: ReadonlyArray<string>): ReadonlyArray<string> => {

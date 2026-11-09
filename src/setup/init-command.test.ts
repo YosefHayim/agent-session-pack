@@ -9,7 +9,6 @@ describe('init command', () => {
 
   beforeEach(() => {
     writes.length = 0;
-    process.exitCode = undefined;
     Object.defineProperty(process.stdin, 'isTTY', {
       configurable: true,
       value: false,
@@ -25,7 +24,6 @@ describe('init command', () => {
   });
 
   afterEach(() => {
-    process.exitCode = undefined;
     Object.defineProperty(process.stdin, 'isTTY', {
       configurable: true,
       value: originalStdinIsTty,

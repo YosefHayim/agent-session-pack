@@ -1,4 +1,5 @@
 import { defineCommand } from 'citty';
+import type { CommandOutcome } from '@/command-outcome.js';
 import { requireHome } from '@/home-env.js';
 import { selectProviders } from '@/providers/flag.js';
 import type { SessionStore } from '@/session-model.js';
@@ -16,15 +17,16 @@ export interface ScanArgs {
 /**
  * Scans provider stores and writes the sessions found for humans or agents.
  */
-export const runScanCommand = async (args: ScanArgs): Promise<void> => {
+export const runScanCommand = async (args: ScanArgs): Promise<CommandOutcome> => {
   const home = requireHome();
   const isHomeMissing = home === undefined;
 
   if (isHomeMissing) {
-    return;
+    return { exitCode: 1 };
   }
 
-  const providers = selectProviders(args.provider);
+  const { providers, isProviderUnknown } = selectProviders(args.provider);
+  const providerExitCode = isProviderUnknown ? 2 : 0;
   const stores = providers.flatMap((provider) =>
     provider.defaultRoots(home).map((path): SessionStore => ({ provider: provider.id, path })),
   );
@@ -36,10 +38,11 @@ export const runScanCommand = async (args: ScanArgs): Promise<void> => {
 
   if (isJsonRequested) {
     renderJsonScan(report);
-    return;
+    return { exitCode: providerExitCode };
   }
 
   renderHumanScan(report);
+  return { exitCode: providerExitCode };
 };
 
 /**
@@ -63,7 +66,7 @@ export const scanCommand = defineCommand({
     },
   },
   run: async ({ args }) => {
-    await runScanCommand({
+    return runScanCommand({
       provider: args.provider,
       json: args.json,
     });

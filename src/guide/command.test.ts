@@ -7,7 +7,6 @@ describe('guide command', () => {
 
   beforeEach(() => {
     writes.length = 0;
-    process.exitCode = undefined;
     vi.spyOn(process.stdout, 'write').mockImplementation((chunk) => {
       writes.push(String(chunk));
       return true;
@@ -15,12 +14,11 @@ describe('guide command', () => {
   });
 
   afterEach(() => {
-    process.exitCode = undefined;
     vi.restoreAllMocks();
   });
 
   it('writes stable JSON guide without prompting', async () => {
-    await runGuideCommand({ json: true });
+    const commandOutcome = await runGuideCommand({ json: true });
 
     const payload = JSON.parse(writes.join(''));
     expect(payload).toMatchObject({
@@ -32,15 +30,15 @@ describe('guide command', () => {
         applyConfirmation: '--apply --yes',
       },
     });
-    expect(process.exitCode).toBeUndefined();
+    expect(commandOutcome.exitCode).toBe(0);
   });
 
   it('writes human guide text by default', async () => {
-    await runGuideCommand({ json: undefined });
+    const commandOutcome = await runGuideCommand({ json: undefined });
 
     expect(writes.join('')).toContain('Agent-first quickstart');
     expect(writes.join('')).toContain('Prefer explicit subcommands with --json.');
-    expect(process.exitCode).toBeUndefined();
+    expect(commandOutcome.exitCode).toBe(0);
   });
 
   it('exposes citty metadata and --json flag', () => {

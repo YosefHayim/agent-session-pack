@@ -3,6 +3,7 @@ import { resolveApplyConfirmation } from '@/apply-confirmation.js';
 import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
+import type { CommandOutcome } from '@/command-outcome.js';
 import { requireHome } from '@/home-env.js';
 import { selectProviders } from '@/providers/flag.js';
 import { scanStores } from '@/scan/stores.js';
@@ -70,7 +71,7 @@ export const packCommand = defineCommand({
           yes: args.yes,
         });
 
-    await runPackCommand({
+    return runPackCommand({
       allProviders: args['all-providers'],
       provider: args.provider,
       max: args.max,
@@ -107,21 +108,20 @@ export type PackArgs = {
 /**
  * Runs the pack command: a dry-run plan, or an archive run when applying.
  */
-export const runPackCommand = async (args: PackArgs): Promise<void> => {
+export const runPackCommand = async (args: PackArgs): Promise<CommandOutcome> => {
   const isMaxApplyRequested = args.max === true && args.apply === true;
 
   if (isMaxApplyRequested) {
     process.stderr.write('Refusing --max with --apply. Use --max as a dry-run preview only.\n');
     process.stderr.write('\n');
-    process.exitCode = 2;
-    return;
+    return { exitCode: 2 };
   }
 
   const home = requireHome(args.home);
   const isHomeMissing = home === undefined;
 
   if (isHomeMissing) {
-    return;
+    return { exitCode: 1 };
   }
 
   const isApplyUnconfirmed = args.apply === true && args.confirmed !== true;
@@ -129,13 +129,13 @@ export const runPackCommand = async (args: PackArgs): Promise<void> => {
   if (isApplyUnconfirmed) {
     process.stderr.write('Cancelled. Re-run with --apply and confirm with y to pack sessions.\n');
     process.stderr.write('\n');
-    process.exitCode = 2;
-    return;
+    return { exitCode: 2 };
   }
 
   const olderThan = args.max === true ? '0h' : (args.olderThan ?? DEFAULT_COLD_AFTER);
   const olderThanMs = parseDurationMs(olderThan);
-  const providers = args.providers ?? selectProviders(args.provider);
+  const { providers, isProviderUnknown } = selectProviders(args.provider, args.providers);
+  const providerExitCode = isProviderUnknown ? 2 : 0;
 
   if (shouldUseArchiveWorkflow(args)) {
     const report = await packProviderSessions({
@@ -151,11 +151,11 @@ export const runPackCommand = async (args: PackArgs): Promise<void> => {
 
     if (args.json === true) {
       process.stdout.write(formatJsonPackReport(report));
-      return;
+      return { exitCode: providerExitCode };
     }
 
     process.stdout.write(`${formatHumanPackReport(report, { olderThan })}\n`);
-    return;
+    return { exitCode: providerExitCode };
   }
 
   const stores = providers.flatMap((provider) =>
@@ -179,10 +179,11 @@ export const runPackCommand = async (args: PackArgs): Promise<void> => {
 
   if (args.json === true) {
     process.stdout.write(formatJsonPackPlan(plan));
-    return;
+    return { exitCode: providerExitCode };
   }
 
   process.stdout.write(`${formatHumanPackPlan(plan, { olderThan })}\n`);
+  return { exitCode: providerExitCode };
 };
 
 const shouldUseArchiveWorkflow = (args: PackArgs): boolean => {

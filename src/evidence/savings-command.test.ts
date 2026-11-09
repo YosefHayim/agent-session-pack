@@ -30,7 +30,6 @@ describe('savings command', () => {
   beforeEach(async () => {
     stdoutWrites.length = 0;
     stderrWrites.length = 0;
-    process.exitCode = undefined;
     workCwd = await createWorkspace();
     process.chdir(workCwd);
     vi.spyOn(process.stdout, 'write').mockImplementation((chunk) => {
@@ -46,7 +45,6 @@ describe('savings command', () => {
   afterEach(async () => {
     process.chdir(originalCwd);
     process.env.HOME = originalHome;
-    process.exitCode = undefined;
     vi.restoreAllMocks();
     if (workCwd !== undefined) {
       await rm(workCwd, { recursive: true, force: true });
@@ -56,9 +54,9 @@ describe('savings command', () => {
   it('exits with code 1 when HOME is unset', async () => {
     delete process.env.HOME;
 
-    await runSavingsCommand({ json: true });
+    const commandOutcome = await runSavingsCommand({ json: true });
 
-    expect(process.exitCode).toBe(1);
+    expect(commandOutcome.exitCode).toBe(1);
     const stderr = stderrWrites.join('');
     expect(stderr).toContain('HOME is not set.');
     expect(stderr).toContain('.env.example');
@@ -69,9 +67,9 @@ describe('savings command', () => {
     const home = await createWorkspace();
     process.env.HOME = home;
 
-    await runSavingsCommand({ provider: 'nope', json: true });
+    const commandOutcome = await runSavingsCommand({ provider: 'nope', json: true });
 
-    expect(process.exitCode).toBe(2);
+    expect(commandOutcome.exitCode).toBe(2);
     expect(stderrWrites.join('')).toContain('Unknown provider: nope');
   });
 
@@ -79,7 +77,7 @@ describe('savings command', () => {
     const home = await createWorkspace();
     process.env.HOME = home;
 
-    await runSavingsCommand({ provider: 'codex', json: true });
+    const commandOutcome = await runSavingsCommand({ provider: 'codex', json: true });
 
     const payload = JSON.parse(stdoutWrites.join('')) as {
       readonly workRoot: string;
@@ -87,7 +85,7 @@ describe('savings command', () => {
     };
     expect(payload.evidence).toEqual([]);
     expect(payload.workRoot).toContain(join('.vault-test', 'evidence-local', String(process.pid)));
-    expect(process.exitCode).toBeUndefined();
+    expect(commandOutcome.exitCode).toBe(0);
   });
 
   it('writes human empty-state evidence without prompting', async () => {

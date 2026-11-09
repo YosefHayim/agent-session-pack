@@ -1,3 +1,4 @@
+import type { CommandOutcome } from '@/command-outcome.js';
 import { runDoctorCommand } from '@/doctor/command.js';
 import { runSavingsCommand } from '@/evidence/savings-command.js';
 import type { InteractiveCliRequest } from '@/interactive-cli-request.js';
@@ -82,7 +83,9 @@ export const createMainMenuOptions = (): ReadonlyArray<PromptOption<MainMenuActi
  * @param request - Optional test overrides for prompts, home, providers, and time.
  * @returns Promise that resolves after the selected action completes.
  */
-export const runInteractiveCli = async (request: InteractiveCliRequest = {}): Promise<void> => {
+export const runInteractiveCli = async (
+  request: InteractiveCliRequest = {},
+): Promise<CommandOutcome> => {
   const prompts = request.prompts ?? clackPromptAdapter;
   prompts.intro('Agent Session Pack');
   prompts.note(firstScreenCopy());
@@ -94,10 +97,10 @@ export const runInteractiveCli = async (request: InteractiveCliRequest = {}): Pr
 
   if (prompts.isCancel(action) || action === 'exit') {
     prompts.outro('No files changed.');
-    return;
+    return { exitCode: 0 };
   }
 
-  await runInteractiveAction({
+  return runInteractiveAction({
     ...request,
     action,
     prompts,
@@ -109,42 +112,39 @@ const runInteractiveAction = async (
     readonly action: MainMenuAction;
     readonly prompts: PromptAdapter;
   },
-): Promise<void> => {
+): Promise<CommandOutcome> => {
   if (request.action === 'setup') {
     await runFirstSetup({
       ...request,
       showIntro: false,
     });
-    return;
+    return { exitCode: 0 };
   }
 
   if (request.action === 'savings') {
-    await runWithSpinner({
+    const savingsOutcome = await runWithSpinner({
       prompts: request.prompts,
       startMessage: 'Checking savings...',
       stopMessage: 'Savings check complete.',
       task: () => runSavingsCommand({}),
     });
     request.prompts.outro('Original sessions touched: no');
-    return;
+    return savingsOutcome;
   }
 
   if (request.action === 'review') {
-    await runReviewSessions(request);
-    return;
+    return runReviewSessions(request);
   }
 
   if (request.action === 'pack') {
-    await runPackFlow(request);
-    return;
+    return runPackFlow(request);
   }
 
   if (request.action === 'restore') {
-    await runRestoreFlow(request);
-    return;
+    return runRestoreFlow(request);
   }
 
-  await runDoctorCommand({});
+  return runDoctorCommand({});
 };
 
 const firstScreenCopy = (): string =>

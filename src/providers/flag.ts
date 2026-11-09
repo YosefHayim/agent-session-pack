@@ -15,21 +15,37 @@ export const parseOptionalProvider = (provider: string | undefined): ProviderId 
   return isProviderKnown ? providerReply.data : undefined;
 };
 
+export interface ProviderSelection {
+  readonly providers: ReadonlyArray<ProviderAdapter>;
+  readonly isProviderUnknown: boolean;
+}
+
 /**
- * Resolves the `--provider` flag to provider adapters, reporting an unknown id with exit code 2.
+ * Resolves the `--provider` flag to provider adapters. An unknown id is written to stderr and flagged;
+ * a provider list the caller already has wins over the flag.
  */
-export const selectProviders = (provider: string | undefined): ReadonlyArray<ProviderAdapter> => {
-  if (provider === undefined) {
-    return allProviders;
+export const selectProviders = (
+  provider: string | undefined,
+  providersOverride?: ReadonlyArray<ProviderAdapter>,
+): ProviderSelection => {
+  if (providersOverride !== undefined) {
+    return { providers: providersOverride, isProviderUnknown: false };
+  }
+
+  const isProviderMissing = provider === undefined;
+
+  if (isProviderMissing) {
+    return { providers: allProviders, isProviderUnknown: false };
   }
 
   const providerId = parseOptionalProvider(provider);
+  const isProviderUnknown = providerId === undefined;
 
-  if (providerId === undefined) {
+  if (isProviderUnknown) {
     process.stderr.write(`Unknown provider: ${provider}\n`);
-    process.exitCode = 2;
-    return [];
+    return { providers: [], isProviderUnknown };
   }
 
-  return allProviders.filter((adapter) => adapter.id === providerId);
+  const providersForId = allProviders.filter((adapter) => adapter.id === providerId);
+  return { providers: providersForId, isProviderUnknown };
 };

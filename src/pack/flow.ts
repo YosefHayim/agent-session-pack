@@ -1,5 +1,6 @@
 import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
 import { formatBytes } from '@/byte-format.js';
+import type { CommandOutcome } from '@/command-outcome.js';
 import { HOME_NOT_SET_CANCEL_MESSAGE } from '@/home-env.js';
 import type { InteractiveCliRequest } from '@/interactive-cli-request.js';
 import type { PromptAdapter } from '@/prompt-adapter.js';
@@ -24,12 +25,12 @@ import { DEFAULT_COLD_AFTER, DEFAULT_COLD_AFTER_MS } from './plan.js';
  */
 export const runPackFlow = async (
   request: InteractiveCliRequest & { readonly prompts: PromptAdapter },
-): Promise<void> => {
+): Promise<CommandOutcome> => {
   const home = request.home ?? process.env.HOME;
 
   if (home === undefined) {
     request.prompts.cancel(HOME_NOT_SET_CANCEL_MESSAGE);
-    return;
+    return { exitCode: 0 };
   }
 
   const inventory = await loadInventoryWithSpinner({
@@ -51,10 +52,10 @@ export const runPackFlow = async (
 
   if (request.prompts.isCancel(shouldPreview) || shouldPreview !== true) {
     request.prompts.cancel('No files changed.');
-    return;
+    return { exitCode: 0 };
   }
 
-  await runPackCommand({
+  const previewOutcome = await runPackCommand({
     allProviders: true,
     apply: false,
     dryRun: true,
@@ -72,10 +73,10 @@ export const runPackFlow = async (
 
   if (request.prompts.isCancel(shouldApply) || shouldApply !== true) {
     request.prompts.outro('No files changed.');
-    return;
+    return previewOutcome;
   }
 
-  await runPackCommand({
+  const applyOutcome = await runPackCommand({
     allProviders: true,
     apply: true,
     dryRun: false,
@@ -85,6 +86,7 @@ export const runPackFlow = async (
     yes: true,
     confirmed: true,
   });
+  return applyOutcome;
 };
 
 const formatPackApplyQuestion = (inventory: ProviderInventoryReport, home: string): string => {

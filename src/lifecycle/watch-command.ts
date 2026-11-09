@@ -3,6 +3,7 @@ import { defineCommand } from 'citty';
 import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
+import type { CommandOutcome } from '@/command-outcome.js';
 import { requireHome } from '@/home-env.js';
 import { parseOptionalProvider } from '@/providers/flag.js';
 import { isRestoreOnLaunchEnabled, readSetupConfig } from '@/setup/config.js';
@@ -34,7 +35,7 @@ export const watchCommand = defineCommand({
   },
   run: async ({ args, rawArgs }) => {
     const execArgs = extractExecArgs(rawArgs);
-    await runWatchCommand({
+    return runWatchCommand({
       provider: args.provider,
       json: args.json,
       pollMs: args['poll-ms'],
@@ -56,18 +57,17 @@ type WatchArgs = {
   readonly vaultPath?: string | undefined;
 };
 
-const runWatchCommand = async (args: WatchArgs): Promise<void> => {
+const runWatchCommand = async (args: WatchArgs): Promise<CommandOutcome> => {
   const home = requireHome(args.home);
 
   if (home === undefined) {
-    return;
+    return { exitCode: 1 };
   }
 
   const provider = parseOptionalProvider(args.provider);
   if (args.provider !== undefined && provider === undefined) {
     process.stderr.write(`Unknown provider: ${args.provider}\n`);
-    process.exitCode = 2;
-    return;
+    return { exitCode: 2 };
   }
 
   const setupConfig = await readSetupConfig(home);
@@ -87,8 +87,7 @@ const runWatchCommand = async (args: WatchArgs): Promise<void> => {
     const [command, ...commandArgs] = args.execArgv;
     if (command === undefined) {
       process.stderr.write('Missing command after -- for watch --exec.\n');
-      process.exitCode = 2;
-      return;
+      return { exitCode: 2 };
     }
 
     const child = spawn(command, commandArgs, {
@@ -132,9 +131,7 @@ const runWatchCommand = async (args: WatchArgs): Promise<void> => {
     onEvent,
   });
 
-  if (childExitCode !== undefined) {
-    process.exitCode = childExitCode === 0 ? undefined : childExitCode;
-  }
+  return { exitCode: childExitCode ?? 0 };
 };
 
 const extractExecArgs = (rawArgs: ReadonlyArray<string>): ReadonlyArray<string> => {

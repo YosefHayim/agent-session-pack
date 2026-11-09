@@ -2,6 +2,7 @@ import { defineCommand } from 'citty';
 import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
+import type { CommandOutcome } from '@/command-outcome.js';
 import { requireHome } from '@/home-env.js';
 import { parseOptionalProvider } from '@/providers/flag.js';
 import { isRestoreOnLaunchEnabled, readSetupConfig } from '@/setup/config.js';
@@ -33,7 +34,7 @@ export const ensureRestoredCommand = defineCommand({
     },
   },
   run: async ({ args }) => {
-    await runEnsureRestoredCommand({
+    return runEnsureRestoredCommand({
       json: args.json,
       provider: args.provider,
       session: args.session,
@@ -58,11 +59,13 @@ export type EnsureRestoredArgs = {
  *
  * @param args - Decoded command-line arguments.
  */
-export const runEnsureRestoredCommand = async (args: EnsureRestoredArgs): Promise<void> => {
+export const runEnsureRestoredCommand = async (
+  args: EnsureRestoredArgs,
+): Promise<CommandOutcome> => {
   const home = requireHome(args.home);
 
   if (home === undefined) {
-    return;
+    return { exitCode: 1 };
   }
 
   const sessionSelector = args.session?.trim() ?? '';
@@ -71,16 +74,14 @@ export const runEnsureRestoredCommand = async (args: EnsureRestoredArgs): Promis
     process.stderr.write(
       'Missing session selector. Use agent-session-pack ensure-restored [--provider codex] <session>.\n',
     );
-    process.exitCode = 2;
-    return;
+    return { exitCode: 2 };
   }
 
   const provider = parseOptionalProvider(args.provider);
 
   if (args.provider !== undefined && provider === undefined) {
     process.stderr.write(`Unknown provider: ${args.provider}\n`);
-    process.exitCode = 2;
-    return;
+    return { exitCode: 2 };
   }
 
   const setupConfig = await readSetupConfig(home);
@@ -100,7 +101,7 @@ export const runEnsureRestoredCommand = async (args: EnsureRestoredArgs): Promis
   });
 
   writeEnsureRestoredOutput(report, args.json === true);
-  process.exitCode = ensureRestoredExitCode(report);
+  return { exitCode: ensureRestoredExitCode(report) };
 };
 
 const writeEnsureRestoredOutput = (report: EnsureRestoredReport, json: boolean): void => {
@@ -121,13 +122,13 @@ const writeEnsureRestoredOutput = (report: EnsureRestoredReport, json: boolean):
   process.stdout.write(`${lines.join('\n')}\n`);
 };
 
-const ensureRestoredExitCode = (report: EnsureRestoredReport): number | undefined => {
+const ensureRestoredExitCode = (report: EnsureRestoredReport): number => {
   if (report.status === 'restored' || report.status === 'already-present') {
-    return undefined;
+    return 0;
   }
 
   if (report.status === 'lifecycle-disabled') {
-    return 3;
+    return 1;
   }
 
   if (

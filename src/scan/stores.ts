@@ -25,7 +25,8 @@ export const scanStores = async (request: ScanRequest): Promise<ScanReport> => {
 
   for (const store of request.stores) {
     const provider = request.providers.find((adapter) => adapter.id === store.provider);
-    const isProviderMissing = provider === undefined;
+
+    const isProviderMissing = provider == null;
 
     if (isProviderMissing) {
       continue;
@@ -52,7 +53,7 @@ export const isPathPresent = async (path: string): Promise<boolean> => {
     return rethrowAsError(cause);
   });
 
-  return pathStat !== undefined;
+  return pathStat != null;
 };
 
 export const discoverStoreSessions = async (
@@ -60,8 +61,9 @@ export const discoverStoreSessions = async (
   store: SessionStore,
 ): Promise<ReadonlyArray<DiscoveredSession>> => {
   const isStorePresent = await isPathPresent(store.path);
+  const isStoreMissing = !isStorePresent;
 
-  if (!isStorePresent) {
+  if (isStoreMissing) {
     return [];
   }
 
@@ -69,8 +71,9 @@ export const discoverStoreSessions = async (
     return await provider.discover(store);
   } catch (discoveryError) {
     const isStorePresentAfterFailure = await isPathPresent(store.path);
+    const isStoreMissingAfterFailure = !isStorePresentAfterFailure;
 
-    if (!isStorePresentAfterFailure) {
+    if (isStoreMissingAfterFailure) {
       return [];
     }
 
@@ -79,7 +82,8 @@ export const discoverStoreSessions = async (
 };
 
 const fileSystemErrorCode = (cause: unknown): string | undefined => {
-  if (typeof cause !== 'object' || cause === null || !('code' in cause)) {
+  const hasNoErrorCode = typeof cause !== 'object' || cause === null || !('code' in cause);
+  if (hasNoErrorCode) {
     return undefined;
   }
 

@@ -111,7 +111,8 @@ export const createPackPlan = (request: PackPlanRequest): PackPlan => {
         (session) => session.provider === provider.id,
       );
 
-      if (provider.mode === 'backup-only') {
+      const isProviderModeBackupOnly = provider.mode === 'backup-only';
+      if (isProviderModeBackupOnly) {
         return {
           provider: provider.id,
           mode: provider.mode,
@@ -171,7 +172,8 @@ export const createPackThresholdPreviews = (
 ): ReadonlyArray<PackThresholdPreview> => {
   const duration = parseDuration(request.olderThan);
 
-  if (duration === undefined || duration.value === 0) {
+  const isDurationZeroOrUnset = duration == null || duration.value === 0;
+  if (isDurationZeroOrUnset) {
     return [
       createThresholdPreview({
         kind: 'max',
@@ -233,7 +235,8 @@ type Duration = {
 export const parseDurationMs = (duration: string): number => {
   const parsed = parseDuration(duration);
 
-  if (parsed === undefined) {
+  const isParsedMissing = parsed == null;
+  if (isParsedMissing) {
     return DEFAULT_COLD_AFTER_MS;
   }
 
@@ -263,7 +266,8 @@ const createThresholdPreview = (request: {
 const parseDuration = (duration: string): Duration | undefined => {
   const match = duration.match(/^(\d+)(h|d|w)$/);
 
-  if (match === null) {
+  const isMatchMissing = match == null;
+  if (isMatchMissing) {
     return undefined;
   }
 
@@ -279,21 +283,24 @@ const multiplyDuration = (duration: Duration, factor: number): Duration => ({
 });
 
 const halveDuration = (duration: Duration): Duration => {
-  if (duration.unit === 'h') {
+  const isDurationInHours = duration.unit === 'h';
+  if (isDurationInHours) {
     return {
       value: Math.max(0, Math.floor(duration.value / 2)),
       unit: 'h',
     };
   }
 
-  if (duration.unit === 'd' && duration.value <= 1) {
+  const isDurationAtMostOneDay = duration.unit === 'd' && duration.value <= 1;
+  if (isDurationAtMostOneDay) {
     return {
       value: 12,
       unit: 'h',
     };
   }
 
-  if (duration.unit === 'w' && duration.value <= 1) {
+  const isDurationAtMostOneWeek = duration.unit === 'w' && duration.value <= 1;
+  if (isDurationAtMostOneWeek) {
     return {
       value: 3,
       unit: 'd',
@@ -307,11 +314,13 @@ const halveDuration = (duration: Duration): Duration => {
 };
 
 const durationMs = (duration: Duration): number => {
-  if (duration.unit === 'h') {
+  const isDurationInHours = duration.unit === 'h';
+  if (isDurationInHours) {
     return duration.value * 60 * 60 * 1000;
   }
 
-  if (duration.unit === 'w') {
+  const isDurationUnitW = duration.unit === 'w';
+  if (isDurationUnitW) {
     return duration.value * 7 * 24 * 60 * 60 * 1000;
   }
 

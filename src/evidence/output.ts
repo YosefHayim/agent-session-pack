@@ -15,7 +15,8 @@ import type { LocalEvidenceEntry, LocalEvidenceReport } from './local-evidence.j
  * ```
  */
 export const formatHumanEvidenceReport = (report: LocalEvidenceReport): string => {
-  if (report.evidence.length === 0) {
+  const isReportEvidenceEmpty = report.evidence.length === 0;
+  if (isReportEvidenceEmpty) {
     return [
       'Local evidence',
       '',
@@ -35,8 +36,10 @@ export const formatHumanEvidenceReport = (report: LocalEvidenceReport): string =
     0,
   );
   const touchedOriginals = report.evidence.some((entry) => entry.originalTouched);
-  const totalSavedPercent =
-    totalSampledSources === 0 ? undefined : savedPercent(totalSourceBytes, totalArchiveBytes);
+  const isNothingSampledInTotal = totalSampledSources === 0;
+  const totalSavedPercent = isNothingSampledInTotal
+    ? undefined
+    : savedPercent(totalSourceBytes, totalArchiveBytes);
 
   return [
     'Local evidence',
@@ -89,19 +92,26 @@ const sumEvidenceBytes = (
   key: 'archiveBytes' | 'sourceBytes',
 ): number => evidence.reduce((totalBytes, entry) => totalBytes + (entry[key] ?? 0), 0);
 
-const formatOptionalBytes = (bytes: number | undefined): string =>
-  bytes === undefined ? '-' : formatBytes(bytes);
+const formatOptionalBytes = (bytes: number | undefined): string => {
+  const isBytesMissing = bytes == null;
+  return isBytesMissing ? '-' : formatBytes(bytes);
+};
 
-const formatMaybeBytes = (bytes: number, sampledSources: number): string =>
-  sampledSources === 0 ? '-' : formatBytes(bytes);
+const formatMaybeBytes = (bytes: number, sampledSources: number): string => {
+  const isNothingSampled = sampledSources === 0;
+  return isNothingSampled ? '-' : formatBytes(bytes);
+};
 
 const formatPercent = (percent: number): string => `${percent.toFixed(1)}%`;
 
-const formatMaybePercent = (percent: number | undefined): string =>
-  percent === undefined ? '-' : formatPercent(percent);
+const formatMaybePercent = (percent: number | undefined): string => {
+  const isPercentMissing = percent == null;
+  return isPercentMissing ? '-' : formatPercent(percent);
+};
 
 const formatExact = (byteExact: boolean | undefined): string => {
-  if (byteExact === undefined) {
+  const isByteExactMissing = byteExact == null;
+  if (isByteExactMissing) {
     return '-';
   }
 

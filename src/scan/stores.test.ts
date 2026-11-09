@@ -29,7 +29,10 @@ describe('scanStores', () => {
       label: 'Codex',
       mode: 'archive',
       defaultRoots: (home) => [join(home, '.codex', 'sessions')],
-      discover: (store) => Promise.resolve(store.path === codexRoot ? [session] : []),
+      discover: (store) => {
+        const isCodexStore = store.path === codexRoot;
+        return Promise.resolve(isCodexStore ? [session] : []);
+      },
     };
 
     const report = await scanStores({

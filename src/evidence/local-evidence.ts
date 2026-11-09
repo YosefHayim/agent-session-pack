@@ -75,17 +75,19 @@ export const runLocalEvidence = async (
   for (const provider of request.providers) {
     const roots = provider.defaultRoots(request.home);
     const sessions = await discoverProviderSessions(provider, roots);
-    const maxEvidenceSourceBytes =
-      provider.mode === 'backup-only'
-        ? MAX_BACKUP_EVIDENCE_SOURCE_BYTES
-        : MAX_ARCHIVE_EVIDENCE_SOURCE_BYTES;
+    const isProviderModeBackupOnly = provider.mode === 'backup-only';
+    const maxEvidenceSourceBytes = isProviderModeBackupOnly
+      ? MAX_BACKUP_EVIDENCE_SOURCE_BYTES
+      : MAX_ARCHIVE_EVIDENCE_SOURCE_BYTES;
     const selected = selectNewestSessionWithinSize(sessions, maxEvidenceSourceBytes);
 
-    if (selected === undefined) {
+    const isSelectedMissing = selected == null;
+    if (isSelectedMissing) {
       continue;
     }
 
-    if (selected.sizeBytes > maxEvidenceSourceBytes) {
+    const isSourceTooLarge = selected.sizeBytes > maxEvidenceSourceBytes;
+    if (isSourceTooLarge) {
       evidence.push({
         provider: provider.id,
         foundSessions: sessions.length,
@@ -101,9 +103,10 @@ export const runLocalEvidence = async (
     const fileName = basename(selected.originalPath);
     const fixtureDir = join(request.workRoot, provider.id);
     const fixturePath = join(fixtureDir, fileName);
+    const isSourceDirectory = sourceKind === 'directory';
     const archivePath = join(
       fixtureDir,
-      sourceKind === 'directory' ? `${fileName}.tar.zst` : `${fileName}.zst`,
+      isSourceDirectory ? `${fileName}.tar.zst` : `${fileName}.zst`,
     );
     const restoredPath = join(fixtureDir, `restored-${fileName}`);
 
@@ -178,7 +181,8 @@ const discoverProviderSessions = async (
 const formatTitlePreview = (title: string): string => {
   const singleLineTitle = title.replace(/\s+/g, ' ').trim();
 
-  if (singleLineTitle.length <= MAX_TITLE_PREVIEW_LENGTH) {
+  const isTitleShortEnough = singleLineTitle.length <= MAX_TITLE_PREVIEW_LENGTH;
+  if (isTitleShortEnough) {
     return singleLineTitle;
   }
 

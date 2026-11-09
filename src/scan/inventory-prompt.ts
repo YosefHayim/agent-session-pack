@@ -68,7 +68,8 @@ export const loadInventoryWithSpinner = (
  * ```
  */
 export const formatProviderInventoryTable = (report: ProviderInventoryReport): string => {
-  if (report.rows.length === 0) {
+  const isReportRowsEmpty = report.rows.length === 0;
+  if (isReportRowsEmpty) {
     return 'No provider stores found.';
   }
 

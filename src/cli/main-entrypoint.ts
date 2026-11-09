@@ -24,7 +24,8 @@ export const isCliEntrypoint = (
   modulePath: string,
   realpath: RealpathResolver = realpathSync,
 ): boolean => {
-  if (entrypointPath === undefined) {
+  const isEntrypointPathMissing = entrypointPath == null;
+  if (isEntrypointPathMissing) {
     return false;
   }
 

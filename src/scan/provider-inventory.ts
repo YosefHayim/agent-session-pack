@@ -60,10 +60,11 @@ export const inspectProviderInventory = async (
       provider,
     });
 
+    const hasExistingRoots = discovered.existingRoots.length > 0;
     inventoryRows.push(
       createInventoryRow({
         cutoffTime,
-        paths: discovered.existingRoots.length > 0 ? discovered.existingRoots : discovered.roots,
+        paths: hasExistingRoots ? discovered.existingRoots : discovered.roots,
         provider,
         sessions: discovered.sessions,
       }),
@@ -113,8 +114,9 @@ const discoverProviderRoot = async (request: {
   readonly root: string;
 }): Promise<RootDiscovery | undefined> => {
   const isRootPresent = await isPathPresent(request.root);
+  const isRootMissing = !isRootPresent;
 
-  if (!isRootPresent) {
+  if (isRootMissing) {
     return undefined;
   }
 
@@ -135,7 +137,9 @@ const createInventoryRow = (request: {
   readonly provider: ProviderAdapter;
   readonly sessions: ReadonlyArray<DiscoveredSession>;
 }): ProviderInventoryRow => {
-  if (request.paths.length === 0 || request.sessions.length === 0) {
+  const isNothingToScan = request.paths.length === 0 || request.sessions.length === 0;
+  if (isNothingToScan) {
+    const isRequestSessionsEmpty = request.sessions.length === 0;
     return {
       provider: request.provider.id,
       label: request.provider.label,
@@ -146,11 +150,12 @@ const createInventoryRow = (request: {
       totalBytes: sumSessionBytes(request.sessions),
       candidateBytes: 0,
       paths: request.paths,
-      status: request.sessions.length === 0 ? 'missing' : 'ready',
+      status: isRequestSessionsEmpty ? 'missing' : 'ready',
     };
   }
 
-  if (request.provider.mode === 'backup-only') {
+  const isProviderModeBackupOnly = request.provider.mode === 'backup-only';
+  if (isProviderModeBackupOnly) {
     return {
       provider: request.provider.id,
       label: request.provider.label,
@@ -184,4 +189,4 @@ const createInventoryRow = (request: {
 };
 
 const isRootDiscovery = (discovery: RootDiscovery | undefined): discovery is RootDiscovery =>
-  discovery !== undefined;
+  discovery != null;

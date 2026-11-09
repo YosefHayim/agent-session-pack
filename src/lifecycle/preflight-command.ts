@@ -63,13 +63,15 @@ export type PreflightArgs = {
 export const runPreflightCommand = async (args: PreflightArgs): Promise<CommandOutcome> => {
   const home = requireHome(args.home);
 
-  if (home === undefined) {
+  const isHomeMissing = home == null;
+  if (isHomeMissing) {
     return { exitCode: 1 };
   }
 
   const provider = parseProvider(args.provider);
 
-  if (provider === undefined) {
+  const isProviderMissing = provider === undefined;
+  if (isProviderMissing) {
     process.stderr.write(`Unknown or missing provider: ${args.provider ?? ''}\n`);
     return { exitCode: 2 };
   }
@@ -82,7 +84,8 @@ export const runPreflightCommand = async (args: PreflightArgs): Promise<CommandO
   const sessionIds = extractSessionIdsFromArgv(args.passthroughArgv);
   const isJsonOutput = args.json === true;
 
-  if (!restoreOnLaunchEnabled) {
+  const isRestoreOnLaunchDisabled = !restoreOnLaunchEnabled;
+  if (isRestoreOnLaunchDisabled) {
     writePreflightOutput(
       {
         command: 'preflight',
@@ -97,7 +100,8 @@ export const runPreflightCommand = async (args: PreflightArgs): Promise<CommandO
     return { exitCode: 0 };
   }
 
-  if (sessionIds.length === 0) {
+  const isSessionIdsEmpty = sessionIds.length === 0;
+  if (isSessionIdsEmpty) {
     writePreflightOutput(
       {
         command: 'preflight',
@@ -128,8 +132,10 @@ export const runPreflightCommand = async (args: PreflightArgs): Promise<CommandO
     restores.push(report);
 
     const isReportUsable = report.status === 'restored' || report.status === 'already-present';
-    const hasReportSessionId = report.sessionId !== undefined;
-    if (isReportUsable && hasReportSessionId) {
+    const hasReportSessionId = report.sessionId != null;
+
+    const isSessionReportUsable = isReportUsable && hasReportSessionId;
+    if (isSessionReportUsable) {
       await recordSessionAccess({
         vaultPath,
         provider,
@@ -155,7 +161,9 @@ export const runPreflightCommand = async (args: PreflightArgs): Promise<CommandO
 
 const extractPassthroughArgv = (rawArgs: ReadonlyArray<string>): ReadonlyArray<string> => {
   const separatorIndex = rawArgs.indexOf('--');
-  if (separatorIndex === -1) {
+
+  const isSeparatorNotFound = separatorIndex === -1;
+  if (isSeparatorNotFound) {
     // Everything after subcommand name flags; drop known flags.
     return rawArgs.filter(
       (arg, index, all) =>
@@ -171,13 +179,15 @@ const extractPassthroughArgv = (rawArgs: ReadonlyArray<string>): ReadonlyArray<s
 };
 
 const parseProvider = (provider: string | undefined): ProviderId | undefined => {
-  if (provider === undefined) {
+  const isProviderMissing = provider == null;
+  if (isProviderMissing) {
     return undefined;
   }
 
   const providerReply = ProviderIdSchema.safeParse(provider);
 
-  if (!providerReply.success) {
+  const isProviderReplyFailed = !providerReply.success;
+  if (isProviderReplyFailed) {
     return undefined;
   }
 
@@ -200,16 +210,17 @@ const writePreflightOutput = (
     return;
   }
 
+  const isReasonMissing = payload.reason == null;
   const lines = [
     `preflight: ${payload.provider}`,
     `restoreOnLaunchEnabled: ${String(payload.restoreOnLaunchEnabled)}`,
     `sessionIds: ${payload.sessionIds.join(', ') || '(none)'}`,
-    payload.reason === undefined ? undefined : `reason: ${payload.reason}`,
-    ...payload.restores.map(
-      (report) =>
-        `- ${report.sessionId ?? '?'}: ${report.status}${report.reason === undefined ? '' : ` (${report.reason})`}`,
-    ),
-  ].filter((line): line is string => line !== undefined);
+    isReasonMissing ? undefined : `reason: ${payload.reason}`,
+    ...payload.restores.map((report) => {
+      const isReportReasonMissing = report.reason == null;
+      return `- ${report.sessionId ?? '?'}: ${report.status}${isReportReasonMissing ? '' : ` (${report.reason})`}`;
+    }),
+  ].filter((line): line is string => line != null);
 
   process.stdout.write(`${lines.join('\n')}\n`);
 };

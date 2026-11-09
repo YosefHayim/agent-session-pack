@@ -88,7 +88,8 @@ export const ensureSessionRestored = async (
     match: request.selectorMatch,
   });
 
-  if (selection.status === 'ambiguous') {
+  const isSelectionStatusAmbiguous = selection.status === 'ambiguous';
+  if (isSelectionStatusAmbiguous) {
     const candidates = selection.candidates.map((manifest) => ({
       provider: manifest.provider,
       sessionId: manifest.sessionId,
@@ -111,7 +112,8 @@ export const ensureSessionRestored = async (
     };
   }
 
-  if (selection.status === 'not-found') {
+  const isSelectionStatusNotFound = selection.status === 'not-found';
+  if (isSelectionStatusNotFound) {
     return {
       command: request.command,
       status: 'missing-archive',
@@ -127,7 +129,8 @@ export const ensureSessionRestored = async (
   const manifest = selection.manifest;
   const backupOnlyProviders = request.backupOnlyProviders ?? ['cursor', 'devin'];
 
-  if (backupOnlyProviders.includes(manifest.provider)) {
+  const isBackupOnlyProvider = backupOnlyProviders.includes(manifest.provider);
+  if (isBackupOnlyProvider) {
     return {
       command: request.command,
       status: 'backup-only',
@@ -159,11 +162,13 @@ export const ensureSessionRestored = async (
 };
 
 const ensureRestoredReason = (status: RestoreOutcome): string | undefined => {
-  if (status === 'conflict') {
+  const isStatusConflict = status === 'conflict';
+  if (isStatusConflict) {
     return 'live file differs from manifest hash; not overwritten';
   }
 
-  if (status === 'already-present') {
+  const isStatusAlreadyPresent = status === 'already-present';
+  if (isStatusAlreadyPresent) {
     return 'native session already matches archive';
   }
 

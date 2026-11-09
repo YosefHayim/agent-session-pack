@@ -26,7 +26,8 @@ export const formatTouched = (touched: boolean): string => (touched ? 'yes' : 'n
  * ```
  */
 export const formatStatus = (status: string, reason: string | undefined): string => {
-  if (reason === undefined) {
+  const isReasonMissing = reason == null;
+  if (isReasonMissing) {
     return status;
   }
 

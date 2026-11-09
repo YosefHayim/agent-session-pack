@@ -29,7 +29,8 @@ export const sumSessionBytes = (sessions: ReadonlyArray<DiscoveredSession>): num
  * ```
  */
 export const savedPercent = (sourceBytes: number, archiveBytes: number): number => {
-  if (sourceBytes === 0) {
+  const isSourceEmpty = sourceBytes === 0;
+  if (isSourceEmpty) {
     return 0;
   }
 

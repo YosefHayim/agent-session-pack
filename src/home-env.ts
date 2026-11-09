@@ -36,7 +36,8 @@ export const HOME_NOT_SET_CANCEL_MESSAGE =
 export const requireHome = (homeOverride?: string): string | undefined => {
   const home = homeOverride ?? process.env.HOME;
 
-  if (home === undefined) {
+  const isHomeMissing = home == null;
+  if (isHomeMissing) {
     process.stderr.write(HOME_NOT_SET_STDERR_MESSAGE);
   }
 

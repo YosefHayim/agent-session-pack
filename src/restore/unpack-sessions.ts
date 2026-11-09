@@ -58,7 +58,8 @@ export const unpackProviderSessions = async (
   for (const provider of request.providers) {
     const providerManifests = manifests.filter((manifest) => manifest.provider === provider.id);
 
-    if (providerManifests.length === 0) {
+    const isProviderManifestsEmpty = providerManifests.length === 0;
+    if (isProviderManifestsEmpty) {
       unpackSessionRows.push(createNoArchivesUnpackRow(provider.id));
       continue;
     }
@@ -66,7 +67,8 @@ export const unpackProviderSessions = async (
     const archiveBytes = await sumArchiveBytes(providerManifests);
     const beforeBytes = sumManifestSourceBytes(providerManifests);
 
-    if (request.apply === false) {
+    const isPreviewOnly = request.apply === false;
+    if (isPreviewOnly) {
       unpackSessionRows.push(createDryRunUnpackRow(provider.id, providerManifests, archiveBytes));
       continue;
     }
@@ -77,6 +79,7 @@ export const unpackProviderSessions = async (
       vaultPath: request.vaultPath,
     });
 
+    const hasConflictSessions = restored.conflictSessions > 0;
     unpackSessionRows.push({
       provider: provider.id,
       archivedSessions: providerManifests.length,
@@ -88,7 +91,7 @@ export const unpackProviderSessions = async (
       restoredBytes: restored.restoredBytes,
       touchedOriginals: restored.restoredSessions > 0,
       status: unpackStatus(restored),
-      reason: restored.conflictSessions > 0 ? 'live file differs from manifest hash' : undefined,
+      reason: hasConflictSessions ? 'live file differs from manifest hash' : undefined,
     });
   }
 
@@ -122,12 +125,14 @@ const restoreProviderManifests = async (request: {
       vaultPath: request.vaultPath,
     });
 
-    if (outcome === 'already-present') {
+    const isAlreadyPresent = outcome === 'already-present';
+    if (isAlreadyPresent) {
       alreadyPresentSessions += 1;
       continue;
     }
 
-    if (outcome === 'conflict') {
+    const isConflictOutcome = outcome === 'conflict';
+    if (isConflictOutcome) {
       conflictSessions += 1;
       continue;
     }
@@ -157,6 +162,7 @@ const sumArchiveBytes = async (manifests: ReadonlyArray<SessionManifest>): Promi
 
 const archiveBytesForManifest = async (manifest: SessionManifest): Promise<number> => {
   const knownArchiveBytes = manifest.archiveBytes;
+
   const isArchiveBytesKnown = knownArchiveBytes !== undefined;
 
   if (isArchiveBytesKnown) {
@@ -204,11 +210,13 @@ const unpackStatus = (restored: {
   readonly conflictSessions: number;
   readonly restoredSessions: number;
 }): UnpackSessionStatus => {
-  if (restored.conflictSessions > 0) {
+  const hasConflictSessions = restored.conflictSessions > 0;
+  if (hasConflictSessions) {
     return 'conflict';
   }
 
-  if (restored.restoredSessions > 0) {
+  const hasRestoredSessions = restored.restoredSessions > 0;
+  if (hasRestoredSessions) {
     return 'restored';
   }
 

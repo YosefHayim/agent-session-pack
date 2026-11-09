@@ -64,13 +64,15 @@ export const runEnsureRestoredCommand = async (
 ): Promise<CommandOutcome> => {
   const home = requireHome(args.home);
 
-  if (home === undefined) {
+  const isHomeMissing = home == null;
+  if (isHomeMissing) {
     return { exitCode: 1 };
   }
 
   const sessionSelector = args.session?.trim() ?? '';
 
-  if (sessionSelector.length === 0) {
+  const isSessionSelectorEmpty = sessionSelector.length === 0;
+  if (isSessionSelectorEmpty) {
     process.stderr.write(
       'Missing session selector. Use agent-session-pack ensure-restored [--provider codex] <session>.\n',
     );
@@ -79,7 +81,8 @@ export const runEnsureRestoredCommand = async (
 
   const provider = parseOptionalProvider(args.provider);
 
-  if (args.provider !== undefined && provider === undefined) {
+  const isUnknownProviderGiven = args.provider != null && provider == null;
+  if (isUnknownProviderGiven) {
     process.stderr.write(`Unknown provider: ${args.provider}\n`);
     return { exitCode: 2 };
   }
@@ -110,36 +113,44 @@ const writeEnsureRestoredOutput = (report: EnsureRestoredReport, json: boolean):
     return;
   }
 
+  const isReportProviderMissing = report.provider === undefined;
+  const isReportSessionIdMissing = report.sessionId == null;
+  const isReportOriginalPathMissing = report.originalPath == null;
+  const isReportReasonMissing = report.reason == null;
   const lines = [
     `ensure-restored: ${report.status}`,
-    report.provider === undefined ? undefined : `provider: ${report.provider}`,
-    report.sessionId === undefined ? undefined : `session: ${report.sessionId}`,
-    report.originalPath === undefined ? undefined : `originalPath: ${report.originalPath}`,
-    report.reason === undefined ? undefined : `reason: ${report.reason}`,
+    isReportProviderMissing ? undefined : `provider: ${report.provider}`,
+    isReportSessionIdMissing ? undefined : `session: ${report.sessionId}`,
+    isReportOriginalPathMissing ? undefined : `originalPath: ${report.originalPath}`,
+    isReportReasonMissing ? undefined : `reason: ${report.reason}`,
     `restoreOnLaunchEnabled: ${String(report.restoreOnLaunchEnabled)}`,
-  ].filter((line): line is string => line !== undefined);
+  ].filter((line): line is string => line != null);
 
   process.stdout.write(`${lines.join('\n')}\n`);
 };
 
 const ensureRestoredExitCode = (report: EnsureRestoredReport): number => {
-  if (report.status === 'restored' || report.status === 'already-present') {
+  const isReportStatusRestoredOrAlreadyPresent =
+    report.status === 'restored' || report.status === 'already-present';
+  if (isReportStatusRestoredOrAlreadyPresent) {
     return 0;
   }
 
-  if (report.status === 'lifecycle-disabled') {
+  const isReportStatusLifecycleDisabled = report.status === 'lifecycle-disabled';
+  if (isReportStatusLifecycleDisabled) {
     return 1;
   }
 
-  if (
+  const isRestoreBlocked =
     report.status === 'conflict' ||
     report.status === 'missing-archive' ||
-    report.status === 'ambiguous-selector'
-  ) {
+    report.status === 'ambiguous-selector';
+  if (isRestoreBlocked) {
     return 2;
   }
 
-  if (report.status === 'backup-only') {
+  const isReportStatusBackupOnly = report.status === 'backup-only';
+  if (isReportStatusBackupOnly) {
     return 2;
   }
 

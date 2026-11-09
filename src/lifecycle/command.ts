@@ -61,13 +61,15 @@ export type LifecycleArgs = {
 export const runLifecycleCommand = async (args: LifecycleArgs): Promise<CommandOutcome> => {
   const home = requireHome(args.home);
 
-  if (home === undefined) {
+  const isHomeMissing = home == null;
+  if (isHomeMissing) {
     return { exitCode: 1 };
   }
 
   const action = args.action?.trim().toLowerCase();
 
-  if (action !== 'enable' && action !== 'disable' && action !== 'status') {
+  const isActionUnknown = action !== 'enable' && action !== 'disable' && action !== 'status';
+  if (isActionUnknown) {
     process.stderr.write('Unknown lifecycle action. Use enable, disable, or status.\n');
     return { exitCode: 2 };
   }
@@ -79,7 +81,8 @@ export const runLifecycleCommand = async (args: LifecycleArgs): Promise<CommandO
   const cliEntrypoint = args.cliEntrypoint ?? pickCliEntrypoint();
   const isJsonOutput = args.json === true;
 
-  if (action === 'status') {
+  const isActionStatus = action === 'status';
+  if (isActionStatus) {
     writeLifecycleStatus(
       {
         restoreOnLaunch: isRestoreOnLaunchEnabled(existingConfig),
@@ -109,7 +112,8 @@ export const runLifecycleCommand = async (args: LifecycleArgs): Promise<CommandO
     config: nextConfig,
   });
 
-  if (action === 'enable') {
+  const isActionEnable = action === 'enable';
+  if (isActionEnable) {
     await installLifecycleWrappers({
       vaultPath: nextConfig.vaultPath,
       cliEntrypoint,
@@ -145,7 +149,8 @@ const buildLifecycleConfig = (request: {
   const timestamp = request.now.toISOString();
   const vaultPath = request.existingConfig?.vaultPath ?? resolveDefaultVaultPath(request.home);
 
-  if (request.existingConfig === undefined) {
+  const isExistingConfigMissing = request.existingConfig === undefined;
+  if (isExistingConfigMissing) {
     return {
       version: 1,
       providers: ['codex', 'claude', 'grok', 'gemini'],
@@ -169,6 +174,7 @@ const buildLifecycleConfig = (request: {
 // The wrappers must run the script that is running now. In the build this module is bundled into dist/cli/main.js.
 const pickCliEntrypoint = (): string => {
   const runningScriptPath = process.argv[1];
+
   const isThereNoRunningScript = runningScriptPath == null;
 
   if (isThereNoRunningScript) {
@@ -207,20 +213,23 @@ const writeLifecycleStatus = (
     return;
   }
 
+  const isStatusActionMissing = status.action == null;
+  const isRestoreCacheAfterMissing = status.restoreCacheAfter == null;
+  const isStatusColdAfterMissing = status.coldAfter == null;
+  const isStatusOpenCommandMissing = status.openCommand == null;
+  const isStatusMaintainCommandMissing = status.maintainCommand == null;
   const lines = [
-    status.action === undefined ? 'lifecycle status' : `lifecycle ${status.action}`,
+    isStatusActionMissing ? 'lifecycle status' : `lifecycle ${status.action}`,
     `restoreOnLaunch: ${String(status.restoreOnLaunch)}`,
-    status.restoreCacheAfter === undefined
-      ? undefined
-      : `restoreCacheAfter: ${status.restoreCacheAfter}`,
-    status.coldAfter === undefined ? undefined : `coldAfter: ${status.coldAfter}`,
+    isRestoreCacheAfterMissing ? undefined : `restoreCacheAfter: ${status.restoreCacheAfter}`,
+    isStatusColdAfterMissing ? undefined : `coldAfter: ${status.coldAfter}`,
     `vaultPath: ${status.vaultPath}`,
     `wrappersBin: ${status.wrappersBin}`,
     `pathHint: ${status.pathHint}`,
-    status.openCommand === undefined ? undefined : `open: ${status.openCommand}`,
-    status.maintainCommand === undefined ? undefined : `maintain: ${status.maintainCommand}`,
+    isStatusOpenCommandMissing ? undefined : `open: ${status.openCommand}`,
+    isStatusMaintainCommandMissing ? undefined : `maintain: ${status.maintainCommand}`,
     `configPresent: ${String(status.configPresent)}`,
-  ].filter((line): line is string => line !== undefined);
+  ].filter((line): line is string => line != null);
 
   process.stdout.write(`${lines.join('\n')}\n`);
 };

@@ -21,7 +21,8 @@ export const initCommand = defineCommand({
     },
   },
   run: async ({ args }) => {
-    if (args.json === true) {
+    const isJsonOutput = args.json === true;
+    if (isJsonOutput) {
       process.stdout.write(
         `${JSON.stringify({
           vaultPath: '~/.agent-session-pack',
@@ -35,7 +36,8 @@ export const initCommand = defineCommand({
       return;
     }
 
-    if (process.stdin.isTTY === true && process.stdout.isTTY === true) {
+    const isInteractiveTerminal = process.stdin.isTTY === true && process.stdout.isTTY === true;
+    if (isInteractiveTerminal) {
       await runFirstSetup();
       return;
     }

@@ -19,7 +19,8 @@ export interface ScanArgs {
  */
 export const runScanCommand = async (args: ScanArgs): Promise<CommandOutcome> => {
   const home = requireHome();
-  const isHomeMissing = home === undefined;
+
+  const isHomeMissing = home == null;
 
   if (isHomeMissing) {
     return { exitCode: 1 };
@@ -34,6 +35,7 @@ export const runScanCommand = async (args: ScanArgs): Promise<CommandOutcome> =>
     providers,
     stores,
   });
+
   const isJsonRequested = args.json === true;
 
   if (isJsonRequested) {

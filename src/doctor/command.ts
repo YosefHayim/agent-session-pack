@@ -33,7 +33,8 @@ export const runDoctorCommand = async (args: DoctorArgs): Promise<CommandOutcome
   const zstd = await checkCommand('zstd', ['--version']);
   const sqlite3 = await checkCommand('sqlite3', ['--version']);
 
-  if (args.json === true) {
+  const isJsonOutput = args.json === true;
+  if (isJsonOutput) {
     process.stdout.write(`${JSON.stringify({ sqlite3, zstd })}\n`);
     return { exitCode: 0 };
   }

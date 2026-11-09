@@ -82,7 +82,9 @@ export const extractSessionIdsFromArgv = (argv: ReadonlyArray<string>): Readonly
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
-    if (arg === undefined) {
+
+    const isArgMissing = arg == null;
+    if (isArgMissing) {
       continue;
     }
 
@@ -92,11 +94,13 @@ export const extractSessionIdsFromArgv = (argv: ReadonlyArray<string>): Readonly
       continue;
     }
 
-    if (tryTakeInlineSessionId(found, arg)) {
+    const isInlineSessionTaken = tryTakeInlineSessionId(found, arg);
+    if (isInlineSessionTaken) {
       continue;
     }
 
-    if (!arg.startsWith('-')) {
+    const isPositionalArgument = !arg.startsWith('-');
+    if (isPositionalArgument) {
       addUuidMatches(found, arg);
     }
   }
@@ -155,11 +159,13 @@ const tryTakeFlagSessionId = (
   arg: string,
   next: string | undefined,
 ): boolean => {
-  if (!FLAG_NAMES.has(arg)) {
+  const isUnknownFlag = !FLAG_NAMES.has(arg);
+  if (isUnknownFlag) {
     return false;
   }
 
-  if (next !== undefined && !next.startsWith('-') && !isNoiseToken(next)) {
+  const isSessionIdCandidate = next != null && !next.startsWith('-') && !isNoiseToken(next);
+  if (isSessionIdCandidate) {
     found.add(next);
   }
 
@@ -168,18 +174,24 @@ const tryTakeFlagSessionId = (
 
 const tryTakeInlineSessionId = (found: Set<string>, arg: string): boolean => {
   const inline = arg.match(/^--(?:session|session-id|resume|id)=(.+)$/i);
-  if (inline?.[1] === undefined || isNoiseToken(inline[1])) {
+  const inlineId = inline?.[1];
+
+  const isInlineIdUnusable = inlineId == null || isNoiseToken(inlineId);
+  if (isInlineIdUnusable) {
     return false;
   }
 
-  found.add(inline[1]);
+  found.add(inlineId);
   return true;
 };
 
 const addUuidMatches = (found: Set<string>, arg: string): void => {
   for (const match of arg.matchAll(SESSION_ID_PATTERN)) {
-    if (match[1] !== undefined) {
-      found.add(match[1]);
+    const matchedId = match[1];
+
+    const hasMatchedId = matchedId != null;
+    if (hasMatchedId) {
+      found.add(matchedId);
     }
   }
 };

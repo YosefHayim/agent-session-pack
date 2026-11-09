@@ -36,12 +36,14 @@ export const runFirstSetup = async (request: FirstSetupRequest = {}): Promise<Fl
   const prompts = request.prompts ?? clackPromptAdapter;
   const home = request.home ?? process.env.HOME;
 
-  if (home === undefined) {
+  const isHomeMissing = home == null;
+  if (isHomeMissing) {
     prompts.cancel(HOME_NOT_SET_CANCEL_MESSAGE);
     return 'cancelled';
   }
 
-  if (request.showIntro !== false) {
+  const isIntroShown = request.showIntro !== false;
+  if (isIntroShown) {
     prompts.intro('Agent Session Pack setup');
   }
 
@@ -67,14 +69,16 @@ export const runFirstSetup = async (request: FirstSetupRequest = {}): Promise<Fl
     prompts,
   });
 
-  if (selectedProviders === undefined) {
+  const isSelectedProvidersMissing = selectedProviders == null;
+  if (isSelectedProvidersMissing) {
     prompts.cancel('No files changed.');
     return 'cancelled';
   }
 
   const coldAfter = await promptColdThreshold(prompts);
 
-  if (coldAfter === undefined) {
+  const isColdAfterMissing = coldAfter == null;
+  if (isColdAfterMissing) {
     prompts.cancel('No files changed.');
     return 'cancelled';
   }
@@ -85,7 +89,8 @@ export const runFirstSetup = async (request: FirstSetupRequest = {}): Promise<Fl
     providers,
   });
 
-  if (vaultPath === undefined) {
+  const isVaultPathMissing = vaultPath == null;
+  if (isVaultPathMissing) {
     prompts.cancel('No files changed.');
     return 'cancelled';
   }
@@ -104,7 +109,8 @@ export const runFirstSetup = async (request: FirstSetupRequest = {}): Promise<Fl
     initialValue: true,
   });
 
-  if (prompts.isCancel(shouldSave) || shouldSave !== true) {
+  const isSaveStopped = prompts.isCancel(shouldSave) || shouldSave !== true;
+  if (isSaveStopped) {
     prompts.cancel('No files changed.');
     return 'cancelled';
   }
@@ -139,11 +145,13 @@ const promptProviderSelection = async (request: {
       required: false,
     });
 
-    if (request.prompts.isCancel(selectedProviders)) {
+    const isSelectionCancelled = request.prompts.isCancel(selectedProviders);
+    if (isSelectionCancelled) {
       return undefined;
     }
 
-    if (selectedProviders.length > 0) {
+    const hasSelectedProviders = selectedProviders.length > 0;
+    if (hasSelectedProviders) {
       return selectedProviders;
     }
 
@@ -163,11 +171,13 @@ const promptColdThreshold = async (prompts: PromptAdapter): Promise<string | und
     initialValue: '7d',
   });
 
-  if (prompts.isCancel(choice)) {
+  const isChoiceCancel = prompts.isCancel(choice);
+  if (isChoiceCancel) {
     return undefined;
   }
 
-  if (choice !== 'custom') {
+  const isChoiceNotCustom = choice !== 'custom';
+  if (isChoiceNotCustom) {
     return choice;
   }
 
@@ -177,7 +187,8 @@ const promptColdThreshold = async (prompts: PromptAdapter): Promise<string | und
     validate: validateDurationText,
   });
 
-  if (prompts.isCancel(custom)) {
+  const isCustomCancel = prompts.isCancel(custom);
+  if (isCustomCancel) {
     return undefined;
   }
 
@@ -206,11 +217,13 @@ const promptVaultPath = async (request: {
     initialValue: 'default',
   });
 
-  if (request.prompts.isCancel(choice)) {
+  const isChoiceCancel = request.prompts.isCancel(choice);
+  if (isChoiceCancel) {
     return undefined;
   }
 
-  if (choice === 'default') {
+  const isChoiceDefault = choice === 'default';
+  if (isChoiceDefault) {
     return validateVaultPathInput({
       home: request.home,
       inputPath: '~/.agent-session-pack',
@@ -233,7 +246,8 @@ const promptCustomVaultPath = async (request: {
       initialValue: '~/.agent-session-pack',
     });
 
-    if (request.prompts.isCancel(inputPath)) {
+    const isPathCancel = request.prompts.isCancel(inputPath);
+    if (isPathCancel) {
       return undefined;
     }
 
@@ -244,7 +258,8 @@ const promptCustomVaultPath = async (request: {
       providers: request.providers,
     });
 
-    if (validatedPath !== undefined) {
+    const isValidatedPathFound = validatedPath != null;
+    if (isValidatedPathFound) {
       return validatedPath;
     }
   }
@@ -277,7 +292,8 @@ const validateVaultPathInput = async (request: {
 const providerPromptOption = (
   inventoryRow: ProviderInventoryReport['rows'][number],
 ): PromptOption<ProviderId> => {
-  if (inventoryRow.provider === 'codex') {
+  const isCodexRow = inventoryRow.provider === 'codex';
+  if (isCodexRow) {
     return {
       value: inventoryRow.provider,
       label: inventoryRow.provider,
@@ -285,7 +301,8 @@ const providerPromptOption = (
     };
   }
 
-  if (inventoryRow.provider === 'claude') {
+  const isClaudeRow = inventoryRow.provider === 'claude';
+  if (isClaudeRow) {
     return {
       value: inventoryRow.provider,
       label: inventoryRow.provider,
@@ -293,7 +310,8 @@ const providerPromptOption = (
     };
   }
 
-  if (inventoryRow.provider === 'kiro') {
+  const isInventoryProviderKiro = inventoryRow.provider === 'kiro';
+  if (isInventoryProviderKiro) {
     return {
       value: inventoryRow.provider,
       label: inventoryRow.provider,
@@ -301,7 +319,8 @@ const providerPromptOption = (
     };
   }
 
-  if (inventoryRow.provider === 'grok') {
+  const isInventoryProviderGrok = inventoryRow.provider === 'grok';
+  if (isInventoryProviderGrok) {
     return {
       value: inventoryRow.provider,
       label: inventoryRow.provider,
@@ -309,7 +328,8 @@ const providerPromptOption = (
     };
   }
 
-  if (inventoryRow.provider === 'kimi') {
+  const isInventoryProviderKimi = inventoryRow.provider === 'kimi';
+  if (isInventoryProviderKimi) {
     return {
       value: inventoryRow.provider,
       label: inventoryRow.provider,
@@ -317,7 +337,8 @@ const providerPromptOption = (
     };
   }
 
-  if (inventoryRow.provider === 'opencode') {
+  const isOpencodeRow = inventoryRow.provider === 'opencode';
+  if (isOpencodeRow) {
     return {
       value: inventoryRow.provider,
       label: inventoryRow.provider,
@@ -325,7 +346,8 @@ const providerPromptOption = (
     };
   }
 
-  if (inventoryRow.provider === 'gemini') {
+  const isGeminiRow = inventoryRow.provider === 'gemini';
+  if (isGeminiRow) {
     return {
       value: inventoryRow.provider,
       label: inventoryRow.provider,
@@ -380,11 +402,13 @@ const firstSetupCopy = (): string =>
   ].join('\n');
 
 const validateDurationText = (duration: string | undefined): string | undefined => {
-  if (duration === undefined) {
+  const isDurationMissing = duration == null;
+  if (isDurationMissing) {
     return 'Use a duration such as 12h, 7d, 2w, or 30d.';
   }
 
-  if (/^\d+(h|d|w)$/.test(duration)) {
+  const isDurationFormat = /^\d+(h|d|w)$/.test(duration);
+  if (isDurationFormat) {
     return undefined;
   }
 

@@ -16,7 +16,8 @@ const MAX_TITLE_PREVIEW_LENGTH = 96;
  * ```
  */
 export const formatHumanScan = (report: ScanReport): string => {
-  if (report.sessions.length === 0) {
+  const isReportSessionsEmpty = report.sessions.length === 0;
+  if (isReportSessionsEmpty) {
     return 'No sessions found.';
   }
 
@@ -50,7 +51,8 @@ const formatSessionRow = (session: DiscoveredSession): string => {
 };
 
 const formatStatus = (session: DiscoveredSession): string => {
-  if (session.status !== undefined) {
+  const isSessionStatusKnown = session.status != null;
+  if (isSessionStatusKnown) {
     return session.status;
   }
 
@@ -60,7 +62,8 @@ const formatStatus = (session: DiscoveredSession): string => {
 const formatTitlePreview = (title: string): string => {
   const singleLineTitle = title.replace(/\s+/g, ' ').trim();
 
-  if (singleLineTitle.length <= MAX_TITLE_PREVIEW_LENGTH) {
+  const isTitleShortEnough = singleLineTitle.length <= MAX_TITLE_PREVIEW_LENGTH;
+  if (isTitleShortEnough) {
     return singleLineTitle;
   }
 

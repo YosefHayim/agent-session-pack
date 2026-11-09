@@ -25,7 +25,8 @@ export const runReviewSessions = async (
 ): Promise<CommandOutcome> => {
   const home = request.home ?? process.env.HOME;
 
-  if (home === undefined) {
+  const isHomeMissing = home == null;
+  if (isHomeMissing) {
     request.prompts.cancel(HOME_NOT_SET_CANCEL_MESSAGE);
     return { exitCode: 0 };
   }

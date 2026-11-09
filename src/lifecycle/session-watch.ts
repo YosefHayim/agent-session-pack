@@ -47,12 +47,16 @@ export const watchSessionStubs = async (request: WatchSessionStubsRequest): Prom
     const activePaths = new Set<string>();
 
     for (const manifest of manifests) {
-      if (request.provider !== undefined && manifest.provider !== request.provider) {
+      const isProviderMismatched =
+        request.provider !== undefined && manifest.provider !== request.provider;
+      if (isProviderMismatched) {
         continue;
       }
 
       activePaths.add(manifest.originalPath);
-      if (watchers.has(manifest.originalPath)) {
+
+      const isOriginalPathWatched = watchers.has(manifest.originalPath);
+      if (isOriginalPathWatched) {
         continue;
       }
 
@@ -68,7 +72,8 @@ export const watchSessionStubs = async (request: WatchSessionStubsRequest): Prom
     }
 
     for (const [path, watcher] of watchers) {
-      if (!activePaths.has(path)) {
+      const isNotPathInActivePaths = !activePaths.has(path);
+      if (isNotPathInActivePaths) {
         watcher.close();
         watchers.delete(path);
       }
@@ -80,26 +85,33 @@ export const watchSessionStubs = async (request: WatchSessionStubsRequest): Prom
     forceFromFsEvent: boolean,
   ): Promise<void> => {
     const sourceKind = manifest.sourceKind ?? 'file';
-    const isStub = await isArchivedStubPath(manifest.originalPath, sourceKind);
 
-    if (!isStub) {
+    const isPathArchivedStub = await isArchivedStubPath(manifest.originalPath, sourceKind);
+    const isNotStub = !isPathArchivedStub;
+
+    if (isNotStub) {
       return;
     }
 
-    if (!forceFromFsEvent && sourceKind === 'directory') {
+    const isDirectoryEventWithoutForce = !forceFromFsEvent && sourceKind === 'directory';
+    if (isDirectoryEventWithoutForce) {
       const opened = await directoryStubWasOpened(manifest.originalPath);
-      if (!opened) {
+
+      const isStubUnopened = !opened;
+      if (isStubUnopened) {
         return;
       }
     }
 
-    if (!forceFromFsEvent && sourceKind === 'file') {
+    const isFileEventWithoutForce = !forceFromFsEvent && sourceKind === 'file';
+    if (isFileEventWithoutForce) {
       // File stubs only materialize on fs events (reads/writes from the provider).
       return;
     }
 
     // One write fires several fs events; concurrent restores would share one staging path.
-    if (restoringPaths.has(manifest.originalPath)) {
+    const isOriginalPathRestoring = restoringPaths.has(manifest.originalPath);
+    if (isOriginalPathRestoring) {
       return;
     }
 

@@ -22,6 +22,7 @@ export const opencodeProvider: ProviderAdapter = {
       maxDepth: 6,
       excludedNames: ['log', 'logs', 'bin', 'node_modules'],
     });
+
     const isDirectorySessionFound = directorySessions.length > 0;
 
     if (isDirectorySessionFound) {

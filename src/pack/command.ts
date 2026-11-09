@@ -109,6 +109,8 @@ export type PackArgs = {
  * Runs the pack command: a dry-run plan, or an archive run when applying.
  */
 export const runPackCommand = async (args: PackArgs): Promise<CommandOutcome> => {
+  const isJsonOutput = args.json === true;
+
   const isMaxApplyRequested = args.max === true && args.apply === true;
 
   if (isMaxApplyRequested) {
@@ -118,7 +120,8 @@ export const runPackCommand = async (args: PackArgs): Promise<CommandOutcome> =>
   }
 
   const home = requireHome(args.home);
-  const isHomeMissing = home === undefined;
+
+  const isHomeMissing = home == null;
 
   if (isHomeMissing) {
     return { exitCode: 1 };
@@ -132,7 +135,8 @@ export const runPackCommand = async (args: PackArgs): Promise<CommandOutcome> =>
     return { exitCode: 2 };
   }
 
-  const olderThan = args.max === true ? '0h' : (args.olderThan ?? DEFAULT_COLD_AFTER);
+  const isMaxRequested = args.max === true;
+  const olderThan = isMaxRequested ? '0h' : (args.olderThan ?? DEFAULT_COLD_AFTER);
   const olderThanMs = parseDurationMs(olderThan);
   const { providers, isProviderUnknown } = selectProviders(args.provider, args.providers);
   const providerExitCode = isProviderUnknown ? 2 : 0;
@@ -149,7 +153,7 @@ export const runPackCommand = async (args: PackArgs): Promise<CommandOutcome> =>
       compression: args.compression ?? createZstdCompression(),
     });
 
-    if (args.json === true) {
+    if (isJsonOutput) {
       process.stdout.write(formatJsonPackReport(report));
       return { exitCode: providerExitCode };
     }
@@ -177,7 +181,7 @@ export const runPackCommand = async (args: PackArgs): Promise<CommandOutcome> =>
     })),
   });
 
-  if (args.json === true) {
+  if (isJsonOutput) {
     process.stdout.write(formatJsonPackPlan(plan));
     return { exitCode: providerExitCode };
   }
@@ -187,15 +191,18 @@ export const runPackCommand = async (args: PackArgs): Promise<CommandOutcome> =>
 };
 
 const shouldUseArchiveWorkflow = (args: PackArgs): boolean => {
-  if (args.apply === true) {
+  const isApplyRequested = args.apply === true;
+  if (isApplyRequested) {
     return true;
   }
 
-  if (args.allProviders === true) {
+  const isAllProvidersRequested = args.allProviders === true;
+  if (isAllProvidersRequested) {
     return true;
   }
 
-  if (args.max === true) {
+  const isMaxRequested = args.max === true;
+  if (isMaxRequested) {
     return true;
   }
 

@@ -19,7 +19,8 @@ export const kimiProvider: ProviderAdapter = {
       titleFromDirectory: readKimiSessionTitle,
       sessionIdFromDirectory: (path) => {
         const name = basename(path);
-        return name.startsWith('session_') ? name.slice('session_'.length) : name;
+        const isNameStartsWithSession = name.startsWith('session_');
+        return isNameStartsWithSession ? name.slice('session_'.length) : name;
       },
     }),
 };
@@ -27,12 +28,16 @@ export const kimiProvider: ProviderAdapter = {
 const readKimiSessionTitle = async (directory: string): Promise<string> => {
   const state = await readJsonFile(join(directory, 'state.json'));
 
-  if (typeof state === 'object' && state !== null) {
-    const title = (state as { readonly title?: unknown }).title;
+  const isStateMissing = typeof state !== 'object' || state === null;
+  if (isStateMissing) {
+    return basename(directory);
+  }
 
-    if (typeof title === 'string' && title.trim().length > 0) {
-      return title.trim();
-    }
+  const title = (state as { readonly title?: unknown }).title;
+
+  const hasTitleText = typeof title === 'string' && title.trim().length > 0;
+  if (hasTitleText) {
+    return title.trim();
   }
 
   return basename(directory);

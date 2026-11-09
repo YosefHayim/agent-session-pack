@@ -5,7 +5,8 @@ import { allProviders } from './all-providers.js';
  * Parses an optional `--provider` value into a provider id, or undefined when missing or unknown.
  */
 export const parseOptionalProvider = (provider: string | undefined): ProviderId | undefined => {
-  if (provider === undefined) {
+  const isProviderMissing = provider == null;
+  if (isProviderMissing) {
     return undefined;
   }
 
@@ -28,17 +29,19 @@ export const selectProviders = (
   provider: string | undefined,
   providersOverride?: ReadonlyArray<ProviderAdapter>,
 ): ProviderSelection => {
-  if (providersOverride !== undefined) {
+  const hasProvidersOverride = providersOverride != null;
+  if (hasProvidersOverride) {
     return { providers: providersOverride, isProviderUnknown: false };
   }
 
-  const isProviderMissing = provider === undefined;
+  const isProviderMissing = provider == null;
 
   if (isProviderMissing) {
     return { providers: allProviders, isProviderUnknown: false };
   }
 
   const providerId = parseOptionalProvider(provider);
+
   const isProviderUnknown = providerId === undefined;
 
   if (isProviderUnknown) {

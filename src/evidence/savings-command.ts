@@ -19,7 +19,8 @@ export interface SavingsArgs {
  */
 export const runSavingsCommand = async (args: SavingsArgs): Promise<CommandOutcome> => {
   const home = requireHome();
-  const isHomeMissing = home === undefined;
+
+  const isHomeMissing = home == null;
 
   if (isHomeMissing) {
     return { exitCode: 1 };
@@ -32,6 +33,7 @@ export const runSavingsCommand = async (args: SavingsArgs): Promise<CommandOutco
     workRoot: resolveEvidenceWorkRoot(process.cwd(), String(process.pid)),
     providers,
   });
+
   const isJsonRequested = args.json === true;
 
   if (isJsonRequested) {

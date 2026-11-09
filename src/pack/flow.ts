@@ -28,7 +28,8 @@ export const runPackFlow = async (
 ): Promise<CommandOutcome> => {
   const home = request.home ?? process.env.HOME;
 
-  if (home === undefined) {
+  const isHomeMissing = home == null;
+  if (isHomeMissing) {
     request.prompts.cancel(HOME_NOT_SET_CANCEL_MESSAGE);
     return { exitCode: 0 };
   }
@@ -50,7 +51,8 @@ export const runPackFlow = async (
     initialValue: true,
   });
 
-  if (request.prompts.isCancel(shouldPreview) || shouldPreview !== true) {
+  const isPreviewStopped = request.prompts.isCancel(shouldPreview) || shouldPreview !== true;
+  if (isPreviewStopped) {
     request.prompts.cancel('No files changed.');
     return { exitCode: 0 };
   }
@@ -71,7 +73,8 @@ export const runPackFlow = async (
     initialValue: false,
   });
 
-  if (request.prompts.isCancel(shouldApply) || shouldApply !== true) {
+  const isApplyStopped = request.prompts.isCancel(shouldApply) || shouldApply !== true;
+  if (isApplyStopped) {
     request.prompts.outro('No files changed.');
     return previewOutcome;
   }

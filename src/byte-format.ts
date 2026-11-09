@@ -14,7 +14,8 @@ const BYTE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB'] as const;
  * ```
  */
 export const formatBytes = (bytes: number): string => {
-  if (bytes < BYTES_PER_UNIT) {
+  const isBelowUnit = bytes < BYTES_PER_UNIT;
+  if (isBelowUnit) {
     return `${bytes} B`;
   }
 
@@ -26,7 +27,8 @@ export const formatBytes = (bytes: number): string => {
     unitIndex += 1;
   }
 
-  if (value >= 100) {
+  const hasThreeOrMoreDigits = value >= 100;
+  if (hasThreeOrMoreDigits) {
     return `${value.toFixed(0)} ${BYTE_UNITS[unitIndex]}`;
   }
 

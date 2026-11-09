@@ -1,7 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { z } from 'zod';
-import { rethrowAsError } from '@/rethrow-as-error.js';
 import { ProviderIdSchema, SessionSourceKindSchema } from '@/session-model.js';
 import { readDirectoryEntries } from './file-system.js';
 
@@ -34,16 +33,25 @@ export const writeSessionManifest = async (
   path: string,
   manifest: SessionManifest,
 ): Promise<void> => {
-  await mkdir(dirname(path), { recursive: true }).catch(rethrowAsError);
-  await writeFile(path, `${JSON.stringify(manifest, null, 2)}\n`).catch(rethrowAsError);
+  try {
+    await mkdir(dirname(path), { recursive: true });
+    await writeFile(path, `${JSON.stringify(manifest, null, 2)}\n`);
+  } catch (error) {
+    throw new Error(`Could not write session manifest ${path}`, { cause: error });
+  }
 };
 
 /**
  * Reads and decodes a session manifest.
  */
 export const readSessionManifest = async (path: string): Promise<SessionManifest> => {
-  const content = await readFile(path, 'utf8').catch(rethrowAsError);
-  return SessionManifestSchema.parse(JSON.parse(content));
+  try {
+    const manifestText = await readFile(path, 'utf8');
+    const manifestJson: unknown = JSON.parse(manifestText);
+    return SessionManifestSchema.parse(manifestJson);
+  } catch (error) {
+    throw new Error(`Could not read session manifest ${path}`, { cause: error });
+  }
 };
 
 /**

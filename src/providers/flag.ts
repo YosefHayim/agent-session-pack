@@ -1,5 +1,5 @@
 import { Either, Schema } from 'effect';
-import { type ProviderAdapter, type ProviderId, ProviderIdSchema } from '@/shared/session-model.js';
+import { type ProviderAdapter, type ProviderId, ProviderIdSchema } from '@/session-model.js';
 import { allProviders } from './all-providers.js';
 
 /**

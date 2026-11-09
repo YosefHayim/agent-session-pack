@@ -4,7 +4,7 @@ import type {
   ProviderDiscoveryError,
   ProviderId,
   SessionStore,
-} from '@/shared/session-model.js';
+} from '@/session-model.js';
 import {
   collectJsonlSessions,
   readSessionTitle,

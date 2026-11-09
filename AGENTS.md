@@ -28,25 +28,24 @@ Agent Session Pack is a CLI-only TypeScript tool for reducing local disk usage f
 ```text
 src/
   cli/           # binary entry, argv routing, interactive menu
-  features/      # one folder per feature: command, workflow, output, tests
-    archive/     # zstd archives, hashes, manifests, vault paths, stubs
-    doctor/
-    evidence/
-    guide/
-    lifecycle/
-    pack/
-    restore/
-    scan/
-    setup/
+  archive/       # zstd archives, hashes, manifests, vault paths, stubs, test fixtures
+  doctor/
+  evidence/
+  guide/
+  lifecycle/
+  pack/
+  restore/
+  scan/
+  setup/
   providers/     # read-only native store discovery per agent
-  shared/        # session model and helpers used by two or more features
+  *.ts           # helpers used by two or more job folders: session model, byte format, prompts
   **/*.test.ts   # unit tests colocated next to source
-tests/           # shared helpers/fixtures + optional *.integration.test.ts
+e2e/             # end-to-end CLI tests, run by pnpm test:e2e
 examples/hello-world/
 .github/workflows/
 ```
 
-Imports point one way: `cli` -> `features` -> `providers` -> `shared`.
+Imports point one way: `cli` -> job folders -> `providers` -> `src/*.ts` helpers.
 
 ## Canonical Docs
 

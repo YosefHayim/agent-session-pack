@@ -8,7 +8,7 @@ export default defineConfig({
   test: {
     globals: false,
     include: ['src/**/*.test.ts'],
-    exclude: ['tests/**/*.integration.test.ts'],
+    exclude: ['e2e/**/*.test.ts'],
     testTimeout: 30_000,
   },
 });

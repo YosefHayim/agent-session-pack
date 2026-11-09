@@ -1,14 +1,14 @@
 import { stat } from 'node:fs/promises';
 import { Effect } from 'effect';
-import { sumSessionBytes } from '../../shared/byte-savings.js';
+import { sumSessionBytes } from '@/shared/byte-savings.js';
 import type {
   DiscoveredSession,
   ProviderAdapter,
   ProviderDiscoveryError,
   ProviderId,
   ProviderMode,
-} from '../../shared/session-model.js';
-import { ProviderDiscoveryError as ProviderDiscoveryFailure } from '../../shared/session-model.js';
+} from '@/shared/session-model.js';
+import { ProviderDiscoveryError as ProviderDiscoveryFailure } from '@/shared/session-model.js';
 
 /**
  * Readiness status reported for a provider store during inventory.
@@ -56,7 +56,7 @@ export type ProviderInventoryRequest = {
  * @example
  * ```ts
  * import { inspectProviderInventory } from './provider-inventory.js';
- * import { allProviders } from '../../providers/all-providers.js';
+ * import { allProviders } from '@/providers/all-providers.js';
  *
  * const report = await Effect.runPromise(
  *   inspectProviderInventory({

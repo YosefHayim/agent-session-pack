@@ -1,8 +1,8 @@
 import { defineCommand } from 'citty';
 import { Effect, Schema } from 'effect';
-import { selectProviders } from '../../providers/flag.js';
-import { requireHome } from '../../shared/home-env.js';
-import type { ProviderDiscoveryError, SessionStore } from '../../shared/session-model.js';
+import { selectProviders } from '@/providers/flag.js';
+import { requireHome } from '@/shared/home-env.js';
+import type { ProviderDiscoveryError, SessionStore } from '@/shared/session-model.js';
 import { renderHumanScan, renderJsonScan } from './output.js';
 import { scanStores } from './stores.js';
 

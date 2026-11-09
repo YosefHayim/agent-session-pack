@@ -4,17 +4,17 @@ import { join } from 'node:path';
 import { Effect } from 'effect';
 import { describe, expect, it } from 'vitest';
 import {
+  listSessionManifestPaths,
+  readSessionManifest,
+  writeSessionManifest,
+} from '@/features/archive/manifest-store.js';
+import { packProviderSessions } from '@/features/pack/sessions.js';
+import type { DiscoveredSession, ProviderAdapter } from '@/shared/session-model.js';
+import {
   copyCompression,
   createArchiveProvider,
   writeColdSession,
 } from '../../../tests/archive-fixtures.js';
-import type { DiscoveredSession, ProviderAdapter } from '../../shared/session-model.js';
-import {
-  listSessionManifestPaths,
-  readSessionManifest,
-  writeSessionManifest,
-} from '../archive/manifest-store.js';
-import { packProviderSessions } from '../pack/sessions.js';
 import { unpackProviderSessions } from './unpack-sessions.js';
 
 const createWorkspace = (): Promise<string> =>

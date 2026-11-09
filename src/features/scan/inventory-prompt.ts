@@ -1,8 +1,8 @@
 import { Effect } from 'effect';
-import { formatBytes } from '../../shared/byte-format.js';
-import type { PromptAdapter } from '../../shared/prompt-adapter.js';
-import type { ProviderAdapter } from '../../shared/session-model.js';
-import { runWithSpinner } from '../../shared/spinner-task.js';
+import { formatBytes } from '@/shared/byte-format.js';
+import type { PromptAdapter } from '@/shared/prompt-adapter.js';
+import type { ProviderAdapter } from '@/shared/session-model.js';
+import { runWithSpinner } from '@/shared/spinner-task.js';
 import { inspectProviderInventory, type ProviderInventoryReport } from './provider-inventory.js';
 
 /**
@@ -26,8 +26,8 @@ export type InventorySpinnerRequest = {
  * @example
  * ```ts
  * import { loadInventoryWithSpinner } from './inventory-prompt.js';
- * import { clackPromptAdapter } from '../../shared/prompt-adapter.js';
- * import { allProviders } from '../../providers/all-providers.js';
+ * import { clackPromptAdapter } from '@/shared/prompt-adapter.js';
+ * import { allProviders } from '@/providers/all-providers.js';
  *
  * const inventory = await loadInventoryWithSpinner({
  *   home: process.env.HOME!,

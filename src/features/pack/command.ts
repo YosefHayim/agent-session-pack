@@ -1,18 +1,18 @@
 import { defineCommand } from 'citty';
 import { Effect } from 'effect';
-import { selectProviders } from '../../providers/flag.js';
-import { resolveApplyConfirmation } from '../../shared/apply-confirmation.js';
-import { requireHome } from '../../shared/home-env.js';
+import type { ManifestStoreError } from '@/features/archive/manifest-store.js';
+import { resolveDefaultVaultPath } from '@/features/archive/vault-paths.js';
+import type { ArchiveWriteError, CompressionAdapter } from '@/features/archive/writer.js';
+import { createZstdCompression } from '@/features/archive/zstd-compression.js';
+import { scanStores } from '@/features/scan/stores.js';
+import { selectProviders } from '@/providers/flag.js';
+import { resolveApplyConfirmation } from '@/shared/apply-confirmation.js';
+import { requireHome } from '@/shared/home-env.js';
 import type {
   ProviderAdapter,
   ProviderDiscoveryError,
   SessionStore,
-} from '../../shared/session-model.js';
-import type { ManifestStoreError } from '../archive/manifest-store.js';
-import { resolveDefaultVaultPath } from '../archive/vault-paths.js';
-import type { ArchiveWriteError, CompressionAdapter } from '../archive/writer.js';
-import { createZstdCompression } from '../archive/zstd-compression.js';
-import { scanStores } from '../scan/stores.js';
+} from '@/shared/session-model.js';
 import {
   formatHumanPackPlan,
   formatHumanPackReport,

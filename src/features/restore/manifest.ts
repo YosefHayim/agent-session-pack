@@ -1,21 +1,21 @@
 import { Effect } from 'effect';
-import type { SessionSourceKind } from '../../shared/session-model.js';
 import {
   type ArchiveFileSystemError,
   copyPath,
   ensureParentDirectory,
   pathExists,
   removePath,
-} from '../archive/file-system.js';
-import { sha256File, sha256Path } from '../archive/hash.js';
-import type { SessionManifest } from '../archive/manifest-store.js';
-import { isArchivedStubPath } from '../archive/session-stub.js';
-import { restorePathForManifest } from '../archive/vault-paths.js';
+} from '@/features/archive/file-system.js';
+import { sha256File, sha256Path } from '@/features/archive/hash.js';
+import type { SessionManifest } from '@/features/archive/manifest-store.js';
+import { isArchivedStubPath } from '@/features/archive/session-stub.js';
+import { restorePathForManifest } from '@/features/archive/vault-paths.js';
 import {
   ArchiveVerificationError,
   type CompressionAdapter,
   restoreDirectoryArchive,
-} from '../archive/writer.js';
+} from '@/features/archive/writer.js';
+import type { SessionSourceKind } from '@/shared/session-model.js';
 
 /**
  * Result of restoring one archived session to its original path.
@@ -61,7 +61,7 @@ const resolveLiveOriginalOutcome = (request: {
  * @returns Effect containing the restore outcome.
  * @example
  * ```ts
- * import { createZstdCompression } from '../archive/zstd-compression.js';
+ * import { createZstdCompression } from '@/features/archive/zstd-compression.js';
  * import { restoreManifest } from './manifest.js';
  *
  * const outcome = await Effect.runPromise(

@@ -1,4 +1,4 @@
-import type { ProviderAdapter } from '../shared/session-model.js';
+import type { ProviderAdapter } from '@/shared/session-model.js';
 import { claudeCodeProvider } from './claude-code.js';
 import { codexProvider } from './codex.js';
 import { cursorProvider } from './cursor.js';

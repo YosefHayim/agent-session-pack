@@ -3,12 +3,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Effect } from 'effect';
 import { describe, expect, it } from 'vitest';
+import type { DiscoveredSession, ProviderAdapter } from '@/shared/session-model.js';
 import {
   copyCompression,
   createArchiveProvider,
   writeColdSession,
 } from '../../../tests/archive-fixtures.js';
-import type { DiscoveredSession, ProviderAdapter } from '../../shared/session-model.js';
 import { packProviderSessions } from './sessions.js';
 
 const createWorkspace = (): Promise<string> =>

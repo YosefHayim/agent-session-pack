@@ -1,5 +1,5 @@
 import { join } from 'node:path';
-import type { DiscoveredSession, SessionSourceKind } from '../../shared/session-model.js';
+import type { DiscoveredSession, SessionSourceKind } from '@/shared/session-model.js';
 import type { SessionManifest } from './manifest-store.js';
 
 /**

@@ -4,9 +4,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Effect } from 'effect';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { writeSessionManifest } from '@/features/archive/manifest-store.js';
+import { writeSetupConfig } from '@/features/setup/config.js';
 import { copyCompression } from '../../../tests/archive-fixtures.js';
-import { writeSessionManifest } from '../archive/manifest-store.js';
-import { writeSetupConfig } from '../setup/config.js';
 import { runPreflightCommand } from './preflight-command.js';
 
 describe('preflight command', () => {

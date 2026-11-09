@@ -4,8 +4,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Effect } from 'effect';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { writeSessionManifest } from '@/features/archive/manifest-store.js';
 import { copyCompression } from '../../../tests/archive-fixtures.js';
-import { writeSessionManifest } from '../archive/manifest-store.js';
 import { runOpenCommand } from './open-command.js';
 
 describe('open command', () => {

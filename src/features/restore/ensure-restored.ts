@@ -1,8 +1,11 @@
 import { Effect, Either } from 'effect';
-import type { ProviderId } from '../../shared/session-model.js';
-import type { ArchiveFileSystemError } from '../archive/file-system.js';
-import { listVaultSessionManifests, type ManifestStoreError } from '../archive/manifest-store.js';
-import type { ArchiveVerificationError, CompressionAdapter } from '../archive/writer.js';
+import type { ArchiveFileSystemError } from '@/features/archive/file-system.js';
+import {
+  listVaultSessionManifests,
+  type ManifestStoreError,
+} from '@/features/archive/manifest-store.js';
+import type { ArchiveVerificationError, CompressionAdapter } from '@/features/archive/writer.js';
+import type { ProviderId } from '@/shared/session-model.js';
 import { type RestoreOutcome, restoreManifest } from './manifest.js';
 import { resolveSessionSelector, type SelectorMatch } from './session-selector.js';
 
@@ -68,7 +71,7 @@ export type EnsureSessionRestoredRequest = {
  * @example
  * ```ts
  * import { ensureSessionRestored } from './ensure-restored.js';
- * import { createZstdCompression } from '../archive/zstd-compression.js';
+ * import { createZstdCompression } from '@/features/archive/zstd-compression.js';
  *
  * const report = await Effect.runPromise(
  *   ensureSessionRestored({

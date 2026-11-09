@@ -1,16 +1,16 @@
 import { Effect } from 'effect';
-import { allProviders } from '../../providers/all-providers.js';
-import { HOME_NOT_SET_CANCEL_MESSAGE } from '../../shared/home-env.js';
-import type { InteractiveCliRequest } from '../../shared/interactive-cli-request.js';
-import type { PromptAdapter } from '../../shared/prompt-adapter.js';
-import { clackPromptAdapter, type PromptOption } from '../../shared/prompt-adapter.js';
-import type { ProviderAdapter, ProviderId } from '../../shared/session-model.js';
-import { DEFAULT_COLD_AFTER, DEFAULT_COLD_AFTER_MS } from '../pack/plan.js';
+import { DEFAULT_COLD_AFTER, DEFAULT_COLD_AFTER_MS } from '@/features/pack/plan.js';
 import {
   formatProviderInventoryTable,
   loadInventoryWithSpinner,
-} from '../scan/inventory-prompt.js';
-import type { ProviderInventoryReport } from '../scan/provider-inventory.js';
+} from '@/features/scan/inventory-prompt.js';
+import type { ProviderInventoryReport } from '@/features/scan/provider-inventory.js';
+import { allProviders } from '@/providers/all-providers.js';
+import { HOME_NOT_SET_CANCEL_MESSAGE } from '@/shared/home-env.js';
+import type { InteractiveCliRequest } from '@/shared/interactive-cli-request.js';
+import type { PromptAdapter } from '@/shared/prompt-adapter.js';
+import { clackPromptAdapter, type PromptOption } from '@/shared/prompt-adapter.js';
+import type { ProviderAdapter, ProviderId } from '@/shared/session-model.js';
 import { validateVaultPath, writeSetupConfig } from './config.js';
 
 type ColdThresholdChoice = '14d' | '30d' | '7d' | 'custom';

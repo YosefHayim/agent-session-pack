@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Effect } from 'effect';
 import { describe, expect, it } from 'vitest';
-import type { ProviderAdapter } from '../../shared/session-model.js';
+import type { ProviderAdapter } from '@/shared/session-model.js';
 import { runLocalEvidence } from './local-evidence.js';
 
 const createWorkspace = (): Promise<string> =>

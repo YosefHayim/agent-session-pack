@@ -1,9 +1,9 @@
 import { defineCommand } from 'citty';
 import { Effect, Schema } from 'effect';
-import { selectProviders } from '../../providers/flag.js';
-import { requireHome } from '../../shared/home-env.js';
-import type { ProviderDiscoveryError } from '../../shared/session-model.js';
-import type { ArchiveWriteError } from '../archive/writer.js';
+import type { ArchiveWriteError } from '@/features/archive/writer.js';
+import { selectProviders } from '@/providers/flag.js';
+import { requireHome } from '@/shared/home-env.js';
+import type { ProviderDiscoveryError } from '@/shared/session-model.js';
 import { runLocalEvidence } from './local-evidence.js';
 import { formatHumanEvidenceReport, formatJsonEvidenceReport } from './output.js';
 import { resolveEvidenceWorkRoot } from './work-root.js';

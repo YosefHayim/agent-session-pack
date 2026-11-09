@@ -3,8 +3,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Effect } from 'effect';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { runPackCommand } from '@/features/pack/command.js';
 import { copyCompression, writeColdSession } from '../../../tests/archive-fixtures.js';
-import { runPackCommand } from '../pack/command.js';
 import { runUnpackCommand } from './unpack-command.js';
 
 const createWorkspace = (): Promise<string> =>

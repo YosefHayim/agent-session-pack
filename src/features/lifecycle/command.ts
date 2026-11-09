@@ -1,16 +1,16 @@
 import { fileURLToPath } from 'node:url';
 import { defineCommand } from 'citty';
 import { Effect } from 'effect';
-import { requireHome } from '../../shared/home-env.js';
-import { resolveDefaultVaultPath } from '../archive/vault-paths.js';
-import { DEFAULT_COLD_AFTER } from '../pack/plan.js';
+import { resolveDefaultVaultPath } from '@/features/archive/vault-paths.js';
+import { DEFAULT_COLD_AFTER } from '@/features/pack/plan.js';
 import {
   isRestoreOnLaunchEnabled,
   readSetupConfig,
   type SetupConfig,
   type SetupConfigFileError,
   writeSetupConfig,
-} from '../setup/config.js';
+} from '@/features/setup/config.js';
+import { requireHome } from '@/shared/home-env.js';
 import { resolveWrappersBinPath } from './session-access.js';
 import {
   installLifecycleWrappers,

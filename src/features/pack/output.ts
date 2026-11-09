@@ -1,6 +1,6 @@
-import { formatBytes } from '../../shared/byte-format.js';
-import { savedPercent } from '../../shared/byte-savings.js';
-import { formatStatus, formatTouched } from '../../shared/report-cells.js';
+import { formatBytes } from '@/shared/byte-format.js';
+import { savedPercent } from '@/shared/byte-savings.js';
+import { formatStatus, formatTouched } from '@/shared/report-cells.js';
 import type { PackPlan } from './plan.js';
 import type { PackSessionsReport } from './sessions.js';
 

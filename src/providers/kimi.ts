@@ -1,5 +1,5 @@
 import { basename, join } from 'node:path';
-import type { ProviderAdapter } from '../shared/session-model.js';
+import type { ProviderAdapter } from '@/shared/session-model.js';
 import { discoverDirectoryProviderSessions, readJsonFile } from './directory-sessions.js';
 
 /**

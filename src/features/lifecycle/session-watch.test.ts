@@ -5,10 +5,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Effect } from 'effect';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { writeSessionManifest } from '@/features/archive/manifest-store.js';
+import { writeArchivedStub } from '@/features/archive/session-stub.js';
+import type { CompressionAdapter } from '@/features/archive/writer.js';
 import { copyCompression } from '../../../tests/archive-fixtures.js';
-import { writeSessionManifest } from '../archive/manifest-store.js';
-import { writeArchivedStub } from '../archive/session-stub.js';
-import type { CompressionAdapter } from '../archive/writer.js';
 import { watchSessionStubs } from './session-watch.js';
 
 const STUB_CONTENT = `${JSON.stringify({

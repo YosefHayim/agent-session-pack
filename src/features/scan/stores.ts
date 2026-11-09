@@ -5,7 +5,7 @@ import {
   type ProviderAdapter,
   ProviderDiscoveryError,
   type SessionStore,
-} from '../../shared/session-model.js';
+} from '@/shared/session-model.js';
 
 /**
  * Stores and providers to inspect during a scan.

@@ -1,9 +1,9 @@
 import { Effect } from 'effect';
-import { allProviders } from '../../providers/all-providers.js';
-import { HOME_NOT_SET_CANCEL_MESSAGE } from '../../shared/home-env.js';
-import type { InteractiveCliRequest } from '../../shared/interactive-cli-request.js';
-import type { PromptAdapter } from '../../shared/prompt-adapter.js';
-import { DEFAULT_COLD_AFTER_MS } from '../pack/plan.js';
+import { DEFAULT_COLD_AFTER_MS } from '@/features/pack/plan.js';
+import { allProviders } from '@/providers/all-providers.js';
+import { HOME_NOT_SET_CANCEL_MESSAGE } from '@/shared/home-env.js';
+import type { InteractiveCliRequest } from '@/shared/interactive-cli-request.js';
+import type { PromptAdapter } from '@/shared/prompt-adapter.js';
 import { runScanCommand } from './command.js';
 import { formatProviderInventoryTable, loadInventoryWithSpinner } from './inventory-prompt.js';
 
@@ -15,7 +15,7 @@ import { formatProviderInventoryTable, loadInventoryWithSpinner } from './invent
  * @example
  * ```ts
  * import { runReviewSessions } from './review-flow.js';
- * import { clackPromptAdapter } from '../../shared/prompt-adapter.js';
+ * import { clackPromptAdapter } from '@/shared/prompt-adapter.js';
  *
  * await runReviewSessions({ prompts: clackPromptAdapter });
  * ```

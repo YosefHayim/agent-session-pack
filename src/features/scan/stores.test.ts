@@ -7,7 +7,7 @@ import {
   type DiscoveredSession,
   type ProviderAdapter,
   ProviderDiscoveryError,
-} from '../../shared/session-model.js';
+} from '@/shared/session-model.js';
 import { discoverStoreSessions, scanStores } from './stores.js';
 
 const createWorkspace = (): Promise<string> =>

@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Effect } from 'effect';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { resolveConfigPath } from '../setup/config.js';
+import { resolveConfigPath } from '@/features/setup/config.js';
 import { runLifecycleCommand } from './command.js';
 
 describe('lifecycle command', () => {

@@ -3,7 +3,7 @@ import { createReadStream } from 'node:fs';
 import { readdir, stat } from 'node:fs/promises';
 import { basename, extname, join } from 'node:path';
 import { Effect } from 'effect';
-import { ProviderDiscoveryError } from '@/shared/session-model.js';
+import { ProviderDiscoveryError } from '@/session-model.js';
 
 const TITLE_SEARCH_LIMIT_BYTES = 1024 * 1024;
 const TITLE_READ_HIGH_WATER_MARK_BYTES = 64 * 1024;

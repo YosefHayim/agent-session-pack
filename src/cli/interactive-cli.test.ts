@@ -3,9 +3,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Effect } from 'effect';
 import { describe, expect, it } from 'vitest';
-import { runFirstSetup } from '@/features/setup/first-setup-flow.js';
-import type { PromptAdapter, PromptOption } from '@/shared/prompt-adapter.js';
-import type { ProviderAdapter } from '@/shared/session-model.js';
+import type { PromptAdapter, PromptOption } from '@/prompt-adapter.js';
+import type { ProviderAdapter } from '@/session-model.js';
+import { runFirstSetup } from '@/setup/first-setup-flow.js';
 import { createMainMenuOptions, shouldRunInteractiveCli } from './interactive-cli.js';
 
 const createWorkspace = (): Promise<string> =>

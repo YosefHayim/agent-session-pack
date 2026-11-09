@@ -1,5 +1,5 @@
 import { join } from 'node:path';
-import type { ProviderAdapter } from '@/shared/session-model.js';
+import type { ProviderAdapter } from '@/session-model.js';
 import { discoverJsonlProviderSessions } from './jsonl-sessions.js';
 
 /**

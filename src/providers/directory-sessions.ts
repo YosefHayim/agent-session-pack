@@ -6,7 +6,7 @@ import {
   ProviderDiscoveryError,
   type ProviderId,
   type SessionStore,
-} from '@/shared/session-model.js';
+} from '@/session-model.js';
 import { measureDirectorySession, slugifyTitle } from './session-discovery.js';
 
 /**

@@ -1,6 +1,6 @@
 import { basename, join } from 'node:path';
-import type { ProviderAdapter } from '../shared/sessionModel.js';
-import { discoverDirectoryProviderSessions, readJsonFile } from './directorySessions.js';
+import type { ProviderAdapter } from '../shared/session-model.js';
+import { discoverDirectoryProviderSessions, readJsonFile } from './directory-sessions.js';
 
 /**
  * Archive provider adapter for Kimi Code multi-file sessions.

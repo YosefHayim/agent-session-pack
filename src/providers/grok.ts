@@ -1,8 +1,8 @@
 import { readFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import { Effect } from 'effect';
-import type { ProviderAdapter } from '../shared/sessionModel.js';
-import { discoverDirectoryProviderSessions, readJsonFile } from './directorySessions.js';
+import type { ProviderAdapter } from '../shared/session-model.js';
+import { discoverDirectoryProviderSessions, readJsonFile } from './directory-sessions.js';
 
 /**
  * Archive provider adapter for Grok Build multi-file sessions.

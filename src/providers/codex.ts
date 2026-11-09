@@ -1,6 +1,6 @@
 import { join } from 'node:path';
-import type { ProviderAdapter } from '../shared/sessionModel.js';
-import { discoverJsonlProviderSessions } from './jsonlSessions.js';
+import type { ProviderAdapter } from '../shared/session-model.js';
+import { discoverJsonlProviderSessions } from './jsonl-sessions.js';
 
 /**
  * Archive provider adapter for Codex JSONL sessions.

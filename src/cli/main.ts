@@ -1,24 +1,24 @@
 import { fileURLToPath } from 'node:url';
 import { defineCommand, runMain } from 'citty';
 import packageJson from '../../package.json' with { type: 'json' };
-import { doctorCommand } from '../features/doctor/doctorCommand.js';
-import { checkCommand, savingsCommand } from '../features/evidence/savingsCommand.js';
-import { guideCommand } from '../features/guide/guideCommand.js';
-import { lifecycleCommand } from '../features/lifecycle/lifecycleCommand.js';
-import { maintainCommand } from '../features/lifecycle/maintainCommand.js';
-import { preflightCommand } from '../features/lifecycle/preflightCommand.js';
-import { watchCommand } from '../features/lifecycle/watchCommand.js';
-import { packCommand } from '../features/pack/packCommand.js';
-import { ensureRestoredCommand } from '../features/restore/ensureRestoredCommand.js';
-import { openCommand } from '../features/restore/openCommand.js';
-import { restoreCommand } from '../features/restore/restoreCommand.js';
-import { unpackCommand } from '../features/restore/unpackCommand.js';
-import { listCommand } from '../features/scan/listCommand.js';
-import { scanCommand } from '../features/scan/scanCommand.js';
-import { initCommand } from '../features/setup/initCommand.js';
-import { runInteractiveCli, shouldRunInteractiveCli } from './interactiveCli.js';
-import { rewriteCommandFlagAliases } from './mainArgs.js';
-import { isCliEntrypoint } from './mainEntrypoint.js';
+import { doctorCommand } from '../features/doctor/command.js';
+import { checkCommand, savingsCommand } from '../features/evidence/savings-command.js';
+import { guideCommand } from '../features/guide/command.js';
+import { lifecycleCommand } from '../features/lifecycle/command.js';
+import { maintainCommand } from '../features/lifecycle/maintain-command.js';
+import { preflightCommand } from '../features/lifecycle/preflight-command.js';
+import { watchCommand } from '../features/lifecycle/watch-command.js';
+import { packCommand } from '../features/pack/command.js';
+import { restoreCommand } from '../features/restore/command.js';
+import { ensureRestoredCommand } from '../features/restore/ensure-restored-command.js';
+import { openCommand } from '../features/restore/open-command.js';
+import { unpackCommand } from '../features/restore/unpack-command.js';
+import { scanCommand } from '../features/scan/command.js';
+import { listCommand } from '../features/scan/list-command.js';
+import { initCommand } from '../features/setup/init-command.js';
+import { runInteractiveCli, shouldRunInteractiveCli } from './interactive-cli.js';
+import { rewriteCommandFlagAliases } from './main-args.js';
+import { isCliEntrypoint } from './main-entrypoint.js';
 
 /**
  * Root citty command that wires all Agent Session Pack subcommands.

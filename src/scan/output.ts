@@ -44,13 +44,13 @@ const createSessionRow = (session: DiscoveredSession): string => {
   const provider = session.provider.padEnd(10);
   const date = session.modifiedAt.toISOString().slice(0, 10);
   const size = `${session.sizeBytes} B`.padEnd(10);
-  const status = createStatus(session).padEnd(8);
+  const status = describeSessionStatus(session).padEnd(8);
   const title = createTitlePreview(session.title);
 
   return `${provider} ${date}   ${size} ${status} ${title}   ${session.originalPath}`;
 };
 
-const createStatus = (session: DiscoveredSession): string => {
+const describeSessionStatus = (session: DiscoveredSession): string => {
   const isSessionStatusKnown = session.status != null;
   if (isSessionStatusKnown) {
     return session.status;

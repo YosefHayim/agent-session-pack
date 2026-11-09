@@ -1,4 +1,4 @@
-import { createBytes } from '@/byte-format.js';
+import { describeBytes } from '@/byte-format.js';
 import type { PromptAdapter } from '@/prompt-adapter.js';
 import type { ProviderAdapter } from '@/session-model.js';
 import { runWithSpinner } from '@/spinner-task.js';
@@ -87,7 +87,7 @@ const createProviderInventoryRow = (
   const sessions = String(inventoryRow.sessions).padStart(8);
   const cold = String(inventoryRow.coldSessions).padStart(6);
   const guarded = String(inventoryRow.guardedRecentSessions).padStart(16);
-  const size = createBytes(inventoryRow.candidateBytes).padEnd(10);
+  const size = describeBytes(inventoryRow.candidateBytes).padEnd(10);
   const path = inventoryRow.paths.join(', ');
 
   return `${provider} ${mode} ${sessions}   ${cold}   ${guarded}   ${size} ${path}`;

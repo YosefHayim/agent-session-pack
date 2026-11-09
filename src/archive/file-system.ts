@@ -123,7 +123,7 @@ export const readStatPath = (path: string): Promise<{ readonly size: number }> =
 /**
  * Checks whether a path exists.
  */
-export const isPathExists = async (path: string): Promise<boolean> => {
+export const isPathOnDisk = async (path: string): Promise<boolean> => {
   try {
     await stat(path);
     return true;

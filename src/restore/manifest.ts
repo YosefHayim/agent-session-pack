@@ -1,7 +1,7 @@
 import {
   copyPath,
   ensureParentDirectory,
-  isPathExists,
+  isPathOnDisk,
   removePath,
 } from '@/archive/file-system.js';
 import { readSha256File, readSha256Path } from '@/archive/hash.js';
@@ -95,7 +95,7 @@ const findLiveOutcomeWhenPresent = async (
   manifest: SessionManifest,
   sourceKind: SessionSourceKind,
 ): Promise<RestoreOutcome | null> => {
-  const isOriginalOnDisk = await isPathExists(manifest.originalPath);
+  const isOriginalOnDisk = await isPathOnDisk(manifest.originalPath);
 
   const isOriginalMissing = !isOriginalOnDisk;
   if (isOriginalMissing) {

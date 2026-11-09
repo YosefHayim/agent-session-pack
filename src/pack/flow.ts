@@ -1,5 +1,5 @@
 import { createDefaultVaultPath } from '@/archive/vault-paths.js';
-import { createBytes } from '@/byte-format.js';
+import { describeBytes } from '@/byte-format.js';
 import type { CommandOutcome } from '@/command-outcome.js';
 import { HOME_NOT_SET_CANCEL_MESSAGE } from '@/home-env.js';
 import type { InteractiveCliRequest } from '@/interactive-cli-request.js';
@@ -112,7 +112,7 @@ const createPackApplyQuestion = (inventory: ProviderInventoryReport, home: strin
     `This will archive ${candidateSessions} cold sessions from ${providerNames || 'no providers'} into:`,
     createDefaultVaultPath(home),
     '',
-    `Candidate size: ${createBytes(candidateBytes)}`,
+    `Candidate size: ${describeBytes(candidateBytes)}`,
     'Original files are removed only after archive write, restore verification, and manifest write.',
   ].join('\n');
 };

@@ -1,5 +1,5 @@
-import { createBytes } from '@/byte-format.js';
-import { readSavedPercent } from '@/byte-savings.js';
+import { describeBytes } from '@/byte-format.js';
+import { calculateSavedPercent } from '@/byte-savings.js';
 import type { LocalEvidenceEntry, LocalEvidenceReport } from './local-evidence.js';
 
 /**
@@ -39,7 +39,7 @@ export const createHumanEvidenceReport = (report: LocalEvidenceReport): string =
   const isNothingSampledInTotal = totalSampledSources === 0;
   const totalSavedPercent = isNothingSampledInTotal
     ? undefined
-    : readSavedPercent(totalSourceBytes, totalArchiveBytes);
+    : calculateSavedPercent(totalSourceBytes, totalArchiveBytes);
 
   return [
     'Local evidence',
@@ -51,7 +51,7 @@ export const createHumanEvidenceReport = (report: LocalEvidenceReport): string =
     'Provider      Discovered  Samples  Mode         Proof before  Proof after  Saved    Exact   Touched',
     ...report.evidence.map(createEvidenceRow),
     '------------- -----------  -------- ----------- ------------- ------------ -------- ------- -------',
-    `${'sample total'.padEnd(13)} ${String(totalFoundSessions).padEnd(11)} ${String(totalSampledSources).padEnd(8)} ${''.padEnd(12)} ${createMaybeBytes(totalSourceBytes, totalSampledSources).padEnd(13)} ${createMaybeBytes(totalArchiveBytes, totalSampledSources).padEnd(12)} ${createMaybePercent(totalSavedPercent).padEnd(8)} ${''.padEnd(7)} ${touchedOriginals ? 'yes' : 'no'}`,
+    `${'sample total'.padEnd(13)} ${String(totalFoundSessions).padEnd(11)} ${String(totalSampledSources).padEnd(8)} ${''.padEnd(12)} ${describeSampledBytes(totalSourceBytes, totalSampledSources).padEnd(13)} ${describeSampledBytes(totalArchiveBytes, totalSampledSources).padEnd(12)} ${describeOptionalPercent(totalSavedPercent).padEnd(8)} ${''.padEnd(7)} ${touchedOriginals ? 'yes' : 'no'}`,
     '',
     `Original sessions touched: ${touchedOriginals ? 'yes' : 'no'}`,
     `Work root: ${report.workRoot}`,
@@ -78,10 +78,10 @@ const createEvidenceRow = (entry: LocalEvidenceEntry): string => {
   const foundSessions = String(entry.foundSessions).padEnd(11);
   const sampledSources = String(entry.sampledSources).padEnd(8);
   const mode = entry.mode.padEnd(12);
-  const before = createOptionalBytes(entry.sourceBytes).padEnd(13);
-  const after = createOptionalBytes(entry.archiveBytes).padEnd(12);
-  const saved = createMaybePercent(entry.savedPercent).padEnd(8);
-  const exact = createExact(entry.byteExact).padEnd(7);
+  const before = describeOptionalBytes(entry.sourceBytes).padEnd(13);
+  const after = describeOptionalBytes(entry.archiveBytes).padEnd(12);
+  const saved = describeOptionalPercent(entry.savedPercent).padEnd(8);
+  const exact = describeByteExact(entry.byteExact).padEnd(7);
   const touched = entry.originalTouched ? 'yes' : 'no';
 
   return `${provider} ${foundSessions} ${sampledSources} ${mode} ${before} ${after} ${saved} ${exact} ${touched}`;
@@ -92,24 +92,24 @@ const sumEvidenceBytes = (
   key: 'archiveBytes' | 'sourceBytes',
 ): number => evidence.reduce((totalBytes, entry) => totalBytes + (entry[key] ?? 0), 0);
 
-const createOptionalBytes = (bytes: number | undefined): string => {
+const describeOptionalBytes = (bytes: number | undefined): string => {
   const isBytesMissing = bytes == null;
-  return isBytesMissing ? '-' : createBytes(bytes);
+  return isBytesMissing ? '-' : describeBytes(bytes);
 };
 
-const createMaybeBytes = (bytes: number, sampledSources: number): string => {
+const describeSampledBytes = (bytes: number, sampledSources: number): string => {
   const isNothingSampled = sampledSources === 0;
-  return isNothingSampled ? '-' : createBytes(bytes);
+  return isNothingSampled ? '-' : describeBytes(bytes);
 };
 
-const createPercent = (percent: number): string => `${percent.toFixed(1)}%`;
+const describePercent = (percent: number): string => `${percent.toFixed(1)}%`;
 
-const createMaybePercent = (percent: number | undefined): string => {
+const describeOptionalPercent = (percent: number | undefined): string => {
   const isPercentMissing = percent == null;
-  return isPercentMissing ? '-' : createPercent(percent);
+  return isPercentMissing ? '-' : describePercent(percent);
 };
 
-const createExact = (byteExact: boolean | undefined): string => {
+const describeByteExact = (byteExact: boolean | undefined): string => {
   const isByteExactMissing = byteExact == null;
   if (isByteExactMissing) {
     return '-';

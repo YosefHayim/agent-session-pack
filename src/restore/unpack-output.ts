@@ -1,5 +1,5 @@
-import { createBytes } from '@/byte-format.js';
-import { createStatus, createTouched } from '@/report-cells.js';
+import { describeBytes } from '@/byte-format.js';
+import { describeStatus, describeTouched } from '@/report-cells.js';
 import type { UnpackSessionsReport } from './unpack-sessions.js';
 
 /**
@@ -15,7 +15,7 @@ import type { UnpackSessionsReport } from './unpack-sessions.js';
  * ```
  */
 export const createHumanUnpackReport = (report: UnpackSessionsReport): string => {
-  const totals = readUnpackTotals(report);
+  const totals = sumUnpackTotals(report);
 
   return [
     'Unpack all providers',
@@ -29,7 +29,7 @@ export const createHumanUnpackReport = (report: UnpackSessionsReport): string =>
     'Provider   Archived  Restored  Present  Conflicts  Before     Archive    Restored   Touch  Status',
     ...report.rows.map(createUnpackReportRow),
     '--------   --------  --------  -------  ---------  ------     -------    --------   -----  ------',
-    `${'total'.padEnd(10)} ${String(totals.archivedSessions).padEnd(9)} ${String(totals.restoredSessions).padEnd(9)} ${String(totals.alreadyPresentSessions).padEnd(8)} ${String(totals.conflictSessions).padEnd(10)} ${createBytes(totals.beforeBytes).padEnd(10)} ${createBytes(totals.archiveBytes).padEnd(10)} ${createBytes(totals.restoredBytes).padEnd(10)} ${createTouched(totals.touchedOriginals).padEnd(6)} ${report.apply ? 'applied' : 'dry-run'}`,
+    `${'total'.padEnd(10)} ${String(totals.archivedSessions).padEnd(9)} ${String(totals.restoredSessions).padEnd(9)} ${String(totals.alreadyPresentSessions).padEnd(8)} ${String(totals.conflictSessions).padEnd(10)} ${describeBytes(totals.beforeBytes).padEnd(10)} ${describeBytes(totals.archiveBytes).padEnd(10)} ${describeBytes(totals.restoredBytes).padEnd(10)} ${describeTouched(totals.touchedOriginals).padEnd(6)} ${report.apply ? 'applied' : 'dry-run'}`,
   ].join('\n');
 };
 
@@ -39,15 +39,15 @@ const createUnpackReportRow = (unpackSessionRow: UnpackSessionsReport['rows'][nu
   const restored = String(unpackSessionRow.restoredSessions).padEnd(9);
   const present = String(unpackSessionRow.alreadyPresentSessions).padEnd(8);
   const conflicts = String(unpackSessionRow.conflictSessions).padEnd(10);
-  const before = createBytes(unpackSessionRow.beforeBytes).padEnd(10);
-  const archive = createBytes(unpackSessionRow.archiveBytes).padEnd(10);
-  const restoredBytes = createBytes(unpackSessionRow.restoredBytes).padEnd(10);
-  const touched = createTouched(unpackSessionRow.touchedOriginals).padEnd(6);
+  const before = describeBytes(unpackSessionRow.beforeBytes).padEnd(10);
+  const archive = describeBytes(unpackSessionRow.archiveBytes).padEnd(10);
+  const restoredBytes = describeBytes(unpackSessionRow.restoredBytes).padEnd(10);
+  const touched = describeTouched(unpackSessionRow.touchedOriginals).padEnd(6);
 
-  return `${provider} ${archived} ${restored} ${present} ${conflicts} ${before} ${archive} ${restoredBytes} ${touched} ${createStatus(unpackSessionRow.status, unpackSessionRow.reason)}`;
+  return `${provider} ${archived} ${restored} ${present} ${conflicts} ${before} ${archive} ${restoredBytes} ${touched} ${describeStatus(unpackSessionRow.status, unpackSessionRow.reason)}`;
 };
 
-const readUnpackTotals = (
+const sumUnpackTotals = (
   report: UnpackSessionsReport,
 ): {
   readonly alreadyPresentSessions: number;

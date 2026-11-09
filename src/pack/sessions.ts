@@ -1,4 +1,4 @@
-import { isPathExists, removePath } from '@/archive/file-system.js';
+import { isPathOnDisk, removePath } from '@/archive/file-system.js';
 import { writeSessionManifest } from '@/archive/manifest-store.js';
 import { writeArchivedStub } from '@/archive/session-stub.js';
 import {
@@ -11,7 +11,7 @@ import {
   removeOriginalSession,
   writeVerifiedArchive,
 } from '@/archive/writer.js';
-import { readSavedPercent, sumSessionBytes } from '@/byte-savings.js';
+import { calculateSavedPercent, sumSessionBytes } from '@/byte-savings.js';
 import type {
   DiscoveredSession,
   ProviderAdapter,
@@ -154,7 +154,7 @@ const discoverExistingProviderSessions = async (request: {
   let existingRoots = 0;
 
   for (const root of roots) {
-    const doesRootExist = await isPathExists(root);
+    const doesRootExist = await isPathOnDisk(root);
     const isRootMissing = !doesRootExist;
 
     if (isRootMissing) {
@@ -327,7 +327,7 @@ const createPackedRow = (request: {
   beforeBytes: request.beforeBytes,
   archiveBytes: request.archiveBytes,
   savedBytes: request.beforeBytes - request.archiveBytes,
-  savedPercent: readSavedPercent(request.beforeBytes, request.archiveBytes),
+  savedPercent: calculateSavedPercent(request.beforeBytes, request.archiveBytes),
   touchedOriginals: request.packedSessions > 0,
   status: 'packed',
   reason: undefined,

@@ -1,10 +1,4 @@
-import { Effect } from 'effect';
-import type {
-  DiscoveredSession,
-  ProviderDiscoveryError,
-  ProviderId,
-  SessionStore,
-} from '@/session-model.js';
+import type { DiscoveredSession, ProviderId, SessionStore } from '@/session-model.js';
 import {
   collectJsonlSessions,
   readSessionTitle,
@@ -22,40 +16,31 @@ export type JsonlProviderDiscoveryOptions = {
 };
 
 /**
- * Discovers JSONL-backed provider sessions.
- *
- * @param options - Provider id, store, and excluded path parts.
- * @returns Effect containing discovered sessions.
- * @example
- * ```ts
- * import { discoverJsonlProviderSessions } from './jsonl-sessions.js';
- *
- * const sessions = discoverJsonlProviderSessions({ provider, store, excludePathParts: [] });
- * ```
+ * Discovers JSONL-backed provider sessions, reading one title at a time.
  */
-export const discoverJsonlProviderSessions = (
+export const discoverJsonlProviderSessions = async (
   options: JsonlProviderDiscoveryOptions,
-): Effect.Effect<ReadonlyArray<DiscoveredSession>, ProviderDiscoveryError> =>
-  Effect.gen(function* () {
-    const files = yield* collectJsonlSessions(options.store.path, {
-      excludePathParts: options.excludePathParts,
-    });
-    const sessions = yield* Effect.all(
-      files.map((file) =>
-        Effect.map(readSessionTitle(file.path), (title) =>
-          sessionFromFile({
-            provider: options.provider,
-            path: file.path,
-            title,
-            sizeBytes: file.sizeBytes,
-            modifiedAt: file.modifiedAt,
-          }),
-        ),
-      ),
-    );
-
-    return sessions;
+): Promise<ReadonlyArray<DiscoveredSession>> => {
+  const files = await collectJsonlSessions(options.store.path, {
+    excludePathParts: options.excludePathParts,
   });
+  const sessions: DiscoveredSession[] = [];
+
+  for (const file of files) {
+    const title = await readSessionTitle(file.path);
+    sessions.push(
+      sessionFromFile({
+        provider: options.provider,
+        path: file.path,
+        title,
+        sizeBytes: file.sizeBytes,
+        modifiedAt: file.modifiedAt,
+      }),
+    );
+  }
+
+  return sessions;
+};
 
 const sessionFromFile = (file: {
   readonly provider: ProviderId;

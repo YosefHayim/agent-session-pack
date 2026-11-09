@@ -1,7 +1,6 @@
 import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Effect } from 'effect';
 import { describe, expect, it } from 'vitest';
 import { grokProvider } from './grok.js';
 import { kimiProvider } from './kimi.js';
@@ -39,12 +38,10 @@ describe('directorySessions', () => {
     );
     await writeFile(join(coldPath, 'updates.jsonl'), '{"type":"user","text":"cold"}\n');
 
-    const sessions = await Effect.runPromise(
-      grokProvider.discover({
-        provider: 'grok',
-        path: sessionsRoot,
-      }),
-    );
+    const sessions = await grokProvider.discover({
+      provider: 'grok',
+      path: sessionsRoot,
+    });
 
     expect(sessions).toHaveLength(1);
     expect(sessions[0]).toMatchObject({
@@ -71,12 +68,10 @@ describe('directorySessions', () => {
     await mkdir(join(sessionPath, 'agents', 'main'), { recursive: true });
     await writeFile(join(sessionPath, 'agents', 'main', 'wire.jsonl'), '{"type":"user"}\n');
 
-    const sessions = await Effect.runPromise(
-      kimiProvider.discover({
-        provider: 'kimi',
-        path: workspace,
-      }),
-    );
+    const sessions = await kimiProvider.discover({
+      provider: 'kimi',
+      path: workspace,
+    });
 
     expect(sessions).toHaveLength(1);
     expect(sessions[0]).toMatchObject({

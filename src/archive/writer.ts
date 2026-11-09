@@ -1,11 +1,10 @@
 import { execFile } from 'node:child_process';
-import { mkdir, readdir, rm, stat } from 'node:fs/promises';
+import { cp, mkdir, readdir, rename, rm, stat } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';
 import { promisify } from 'node:util';
-import { Effect, Schema } from 'effect';
+import { rethrowAsError } from '@/rethrow-as-error.js';
 import type { SessionSourceKind } from '@/session-model.js';
 import {
-  ArchiveFileSystemError,
   directorySizeBytes,
   ensureDirectory,
   ensureParentDirectory,
@@ -27,17 +26,11 @@ const TAR_CHANGE_DIR_FLAG = '-C';
 
 const execFileAsync = promisify(execFile);
 
-/**
- * Describes a single-file compression request from source to archive path.
- */
 type CompressionRequest = {
   readonly sourcePath: string;
   readonly archivePath: string;
 };
 
-/**
- * Describes a single-file decompression request from archive to restored path.
- */
 type DecompressionRequest = {
   readonly archivePath: string;
   readonly restoredPath: string;
@@ -47,10 +40,8 @@ type DecompressionRequest = {
  * Pluggable compression backend used by archive read and write workflows.
  */
 export type CompressionAdapter = {
-  readonly compress: (request: CompressionRequest) => Effect.Effect<void, ArchiveFileSystemError>;
-  readonly decompress: (
-    request: DecompressionRequest,
-  ) => Effect.Effect<void, ArchiveFileSystemError>;
+  readonly compress: (request: CompressionRequest) => Promise<void>;
+  readonly decompress: (request: DecompressionRequest) => Promise<void>;
 };
 
 /**
@@ -81,199 +72,133 @@ export type VerifiedArchive = {
 };
 
 /**
- * Typed error raised when a restored archive hash does not match the source.
- */
-export class ArchiveVerificationError extends Schema.TaggedError<ArchiveVerificationError>()(
-  'ArchiveVerificationError',
-  {
-    sessionId: Schema.String,
-    sourceSha256: Schema.String,
-    restoredSha256: Schema.String,
-  },
-) {}
-
-/**
- * Union of errors that an archive write workflow can produce.
- */
-export type ArchiveWriteError = ArchiveFileSystemError | ArchiveVerificationError;
-
-/**
  * Writes a compressed archive and verifies byte-exact restore before removal is allowed.
- *
- * @param request - Source session and destination archive paths.
- * @returns Verified archive metadata for the manifest and index.
- * @example
- * ```ts
- * import { Effect } from 'effect';
- * import { writeVerifiedArchive } from './writer.js';
- * import { createZstdCompression } from './zstd-compression.js';
- *
- * const verified = await Effect.runPromise(
- *   writeVerifiedArchive({
- *     sessionId: 'abc',
- *     sourcePath: '/sessions/abc.jsonl',
- *     archivePath: '/vault/abc.jsonl.zst',
- *     restoredPath: '/vault/verify/abc.jsonl',
- *     apply: false,
- *     compression: createZstdCompression(),
- *   }),
- * );
- * ```
  */
-export const writeVerifiedArchive = (
+export const writeVerifiedArchive = async (
   request: ArchiveWriteRequest,
-): Effect.Effect<VerifiedArchive, ArchiveWriteError> =>
-  Effect.gen(function* () {
-    const sourceKind = yield* resolveSourceKind(request.sourcePath, request.sourceKind);
+): Promise<VerifiedArchive> => {
+  const sourceKind = await resolveSourceKind(request.sourcePath, request.sourceKind);
+  const isDirectorySource = sourceKind === 'directory';
 
-    if (sourceKind === 'directory') {
-      return yield* writeVerifiedDirectoryArchive(request);
-    }
+  if (isDirectorySource) {
+    return writeVerifiedDirectoryArchive(request);
+  }
 
-    return yield* writeVerifiedFileArchive(request);
-  });
+  return writeVerifiedFileArchive(request);
+};
 
 /**
  * Removes an original session file or directory after verification has passed.
- *
- * @param path - Original provider session path.
- * @returns Effect completing after removal.
- * @example
- * ```ts
- * import { Effect } from 'effect';
- * import { removeOriginalSession } from './writer.js';
- *
- * await Effect.runPromise(removeOriginalSession('/sessions/abc.jsonl'));
- * ```
  */
-export const removeOriginalSession = (path: string): Effect.Effect<void, ArchiveFileSystemError> =>
-  Effect.tryPromise({
-    try: async () => {
-      const pathStat = await stat(path);
-      await rm(path, {
-        force: false,
-        recursive: pathStat.isDirectory(),
-      });
-    },
-    catch: (cause) =>
-      new ArchiveFileSystemError({
-        path,
-        message: String(cause),
-      }),
+export const removeOriginalSession = async (path: string): Promise<void> => {
+  const pathStat = await stat(path).catch(rethrowAsError);
+  await rm(path, {
+    force: false,
+    recursive: pathStat.isDirectory(),
+  }).catch(rethrowAsError);
+};
+
+const writeVerifiedFileArchive = async (request: ArchiveWriteRequest): Promise<VerifiedArchive> => {
+  await ensureParentDirectory(request.archivePath);
+  await ensureParentDirectory(request.restoredPath);
+
+  const sourceStat = await statPath(request.sourcePath);
+  const sourceSha256 = await sha256File(request.sourcePath);
+
+  await request.compression.compress({
+    sourcePath: request.sourcePath,
+    archivePath: request.archivePath,
+  });
+  await request.compression.decompress({
+    archivePath: request.archivePath,
+    restoredPath: request.restoredPath,
   });
 
-const writeVerifiedFileArchive = (
+  const restoredSha256 = await sha256File(request.restoredPath);
+  const isRestoreMismatched = sourceSha256 !== restoredSha256;
+
+  if (isRestoreMismatched) {
+    throwVerificationMismatch({ sessionId: request.sessionId, sourceSha256, restoredSha256 });
+  }
+
+  const archiveStat = await statPath(request.archivePath);
+  const isRemovalRequested = request.apply === true;
+
+  if (isRemovalRequested) {
+    await removeOriginalSession(request.sourcePath);
+  }
+
+  return {
+    sessionId: request.sessionId,
+    archivePath: request.archivePath,
+    sourceSha256,
+    restoredSha256,
+    sourceBytes: sourceStat.size,
+    archiveBytes: archiveStat.size,
+    removedOriginal: request.apply,
+    sourceKind: 'file',
+  };
+};
+
+const writeVerifiedDirectoryArchive = async (
   request: ArchiveWriteRequest,
-): Effect.Effect<VerifiedArchive, ArchiveWriteError> =>
-  Effect.gen(function* () {
-    yield* ensureParentDirectory(request.archivePath);
-    yield* ensureParentDirectory(request.restoredPath);
+): Promise<VerifiedArchive> => {
+  await ensureParentDirectory(request.archivePath);
+  await ensureDirectory(request.restoredPath);
+  await removePath(request.restoredPath);
+  await ensureParentDirectory(request.restoredPath);
 
-    const sourceStat = yield* statPath(request.sourcePath);
-    const sourceSha256 = yield* sha256File(request.sourcePath);
+  const sourceBytes = await directorySizeBytes(request.sourcePath);
+  const sourceSha256 = await sha256Directory(request.sourcePath);
+  const tarPath = `${request.archivePath}.tar`;
+  const restoredTarPath = `${request.restoredPath}.tar`;
 
-    yield* request.compression.compress({
-      sourcePath: request.sourcePath,
-      archivePath: request.archivePath,
-    });
-    yield* request.compression.decompress({
-      archivePath: request.archivePath,
-      restoredPath: request.restoredPath,
-    });
-
-    const restoredSha256 = yield* sha256File(request.restoredPath);
-
-    if (sourceSha256 !== restoredSha256) {
-      return yield* Effect.fail(
-        new ArchiveVerificationError({
-          sessionId: request.sessionId,
-          sourceSha256,
-          restoredSha256,
-        }),
-      );
-    }
-
-    const archiveStat = yield* statPath(request.archivePath);
-
-    if (request.apply === true) {
-      yield* removeOriginalSession(request.sourcePath);
-    }
-
-    return {
-      sessionId: request.sessionId,
-      archivePath: request.archivePath,
-      sourceSha256,
-      restoredSha256,
-      sourceBytes: sourceStat.size,
-      archiveBytes: archiveStat.size,
-      removedOriginal: request.apply,
-      sourceKind: 'file' as const,
-    };
+  await createTarArchive({
+    sourcePath: request.sourcePath,
+    tarPath,
+  });
+  await request.compression.compress({
+    sourcePath: tarPath,
+    archivePath: request.archivePath,
+  });
+  await request.compression.decompress({
+    archivePath: request.archivePath,
+    restoredPath: restoredTarPath,
+  });
+  await extractTarArchive({
+    tarPath: restoredTarPath,
+    destinationPath: request.restoredPath,
   });
 
-const writeVerifiedDirectoryArchive = (
-  request: ArchiveWriteRequest,
-): Effect.Effect<VerifiedArchive, ArchiveWriteError> =>
-  Effect.gen(function* () {
-    yield* ensureParentDirectory(request.archivePath);
-    yield* ensureDirectory(request.restoredPath);
-    yield* removePath(request.restoredPath);
-    yield* ensureParentDirectory(request.restoredPath);
+  const restoredSha256 = await sha256Directory(request.restoredPath);
+  const isRestoreMismatched = sourceSha256 !== restoredSha256;
 
-    const sourceBytes = yield* directorySizeBytes(request.sourcePath);
-    const sourceSha256 = yield* sha256Directory(request.sourcePath);
-    const tarPath = `${request.archivePath}.tar`;
-    const restoredTarPath = `${request.restoredPath}.tar`;
+  if (isRestoreMismatched) {
+    throwVerificationMismatch({ sessionId: request.sessionId, sourceSha256, restoredSha256 });
+  }
 
-    yield* createTarArchive({
-      sourcePath: request.sourcePath,
-      tarPath,
-    });
-    yield* request.compression.compress({
-      sourcePath: tarPath,
-      archivePath: request.archivePath,
-    });
-    yield* request.compression.decompress({
-      archivePath: request.archivePath,
-      restoredPath: restoredTarPath,
-    });
-    yield* extractTarArchive({
-      tarPath: restoredTarPath,
-      destinationPath: request.restoredPath,
-    });
+  const archiveStat = await statPath(request.archivePath);
 
-    const restoredSha256 = yield* sha256Directory(request.restoredPath);
+  await removePath(tarPath);
+  await removePath(restoredTarPath);
 
-    if (sourceSha256 !== restoredSha256) {
-      return yield* Effect.fail(
-        new ArchiveVerificationError({
-          sessionId: request.sessionId,
-          sourceSha256,
-          restoredSha256,
-        }),
-      );
-    }
+  const isRemovalRequested = request.apply === true;
 
-    const archiveStat = yield* statPath(request.archivePath);
+  if (isRemovalRequested) {
+    await removeOriginalSession(request.sourcePath);
+  }
 
-    yield* removePath(tarPath);
-    yield* removePath(restoredTarPath);
-
-    if (request.apply === true) {
-      yield* removeOriginalSession(request.sourcePath);
-    }
-
-    return {
-      sessionId: request.sessionId,
-      archivePath: request.archivePath,
-      sourceSha256,
-      restoredSha256,
-      sourceBytes,
-      archiveBytes: archiveStat.size,
-      removedOriginal: request.apply,
-      sourceKind: 'directory' as const,
-    };
-  });
+  return {
+    sessionId: request.sessionId,
+    archivePath: request.archivePath,
+    sourceSha256,
+    restoredSha256,
+    sourceBytes,
+    archiveBytes: archiveStat.size,
+    removedOriginal: request.apply,
+    sourceKind: 'directory',
+  };
+};
 
 /**
  * Request used to restore a directory-backed session archive.
@@ -289,173 +214,127 @@ export type DirectoryRestoreRequest = {
 
 /**
  * Restores a directory archive to an original provider path after hash verification.
- *
- * @param request - Archive path, restored work path, original destination, and expected hash.
- * @returns Effect completing after verified restore.
- * @example
- * ```ts
- * import { Effect } from 'effect';
- * import { restoreDirectoryArchive } from './writer.js';
- * import { createZstdCompression } from './zstd-compression.js';
- *
- * await Effect.runPromise(
- *   restoreDirectoryArchive({
- *     sessionId: 'abc',
- *     archivePath: '/vault/abc.tar.zst',
- *     restoredPath: '/vault/restore/abc',
- *     originalPath: '/sessions/abc',
- *     expectedSha256: 'abc',
- *     compression: createZstdCompression(),
- *   }),
- * );
- * ```
  */
-export const restoreDirectoryArchive = (
-  request: DirectoryRestoreRequest,
-): Effect.Effect<void, ArchiveWriteError> =>
-  Effect.gen(function* () {
-    yield* ensureParentDirectory(request.restoredPath);
-    yield* removePath(request.restoredPath);
-    yield* ensureParentDirectory(request.originalPath);
-    yield* removePath(request.originalPath);
+export const restoreDirectoryArchive = async (request: DirectoryRestoreRequest): Promise<void> => {
+  await ensureParentDirectory(request.restoredPath);
+  await removePath(request.restoredPath);
+  await ensureParentDirectory(request.originalPath);
+  await removePath(request.originalPath);
 
-    const restoredTarPath = `${request.restoredPath}.tar`;
-    yield* request.compression.decompress({
-      archivePath: request.archivePath,
-      restoredPath: restoredTarPath,
-    });
-    yield* extractTarArchive({
-      tarPath: restoredTarPath,
-      destinationPath: request.restoredPath,
-    });
-
-    const restoredSha256 = yield* sha256Directory(request.restoredPath);
-
-    if (restoredSha256 !== request.expectedSha256) {
-      return yield* Effect.fail(
-        new ArchiveVerificationError({
-          sessionId: request.sessionId,
-          sourceSha256: request.expectedSha256,
-          restoredSha256,
-        }),
-      );
-    }
-
-    yield* movePath(request.restoredPath, request.originalPath);
-    yield* removePath(restoredTarPath);
-
-    const originalSha256 = yield* sha256Directory(request.originalPath);
-
-    if (originalSha256 !== request.expectedSha256) {
-      return yield* Effect.fail(
-        new ArchiveVerificationError({
-          sessionId: request.sessionId,
-          sourceSha256: request.expectedSha256,
-          restoredSha256: originalSha256,
-        }),
-      );
-    }
+  const restoredTarPath = `${request.restoredPath}.tar`;
+  await request.compression.decompress({
+    archivePath: request.archivePath,
+    restoredPath: restoredTarPath,
+  });
+  await extractTarArchive({
+    tarPath: restoredTarPath,
+    destinationPath: request.restoredPath,
   });
 
-const createTarArchive = (request: {
+  const restoredSha256 = await sha256Directory(request.restoredPath);
+  const isRestoredMismatched = restoredSha256 !== request.expectedSha256;
+
+  if (isRestoredMismatched) {
+    throwVerificationMismatch({
+      sessionId: request.sessionId,
+      sourceSha256: request.expectedSha256,
+      restoredSha256,
+    });
+  }
+
+  await movePath(request.restoredPath, request.originalPath);
+  await removePath(restoredTarPath);
+
+  const originalSha256 = await sha256Directory(request.originalPath);
+  const isOriginalMismatched = originalSha256 !== request.expectedSha256;
+
+  if (isOriginalMismatched) {
+    throwVerificationMismatch({
+      sessionId: request.sessionId,
+      sourceSha256: request.expectedSha256,
+      restoredSha256: originalSha256,
+    });
+  }
+};
+
+const throwVerificationMismatch = (mismatch: {
+  readonly sessionId: string;
+  readonly sourceSha256: string;
+  readonly restoredSha256: string;
+}): never => {
+  throw new Error(
+    `Archive verification failed for session ${mismatch.sessionId}: source ${mismatch.sourceSha256} does not match restored ${mismatch.restoredSha256}`,
+  );
+};
+
+const createTarArchive = async (request: {
   readonly sourcePath: string;
   readonly tarPath: string;
-}): Effect.Effect<void, ArchiveFileSystemError> =>
-  Effect.tryPromise({
-    try: async () => {
-      await mkdir(dirname(request.tarPath), { recursive: true });
-      // Pack sourcePath into tarPath: create archive from parent so the leaf name is the top entry.
-      const createTarArgs = [
-        TAR_CREATE_FLAG,
-        TAR_FILE_FLAG,
-        request.tarPath,
-        TAR_CHANGE_DIR_FLAG,
-        dirname(request.sourcePath),
-        basename(request.sourcePath),
-      ];
-      await execFileAsync(TAR_BINARY, createTarArgs);
-    },
-    catch: (cause) =>
-      new ArchiveFileSystemError({
-        path: request.sourcePath,
-        message: String(cause),
-      }),
-  });
+}): Promise<void> => {
+  await mkdir(dirname(request.tarPath), { recursive: true }).catch(rethrowAsError);
+  // Pack sourcePath into tarPath: create archive from parent so the leaf name is the top entry.
+  const createTarArgs = [
+    TAR_CREATE_FLAG,
+    TAR_FILE_FLAG,
+    request.tarPath,
+    TAR_CHANGE_DIR_FLAG,
+    dirname(request.sourcePath),
+    basename(request.sourcePath),
+  ];
+  await execFileAsync(TAR_BINARY, createTarArgs).catch(rethrowAsError);
+};
 
-const extractTarArchive = (request: {
+const extractTarArchive = async (request: {
   readonly tarPath: string;
   readonly destinationPath: string;
-}): Effect.Effect<void, ArchiveFileSystemError> =>
-  Effect.tryPromise({
-    try: async () => {
-      const parent = dirname(request.destinationPath);
-      const leaf = basename(request.destinationPath);
-      await mkdir(parent, { recursive: true });
-      await rm(request.destinationPath, { recursive: true, force: true });
+}): Promise<void> => {
+  const parent = dirname(request.destinationPath);
+  const leaf = basename(request.destinationPath);
+  const extractRoot = join(parent, `.extract-${leaf}`);
 
-      const extractRoot = join(parent, `.extract-${leaf}`);
-      await rm(extractRoot, { recursive: true, force: true });
-      await mkdir(extractRoot, { recursive: true });
-      // Extract tarPath into extractRoot: unpack archive contents under the staging directory.
-      const extractTarArgs = [
-        TAR_EXTRACT_FLAG,
-        TAR_FILE_FLAG,
-        request.tarPath,
-        TAR_CHANGE_DIR_FLAG,
-        extractRoot,
-      ];
-      await execFileAsync(TAR_BINARY, extractTarArgs);
+  await mkdir(parent, { recursive: true }).catch(rethrowAsError);
+  await rm(request.destinationPath, { recursive: true, force: true }).catch(rethrowAsError);
+  await rm(extractRoot, { recursive: true, force: true }).catch(rethrowAsError);
+  await mkdir(extractRoot, { recursive: true }).catch(rethrowAsError);
 
-      const extractedEntries = await readdir(extractRoot, { withFileTypes: true });
-      const onlyEntry = extractedEntries[0];
+  // Extract tarPath into extractRoot: unpack archive contents under the staging directory.
+  const extractTarArgs = [
+    TAR_EXTRACT_FLAG,
+    TAR_FILE_FLAG,
+    request.tarPath,
+    TAR_CHANGE_DIR_FLAG,
+    extractRoot,
+  ];
+  await execFileAsync(TAR_BINARY, extractTarArgs).catch(rethrowAsError);
 
-      if (extractedEntries.length !== 1 || onlyEntry === undefined) {
-        throw new ArchiveFileSystemError({
-          path: request.tarPath,
-          message: `expected one top-level entry in tar archive: ${request.tarPath}`,
-        });
-      }
+  const extractedEntries = await readdir(extractRoot, { withFileTypes: true }).catch(
+    rethrowAsError,
+  );
+  const onlyEntry = extractedEntries[0];
+  const isSingleTopLevelEntry = extractedEntries.length === 1 && onlyEntry !== undefined;
 
-      const extractedPath = join(extractRoot, onlyEntry.name);
-      await rm(request.destinationPath, { recursive: true, force: true });
-      await movePathAsync(extractedPath, request.destinationPath);
-      await rm(extractRoot, { recursive: true, force: true });
-    },
-    catch: (cause) => {
-      if (cause instanceof ArchiveFileSystemError) {
-        return cause;
-      }
+  if (!isSingleTopLevelEntry) {
+    throw new Error(`expected one top-level entry in tar archive: ${request.tarPath}`);
+  }
 
-      return new ArchiveFileSystemError({
-        path: request.destinationPath,
-        message: String(cause),
-      });
-    },
-  });
+  const extractedPath = join(extractRoot, onlyEntry.name);
+  await rm(request.destinationPath, { recursive: true, force: true }).catch(rethrowAsError);
+  await movePath(extractedPath, request.destinationPath);
+  await rm(extractRoot, { recursive: true, force: true }).catch(rethrowAsError);
+};
 
-const movePath = (
-  sourcePath: string,
-  destinationPath: string,
-): Effect.Effect<void, ArchiveFileSystemError> =>
-  Effect.tryPromise({
-    try: () => movePathAsync(sourcePath, destinationPath),
-    catch: (cause) =>
-      new ArchiveFileSystemError({
-        path: destinationPath,
-        message: String(cause),
-      }),
-  });
+const movePath = async (sourcePath: string, destinationPath: string): Promise<void> => {
+  await mkdir(dirname(destinationPath), { recursive: true }).catch(rethrowAsError);
+  await rm(destinationPath, { recursive: true, force: true }).catch(rethrowAsError);
 
-const movePathAsync = async (sourcePath: string, destinationPath: string): Promise<void> => {
-  await mkdir(dirname(destinationPath), { recursive: true });
-  await rm(destinationPath, { recursive: true, force: true });
+  // A rename fails across devices, so copy and delete the source instead.
+  const isRenameFailed = await rename(sourcePath, destinationPath).then(
+    () => false,
+    () => true,
+  );
 
-  try {
-    const { rename } = await import('node:fs/promises');
-    await rename(sourcePath, destinationPath);
-  } catch {
-    const { cp } = await import('node:fs/promises');
-    await cp(sourcePath, destinationPath, { recursive: true });
-    await rm(sourcePath, { recursive: true, force: true });
+  if (isRenameFailed) {
+    await cp(sourcePath, destinationPath, { recursive: true }).catch(rethrowAsError);
+    await rm(sourcePath, { recursive: true, force: true }).catch(rethrowAsError);
   }
 };

@@ -1,14 +1,9 @@
 import { execFile } from 'node:child_process';
-import { stat } from 'node:fs/promises';
+import { type Stats, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
-import { Effect, Schema } from 'effect';
-import {
-  type DiscoveredSession,
-  type ProviderAdapter,
-  ProviderDiscoveryError,
-  type SessionStore,
-} from '@/session-model.js';
+import { z } from 'zod';
+import type { DiscoveredSession, ProviderAdapter } from '@/session-model.js';
 import { slugifyTitle } from './session-discovery.js';
 
 const execFileAsync = promisify(execFile);
@@ -31,17 +26,17 @@ WHERE s.hidden = 0
 ORDER BY s.last_activity_at DESC
 `;
 
-const DevinSessionRowSchema = Schema.Struct({
-  id: Schema.String,
-  title: Schema.String,
-  createdAt: Schema.Number,
-  modifiedAt: Schema.Number,
-  sizeBytes: Schema.Number,
+const DevinSessionRowSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  createdAt: z.number(),
+  modifiedAt: z.number(),
+  sizeBytes: z.number(),
 });
 
-const DevinSessionRowsSchema = Schema.Array(DevinSessionRowSchema);
+const DevinSessionRowsSchema = z.array(DevinSessionRowSchema);
 
-type DevinSessionRow = typeof DevinSessionRowSchema.Type;
+type DevinSessionRow = z.infer<typeof DevinSessionRowSchema>;
 
 /**
  * Backup-only provider adapter for Devin CLI sessions.
@@ -53,33 +48,21 @@ export const devinProvider: ProviderAdapter = {
   defaultRoots: (home: string): ReadonlyArray<string> => [
     join(home, '.local', 'share', 'devin', 'cli'),
   ],
-  discover: (store) => discoverDevinProviderSessions(store),
+  discover: (store) => discoverDevinSessions(store.path),
 };
-
-const discoverDevinProviderSessions = (
-  store: SessionStore,
-): Effect.Effect<ReadonlyArray<DiscoveredSession>, ProviderDiscoveryError> =>
-  Effect.tryPromise({
-    try: () => discoverDevinSessions(store.path),
-    catch: (cause) =>
-      new ProviderDiscoveryError({
-        provider: 'devin',
-        path: store.path,
-        message: String(cause),
-      }),
-  });
 
 const discoverDevinSessions = async (root: string): Promise<ReadonlyArray<DiscoveredSession>> => {
   const dbPath = join(root, 'sessions.db');
-  const dbStat = await stat(dbPath).catch(() => undefined);
+  const dbStat = await readStatOrNull(dbPath);
 
-  if (dbStat === undefined) {
+  if (dbStat === null) {
     return [];
   }
 
-  const devinSessionRows = await readDevinSessionRows(dbPath).catch(() => []);
+  const devinSessionRows = await readDevinSessionRows(dbPath);
+  const isSessionListEmpty = devinSessionRows.length === 0;
 
-  if (devinSessionRows.length === 0) {
+  if (isSessionListEmpty) {
     return [sessionFromDatabaseSnapshot(dbPath, dbStat.size, dbStat.mtime)];
   }
 
@@ -88,16 +71,31 @@ const discoverDevinSessions = async (root: string): Promise<ReadonlyArray<Discov
   );
 };
 
-const readDevinSessionRows = async (dbPath: string): Promise<ReadonlyArray<DevinSessionRow>> => {
-  const output = await execFileAsync('sqlite3', ['-json', dbPath, DEVIN_SESSIONS_SQL]);
-  const parsed = JSON.parse(output.stdout) as unknown;
-  const decoded = Schema.decodeUnknownEither(DevinSessionRowsSchema)(parsed);
+const readStatOrNull = async (path: string): Promise<Stats | null> => {
+  try {
+    return await stat(path);
+  } catch {
+    // A missing database means no Devin sessions.
+    return null;
+  }
+};
 
-  if (decoded._tag === 'Left') {
+const readDevinSessionRows = async (dbPath: string): Promise<ReadonlyArray<DevinSessionRow>> => {
+  try {
+    const output = await execFileAsync('sqlite3', ['-json', dbPath, DEVIN_SESSIONS_SQL]);
+    const parsed = JSON.parse(output.stdout) as unknown;
+    const decodedReply = DevinSessionRowsSchema.safeParse(parsed);
+    const isDecodeFailed = !decodedReply.success;
+
+    if (isDecodeFailed) {
+      return [];
+    }
+
+    return decodedReply.data;
+  } catch {
+    // An unreadable sqlite database falls back to one snapshot entry, as discovery always did.
     return [];
   }
-
-  return decoded.right;
 };
 
 const sessionFromDevinRow = (
@@ -105,7 +103,8 @@ const sessionFromDevinRow = (
   dbPath: string,
   dbBytes: number,
 ): DiscoveredSession => {
-  const sizeBytes = devinSessionRow.sizeBytes > 0 ? devinSessionRow.sizeBytes : dbBytes;
+  const isRowSizeKnown = devinSessionRow.sizeBytes > 0;
+  const sizeBytes = isRowSizeKnown ? devinSessionRow.sizeBytes : dbBytes;
 
   return {
     id: devinSessionRow.id,
@@ -136,7 +135,9 @@ const sessionFromDatabaseSnapshot = (
 });
 
 const dateFromDevinTimestamp = (timestamp: number): Date => {
-  if (timestamp > 9_999_999_999) {
+  const isMillisecondTimestamp = timestamp > 9_999_999_999;
+
+  if (isMillisecondTimestamp) {
     return new Date(timestamp);
   }
 

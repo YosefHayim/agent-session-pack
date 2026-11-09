@@ -1,14 +1,13 @@
 import { defineCommand } from 'citty';
 import { Effect } from 'effect';
 import { resolveApplyConfirmation } from '@/apply-confirmation.js';
-import type { ManifestStoreError } from '@/archive/manifest-store.js';
 import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
-import type { ArchiveWriteError, CompressionAdapter } from '@/archive/writer.js';
+import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
 import { requireHome } from '@/home-env.js';
 import { selectProviders } from '@/providers/flag.js';
 import { scanStores } from '@/scan/stores.js';
-import type { ProviderAdapter, ProviderDiscoveryError, SessionStore } from '@/session-model.js';
+import type { ProviderAdapter, SessionStore } from '@/session-model.js';
 import {
   formatHumanPackPlan,
   formatHumanPackReport,
@@ -131,9 +130,7 @@ export type PackArgs = {
  * );
  * ```
  */
-export const runPackCommand = (
-  args: PackArgs,
-): Effect.Effect<void, ArchiveWriteError | ManifestStoreError | ProviderDiscoveryError> =>
+export const runPackCommand = (args: PackArgs): Effect.Effect<void, Error> =>
   Effect.gen(function* () {
     if (args.max === true && args.apply === true) {
       process.stderr.write('Refusing --max with --apply. Use --max as a dry-run preview only.\n');

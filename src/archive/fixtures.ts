@@ -1,6 +1,5 @@
 import { copyFile, mkdir, utimes, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { Effect } from 'effect';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import type { ProviderAdapter } from '@/session-model.js';
 
@@ -8,10 +7,8 @@ import type { ProviderAdapter } from '@/session-model.js';
  * Compression adapter for tests that copies bytes instead of compressing them.
  */
 export const copyCompression: CompressionAdapter = {
-  compress: ({ sourcePath, archivePath }) =>
-    Effect.promise(() => copyFile(sourcePath, archivePath)),
-  decompress: ({ archivePath, restoredPath }) =>
-    Effect.promise(() => copyFile(archivePath, restoredPath)),
+  compress: ({ sourcePath, archivePath }) => copyFile(sourcePath, archivePath),
+  decompress: ({ archivePath, restoredPath }) => copyFile(archivePath, restoredPath),
 };
 
 /**
@@ -37,7 +34,7 @@ export type ArchiveProviderRequest = {
  *   id: 'codex',
  *   mode: 'archive',
  *   rootRelative: '.codex/sessions',
- *   discover: () => Effect.succeed([]),
+ *   discover: async () => [],
  * });
  * ```
  */

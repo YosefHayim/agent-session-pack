@@ -1,5 +1,4 @@
 import { join } from 'node:path';
-import { Effect } from 'effect';
 import type { ProviderAdapter } from '@/session-model.js';
 
 /**
@@ -12,5 +11,5 @@ export const cursorProvider: ProviderAdapter = {
   defaultRoots: (home: string): ReadonlyArray<string> => [
     join(home, 'Library', 'Application Support', 'Cursor'),
   ],
-  discover: () => Effect.succeed([]),
+  discover: async () => [],
 };

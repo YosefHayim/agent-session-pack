@@ -3,7 +3,6 @@ import { mkdir, mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
-import { Effect } from 'effect';
 import { describe, expect, it } from 'vitest';
 import { devinProvider } from './devin.js';
 
@@ -19,12 +18,10 @@ describe('Devin provider discovery', () => {
     await mkdir(root, { recursive: true });
     await execFileAsync('sqlite3', [dbPath, createDevinFixtureSql()]);
 
-    const sessions = await Effect.runPromise(
-      devinProvider.discover({
-        provider: 'devin',
-        path: root,
-      }),
-    );
+    const sessions = await devinProvider.discover({
+      provider: 'devin',
+      path: root,
+    });
 
     expect(sessions).toHaveLength(1);
     expect(sessions[0]).toMatchObject({

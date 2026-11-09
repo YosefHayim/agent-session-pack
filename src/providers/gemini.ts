@@ -1,5 +1,4 @@
 import { join } from 'node:path';
-import { Effect } from 'effect';
 import type { ProviderAdapter } from '@/session-model.js';
 import { discoverDirectoryProviderSessions } from './directory-sessions.js';
 import { discoverJsonlProviderSessions } from './jsonl-sessions.js';
@@ -15,24 +14,24 @@ export const geminiProvider: ProviderAdapter = {
     join(home, '.gemini'),
     join(home, '.gemini', 'tmp'),
   ],
-  discover: (store) =>
-    Effect.gen(function* () {
-      const directorySessions = yield* discoverDirectoryProviderSessions({
-        provider: 'gemini',
-        store,
-        markers: ['checkpoint.json', 'chat.json', 'session.json', 'history.json'],
-        maxDepth: 5,
-        excludedNames: ['bin', 'node_modules', 'extensions'],
-      });
+  discover: async (store) => {
+    const directorySessions = await discoverDirectoryProviderSessions({
+      provider: 'gemini',
+      store,
+      markers: ['checkpoint.json', 'chat.json', 'session.json', 'history.json'],
+      maxDepth: 5,
+      excludedNames: ['bin', 'node_modules', 'extensions'],
+    });
+    const isDirectorySessionFound = directorySessions.length > 0;
 
-      if (directorySessions.length > 0) {
-        return directorySessions;
-      }
+    if (isDirectorySessionFound) {
+      return directorySessions;
+    }
 
-      return yield* discoverJsonlProviderSessions({
-        provider: 'gemini',
-        store,
-        excludePathParts: ['bin', 'node_modules', 'extensions'],
-      });
-    }),
+    return discoverJsonlProviderSessions({
+      provider: 'gemini',
+      store,
+      excludePathParts: ['bin', 'node_modules', 'extensions'],
+    });
+  },
 };

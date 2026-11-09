@@ -1,21 +1,16 @@
 import { defineCommand } from 'citty';
 import { Effect } from 'effect';
 import { resolveApplyConfirmation } from '@/apply-confirmation.js';
-import type { ManifestStoreError } from '@/archive/manifest-store.js';
 import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
-import type { ArchiveWriteError, CompressionAdapter } from '@/archive/writer.js';
+import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
+import { promiseAsEffect } from '@/effect-bridge.js';
 import { requireHome } from '@/home-env.js';
 import { formatHumanPackReport } from '@/pack/output.js';
 import { DEFAULT_COLD_AFTER, parseDurationMs } from '@/pack/plan.js';
 import { packProviderSessions } from '@/pack/sessions.js';
 import { allProviders } from '@/providers/all-providers.js';
-import type { ProviderDiscoveryError } from '@/session-model.js';
-import {
-  isRestoreOnLaunchEnabled,
-  readSetupConfig,
-  type SetupConfigFileError,
-} from '@/setup/config.js';
+import { isRestoreOnLaunchEnabled, readSetupConfig } from '@/setup/config.js';
 
 /**
  * Citty command that re-packs cold sessions so storage stays low over time.
@@ -79,12 +74,7 @@ type MaintainArgs = {
   readonly vaultPath?: string | undefined;
 };
 
-const runMaintainCommand = (
-  args: MaintainArgs,
-): Effect.Effect<
-  void,
-  ArchiveWriteError | ManifestStoreError | ProviderDiscoveryError | SetupConfigFileError
-> =>
+const runMaintainCommand = (args: MaintainArgs): Effect.Effect<void, Error> =>
   Effect.gen(function* () {
     const home = requireHome(args.home);
 
@@ -92,7 +82,7 @@ const runMaintainCommand = (
       return;
     }
 
-    const setupConfig = yield* readSetupConfig(home);
+    const setupConfig = yield* promiseAsEffect(() => readSetupConfig(home));
 
     if (!isRestoreOnLaunchEnabled(setupConfig)) {
       process.stderr.write(

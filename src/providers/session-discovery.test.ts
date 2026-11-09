@@ -1,9 +1,7 @@
 import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Effect, Either } from 'effect';
 import { describe, expect, it } from 'vitest';
-import { ProviderDiscoveryError } from '@/session-model.js';
 import {
   collectJsonlSessions,
   measureDirectorySession,
@@ -46,11 +44,9 @@ describe('sessionDiscovery', () => {
     await writeFile(skipPath, '{"type":"user","text":"skip"}\n');
     await writeFile(join(nested, 'notes.txt'), 'ignore');
 
-    const files = await Effect.runPromise(
-      collectJsonlSessions(workspace, {
-        excludePathParts: ['subagents'],
-      }),
-    );
+    const files = await collectJsonlSessions(workspace, {
+      excludePathParts: ['subagents'],
+    });
 
     expect(files).toHaveLength(1);
     expect(files[0]).toMatchObject({
@@ -60,27 +56,15 @@ describe('sessionDiscovery', () => {
     expect(files[0].modifiedAt).toBeInstanceOf(Date);
   });
 
-  it('returns ProviderDiscoveryError when the collect root is missing', async () => {
+  it('throws when the collect root is missing', async () => {
     const workspace = await createWorkspace();
     const missingRoot = join(workspace, 'missing-root');
 
-    const result = await Effect.runPromise(
-      Effect.either(
-        collectJsonlSessions(missingRoot, {
-          excludePathParts: [],
-        }),
-      ),
-    );
-
-    expect(Either.isLeft(result)).toBe(true);
-    if (Either.isRight(result)) {
-      expect.fail('expected collectJsonlSessions to fail for a missing root');
-    }
-    expect(result.left).toBeInstanceOf(ProviderDiscoveryError);
-    expect(result.left).toMatchObject({
-      _tag: 'ProviderDiscoveryError',
-      path: missingRoot,
-    });
+    await expect(
+      collectJsonlSessions(missingRoot, {
+        excludePathParts: [],
+      }),
+    ).rejects.toThrow(missingRoot);
   });
 
   it('measures directory session size and newest mtime', async () => {
@@ -90,7 +74,7 @@ describe('sessionDiscovery', () => {
     await writeFile(join(sessionPath, 'summary.json'), '{"title":"dir"}\n');
     await writeFile(join(sessionPath, 'nested', 'updates.jsonl'), '{"type":"user","text":"hi"}\n');
 
-    const entry = await Effect.runPromise(measureDirectorySession(sessionPath));
+    const entry = await measureDirectorySession(sessionPath);
 
     expect(entry.path).toBe(sessionPath);
     expect(entry.sizeBytes).toBeGreaterThan(0);
@@ -110,27 +94,15 @@ describe('sessionDiscovery', () => {
     await writeFile(messagePath, '{"type":"user","message":{"content":"Message content title"}}\n');
     await writeFile(fallbackPath, '{"type":"assistant","text":"only assistant"}\n');
 
-    await expect(Effect.runPromise(readSessionTitle(textPath))).resolves.toBe('Plain text title');
-    await expect(Effect.runPromise(readSessionTitle(messagePath))).resolves.toBe(
-      'Message content title',
-    );
-    await expect(Effect.runPromise(readSessionTitle(fallbackPath))).resolves.toBe('fallback-title');
+    await expect(readSessionTitle(textPath)).resolves.toBe('Plain text title');
+    await expect(readSessionTitle(messagePath)).resolves.toBe('Message content title');
+    await expect(readSessionTitle(fallbackPath)).resolves.toBe('fallback-title');
   });
 
-  it('returns ProviderDiscoveryError when reading a missing session title path', async () => {
+  it('throws when reading a missing session title path', async () => {
     const workspace = await createWorkspace();
     const missingPath = join(workspace, 'missing.jsonl');
 
-    const result = await Effect.runPromise(Effect.either(readSessionTitle(missingPath)));
-
-    expect(Either.isLeft(result)).toBe(true);
-    if (Either.isRight(result)) {
-      expect.fail('expected readSessionTitle to fail for a missing path');
-    }
-    expect(result.left).toBeInstanceOf(ProviderDiscoveryError);
-    expect(result.left).toMatchObject({
-      _tag: 'ProviderDiscoveryError',
-      path: missingPath,
-    });
+    await expect(readSessionTitle(missingPath)).rejects.toThrow(missingPath);
   });
 });

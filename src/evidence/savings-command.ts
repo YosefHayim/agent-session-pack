@@ -1,9 +1,7 @@
 import { defineCommand } from 'citty';
 import { Effect, Schema } from 'effect';
-import type { ArchiveWriteError } from '@/archive/writer.js';
 import { requireHome } from '@/home-env.js';
 import { selectProviders } from '@/providers/flag.js';
-import type { ProviderDiscoveryError } from '@/session-model.js';
 import { runLocalEvidence } from './local-evidence.js';
 import { formatHumanEvidenceReport, formatJsonEvidenceReport } from './output.js';
 import { resolveEvidenceWorkRoot } from './work-root.js';
@@ -34,9 +32,7 @@ export type SavingsArgs = typeof SavingsArgsSchema.Type;
  * await Effect.runPromise(runSavingsCommand({ json: true }));
  * ```
  */
-export const runSavingsCommand = (
-  args: SavingsArgs,
-): Effect.Effect<void, ArchiveWriteError | ProviderDiscoveryError> =>
+export const runSavingsCommand = (args: SavingsArgs): Effect.Effect<void, Error> =>
   Effect.gen(function* () {
     const home = requireHome();
 

@@ -1,13 +1,12 @@
 import { defineCommand } from 'citty';
 import { Effect } from 'effect';
-import type { ArchiveFileSystemError } from '@/archive/file-system.js';
-import type { ManifestStoreError } from '@/archive/manifest-store.js';
 import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
-import type { ArchiveVerificationError, CompressionAdapter } from '@/archive/writer.js';
+import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
+import { promiseAsEffect } from '@/effect-bridge.js';
 import { requireHome } from '@/home-env.js';
 import { parseOptionalProvider } from '@/providers/flag.js';
-import { readSetupConfig, type SetupConfigFileError } from '@/setup/config.js';
+import { readSetupConfig } from '@/setup/config.js';
 import { type EnsureRestoredReport, ensureSessionRestored } from './ensure-restored.js';
 
 /**
@@ -84,12 +83,7 @@ export type RestoreArgs = {
  * );
  * ```
  */
-export const runRestoreCommand = (
-  args: RestoreArgs,
-): Effect.Effect<
-  void,
-  ArchiveFileSystemError | ArchiveVerificationError | ManifestStoreError | SetupConfigFileError
-> =>
+export const runRestoreCommand = (args: RestoreArgs): Effect.Effect<void, Error> =>
   Effect.gen(function* () {
     const home = requireHome(args.home);
 
@@ -121,7 +115,7 @@ export const runRestoreCommand = (
       return;
     }
 
-    const setupConfig = yield* readSetupConfig(home);
+    const setupConfig = yield* promiseAsEffect(() => readSetupConfig(home));
     const vaultPath = args.vaultPath ?? setupConfig?.vaultPath ?? resolveDefaultVaultPath(home);
     const compression = args.compression ?? createZstdCompression();
 

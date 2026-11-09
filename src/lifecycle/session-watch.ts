@@ -1,11 +1,11 @@
 import { watch } from 'node:fs';
 import { Effect, Schema } from 'effect';
-import type { ArchiveFileSystemError } from '@/archive/file-system.js';
-import type { ManifestStoreError, SessionManifest } from '@/archive/manifest-store.js';
+import type { SessionManifest } from '@/archive/manifest-store.js';
 import { listVaultSessionManifests } from '@/archive/manifest-store.js';
 import { directoryStubWasOpened, isArchivedStubPath } from '@/archive/session-stub.js';
-import type { ArchiveVerificationError, CompressionAdapter } from '@/archive/writer.js';
+import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
+import { promiseAsEffect } from '@/effect-bridge.js';
 import { ensureSessionRestored } from '@/restore/ensure-restored.js';
 import type { ProviderId } from '@/session-model.js';
 
@@ -65,10 +65,7 @@ export type WatchSessionStubsRequest = {
  */
 export const watchSessionStubs = (
   request: WatchSessionStubsRequest,
-): Effect.Effect<
-  void,
-  ArchiveFileSystemError | ArchiveVerificationError | ManifestStoreError | SessionWatchError
-> =>
+): Effect.Effect<void, Error | SessionWatchError> =>
   Effect.gen(function* () {
     const compression = request.compression ?? createZstdCompression();
     const pollIntervalMs = request.pollIntervalMs ?? 750;
@@ -112,14 +109,14 @@ export const watchSessionStubs = (
       forceFromFsEvent: boolean,
     ): Promise<void> => {
       const sourceKind = manifest.sourceKind ?? 'file';
-      const isStub = await Effect.runPromise(isArchivedStubPath(manifest.originalPath, sourceKind));
+      const isStub = await isArchivedStubPath(manifest.originalPath, sourceKind);
 
       if (!isStub) {
         return;
       }
 
       if (!forceFromFsEvent && sourceKind === 'directory') {
-        const opened = await Effect.runPromise(directoryStubWasOpened(manifest.originalPath));
+        const opened = await directoryStubWasOpened(manifest.originalPath);
         if (!opened) {
           return;
         }
@@ -160,7 +157,7 @@ export const watchSessionStubs = (
     };
 
     while (!request.shouldStop()) {
-      const manifests = yield* listVaultSessionManifests(request.vaultPath);
+      const manifests = yield* promiseAsEffect(() => listVaultSessionManifests(request.vaultPath));
       const scoped = manifests.filter(
         (manifest) => request.provider === undefined || manifest.provider === request.provider,
       );

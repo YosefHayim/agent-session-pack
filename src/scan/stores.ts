@@ -1,11 +1,7 @@
 import { stat } from 'node:fs/promises';
 import { Effect } from 'effect';
-import {
-  type DiscoveredSession,
-  type ProviderAdapter,
-  ProviderDiscoveryError,
-  type SessionStore,
-} from '@/session-model.js';
+import { promiseAsEffect } from '@/effect-bridge.js';
+import type { DiscoveredSession, ProviderAdapter, SessionStore } from '@/session-model.js';
 
 /**
  * Stores and providers to inspect during a scan.
@@ -34,9 +30,7 @@ export type ScanReport = {
  * const report = await Effect.runPromise(scanStores({ stores, providers }));
  * ```
  */
-export const scanStores = (
-  request: ScanRequest,
-): Effect.Effect<ScanReport, ProviderDiscoveryError> =>
+export const scanStores = (request: ScanRequest): Effect.Effect<ScanReport, Error> =>
   Effect.gen(function* () {
     const discovered = yield* Effect.all(
       request.stores.map((store) => {
@@ -71,7 +65,7 @@ export const scanStores = (
 export const discoverStoreSessions = (
   provider: ProviderAdapter,
   store: SessionStore,
-): Effect.Effect<ReadonlyArray<DiscoveredSession>, ProviderDiscoveryError> =>
+): Effect.Effect<ReadonlyArray<DiscoveredSession>, Error> =>
   Effect.gen(function* () {
     const exists = yield* providerStoreExists(store);
 
@@ -79,8 +73,8 @@ export const discoverStoreSessions = (
       return [];
     }
 
-    return yield* provider.discover(store).pipe(
-      Effect.catchTag('ProviderDiscoveryError', (discoveryError) =>
+    return yield* promiseAsEffect(() => provider.discover(store)).pipe(
+      Effect.catchAll((discoveryError) =>
         Effect.flatMap(providerStoreExists(store), (stillExists) => {
           if (!stillExists) {
             return Effect.succeed<ReadonlyArray<DiscoveredSession>>([]);
@@ -92,7 +86,7 @@ export const discoverStoreSessions = (
     );
   });
 
-const providerStoreExists = (store: SessionStore): Effect.Effect<boolean, ProviderDiscoveryError> =>
+const providerStoreExists = (store: SessionStore): Effect.Effect<boolean, Error> =>
   Effect.tryPromise({
     try: async () => {
       const storeStat = await stat(store.path).catch((cause: unknown) => {
@@ -105,12 +99,7 @@ const providerStoreExists = (store: SessionStore): Effect.Effect<boolean, Provid
 
       return storeStat !== undefined;
     },
-    catch: (cause) =>
-      new ProviderDiscoveryError({
-        provider: store.provider,
-        path: store.path,
-        message: String(cause),
-      }),
+    catch: (cause) => new Error(String(cause), { cause }),
   });
 
 const fileSystemErrorCode = (cause: unknown): string | undefined => {

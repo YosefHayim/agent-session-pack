@@ -2,8 +2,6 @@ import { Buffer } from 'node:buffer';
 import { createReadStream } from 'node:fs';
 import { readdir, stat } from 'node:fs/promises';
 import { basename, extname, join } from 'node:path';
-import { Effect } from 'effect';
-import { ProviderDiscoveryError } from '@/session-model.js';
 
 const TITLE_SEARCH_LIMIT_BYTES = 1024 * 1024;
 const TITLE_READ_HIGH_WATER_MARK_BYTES = 64 * 1024;
@@ -34,131 +32,9 @@ export type CollectJsonlOptions = {
 };
 
 /**
- * Collects JSONL files below a provider store.
- *
- * @param root - Store root to scan.
- * @param options - Path parts that should be skipped during recursion.
- * @returns Effect containing discovered JSONL file metadata.
- * @example
- * ```ts
- * import { collectJsonlSessions } from './session-discovery.js';
- *
- * const files = await Effect.runPromise(
- *   collectJsonlSessions('/root', { excludePathParts: ['node_modules'] }),
- * );
- * ```
+ * Collects JSONL files below a provider store, skipping the excluded directory names.
  */
-export const collectJsonlSessions = (
-  root: string,
-  options: CollectJsonlOptions,
-): Effect.Effect<ReadonlyArray<JsonlSessionFile>, ProviderDiscoveryError> =>
-  Effect.tryPromise({
-    try: () => collectJsonlSessionFiles(root, options),
-    catch: (cause) =>
-      new ProviderDiscoveryError({
-        provider: 'codex',
-        path: root,
-        message: String(cause),
-      }),
-  });
-
-/**
- * Measures total file bytes and newest mtime for a session directory tree.
- *
- * @param path - Session directory path.
- * @returns Effect containing directory size and modified time.
- * @example
- * ```ts
- * import { measureDirectorySession } from './session-discovery.js';
- *
- * const entry = await Effect.runPromise(measureDirectorySession('/sessions/abc'));
- * ```
- */
-export const measureDirectorySession = (
-  path: string,
-): Effect.Effect<DirectorySessionEntry, ProviderDiscoveryError> =>
-  Effect.tryPromise({
-    try: () => measureDirectorySessionEntry(path),
-    catch: (cause) =>
-      new ProviderDiscoveryError({
-        provider: 'codex',
-        path,
-        message: String(cause),
-      }),
-  });
-
-/**
- * Converts text into a stable session slug.
- *
- * @param title - Human title extracted from provider data.
- * @returns Lowercase slug suitable for selectors.
- * @example
- * ```ts
- * import { slugifyTitle } from './session-discovery.js';
- *
- * const slug = slugifyTitle('Fix login bug');
- * ```
- */
-export const slugifyTitle = (title: string): string => {
-  const slug = title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-
-  if (slug.length === 0) {
-    return 'untitled-session';
-  }
-
-  return slug;
-};
-
-/**
- * Extracts a provider session id from a file path.
- *
- * @param path - Provider session file path.
- * @returns UUID-like id when available, otherwise the basename without extension.
- * @example
- * ```ts
- * import { sessionIdFromPath } from './session-discovery.js';
- *
- * const id = sessionIdFromPath('/sessions/2024-01-01-abc.jsonl');
- * ```
- */
-export const sessionIdFromPath = (path: string): string => {
-  const fileName = basename(path, extname(path));
-  const idMatch = fileName.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-
-  if (idMatch !== null) {
-    return idMatch[0];
-  }
-
-  return fileName;
-};
-
-/**
- * Reads the first meaningful user text from a JSONL session file.
- *
- * @param path - Provider JSONL session path.
- * @returns Effect containing the title fallback text.
- * @example
- * ```ts
- * import { readSessionTitle } from './session-discovery.js';
- *
- * const title = await Effect.runPromise(readSessionTitle('/sessions/abc.jsonl'));
- * ```
- */
-export const readSessionTitle = (path: string): Effect.Effect<string, ProviderDiscoveryError> =>
-  Effect.tryPromise({
-    try: () => readSessionTitleFromFile(path),
-    catch: (cause) =>
-      new ProviderDiscoveryError({
-        provider: 'codex',
-        path,
-        message: String(cause),
-      }),
-  });
-
-const collectJsonlSessionFiles = async (
+export const collectJsonlSessions = async (
   root: string,
   options: CollectJsonlOptions,
 ): Promise<ReadonlyArray<JsonlSessionFile>> => {
@@ -173,7 +49,7 @@ const collectJsonlSessionFiles = async (
     const entryPath = join(root, entry.name);
 
     if (entry.isDirectory()) {
-      files.push(...(await collectJsonlSessionFiles(entryPath, options)));
+      files.push(...(await collectJsonlSessions(entryPath, options)));
       continue;
     }
 
@@ -196,7 +72,10 @@ const collectJsonlSessionFiles = async (
   return files;
 };
 
-const measureDirectorySessionEntry = async (path: string): Promise<DirectorySessionEntry> => {
+/**
+ * Measures total file bytes and newest mtime for a session directory tree.
+ */
+export const measureDirectorySession = async (path: string): Promise<DirectorySessionEntry> => {
   const rootStat = await stat(path);
   let sizeBytes = 0;
   let modifiedAt = rootStat.mtime;
@@ -233,6 +112,41 @@ const measureDirectorySessionEntry = async (path: string): Promise<DirectorySess
     modifiedAt,
   };
 };
+
+/**
+ * Converts text into a stable session slug.
+ */
+export const slugifyTitle = (title: string): string => {
+  const slug = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  if (slug.length === 0) {
+    return 'untitled-session';
+  }
+
+  return slug;
+};
+
+/**
+ * Extracts a provider session id from a file path: the UUID when present, else the basename.
+ */
+export const sessionIdFromPath = (path: string): string => {
+  const fileName = basename(path, extname(path));
+  const idMatch = fileName.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+
+  if (idMatch !== null) {
+    return idMatch[0];
+  }
+
+  return fileName;
+};
+
+/**
+ * Reads the first meaningful user text from a JSONL session file, falling back to the basename.
+ */
+export const readSessionTitle = (path: string): Promise<string> => readSessionTitleFromFile(path);
 
 const readSessionTitleFromFile = async (path: string): Promise<string> => {
   let carry = '';

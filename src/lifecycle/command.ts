@@ -1,13 +1,13 @@
 import { defineCommand } from 'citty';
 import { Effect } from 'effect';
 import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
+import { promiseAsEffect } from '@/effect-bridge.js';
 import { requireHome } from '@/home-env.js';
 import { DEFAULT_COLD_AFTER } from '@/pack/plan.js';
 import {
   isRestoreOnLaunchEnabled,
   readSetupConfig,
   type SetupConfig,
-  type SetupConfigFileError,
   writeSetupConfig,
 } from '@/setup/config.js';
 import { resolveWrappersBinPath } from './session-access.js';
@@ -73,7 +73,7 @@ export type LifecycleArgs = {
  */
 export const runLifecycleCommand = (
   args: LifecycleArgs,
-): Effect.Effect<void, SetupConfigFileError | LifecycleWrapperError> =>
+): Effect.Effect<void, Error | LifecycleWrapperError> =>
   Effect.gen(function* () {
     const home = requireHome(args.home);
 
@@ -89,7 +89,7 @@ export const runLifecycleCommand = (
       return;
     }
 
-    const existingConfig = yield* readSetupConfig(home);
+    const existingConfig = yield* promiseAsEffect(() => readSetupConfig(home));
     const now = args.now ?? new Date();
     const vaultPath = existingConfig?.vaultPath ?? resolveDefaultVaultPath(home);
     const wrappersBin = resolveWrappersBinPath(vaultPath);
@@ -120,10 +120,12 @@ export const runLifecycleCommand = (
       restoreOnLaunch: action === 'enable',
     });
 
-    yield* writeSetupConfig({
-      home,
-      config: nextConfig,
-    });
+    yield* promiseAsEffect(() =>
+      writeSetupConfig({
+        home,
+        config: nextConfig,
+      }),
+    );
 
     if (action === 'enable') {
       yield* installLifecycleWrappers({

@@ -1,124 +1,76 @@
-import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import { Effect, Schema } from 'effect';
+import { z } from 'zod';
+import { rethrowAsError } from '@/rethrow-as-error.js';
 import { ProviderIdSchema, SessionSourceKindSchema } from '@/session-model.js';
+import { readDirectoryEntries } from './file-system.js';
 
 /**
  * Schema describing the restore manifest recorded for an archived session.
  */
-export const SessionManifestSchema = Schema.Struct({
-  sessionId: Schema.String,
+export const SessionManifestSchema = z.object({
+  sessionId: z.string(),
   provider: ProviderIdSchema,
-  title: Schema.String,
-  slug: Schema.String,
-  originalPath: Schema.String,
-  archivePath: Schema.String,
-  sourceSha256: Schema.String,
-  sourceBytes: Schema.Number,
-  archiveBytes: Schema.optional(Schema.Number),
-  archivedAt: Schema.String,
-  sourceKind: Schema.optional(SessionSourceKindSchema),
+  title: z.string(),
+  slug: z.string(),
+  originalPath: z.string(),
+  archivePath: z.string(),
+  sourceSha256: z.string(),
+  sourceBytes: z.number(),
+  archiveBytes: z.number().optional(),
+  archivedAt: z.string(),
+  sourceKind: SessionSourceKindSchema.optional(),
 });
+
 /**
  * Decoded session manifest record used to drive restores.
  */
-export type SessionManifest = typeof SessionManifestSchema.Type;
-
-/**
- * Typed error raised when reading or writing a session manifest fails.
- */
-export class ManifestStoreError extends Schema.TaggedError<ManifestStoreError>()(
-  'ManifestStoreError',
-  {
-    path: Schema.String,
-    message: Schema.String,
-  },
-) {}
+export type SessionManifest = z.infer<typeof SessionManifestSchema>;
 
 /**
  * Writes a session manifest as formatted JSON.
- *
- * @param path - Manifest destination path.
- * @param manifest - Restore metadata to persist.
- * @returns Effect completing after write.
- * @example
- * ```ts
- * import { writeSessionManifest } from './manifest-store.js';
- *
- * await Effect.runPromise(writeSessionManifest('/vault/manifests/abc.json', manifest));
- * ```
  */
-export const writeSessionManifest = (
+export const writeSessionManifest = async (
   path: string,
   manifest: SessionManifest,
-): Effect.Effect<void, ManifestStoreError> =>
-  Effect.tryPromise({
-    try: async () => {
-      await mkdir(dirname(path), { recursive: true });
-      await writeFile(path, `${JSON.stringify(manifest, null, 2)}\n`);
-    },
-    catch: (cause) =>
-      new ManifestStoreError({
-        path,
-        message: String(cause),
-      }),
-  });
+): Promise<void> => {
+  await mkdir(dirname(path), { recursive: true }).catch(rethrowAsError);
+  await writeFile(path, `${JSON.stringify(manifest, null, 2)}\n`).catch(rethrowAsError);
+};
 
 /**
  * Reads and decodes a session manifest.
- *
- * @param path - Manifest file path.
- * @returns Effect containing decoded manifest data.
- * @example
- * ```ts
- * import { readSessionManifest } from './manifest-store.js';
- *
- * const manifest = await Effect.runPromise(readSessionManifest('/vault/manifests/abc.json'));
- * ```
  */
-export const readSessionManifest = (
-  path: string,
-): Effect.Effect<SessionManifest, ManifestStoreError> =>
-  Effect.tryPromise({
-    try: async () => {
-      const content = await readFile(path, 'utf8');
-      const decoded = Schema.decodeUnknownSync(SessionManifestSchema)(JSON.parse(content));
-
-      return decoded;
-    },
-    catch: (cause) =>
-      new ManifestStoreError({
-        path,
-        message: String(cause),
-      }),
-  });
+export const readSessionManifest = async (path: string): Promise<SessionManifest> => {
+  const content = await readFile(path, 'utf8').catch(rethrowAsError);
+  return SessionManifestSchema.parse(JSON.parse(content));
+};
 
 /**
  * Lists all manifest JSON files below a vault manifest root.
- *
- * @param root - Manifest root directory.
- * @returns Effect containing manifest file paths.
- * @example
- * ```ts
- * import { listSessionManifestPaths } from './manifest-store.js';
- *
- * const paths = await Effect.runPromise(listSessionManifestPaths('/vault/manifests'));
- * ```
  */
-export const listSessionManifestPaths = (
-  root: string,
-): Effect.Effect<ReadonlyArray<string>, ManifestStoreError> =>
-  Effect.tryPromise({
-    try: () => collectManifestPaths(root),
-    catch: (cause) =>
-      new ManifestStoreError({
-        path: root,
-        message: String(cause),
-      }),
-  });
+export const listSessionManifestPaths = (root: string): Promise<ReadonlyArray<string>> =>
+  collectManifestPaths(root);
+
+/**
+ * Lists every session manifest stored under a vault.
+ */
+export const listVaultSessionManifests = async (
+  vaultPath: string,
+): Promise<ReadonlyArray<SessionManifest>> => {
+  const manifestPaths = await listSessionManifestPaths(join(vaultPath, 'manifests'));
+  const manifests: SessionManifest[] = [];
+
+  for (const manifestPath of manifestPaths) {
+    const manifest = await readSessionManifest(manifestPath);
+    manifests.push(manifest);
+  }
+
+  return manifests;
+};
 
 const collectManifestPaths = async (root: string): Promise<ReadonlyArray<string>> => {
-  const entries = await readdir(root, { withFileTypes: true }).catch(() => []);
+  const entries = await readDirectoryEntries(root);
   const paths: string[] = [];
 
   for (const entry of entries) {
@@ -142,30 +94,3 @@ const collectManifestPaths = async (root: string): Promise<ReadonlyArray<string>
 
   return paths;
 };
-
-/**
- * Lists every session manifest stored under a vault.
- *
- * @param vaultPath - Vault root path.
- * @returns Effect containing decoded manifests.
- * @example
- * ```ts
- * import { listVaultSessionManifests } from './manifest-store.js';
- *
- * const manifests = await Effect.runPromise(listVaultSessionManifests('/vault'));
- * ```
- */
-export const listVaultSessionManifests = (
-  vaultPath: string,
-): Effect.Effect<ReadonlyArray<SessionManifest>, ManifestStoreError> =>
-  Effect.gen(function* () {
-    const manifestPaths = yield* listSessionManifestPaths(join(vaultPath, 'manifests'));
-    const manifests: SessionManifest[] = [];
-
-    for (const manifestPath of manifestPaths) {
-      const manifest = yield* readSessionManifest(manifestPath);
-      manifests.push(manifest);
-    }
-
-    return manifests;
-  });

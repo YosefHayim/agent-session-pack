@@ -2,90 +2,34 @@ import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
-import { Effect } from 'effect';
+import { rethrowAsError } from '@/rethrow-as-error.js';
 import type { SessionSourceKind } from '@/session-model.js';
-import { ArchiveFileSystemError, resolveSourceKind } from './file-system.js';
+import { resolveSourceKind } from './file-system.js';
 
 /**
  * Hashes a file as SHA-256.
- *
- * @param path - File path to hash.
- * @returns Effect containing the hex digest.
- * @example
- * ```ts
- * import { Effect } from 'effect';
- * import { sha256File } from './hash.js';
- *
- * const digest = await Effect.runPromise(sha256File('/sessions/abc.jsonl'));
- * ```
  */
-export const sha256File = (path: string): Effect.Effect<string, ArchiveFileSystemError> =>
-  Effect.tryPromise({
-    try: () =>
-      new Promise<string>((resolve, reject) => {
-        const hash = createHash('sha256');
-        createReadStream(path)
-          .on('data', (chunk) => hash.update(chunk))
-          .on('error', reject)
-          .on('end', () => resolve(hash.digest('hex')));
-      }),
-    catch: (cause) =>
-      new ArchiveFileSystemError({
-        path,
-        message: String(cause),
-      }),
-  });
+export const sha256File = (path: string): Promise<string> => hashFile(path).catch(rethrowAsError);
 
 /**
  * Hashes a file or directory tree as SHA-256.
- *
- * @param path - File or directory path to hash.
- * @param sourceKind - Explicit source kind when known.
- * @returns Effect containing the hex digest.
- * @example
- * ```ts
- * import { Effect } from 'effect';
- * import { sha256Path } from './hash.js';
- *
- * const digest = await Effect.runPromise(sha256Path('/sessions/abc', 'directory'));
- * ```
  */
-export const sha256Path = (
-  path: string,
-  sourceKind?: SessionSourceKind,
-): Effect.Effect<string, ArchiveFileSystemError> =>
-  Effect.gen(function* () {
-    const kind = yield* resolveSourceKind(path, sourceKind);
+export const sha256Path = async (path: string, sourceKind?: SessionSourceKind): Promise<string> => {
+  const kind = await resolveSourceKind(path, sourceKind);
+  const isDirectorySource = kind === 'directory';
 
-    if (kind === 'directory') {
-      return yield* sha256Directory(path);
-    }
+  if (isDirectorySource) {
+    return sha256Directory(path);
+  }
 
-    return yield* sha256File(path);
-  });
+  return sha256File(path);
+};
 
 /**
  * Hashes every file under a directory into one stable content digest.
- *
- * @param path - Directory path to hash.
- * @returns Effect containing the hex digest.
- * @example
- * ```ts
- * import { Effect } from 'effect';
- * import { sha256Directory } from './hash.js';
- *
- * const digest = await Effect.runPromise(sha256Directory('/sessions/abc'));
- * ```
  */
-export const sha256Directory = (path: string): Effect.Effect<string, ArchiveFileSystemError> =>
-  Effect.tryPromise({
-    try: () => hashDirectoryTree(path),
-    catch: (cause) =>
-      new ArchiveFileSystemError({
-        path,
-        message: String(cause),
-      }),
-  });
+export const sha256Directory = (path: string): Promise<string> =>
+  hashDirectoryTree(path).catch(rethrowAsError);
 
 const hashDirectoryTree = async (root: string): Promise<string> => {
   const files: string[] = [];
@@ -127,10 +71,10 @@ const hashDirectoryTree = async (root: string): Promise<string> => {
 };
 
 const hashFile = (path: string): Promise<string> =>
-  new Promise((resolve, reject) => {
+  new Promise((fulfill, reject) => {
     const hash = createHash('sha256');
     createReadStream(path)
       .on('data', (chunk) => hash.update(chunk))
       .on('error', reject)
-      .on('end', () => resolve(hash.digest('hex')));
+      .on('end', () => fulfill(hash.digest('hex')));
   });

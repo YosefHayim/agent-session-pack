@@ -1,7 +1,7 @@
 import { Effect, Either } from 'effect';
-import type { ArchiveFileSystemError } from '@/archive/file-system.js';
-import { listVaultSessionManifests, type ManifestStoreError } from '@/archive/manifest-store.js';
-import type { ArchiveVerificationError, CompressionAdapter } from '@/archive/writer.js';
+import { listVaultSessionManifests } from '@/archive/manifest-store.js';
+import type { CompressionAdapter } from '@/archive/writer.js';
+import { promiseAsEffect } from '@/effect-bridge.js';
 import type { ProviderId } from '@/session-model.js';
 import { type RestoreOutcome, restoreManifest } from './manifest.js';
 import { resolveSessionSelector, type SelectorMatch } from './session-selector.js';
@@ -86,10 +86,7 @@ export type EnsureSessionRestoredRequest = {
  */
 export const ensureSessionRestored = (
   request: EnsureSessionRestoredRequest,
-): Effect.Effect<
-  EnsureRestoredReport,
-  ArchiveFileSystemError | ArchiveVerificationError | ManifestStoreError
-> =>
+): Effect.Effect<EnsureRestoredReport, Error> =>
   Effect.gen(function* () {
     if (request.requireLifecycleEnabled && !request.restoreOnLaunchEnabled) {
       return {
@@ -105,7 +102,7 @@ export const ensureSessionRestored = (
       };
     }
 
-    const manifests = yield* listVaultSessionManifests(request.vaultPath);
+    const manifests = yield* promiseAsEffect(() => listVaultSessionManifests(request.vaultPath));
     const selection = yield* Effect.either(
       resolveSessionSelector({
         selector: request.selector,

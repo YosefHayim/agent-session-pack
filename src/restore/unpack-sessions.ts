@@ -1,11 +1,8 @@
 import { Effect } from 'effect';
-import { type ArchiveFileSystemError, statPath } from '@/archive/file-system.js';
-import {
-  listVaultSessionManifests,
-  type ManifestStoreError,
-  type SessionManifest,
-} from '@/archive/manifest-store.js';
-import type { ArchiveVerificationError, CompressionAdapter } from '@/archive/writer.js';
+import { statPath } from '@/archive/file-system.js';
+import { listVaultSessionManifests, type SessionManifest } from '@/archive/manifest-store.js';
+import type { CompressionAdapter } from '@/archive/writer.js';
+import { promiseAsEffect } from '@/effect-bridge.js';
 import type { ProviderAdapter, ProviderId } from '@/session-model.js';
 import { restoreManifest } from './manifest.js';
 
@@ -73,12 +70,9 @@ export type UnpackProviderSessionsRequest = {
  */
 export const unpackProviderSessions = (
   request: UnpackProviderSessionsRequest,
-): Effect.Effect<
-  UnpackSessionsReport,
-  ArchiveFileSystemError | ArchiveVerificationError | ManifestStoreError
-> =>
+): Effect.Effect<UnpackSessionsReport, Error> =>
   Effect.gen(function* () {
-    const manifests = yield* listVaultSessionManifests(request.vaultPath);
+    const manifests = yield* promiseAsEffect(() => listVaultSessionManifests(request.vaultPath));
     const unpackSessionRows: UnpackSessionRow[] = [];
 
     for (const provider of request.providers) {
@@ -137,7 +131,7 @@ const restoreProviderManifests = (request: {
     readonly restoredBytes: number;
     readonly restoredSessions: number;
   },
-  ArchiveFileSystemError | ArchiveVerificationError
+  Error
 > =>
   Effect.gen(function* () {
     let alreadyPresentSessions = 0;
@@ -174,9 +168,7 @@ const restoreProviderManifests = (request: {
     };
   });
 
-const sumArchiveBytes = (
-  manifests: ReadonlyArray<SessionManifest>,
-): Effect.Effect<number, ArchiveFileSystemError> =>
+const sumArchiveBytes = (manifests: ReadonlyArray<SessionManifest>): Effect.Effect<number, Error> =>
   Effect.gen(function* () {
     let archiveBytes = 0;
 
@@ -188,14 +180,12 @@ const sumArchiveBytes = (
     return archiveBytes;
   });
 
-const archiveBytesForManifest = (
-  manifest: SessionManifest,
-): Effect.Effect<number, ArchiveFileSystemError> => {
+const archiveBytesForManifest = (manifest: SessionManifest): Effect.Effect<number, Error> => {
   if (manifest.archiveBytes !== undefined) {
     return Effect.succeed(manifest.archiveBytes);
   }
 
-  const archiveStats = statPath(manifest.archivePath);
+  const archiveStats = promiseAsEffect(() => statPath(manifest.archivePath));
 
   return Effect.map(archiveStats, (stats) => stats.size);
 };

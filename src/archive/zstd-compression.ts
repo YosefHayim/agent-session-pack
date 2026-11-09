@@ -1,7 +1,6 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { Effect } from 'effect';
-import { ArchiveFileSystemError } from './file-system.js';
+import { rethrowAsError } from '@/rethrow-as-error.js';
 import type { CompressionAdapter } from './writer.js';
 
 const ZSTD_BINARY = 'zstd';
@@ -25,46 +24,33 @@ const execFileAsync = promisify(execFile);
  * const compression = createZstdCompression();
  * ```
  */
+/**
+ * Compression adapter backed by the system zstd binary.
+ */
 export const createZstdCompression = (): CompressionAdapter => ({
-  compress: ({ sourcePath, archivePath }) =>
-    Effect.tryPromise({
-      try: () => {
-        // Compress sourcePath to archivePath: zstd level 9, long window 27, quiet, force overwrite.
-        const compressArgs = [
-          ZSTD_LEVEL_FLAG,
-          ZSTD_LONG_WINDOW_FLAG,
-          ZSTD_QUIET_FLAG,
-          ZSTD_FORCE_FLAG,
-          sourcePath,
-          ZSTD_OUTPUT_FLAG,
-          archivePath,
-        ];
-        return execFileAsync(ZSTD_BINARY, compressArgs).then(() => undefined);
-      },
-      catch: (cause) =>
-        new ArchiveFileSystemError({
-          path: sourcePath,
-          message: String(cause),
-        }),
-    }),
-  decompress: ({ archivePath, restoredPath }) =>
-    Effect.tryPromise({
-      try: () => {
-        // Decompress archivePath to restoredPath: quiet, force overwrite.
-        const decompressArgs = [
-          ZSTD_DECOMPRESS_FLAG,
-          ZSTD_QUIET_FLAG,
-          ZSTD_FORCE_FLAG,
-          archivePath,
-          ZSTD_OUTPUT_FLAG,
-          restoredPath,
-        ];
-        return execFileAsync(ZSTD_BINARY, decompressArgs).then(() => undefined);
-      },
-      catch: (cause) =>
-        new ArchiveFileSystemError({
-          path: archivePath,
-          message: String(cause),
-        }),
-    }),
+  compress: async ({ sourcePath, archivePath }) => {
+    // Compress sourcePath to archivePath: zstd level 9, long window 27, quiet, force overwrite.
+    const compressArgs = [
+      ZSTD_LEVEL_FLAG,
+      ZSTD_LONG_WINDOW_FLAG,
+      ZSTD_QUIET_FLAG,
+      ZSTD_FORCE_FLAG,
+      sourcePath,
+      ZSTD_OUTPUT_FLAG,
+      archivePath,
+    ];
+    await execFileAsync(ZSTD_BINARY, compressArgs).catch(rethrowAsError);
+  },
+  decompress: async ({ archivePath, restoredPath }) => {
+    // Decompress archivePath to restoredPath: quiet, force overwrite.
+    const decompressArgs = [
+      ZSTD_DECOMPRESS_FLAG,
+      ZSTD_QUIET_FLAG,
+      ZSTD_FORCE_FLAG,
+      archivePath,
+      ZSTD_OUTPUT_FLAG,
+      restoredPath,
+    ];
+    await execFileAsync(ZSTD_BINARY, decompressArgs).catch(rethrowAsError);
+  },
 });

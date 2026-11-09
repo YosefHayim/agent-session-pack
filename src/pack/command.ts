@@ -1,5 +1,4 @@
 import { defineCommand } from 'citty';
-import { Effect } from 'effect';
 import { resolveApplyConfirmation } from '@/apply-confirmation.js';
 import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
@@ -61,34 +60,32 @@ export const packCommand = defineCommand({
     },
   },
   run: async ({ args }) => {
-    const confirmed =
-      args.max === true && args.apply === true
-        ? false
-        : await resolveApplyConfirmation({
-            action: 'Pack cold sessions for the selected providers',
-            apply: args.apply,
-            json: args.json,
-            yes: args.yes,
-          });
+    const isMaxApplyRequested = args.max === true && args.apply === true;
+    const confirmed = isMaxApplyRequested
+      ? false
+      : await resolveApplyConfirmation({
+          action: 'Pack cold sessions for the selected providers',
+          apply: args.apply,
+          json: args.json,
+          yes: args.yes,
+        });
 
-    await Effect.runPromise(
-      runPackCommand({
-        allProviders: args['all-providers'],
-        provider: args.provider,
-        max: args.max,
-        olderThan: args['older-than'],
-        dryRun: args['dry-run'],
-        apply: args.apply,
-        json: args.json,
-        yes: args.yes,
-        confirmed,
-      }),
-    );
+    await runPackCommand({
+      allProviders: args['all-providers'],
+      provider: args.provider,
+      max: args.max,
+      olderThan: args['older-than'],
+      dryRun: args['dry-run'],
+      apply: args.apply,
+      json: args.json,
+      yes: args.yes,
+      confirmed,
+    });
   },
 });
 
 /**
- * Decoded arguments for the pack command.
+ * Arguments for the pack command, after citty has parsed the flags.
  */
 export type PackArgs = {
   readonly allProviders: boolean | undefined;
@@ -108,101 +105,85 @@ export type PackArgs = {
 };
 
 /**
- * Runs a non-destructive pack planning command.
- *
- * @param args - Decoded command-line arguments.
- * @returns Effect that writes the pack plan.
- * @example
- * ```ts
- * import { Effect } from 'effect';
- * import { runPackCommand } from './command.js';
- *
- * await Effect.runPromise(
- *   runPackCommand({
- *     allProviders: true,
- *     provider: undefined,
- *     olderThan: '7d',
- *     dryRun: true,
- *     apply: false,
- *     json: false,
- *     yes: false,
- *   }),
- * );
- * ```
+ * Runs the pack command: a dry-run plan, or an archive run when applying.
  */
-export const runPackCommand = (args: PackArgs): Effect.Effect<void, Error> =>
-  Effect.gen(function* () {
-    if (args.max === true && args.apply === true) {
-      process.stderr.write('Refusing --max with --apply. Use --max as a dry-run preview only.\n');
-      process.stderr.write('\n');
-      process.exitCode = 2;
-      return;
-    }
+export const runPackCommand = async (args: PackArgs): Promise<void> => {
+  const isMaxApplyRequested = args.max === true && args.apply === true;
 
-    const home = requireHome(args.home);
+  if (isMaxApplyRequested) {
+    process.stderr.write('Refusing --max with --apply. Use --max as a dry-run preview only.\n');
+    process.stderr.write('\n');
+    process.exitCode = 2;
+    return;
+  }
 
-    if (home === undefined) {
-      return;
-    }
+  const home = requireHome(args.home);
+  const isHomeMissing = home === undefined;
 
-    if (args.apply === true && args.confirmed !== true) {
-      process.stderr.write('Cancelled. Re-run with --apply and confirm with y to pack sessions.\n');
-      process.stderr.write('\n');
-      process.exitCode = 2;
-      return;
-    }
+  if (isHomeMissing) {
+    return;
+  }
 
-    const olderThan = args.max === true ? '0h' : (args.olderThan ?? DEFAULT_COLD_AFTER);
-    const olderThanMs = parseDurationMs(olderThan);
-    const providers = args.providers ?? selectProviders(args.provider);
+  const isApplyUnconfirmed = args.apply === true && args.confirmed !== true;
 
-    if (shouldUseArchiveWorkflow(args)) {
-      const report = yield* packProviderSessions({
-        home,
-        vaultPath: args.vaultPath ?? resolveDefaultVaultPath(home),
-        providers,
-        olderThan,
-        olderThanMs,
-        now: args.now ?? new Date(),
-        apply: args.apply === true,
-        compression: args.compression ?? createZstdCompression(),
-      });
+  if (isApplyUnconfirmed) {
+    process.stderr.write('Cancelled. Re-run with --apply and confirm with y to pack sessions.\n');
+    process.stderr.write('\n');
+    process.exitCode = 2;
+    return;
+  }
 
-      if (args.json === true) {
-        process.stdout.write(formatJsonPackReport(report));
-        return;
-      }
+  const olderThan = args.max === true ? '0h' : (args.olderThan ?? DEFAULT_COLD_AFTER);
+  const olderThanMs = parseDurationMs(olderThan);
+  const providers = args.providers ?? selectProviders(args.provider);
 
-      process.stdout.write(`${formatHumanPackReport(report, { olderThan })}\n`);
-      return;
-    }
-
-    const stores = providers.flatMap((provider) =>
-      provider.defaultRoots(home).map((path): SessionStore => ({ provider: provider.id, path })),
-    );
-    const report = yield* scanStores({
+  if (shouldUseArchiveWorkflow(args)) {
+    const report = await packProviderSessions({
+      home,
+      vaultPath: args.vaultPath ?? resolveDefaultVaultPath(home),
       providers,
-      stores,
-    });
-    const plan = createPackPlan({
-      now: new Date(),
       olderThan,
       olderThanMs,
-      sessions: report.sessions,
-      providers: providers.map((provider) => ({
-        id: provider.id,
-        label: provider.label,
-        mode: provider.mode,
-      })),
+      now: args.now ?? new Date(),
+      apply: args.apply === true,
+      compression: args.compression ?? createZstdCompression(),
     });
 
     if (args.json === true) {
-      process.stdout.write(formatJsonPackPlan(plan));
+      process.stdout.write(formatJsonPackReport(report));
       return;
     }
 
-    process.stdout.write(`${formatHumanPackPlan(plan, { olderThan })}\n`);
+    process.stdout.write(`${formatHumanPackReport(report, { olderThan })}\n`);
+    return;
+  }
+
+  const stores = providers.flatMap((provider) =>
+    provider.defaultRoots(home).map((path): SessionStore => ({ provider: provider.id, path })),
+  );
+  const report = await scanStores({
+    providers,
+    stores,
   });
+  const plan = createPackPlan({
+    now: new Date(),
+    olderThan,
+    olderThanMs,
+    sessions: report.sessions,
+    providers: providers.map((provider) => ({
+      id: provider.id,
+      label: provider.label,
+      mode: provider.mode,
+    })),
+  });
+
+  if (args.json === true) {
+    process.stdout.write(formatJsonPackPlan(plan));
+    return;
+  }
+
+  process.stdout.write(`${formatHumanPackPlan(plan, { olderThan })}\n`);
+};
 
 const shouldUseArchiveWorkflow = (args: PackArgs): boolean => {
   if (args.apply === true) {

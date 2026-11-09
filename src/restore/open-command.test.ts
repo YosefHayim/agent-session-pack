@@ -2,7 +2,6 @@ import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Effect } from 'effect';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { copyCompression } from '@/archive/fixtures.js';
 import { writeSessionManifest } from '@/archive/manifest-store.js';
@@ -36,33 +35,29 @@ describe('open command', () => {
 
     await mkdir(join(vaultPath, 'archives', 'codex'), { recursive: true });
     await writeFile(archivePath, content);
-    await Effect.runPromise(
-      writeSessionManifest(join(vaultPath, 'manifests', 'codex', 'cold.json'), {
-        sessionId: 'cold',
-        provider: 'codex',
-        title: 'open me',
-        slug: 'open-me',
-        originalPath,
-        archivePath,
-        sourceSha256,
-        sourceBytes: Buffer.byteLength(content, 'utf8'),
-        archiveBytes: Buffer.byteLength(content, 'utf8'),
-        archivedAt: '2026-07-01T00:00:00.000Z',
-        sourceKind: 'file',
-      }),
-    );
+    await writeSessionManifest(join(vaultPath, 'manifests', 'codex', 'cold.json'), {
+      sessionId: 'cold',
+      provider: 'codex',
+      title: 'open me',
+      slug: 'open-me',
+      originalPath,
+      archivePath,
+      sourceSha256,
+      sourceBytes: Buffer.byteLength(content, 'utf8'),
+      archiveBytes: Buffer.byteLength(content, 'utf8'),
+      archivedAt: '2026-07-01T00:00:00.000Z',
+      sourceKind: 'file',
+    });
 
-    await Effect.runPromise(
-      runOpenCommand({
-        home,
-        vaultPath,
-        provider: 'codex',
-        session: 'cold',
-        json: true,
-        compression: copyCompression,
-        now: new Date('2026-07-07T00:00:00.000Z'),
-      }),
-    );
+    await runOpenCommand({
+      home,
+      vaultPath,
+      provider: 'codex',
+      session: 'cold',
+      json: true,
+      compression: copyCompression,
+      now: new Date('2026-07-07T00:00:00.000Z'),
+    });
 
     expect(process.exitCode).toBeUndefined();
     expect(JSON.parse(stdoutWrites.join(''))).toMatchObject({

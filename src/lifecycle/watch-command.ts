@@ -1,18 +1,12 @@
 import { spawn } from 'node:child_process';
 import { defineCommand } from 'citty';
-import { Effect } from 'effect';
 import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
-import { promiseAsEffect } from '@/effect-bridge.js';
 import { requireHome } from '@/home-env.js';
 import { parseOptionalProvider } from '@/providers/flag.js';
 import { isRestoreOnLaunchEnabled, readSetupConfig } from '@/setup/config.js';
-import {
-  type SessionWatchError,
-  type SessionWatchEvent,
-  watchSessionStubs,
-} from './session-watch.js';
+import { type SessionWatchEvent, watchSessionStubs } from './session-watch.js';
 
 /**
  * Citty command that watches archived stubs and restores sessions when opened.
@@ -40,14 +34,12 @@ export const watchCommand = defineCommand({
   },
   run: async ({ args, rawArgs }) => {
     const execArgs = extractExecArgs(rawArgs);
-    await Effect.runPromise(
-      runWatchCommand({
-        provider: args.provider,
-        json: args.json,
-        pollMs: args['poll-ms'],
-        execArgv: execArgs,
-      }),
-    );
+    await runWatchCommand({
+      provider: args.provider,
+      json: args.json,
+      pollMs: args['poll-ms'],
+      execArgv: execArgs,
+    });
   },
 });
 
@@ -64,89 +56,86 @@ type WatchArgs = {
   readonly vaultPath?: string | undefined;
 };
 
-const runWatchCommand = (
-  args: WatchArgs,
-): Effect.Effect<void, Error | Error | Error | SessionWatchError | Error> =>
-  Effect.gen(function* () {
-    const home = requireHome(args.home);
+const runWatchCommand = async (args: WatchArgs): Promise<void> => {
+  const home = requireHome(args.home);
 
-    if (home === undefined) {
-      return;
-    }
+  if (home === undefined) {
+    return;
+  }
 
-    const provider = parseOptionalProvider(args.provider);
-    if (args.provider !== undefined && provider === undefined) {
-      process.stderr.write(`Unknown provider: ${args.provider}\n`);
+  const provider = parseOptionalProvider(args.provider);
+  if (args.provider !== undefined && provider === undefined) {
+    process.stderr.write(`Unknown provider: ${args.provider}\n`);
+    process.exitCode = 2;
+    return;
+  }
+
+  const setupConfig = await readSetupConfig(home);
+  if (!isRestoreOnLaunchEnabled(setupConfig) && args.execArgv.length === 0) {
+    // Allow explicit watch even if disabled when following a child; wrappers enable lifecycle first.
+  }
+
+  const vaultPath = args.vaultPath ?? setupConfig?.vaultPath ?? resolveDefaultVaultPath(home);
+  const pollIntervalMs = parsePollMs(args.pollMs);
+  const compression = args.compression ?? createZstdCompression();
+  const json = args.json === true;
+
+  let childExitCode: number | undefined;
+  let stop = false;
+
+  if (args.execArgv.length > 0) {
+    const [command, ...commandArgs] = args.execArgv;
+    if (command === undefined) {
+      process.stderr.write('Missing command after -- for watch --exec.\n');
       process.exitCode = 2;
       return;
     }
 
-    const setupConfig = yield* promiseAsEffect(() => readSetupConfig(home));
-    if (!isRestoreOnLaunchEnabled(setupConfig) && args.execArgv.length === 0) {
-      // Allow explicit watch even if disabled when following a child; wrappers enable lifecycle first.
-    }
-
-    const vaultPath = args.vaultPath ?? setupConfig?.vaultPath ?? resolveDefaultVaultPath(home);
-    const pollIntervalMs = parsePollMs(args.pollMs);
-    const compression = args.compression ?? createZstdCompression();
-    const json = args.json === true;
-
-    let childExitCode: number | undefined;
-    let stop = false;
-
-    if (args.execArgv.length > 0) {
-      const [command, ...commandArgs] = args.execArgv;
-      if (command === undefined) {
-        process.stderr.write('Missing command after -- for watch --exec.\n');
-        process.exitCode = 2;
-        return;
-      }
-
-      const child = spawn(command, commandArgs, {
-        stdio: 'inherit',
-        env: process.env,
-      });
-
-      child.on('exit', (code) => {
-        childExitCode = code ?? 0;
-        stop = true;
-      });
-    } else {
-      const onSignal = (): void => {
-        stop = true;
-      };
-      process.once('SIGINT', onSignal);
-      process.once('SIGTERM', onSignal);
-    }
-
-    const onEvent = (event: SessionWatchEvent): void => {
-      if (json) {
-        process.stdout.write(`${JSON.stringify({ command: 'watch', ...event })}\n`);
-        return;
-      }
-
-      process.stderr.write(`watch: ${event.provider}/${event.sessionId} → ${event.status}\n`);
-    };
-
-    if (!json && args.execArgv.length === 0) {
-      process.stderr.write(
-        `watch: monitoring stubs under vault ${vaultPath}${provider === undefined ? '' : ` for ${provider}`} (Ctrl+C to stop)\n`,
-      );
-    }
-
-    yield* watchSessionStubs({
-      vaultPath,
-      provider,
-      compression,
-      pollIntervalMs,
-      shouldStop: () => stop,
-      onEvent,
+    const child = spawn(command, commandArgs, {
+      stdio: 'inherit',
+      env: process.env,
     });
 
-    if (childExitCode !== undefined) {
-      process.exitCode = childExitCode === 0 ? undefined : childExitCode;
+    child.on('exit', (code) => {
+      childExitCode = code ?? 0;
+      stop = true;
+    });
+  } else {
+    const onSignal = (): void => {
+      stop = true;
+    };
+    process.once('SIGINT', onSignal);
+    process.once('SIGTERM', onSignal);
+  }
+
+  const onEvent = (event: SessionWatchEvent): void => {
+    if (json) {
+      process.stdout.write(`${JSON.stringify({ command: 'watch', ...event })}\n`);
+      return;
     }
+
+    process.stderr.write(`watch: ${event.provider}/${event.sessionId} → ${event.status}\n`);
+  };
+
+  if (!json && args.execArgv.length === 0) {
+    process.stderr.write(
+      `watch: monitoring stubs under vault ${vaultPath}${provider === undefined ? '' : ` for ${provider}`} (Ctrl+C to stop)\n`,
+    );
+  }
+
+  await watchSessionStubs({
+    vaultPath,
+    provider,
+    compression,
+    pollIntervalMs,
+    shouldStop: () => stop,
+    onEvent,
   });
+
+  if (childExitCode !== undefined) {
+    process.exitCode = childExitCode === 0 ? undefined : childExitCode;
+  }
+};
 
 const extractExecArgs = (rawArgs: ReadonlyArray<string>): ReadonlyArray<string> => {
   const separator = rawArgs.indexOf('--');

@@ -1,11 +1,9 @@
 import { defineCommand } from 'citty';
-import { Effect } from 'effect';
 import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
-import { promiseAsEffect } from '@/effect-bridge.js';
 import { requireHome } from '@/home-env.js';
-import { recordSessionAccess, type SessionAccessLogError } from '@/lifecycle/session-access.js';
+import { recordSessionAccess } from '@/lifecycle/session-access.js';
 import { parseOptionalProvider } from '@/providers/flag.js';
 import { isRestoreOnLaunchEnabled, readSetupConfig } from '@/setup/config.js';
 import { type EnsureRestoredReport, ensureSessionRestored } from './ensure-restored.js';
@@ -36,13 +34,11 @@ export const openCommand = defineCommand({
     },
   },
   run: async ({ args }) => {
-    await Effect.runPromise(
-      runOpenCommand({
-        json: args.json,
-        provider: args.provider,
-        session: args.session,
-      }),
-    );
+    await runOpenCommand({
+      json: args.json,
+      provider: args.provider,
+      session: args.session,
+    });
   },
 });
 
@@ -63,81 +59,68 @@ export type OpenArgs = {
  * Opens (looks up) a session and restores it when lifecycle is enabled.
  *
  * @param args - Decoded command-line arguments.
- * @returns Effect that writes open output and sets exit codes.
- * @example
- * ```ts
- * import { Effect } from 'effect';
- * import { runOpenCommand } from './open-command.js';
- *
- * await Effect.runPromise(
- *   runOpenCommand({ json: true, provider: 'codex', session: 'cold' }),
- * );
- * ```
  */
-export const runOpenCommand = (
-  args: OpenArgs,
-): Effect.Effect<void, Error | Error | Error | SessionAccessLogError | Error> =>
-  Effect.gen(function* () {
-    const home = requireHome(args.home);
+export const runOpenCommand = async (args: OpenArgs): Promise<void> => {
+  const home = requireHome(args.home);
 
-    if (home === undefined) {
-      return;
-    }
+  if (home === undefined) {
+    return;
+  }
 
-    const sessionSelector = args.session?.trim() ?? '';
+  const sessionSelector = args.session?.trim() ?? '';
 
-    if (sessionSelector.length === 0) {
-      process.stderr.write(
-        'Missing session. Use agent-session-pack open [--provider codex] <session>.\n',
-      );
-      process.exitCode = 2;
-      return;
-    }
+  if (sessionSelector.length === 0) {
+    process.stderr.write(
+      'Missing session. Use agent-session-pack open [--provider codex] <session>.\n',
+    );
+    process.exitCode = 2;
+    return;
+  }
 
-    const provider = parseOptionalProvider(args.provider);
+  const provider = parseOptionalProvider(args.provider);
 
-    if (args.provider !== undefined && provider === undefined) {
-      process.stderr.write(`Unknown provider: ${args.provider}\n`);
-      process.exitCode = 2;
-      return;
-    }
+  if (args.provider !== undefined && provider === undefined) {
+    process.stderr.write(`Unknown provider: ${args.provider}\n`);
+    process.exitCode = 2;
+    return;
+  }
 
-    const setupConfig = yield* promiseAsEffect(() => readSetupConfig(home));
-    const restoreOnLaunchEnabled = isRestoreOnLaunchEnabled(setupConfig);
-    const vaultPath = args.vaultPath ?? setupConfig?.vaultPath ?? resolveDefaultVaultPath(home);
-    const compression = args.compression ?? createZstdCompression();
-    const now = args.now ?? new Date();
+  const setupConfig = await readSetupConfig(home);
+  const restoreOnLaunchEnabled = isRestoreOnLaunchEnabled(setupConfig);
+  const vaultPath = args.vaultPath ?? setupConfig?.vaultPath ?? resolveDefaultVaultPath(home);
+  const compression = args.compression ?? createZstdCompression();
+  const now = args.now ?? new Date();
 
-    // When lifecycle is off, open still restores (lookup path) so "look for session"
-    // always materializes packed history without needing a separate restore step.
-    // Lifecycle wrappers use preflight/ensure-restored for the enable gate.
-    const report = yield* ensureSessionRestored({
-      command: 'restore',
-      vaultPath,
-      selector: sessionSelector,
-      selectorMatch: 'fuzzy',
-      provider,
-      compression,
-      restoreOnLaunchEnabled,
-      requireLifecycleEnabled: false,
-    });
-
-    if (
-      (report.status === 'restored' || report.status === 'already-present') &&
-      report.provider !== undefined &&
-      report.sessionId !== undefined
-    ) {
-      yield* recordSessionAccess({
-        vaultPath,
-        provider: report.provider,
-        sessionId: report.sessionId,
-        accessedAt: now,
-      });
-    }
-
-    writeOpenOutput(report, restoreOnLaunchEnabled, args.json === true);
-    process.exitCode = openExitCode(report);
+  // When lifecycle is off, open still restores (lookup path) so "look for session"
+  // always materializes packed history without needing a separate restore step.
+  // Lifecycle wrappers use preflight/ensure-restored for the enable gate.
+  const report = await ensureSessionRestored({
+    command: 'restore',
+    vaultPath,
+    selector: sessionSelector,
+    selectorMatch: 'fuzzy',
+    provider,
+    compression,
+    restoreOnLaunchEnabled,
+    requireLifecycleEnabled: false,
   });
+
+  if (
+    (report.status === 'restored' || report.status === 'already-present') &&
+    report.provider !== undefined &&
+    report.sessionId !== undefined
+  ) {
+    await recordSessionAccess({
+      vaultPath,
+      provider: report.provider,
+      sessionId: report.sessionId,
+      accessedAt: now,
+    });
+  }
+
+  writeOpenOutput(report, restoreOnLaunchEnabled, args.json === true);
+  process.exitCode = openExitCode(report);
+};
 
 const writeOpenOutput = (
   report: EnsureRestoredReport,

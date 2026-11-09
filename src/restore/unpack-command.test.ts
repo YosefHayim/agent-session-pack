@@ -1,7 +1,6 @@
 import { mkdtemp, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Effect } from 'effect';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { copyCompression, writeColdSession } from '@/archive/fixtures.js';
 import { runPackCommand } from '@/pack/command.js';
@@ -50,34 +49,30 @@ describe('unpackCommand', () => {
     const session = await createColdCodexSession(home);
     process.env.HOME = home;
 
-    await Effect.runPromise(
-      runPackCommand({
-        allProviders: true,
-        apply: true,
-        compression: copyCompression,
-        confirmed: true,
-        dryRun: undefined,
-        json: true,
-        olderThan: '7d',
-        provider: undefined,
-        vaultPath,
-        yes: true,
-        now: new Date('2026-07-06T12:00:00.000Z'),
-      }),
-    );
+    await runPackCommand({
+      allProviders: true,
+      apply: true,
+      compression: copyCompression,
+      confirmed: true,
+      dryRun: undefined,
+      json: true,
+      olderThan: '7d',
+      provider: undefined,
+      vaultPath,
+      yes: true,
+      now: new Date('2026-07-06T12:00:00.000Z'),
+    });
 
-    await Effect.runPromise(
-      runUnpackCommand({
-        allProviders: true,
-        apply: true,
-        compression: copyCompression,
-        confirmed: true,
-        json: undefined,
-        provider: undefined,
-        vaultPath,
-        yes: true,
-      }),
-    );
+    await runUnpackCommand({
+      allProviders: true,
+      apply: true,
+      compression: copyCompression,
+      confirmed: true,
+      json: undefined,
+      provider: undefined,
+      vaultPath,
+      yes: true,
+    });
 
     await expect(readFile(session.path, 'utf8')).resolves.toBe(session.content);
     expect(writes.join('')).toContain('Unpack all providers');
@@ -87,17 +82,15 @@ describe('unpackCommand', () => {
   it('unpack exits with code 1 when HOME is unset', async () => {
     delete process.env.HOME;
 
-    await Effect.runPromise(
-      runUnpackCommand({
-        allProviders: true,
-        apply: undefined,
-        compression: copyCompression,
-        confirmed: undefined,
-        json: true,
-        provider: undefined,
-        yes: undefined,
-      }),
-    );
+    await runUnpackCommand({
+      allProviders: true,
+      apply: undefined,
+      compression: copyCompression,
+      confirmed: undefined,
+      json: true,
+      provider: undefined,
+      yes: undefined,
+    });
 
     expect(process.exitCode).toBe(1);
     const stderr = writes.join('');
@@ -110,19 +103,17 @@ describe('unpackCommand', () => {
     const home = await createWorkspace();
     process.env.HOME = home;
 
-    await Effect.runPromise(
-      runUnpackCommand({
-        allProviders: true,
-        apply: true,
-        compression: copyCompression,
-        confirmed: false,
-        home,
-        json: true,
-        provider: undefined,
-        vaultPath: join(home, '.agent-session-pack-test'),
-        yes: undefined,
-      }),
-    );
+    await runUnpackCommand({
+      allProviders: true,
+      apply: true,
+      compression: copyCompression,
+      confirmed: false,
+      home,
+      json: true,
+      provider: undefined,
+      vaultPath: join(home, '.agent-session-pack-test'),
+      yes: undefined,
+    });
 
     expect(process.exitCode).toBe(2);
     expect(writes.join('')).toContain('Cancelled. Re-run with --apply and confirm with y');
@@ -132,19 +123,17 @@ describe('unpackCommand', () => {
     const home = await createWorkspace();
     process.env.HOME = home;
 
-    await Effect.runPromise(
-      runUnpackCommand({
-        allProviders: true,
-        apply: false,
-        compression: copyCompression,
-        confirmed: undefined,
-        home,
-        json: true,
-        provider: 'codex',
-        vaultPath: join(home, '.agent-session-pack-test'),
-        yes: undefined,
-      }),
-    );
+    await runUnpackCommand({
+      allProviders: true,
+      apply: false,
+      compression: copyCompression,
+      confirmed: undefined,
+      home,
+      json: true,
+      provider: 'codex',
+      vaultPath: join(home, '.agent-session-pack-test'),
+      yes: undefined,
+    });
 
     const payload = JSON.parse(writes.join('')) as {
       readonly rows: ReadonlyArray<unknown>;

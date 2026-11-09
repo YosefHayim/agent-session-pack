@@ -1,7 +1,6 @@
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Effect } from 'effect';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { resolveConfigPath } from '@/setup/config.js';
 import { runLifecycleCommand } from './command.js';
@@ -33,14 +32,12 @@ describe('lifecycle command', () => {
     const home = await mkdtemp(join(tmpdir(), 'asp-lifecycle-'));
     const now = new Date('2026-07-07T00:00:00.000Z');
 
-    await Effect.runPromise(
-      runLifecycleCommand({
-        action: 'enable',
-        json: true,
-        home,
-        now,
-      }),
-    );
+    await runLifecycleCommand({
+      action: 'enable',
+      json: true,
+      home,
+      now,
+    });
 
     expect(process.exitCode).toBeUndefined();
     expect(JSON.parse(stdoutWrites.join(''))).toMatchObject({
@@ -64,26 +61,22 @@ describe('lifecycle command', () => {
     expect(config.restoreOnLaunch).toBe(true);
 
     stdoutWrites.length = 0;
-    await Effect.runPromise(
-      runLifecycleCommand({
-        action: 'status',
-        json: true,
-        home,
-      }),
-    );
+    await runLifecycleCommand({
+      action: 'status',
+      json: true,
+      home,
+    });
     expect(JSON.parse(stdoutWrites.join(''))).toMatchObject({
       restoreOnLaunch: true,
     });
 
     stdoutWrites.length = 0;
-    await Effect.runPromise(
-      runLifecycleCommand({
-        action: 'disable',
-        json: true,
-        home,
-        now,
-      }),
-    );
+    await runLifecycleCommand({
+      action: 'disable',
+      json: true,
+      home,
+      now,
+    });
     expect(JSON.parse(stdoutWrites.join(''))).toMatchObject({
       restoreOnLaunch: false,
       action: 'disable',
@@ -99,14 +92,12 @@ describe('lifecycle command', () => {
 
     process.argv[1] = runningCliPath;
     try {
-      await Effect.runPromise(
-        runLifecycleCommand({
-          action: 'enable',
-          json: true,
-          home,
-          now: new Date('2026-07-07T00:00:00.000Z'),
-        }),
-      );
+      await runLifecycleCommand({
+        action: 'enable',
+        json: true,
+        home,
+        now: new Date('2026-07-07T00:00:00.000Z'),
+      });
     } finally {
       process.argv.splice(0, process.argv.length, ...argvBeforeTest);
     }
@@ -120,13 +111,11 @@ describe('lifecycle command', () => {
   it('rejects unknown lifecycle actions', async () => {
     const home = await mkdtemp(join(tmpdir(), 'asp-lifecycle-bad-'));
 
-    await Effect.runPromise(
-      runLifecycleCommand({
-        action: 'explode',
-        json: true,
-        home,
-      }),
-    );
+    await runLifecycleCommand({
+      action: 'explode',
+      json: true,
+      home,
+    });
 
     expect(process.exitCode).toBe(2);
     expect(stderrWrites.join('')).toContain('Unknown lifecycle action');

@@ -1,4 +1,3 @@
-import { Effect } from 'effect';
 import type { DiscoveredSession } from '@/session-model.js';
 import type { ScanReport } from './stores.js';
 
@@ -35,18 +34,10 @@ export const formatHumanScan = (report: ScanReport): string => {
  * Writes scan output for terminal users.
  *
  * @param report - Scan report to render.
- * @returns Effect completing after output.
- * @example
- * ```ts
- * import { renderHumanScan } from './output.js';
- *
- * renderHumanScan(report);
- * ```
  */
-export const renderHumanScan = (report: ScanReport): Effect.Effect<void> =>
-  Effect.sync(() => {
-    console.log(formatHumanScan(report));
-  });
+export const renderHumanScan = (report: ScanReport): void => {
+  console.log(formatHumanScan(report));
+};
 
 const formatSessionRow = (session: DiscoveredSession): string => {
   const provider = session.provider.padEnd(10);
@@ -82,15 +73,7 @@ const formatJsonScan = (report: ScanReport): string => `${JSON.stringify(report,
  * Writes scan output for agents.
  *
  * @param report - Scan report to render.
- * @returns Effect completing after output.
- * @example
- * ```ts
- * import { renderJsonScan } from './output.js';
- *
- * renderJsonScan(report);
- * ```
  */
-export const renderJsonScan = (report: ScanReport): Effect.Effect<void> =>
-  Effect.sync(() => {
-    process.stdout.write(formatJsonScan(report));
-  });
+export const renderJsonScan = (report: ScanReport): void => {
+  process.stdout.write(formatJsonScan(report));
+};

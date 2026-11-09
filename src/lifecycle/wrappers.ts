@@ -1,9 +1,8 @@
 import { chmod, mkdir, readdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { Effect, Schema } from 'effect';
 import { resolveWrappersBinPath } from './session-access.js';
 
-const WRAPPER_PROVIDERS = [
+const WRAPPER_PROVIDERS: ReadonlyArray<string> = [
   'codex',
   'claude',
   'grok',
@@ -11,18 +10,7 @@ const WRAPPER_PROVIDERS = [
   'kimi',
   'opencode',
   'kiro',
-] as const;
-
-/**
- * Typed error raised when provider launch wrappers cannot be installed or removed.
- */
-export class LifecycleWrapperError extends Schema.TaggedError<LifecycleWrapperError>()(
-  'LifecycleWrapperError',
-  {
-    path: Schema.String,
-    message: Schema.String,
-  },
-) {}
+];
 
 /**
  * Inputs required to install lifecycle provider wrappers.
@@ -36,36 +24,20 @@ export type InstallLifecycleWrappersRequest = {
  * Installs thin provider wrappers that preflight-restore packed sessions before exec.
  *
  * @param request - Install fields for vault path and CLI entrypoint.
- * @returns Effect with the wrappers bin directory path.
- * @example
- * ```ts
- * import { installLifecycleWrappers } from './wrappers.js';
- *
- * await Effect.runPromise(
- *   installLifecycleWrappers({
- *     vaultPath: '/Users/me/.agent-session-pack',
- *     cliEntrypoint: '/path/to/agent-session-pack/dist/cli/main.js',
- *   }),
- * );
- * ```
+ * @returns The wrappers bin directory path.
  */
-export const installLifecycleWrappers = (
+export const installLifecycleWrappers = async (
   request: InstallLifecycleWrappersRequest,
-): Effect.Effect<string, LifecycleWrapperError> => {
+): Promise<string> => {
   const binPath = resolveWrappersBinPath(request.vaultPath);
 
-  return Effect.tryPromise({
-    try: async () => {
-      await mkdir(binPath, { recursive: true });
-      await writeProviderWrappers(binPath, request.cliEntrypoint);
-      return binPath;
-    },
-    catch: (cause) =>
-      new LifecycleWrapperError({
-        path: binPath,
-        message: String(cause),
-      }),
-  });
+  try {
+    await mkdir(binPath, { recursive: true });
+    await writeProviderWrappers(binPath, request.cliEntrypoint);
+    return binPath;
+  } catch (cause) {
+    throw new Error(String(cause), { cause });
+  }
 };
 
 const writeProviderWrappers = async (binPath: string, cliEntrypoint: string): Promise<void> => {
@@ -85,41 +57,35 @@ const writeProviderWrappers = async (binPath: string, cliEntrypoint: string): Pr
  * Removes installed provider launch wrappers from the vault bin directory.
  *
  * @param vaultPath - Vault root path.
- * @returns Effect completing after removal.
- * @example
- * ```ts
- * import { uninstallLifecycleWrappers } from './wrappers.js';
- *
- * await Effect.runPromise(uninstallLifecycleWrappers('/Users/me/.agent-session-pack'));
- * ```
  */
-export const uninstallLifecycleWrappers = (
-  vaultPath: string,
-): Effect.Effect<void, LifecycleWrapperError> => {
+export const uninstallLifecycleWrappers = async (vaultPath: string): Promise<void> => {
   const binPath = resolveWrappersBinPath(vaultPath);
 
-  return Effect.tryPromise({
-    try: async () => {
-      const entries = await readdir(binPath).catch((cause: unknown) => {
-        if (isEnoent(cause)) {
-          return [];
-        }
+  try {
+    const entries = await listWrapperEntries(binPath);
 
-        return Promise.reject(cause);
-      });
-
-      for (const entry of entries) {
-        if ((WRAPPER_PROVIDERS as ReadonlyArray<string>).includes(entry)) {
-          await rm(join(binPath, entry), { force: true });
-        }
+    for (const entry of entries) {
+      const isWrapperEntry = WRAPPER_PROVIDERS.includes(entry);
+      if (isWrapperEntry) {
+        await rm(join(binPath, entry), { force: true });
       }
-    },
-    catch: (cause) =>
-      new LifecycleWrapperError({
-        path: binPath,
-        message: String(cause),
-      }),
-  });
+    }
+  } catch (cause) {
+    throw new Error(String(cause), { cause });
+  }
+};
+
+const listWrapperEntries = async (binPath: string): Promise<string[]> => {
+  try {
+    return await readdir(binPath);
+  } catch (cause) {
+    const isThereNoBinDirectory = isEnoent(cause);
+    if (isThereNoBinDirectory) {
+      return [];
+    }
+
+    throw cause;
+  }
 };
 
 const buildWrapperScript = (request: {

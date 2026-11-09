@@ -1,7 +1,6 @@
 import { mkdtemp, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Effect } from 'effect';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { copyCompression, writeColdSession } from '@/archive/fixtures.js';
 import { runPackCommand } from './command.js';
@@ -49,21 +48,19 @@ describe('packCommand', () => {
     const session = await createColdCodexSession(home);
     process.env.HOME = home;
 
-    await Effect.runPromise(
-      runPackCommand({
-        allProviders: true,
-        apply: true,
-        compression: copyCompression,
-        confirmed: true,
-        dryRun: undefined,
-        json: undefined,
-        olderThan: '7d',
-        provider: undefined,
-        vaultPath,
-        yes: true,
-        now: new Date('2026-07-06T12:00:00.000Z'),
-      }),
-    );
+    await runPackCommand({
+      allProviders: true,
+      apply: true,
+      compression: copyCompression,
+      confirmed: true,
+      dryRun: undefined,
+      json: undefined,
+      olderThan: '7d',
+      provider: undefined,
+      vaultPath,
+      yes: true,
+      now: new Date('2026-07-06T12:00:00.000Z'),
+    });
 
     await expect(readFile(session.path, 'utf8')).resolves.toContain(
       'agent-session-pack-archived-stub',
@@ -81,22 +78,20 @@ describe('packCommand', () => {
     const home = await createWorkspace();
     process.env.HOME = home;
 
-    await Effect.runPromise(
-      runPackCommand({
-        allProviders: true,
-        apply: true,
-        compression: copyCompression,
-        confirmed: true,
-        dryRun: undefined,
-        json: undefined,
-        max: true,
-        olderThan: undefined,
-        provider: undefined,
-        vaultPath: join(home, '.agent-session-pack-test'),
-        yes: true,
-        now: new Date('2026-07-06T12:00:00.000Z'),
-      }),
-    );
+    await runPackCommand({
+      allProviders: true,
+      apply: true,
+      compression: copyCompression,
+      confirmed: true,
+      dryRun: undefined,
+      json: undefined,
+      max: true,
+      olderThan: undefined,
+      provider: undefined,
+      vaultPath: join(home, '.agent-session-pack-test'),
+      yes: true,
+      now: new Date('2026-07-06T12:00:00.000Z'),
+    });
 
     expect(process.exitCode).toBe(2);
     expect(writes.join('')).toContain('Refusing --max with --apply');
@@ -105,19 +100,17 @@ describe('packCommand', () => {
   it('pack exits with code 1 when HOME is unset', async () => {
     delete process.env.HOME;
 
-    await Effect.runPromise(
-      runPackCommand({
-        allProviders: true,
-        apply: undefined,
-        compression: copyCompression,
-        confirmed: undefined,
-        dryRun: true,
-        json: true,
-        olderThan: '7d',
-        provider: undefined,
-        yes: undefined,
-      }),
-    );
+    await runPackCommand({
+      allProviders: true,
+      apply: undefined,
+      compression: copyCompression,
+      confirmed: undefined,
+      dryRun: true,
+      json: true,
+      olderThan: '7d',
+      provider: undefined,
+      yes: undefined,
+    });
 
     expect(process.exitCode).toBe(1);
     const stderr = writes.join('');
@@ -130,21 +123,19 @@ describe('packCommand', () => {
     const home = await createWorkspace();
     process.env.HOME = home;
 
-    await Effect.runPromise(
-      runPackCommand({
-        allProviders: true,
-        apply: true,
-        compression: copyCompression,
-        confirmed: false,
-        dryRun: undefined,
-        home,
-        json: true,
-        olderThan: '7d',
-        provider: undefined,
-        vaultPath: join(home, '.agent-session-pack-test'),
-        yes: undefined,
-      }),
-    );
+    await runPackCommand({
+      allProviders: true,
+      apply: true,
+      compression: copyCompression,
+      confirmed: false,
+      dryRun: undefined,
+      home,
+      json: true,
+      olderThan: '7d',
+      provider: undefined,
+      vaultPath: join(home, '.agent-session-pack-test'),
+      yes: undefined,
+    });
 
     expect(process.exitCode).toBe(2);
     expect(writes.join('')).toContain('Cancelled. Re-run with --apply and confirm with y');
@@ -155,22 +146,20 @@ describe('packCommand', () => {
     await createColdCodexSession(home);
     process.env.HOME = home;
 
-    await Effect.runPromise(
-      runPackCommand({
-        allProviders: true,
-        apply: false,
-        compression: copyCompression,
-        confirmed: undefined,
-        dryRun: true,
-        home,
-        json: true,
-        olderThan: '7d',
-        provider: 'codex',
-        vaultPath: join(home, '.agent-session-pack-test'),
-        yes: undefined,
-        now: new Date('2026-07-06T12:00:00.000Z'),
-      }),
-    );
+    await runPackCommand({
+      allProviders: true,
+      apply: false,
+      compression: copyCompression,
+      confirmed: undefined,
+      dryRun: true,
+      home,
+      json: true,
+      olderThan: '7d',
+      provider: 'codex',
+      vaultPath: join(home, '.agent-session-pack-test'),
+      yes: undefined,
+      now: new Date('2026-07-06T12:00:00.000Z'),
+    });
 
     const payload = JSON.parse(writes.join('')) as {
       readonly rows: ReadonlyArray<{ readonly provider: string; readonly status: string }>;
@@ -184,20 +173,18 @@ describe('packCommand', () => {
     const home = await createWorkspace();
     process.env.HOME = home;
 
-    await Effect.runPromise(
-      runPackCommand({
-        allProviders: undefined,
-        apply: undefined,
-        compression: copyCompression,
-        confirmed: undefined,
-        dryRun: true,
-        home,
-        json: true,
-        olderThan: '7d',
-        provider: 'unknown-agent',
-        yes: undefined,
-      }),
-    );
+    await runPackCommand({
+      allProviders: undefined,
+      apply: undefined,
+      compression: copyCompression,
+      confirmed: undefined,
+      dryRun: true,
+      home,
+      json: true,
+      olderThan: '7d',
+      provider: 'unknown-agent',
+      yes: undefined,
+    });
 
     expect(process.exitCode).toBe(2);
     expect(writes.join('')).toContain('Unknown provider: unknown-agent');

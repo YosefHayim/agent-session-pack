@@ -1,4 +1,3 @@
-import { Effect } from 'effect';
 import { HOME_NOT_SET_CANCEL_MESSAGE } from '@/home-env.js';
 import type { InteractiveCliRequest } from '@/interactive-cli-request.js';
 import { DEFAULT_COLD_AFTER_MS } from '@/pack/plan.js';
@@ -41,5 +40,5 @@ export const runReviewSessions = async (
   });
 
   request.prompts.note(formatProviderInventoryTable(inventory), 'Provider sessions');
-  await Effect.runPromise(runScanCommand({}));
+  await runScanCommand({});
 };

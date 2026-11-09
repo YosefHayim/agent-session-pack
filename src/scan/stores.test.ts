@@ -1,13 +1,8 @@
 import { mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Effect, Either } from 'effect';
 import { describe, expect, it } from 'vitest';
-import {
-  type DiscoveredSession,
-  type ProviderAdapter,
-  ProviderDiscoveryError,
-} from '@/session-model.js';
+import type { DiscoveredSession, ProviderAdapter } from '@/session-model.js';
 import { discoverStoreSessions, scanStores } from './stores.js';
 
 const createWorkspace = (): Promise<string> =>
@@ -34,18 +29,16 @@ describe('scanStores', () => {
       label: 'Codex',
       mode: 'archive',
       defaultRoots: (home) => [join(home, '.codex', 'sessions')],
-      discover: (store) => Effect.succeed(store.path === codexRoot ? [session] : []),
+      discover: (store) => Promise.resolve(store.path === codexRoot ? [session] : []),
     };
 
-    const report = await Effect.runPromise(
-      scanStores({
-        stores: [
-          { provider: 'codex', path: codexRoot },
-          { provider: 'claude', path: join(workspace, 'claude') },
-        ],
-        providers: [provider],
-      }),
-    );
+    const report = await scanStores({
+      stores: [
+        { provider: 'codex', path: codexRoot },
+        { provider: 'claude', path: join(workspace, 'claude') },
+      ],
+      providers: [provider],
+    });
 
     expect(report.sessions).toEqual([session]);
   });
@@ -54,25 +47,19 @@ describe('scanStores', () => {
     const workspace = await createWorkspace();
     const storePath = join(workspace, 'codex');
     await mkdir(storePath, { recursive: true });
-    const discoveryError = new ProviderDiscoveryError({
-      provider: 'codex',
-      path: storePath,
-      message: 'store disappeared',
-    });
+    const discoveryError = new Error('store disappeared');
     const provider: ProviderAdapter = {
       id: 'codex',
       label: 'Codex',
       mode: 'archive',
       defaultRoots: () => [storePath],
-      discover: () =>
-        Effect.promise(() => rm(storePath, { recursive: true })).pipe(
-          Effect.zipRight(Effect.fail(discoveryError)),
-        ),
+      discover: async () => {
+        await rm(storePath, { recursive: true });
+        throw discoveryError;
+      },
     };
 
-    const sessions = await Effect.runPromise(
-      discoverStoreSessions(provider, { provider: 'codex', path: storePath }),
-    );
+    const sessions = await discoverStoreSessions(provider, { provider: 'codex', path: storePath });
 
     expect(sessions).toEqual([]);
   });
@@ -81,27 +68,17 @@ describe('scanStores', () => {
     const workspace = await createWorkspace();
     const storePath = join(workspace, 'codex');
     await mkdir(storePath, { recursive: true });
-    const discoveryError = new ProviderDiscoveryError({
-      provider: 'codex',
-      path: storePath,
-      message: 'permission denied',
-    });
+    const discoveryError = new Error('permission denied');
     const provider: ProviderAdapter = {
       id: 'codex',
       label: 'Codex',
       mode: 'archive',
       defaultRoots: () => [storePath],
-      discover: () => Effect.fail(discoveryError),
+      discover: () => Promise.reject(discoveryError),
     };
 
-    const discovery = await Effect.runPromise(
-      Effect.either(discoverStoreSessions(provider, { provider: 'codex', path: storePath })),
-    );
-
-    expect(Either.isLeft(discovery)).toBe(true);
-    if (Either.isRight(discovery)) {
-      expect.fail('expected an existing store discovery error to be preserved');
-    }
-    expect(discovery.left).toBe(discoveryError);
+    await expect(
+      discoverStoreSessions(provider, { provider: 'codex', path: storePath }),
+    ).rejects.toBe(discoveryError);
   });
 });

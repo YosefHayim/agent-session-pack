@@ -3,7 +3,6 @@ import type * as NodeFs from 'node:fs';
 import { copyFile, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Effect } from 'effect';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { copyCompression } from '@/archive/fixtures.js';
 import { writeSessionManifest } from '@/archive/manifest-store.js';
@@ -49,29 +48,25 @@ const writeArchivedCodexStub = async (
   await mkdir(join(vaultPath, 'archives', 'codex'), { recursive: true });
   await mkdir(join(home, '.codex', 'sessions'), { recursive: true });
   await writeFile(archivePath, content);
-  await Effect.runPromise(
-    writeSessionManifest(join(vaultPath, 'manifests', 'codex', 'cold.json'), {
-      sessionId: 'cold',
-      provider: 'codex',
-      title: 'cold',
-      slug: 'cold',
-      originalPath: filePath,
-      archivePath,
-      sourceSha256: createHash('sha256').update(content).digest('hex'),
-      sourceBytes: Buffer.byteLength(content, 'utf8'),
-      archiveBytes: Buffer.byteLength(content, 'utf8'),
-      archivedAt: '2026-07-01T00:00:00.000Z',
-      sourceKind: 'file',
-    }),
-  );
-  await Effect.runPromise(
-    writeArchivedStub({
-      originalPath: filePath,
-      sessionId: 'cold',
-      provider: 'codex',
-      sourceKind: 'file',
-    }),
-  );
+  await writeSessionManifest(join(vaultPath, 'manifests', 'codex', 'cold.json'), {
+    sessionId: 'cold',
+    provider: 'codex',
+    title: 'cold',
+    slug: 'cold',
+    originalPath: filePath,
+    archivePath,
+    sourceSha256: createHash('sha256').update(content).digest('hex'),
+    sourceBytes: Buffer.byteLength(content, 'utf8'),
+    archiveBytes: Buffer.byteLength(content, 'utf8'),
+    archivedAt: '2026-07-01T00:00:00.000Z',
+    sourceKind: 'file',
+  });
+  await writeArchivedStub({
+    originalPath: filePath,
+    sessionId: 'cold',
+    provider: 'codex',
+    sourceKind: 'file',
+  });
 
   return { vaultPath, filePath, content };
 };
@@ -79,18 +74,16 @@ const writeArchivedCodexStub = async (
 const startCodexWatch = (vaultPath: string, compression: CompressionAdapter): WatchRun => {
   const control = { stopped: false };
   const events: string[] = [];
-  const watchPromise = Effect.runPromise(
-    watchSessionStubs({
-      vaultPath,
-      provider: 'codex',
-      compression,
-      pollIntervalMs: 80,
-      shouldStop: () => control.stopped,
-      onEvent: (event) => {
-        events.push(event.status);
-      },
-    }),
-  );
+  const watchPromise = watchSessionStubs({
+    vaultPath,
+    provider: 'codex',
+    compression,
+    pollIntervalMs: 80,
+    shouldStop: () => control.stopped,
+    onEvent: (event) => {
+      events.push(event.status);
+    },
+  });
 
   return {
     events,
@@ -137,11 +130,10 @@ describe('sessionWatch', () => {
     const decompressedPaths: string[] = [];
     const countingCompression: CompressionAdapter = {
       compress: copyCompression.compress,
-      decompress: ({ archivePath, restoredPath }) =>
-        Effect.promise(() => {
-          decompressedPaths.push(restoredPath);
-          return copyFile(archivePath, restoredPath);
-        }),
+      decompress: async ({ archivePath, restoredPath }) => {
+        decompressedPaths.push(restoredPath);
+        await copyFile(archivePath, restoredPath);
+      },
     };
     const watchRun = startCodexWatch(session.vaultPath, countingCompression);
 

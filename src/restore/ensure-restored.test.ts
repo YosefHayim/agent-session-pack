@@ -1,7 +1,6 @@
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Effect } from 'effect';
 import { describe, expect, it } from 'vitest';
 import { copyCompression, createArchiveProvider, writeColdSession } from '@/archive/fixtures.js';
 import { packProviderSessions } from '@/pack/sessions.js';
@@ -42,56 +41,50 @@ describe('ensureSessionRestored', () => {
         id: 'codex',
         mode: 'archive',
         rootRelative: join('.codex', 'sessions'),
-        discover: () => Effect.succeed([discovered]),
+        discover: () => Promise.resolve([discovered]),
       }),
     ];
 
-    await Effect.runPromise(
-      packProviderSessions({
-        home,
-        vaultPath,
-        providers,
-        olderThan: '7d',
-        olderThanMs: 7 * 24 * 60 * 60 * 1000,
-        now,
-        apply: true,
-        compression: copyCompression,
-      }),
-    );
+    await packProviderSessions({
+      home,
+      vaultPath,
+      providers,
+      olderThan: '7d',
+      olderThanMs: 7 * 24 * 60 * 60 * 1000,
+      now,
+      apply: true,
+      compression: copyCompression,
+    });
     const stubAfterPack = JSON.parse(await readFile(session.path, 'utf8')) as {
       agentSessionPack: string;
     };
     expect(stubAfterPack.agentSessionPack).toBe('agent-session-pack-archived-stub');
 
-    const disabled = await Effect.runPromise(
-      ensureSessionRestored({
-        command: 'ensure-restored',
-        vaultPath,
-        selector: 'ensure-session',
-        selectorMatch: 'exact',
-        provider: 'codex',
-        compression: copyCompression,
-        restoreOnLaunchEnabled: false,
-        requireLifecycleEnabled: true,
-      }),
-    );
+    const disabled = await ensureSessionRestored({
+      command: 'ensure-restored',
+      vaultPath,
+      selector: 'ensure-session',
+      selectorMatch: 'exact',
+      provider: 'codex',
+      compression: copyCompression,
+      restoreOnLaunchEnabled: false,
+      requireLifecycleEnabled: true,
+    });
     expect(disabled.status).toBe('lifecycle-disabled');
     await expect(readFile(session.path, 'utf8')).resolves.toContain(
       'agent-session-pack-archived-stub',
     );
 
-    const restored = await Effect.runPromise(
-      ensureSessionRestored({
-        command: 'ensure-restored',
-        vaultPath,
-        selector: 'codex:ensure-session',
-        selectorMatch: 'exact',
-        provider: undefined,
-        compression: copyCompression,
-        restoreOnLaunchEnabled: true,
-        requireLifecycleEnabled: true,
-      }),
-    );
+    const restored = await ensureSessionRestored({
+      command: 'ensure-restored',
+      vaultPath,
+      selector: 'codex:ensure-session',
+      selectorMatch: 'exact',
+      provider: undefined,
+      compression: copyCompression,
+      restoreOnLaunchEnabled: true,
+      requireLifecycleEnabled: true,
+    });
     expect(restored).toMatchObject({
       status: 'restored',
       provider: 'codex',
@@ -100,33 +93,29 @@ describe('ensureSessionRestored', () => {
     });
     await expect(readFile(session.path, 'utf8')).resolves.toBe(content);
 
-    const alreadyPresent = await Effect.runPromise(
-      ensureSessionRestored({
-        command: 'restore',
-        vaultPath,
-        selector: 'ensure-session',
-        selectorMatch: 'exact',
-        provider: 'codex',
-        compression: copyCompression,
-        restoreOnLaunchEnabled: true,
-        requireLifecycleEnabled: false,
-      }),
-    );
+    const alreadyPresent = await ensureSessionRestored({
+      command: 'restore',
+      vaultPath,
+      selector: 'ensure-session',
+      selectorMatch: 'exact',
+      provider: 'codex',
+      compression: copyCompression,
+      restoreOnLaunchEnabled: true,
+      requireLifecycleEnabled: false,
+    });
     expect(alreadyPresent.status).toBe('already-present');
 
     await writeFile(session.path, '{"type":"user","text":"changed live"}\n');
-    const conflict = await Effect.runPromise(
-      ensureSessionRestored({
-        command: 'restore',
-        vaultPath,
-        selector: 'ensure-session',
-        selectorMatch: 'exact',
-        provider: 'codex',
-        compression: copyCompression,
-        restoreOnLaunchEnabled: true,
-        requireLifecycleEnabled: false,
-      }),
-    );
+    const conflict = await ensureSessionRestored({
+      command: 'restore',
+      vaultPath,
+      selector: 'ensure-session',
+      selectorMatch: 'exact',
+      provider: 'codex',
+      compression: copyCompression,
+      restoreOnLaunchEnabled: true,
+      requireLifecycleEnabled: false,
+    });
     expect(conflict.status).toBe('conflict');
     await expect(readFile(session.path, 'utf8')).resolves.toBe(
       '{"type":"user","text":"changed live"}\n',

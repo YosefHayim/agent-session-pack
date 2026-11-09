@@ -1,5 +1,4 @@
-import { Effect, Schema } from 'effect';
-import { type SessionManifest, SessionManifestSchema } from '@/archive/manifest-store.js';
+import type { SessionManifest } from '@/archive/manifest-store.js';
 import { type ProviderId, ProviderIdSchema } from '@/session-model.js';
 
 /**
@@ -18,98 +17,56 @@ export type SessionSelectorRequest = {
   readonly match: SelectorMatch;
 };
 
+/**
+ * Outcome of resolving a selector: one session, no session, or several candidates.
+ */
+export type SessionSelection =
+  | { readonly status: 'found'; readonly manifest: SessionManifest }
+  | { readonly status: 'not-found' }
+  | { readonly status: 'ambiguous'; readonly candidates: ReadonlyArray<SessionManifest> };
+
 type ParsedSelector = {
   readonly provider: ProviderId | undefined;
   readonly query: string;
 };
 
 /**
- * Typed error raised when a selector matches no session.
- */
-export class SessionSelectorNotFoundError extends Schema.TaggedError<SessionSelectorNotFoundError>()(
-  'SessionSelectorNotFoundError',
-  {
-    selector: Schema.String,
-  },
-) {}
-
-/**
- * Typed error raised when a selector matches more than one session.
- */
-export class SessionSelectorAmbiguousError extends Schema.TaggedError<SessionSelectorAmbiguousError>()(
-  'SessionSelectorAmbiguousError',
-  {
-    selector: Schema.String,
-    candidates: Schema.Array(SessionManifestSchema),
-  },
-) {}
-
-/**
- * Union of errors a selector resolution can produce.
- */
-export type SessionSelectorError = SessionSelectorNotFoundError | SessionSelectorAmbiguousError;
-
-const isProviderId = Schema.is(ProviderIdSchema);
-
-/**
  * Resolves a human or agent selector to one vault manifest.
  *
  * Exact id, name, or slug matches win. In `fuzzy` mode an id prefix comes next, then
  * sessions whose name or slug contains every word of the selector.
- *
- * @param request - Selector text, optional provider, vault manifests, and match mode.
- * @returns Effect containing the resolved manifest or a typed selector error.
- * @example
- * ```ts
- * import { resolveSessionSelector } from './session-selector.js';
- *
- * const manifest = await Effect.runPromise(
- *   resolveSessionSelector({
- *     selector: 'codex:fix-login',
- *     provider: undefined,
- *     manifests,
- *     match: 'fuzzy',
- *   }),
- * );
- * ```
  */
-export const resolveSessionSelector = (
-  request: SessionSelectorRequest,
-): Effect.Effect<SessionManifest, SessionSelectorError> =>
-  Effect.gen(function* () {
-    const parsed = parseSelector(request.selector);
-    const provider = request.provider ?? parsed.provider;
-    const candidates = request.manifests.filter(
-      (manifest) => provider === undefined || manifest.provider === provider,
-    );
-    const matches = matchingManifests(parsed.query, candidates, request.match);
+export const resolveSessionSelector = (request: SessionSelectorRequest): SessionSelection => {
+  const parsed = parseSelector(request.selector);
+  const provider = request.provider ?? parsed.provider;
+  const candidates = request.manifests.filter(
+    (manifest) => provider === undefined || manifest.provider === provider,
+  );
+  const matches = matchingManifests(parsed.query, candidates, request.match);
+  const isNoMatch = matches.length === 0;
+  const isAmbiguous = matches.length > 1;
 
-    if (matches.length === 0) {
-      return yield* Effect.fail(
-        new SessionSelectorNotFoundError({
-          selector: request.selector,
-        }),
-      );
-    }
+  if (isNoMatch) {
+    return { status: 'not-found' };
+  }
 
-    if (matches.length > 1) {
-      return yield* Effect.fail(
-        new SessionSelectorAmbiguousError({
-          selector: request.selector,
-          candidates: matches,
-        }),
-      );
-    }
+  if (isAmbiguous) {
+    return { status: 'ambiguous', candidates: matches };
+  }
 
-    return matches[0];
-  });
+  return { status: 'found', manifest: matches[0] };
+};
+
+const isProviderId = (value: string): value is ProviderId =>
+  ProviderIdSchema.safeParse(value).success;
 
 const parseSelector = (selector: string): ParsedSelector => {
   const trimmedSelector = selector.trim();
   const separatorIndex = trimmedSelector.indexOf(':');
   const prefix = trimmedSelector.slice(0, separatorIndex).toLowerCase();
+  const isPrefixProvider = separatorIndex !== -1 && isProviderId(prefix);
 
-  if (separatorIndex === -1 || !isProviderId(prefix)) {
+  if (!isPrefixProvider) {
     return {
       provider: undefined,
       query: trimmedSelector.toLowerCase(),

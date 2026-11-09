@@ -1,9 +1,7 @@
 import { defineCommand } from 'citty';
-import { Effect } from 'effect';
 import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
-import { promiseAsEffect } from '@/effect-bridge.js';
 import { requireHome } from '@/home-env.js';
 import { parseOptionalProvider } from '@/providers/flag.js';
 import { isRestoreOnLaunchEnabled, readSetupConfig } from '@/setup/config.js';
@@ -35,13 +33,11 @@ export const ensureRestoredCommand = defineCommand({
     },
   },
   run: async ({ args }) => {
-    await Effect.runPromise(
-      runEnsureRestoredCommand({
-        json: args.json,
-        provider: args.provider,
-        session: args.session,
-      }),
-    );
+    await runEnsureRestoredCommand({
+      json: args.json,
+      provider: args.provider,
+      session: args.session,
+    });
   },
 });
 
@@ -61,66 +57,51 @@ export type EnsureRestoredArgs = {
  * Runs ensure-restored for human and agent callers.
  *
  * @param args - Decoded command-line arguments.
- * @returns Effect that writes ensure-restored output and sets exit codes.
- * @example
- * ```ts
- * import { Effect } from 'effect';
- * import { runEnsureRestoredCommand } from './ensure-restored-command.js';
- *
- * await Effect.runPromise(
- *   runEnsureRestoredCommand({
- *     json: true,
- *     provider: 'codex',
- *     session: 'cold',
- *   }),
- * );
- * ```
  */
-export const runEnsureRestoredCommand = (args: EnsureRestoredArgs): Effect.Effect<void, Error> =>
-  Effect.gen(function* () {
-    const home = requireHome(args.home);
+export const runEnsureRestoredCommand = async (args: EnsureRestoredArgs): Promise<void> => {
+  const home = requireHome(args.home);
 
-    if (home === undefined) {
-      return;
-    }
+  if (home === undefined) {
+    return;
+  }
 
-    const sessionSelector = args.session?.trim() ?? '';
+  const sessionSelector = args.session?.trim() ?? '';
 
-    if (sessionSelector.length === 0) {
-      process.stderr.write(
-        'Missing session selector. Use agent-session-pack ensure-restored [--provider codex] <session>.\n',
-      );
-      process.exitCode = 2;
-      return;
-    }
+  if (sessionSelector.length === 0) {
+    process.stderr.write(
+      'Missing session selector. Use agent-session-pack ensure-restored [--provider codex] <session>.\n',
+    );
+    process.exitCode = 2;
+    return;
+  }
 
-    const provider = parseOptionalProvider(args.provider);
+  const provider = parseOptionalProvider(args.provider);
 
-    if (args.provider !== undefined && provider === undefined) {
-      process.stderr.write(`Unknown provider: ${args.provider}\n`);
-      process.exitCode = 2;
-      return;
-    }
+  if (args.provider !== undefined && provider === undefined) {
+    process.stderr.write(`Unknown provider: ${args.provider}\n`);
+    process.exitCode = 2;
+    return;
+  }
 
-    const setupConfig = yield* promiseAsEffect(() => readSetupConfig(home));
-    const vaultPath = args.vaultPath ?? setupConfig?.vaultPath ?? resolveDefaultVaultPath(home);
-    const restoreOnLaunchEnabled = isRestoreOnLaunchEnabled(setupConfig);
-    const compression = args.compression ?? createZstdCompression();
+  const setupConfig = await readSetupConfig(home);
+  const vaultPath = args.vaultPath ?? setupConfig?.vaultPath ?? resolveDefaultVaultPath(home);
+  const restoreOnLaunchEnabled = isRestoreOnLaunchEnabled(setupConfig);
+  const compression = args.compression ?? createZstdCompression();
 
-    const report = yield* ensureSessionRestored({
-      command: 'ensure-restored',
-      vaultPath,
-      selector: sessionSelector,
-      selectorMatch: 'exact',
-      provider,
-      compression,
-      restoreOnLaunchEnabled,
-      requireLifecycleEnabled: true,
-    });
-
-    writeEnsureRestoredOutput(report, args.json === true);
-    process.exitCode = ensureRestoredExitCode(report);
+  const report = await ensureSessionRestored({
+    command: 'ensure-restored',
+    vaultPath,
+    selector: sessionSelector,
+    selectorMatch: 'exact',
+    provider,
+    compression,
+    restoreOnLaunchEnabled,
+    requireLifecycleEnabled: true,
   });
+
+  writeEnsureRestoredOutput(report, args.json === true);
+  process.exitCode = ensureRestoredExitCode(report);
+};
 
 const writeEnsureRestoredOutput = (report: EnsureRestoredReport, json: boolean): void => {
   if (json) {

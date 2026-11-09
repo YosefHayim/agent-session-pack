@@ -1,7 +1,5 @@
 import { defineCommand } from 'citty';
-import { Effect } from 'effect';
 import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
-import { promiseAsEffect } from '@/effect-bridge.js';
 import { requireHome } from '@/home-env.js';
 import { DEFAULT_COLD_AFTER } from '@/pack/plan.js';
 import {
@@ -11,11 +9,7 @@ import {
   writeSetupConfig,
 } from '@/setup/config.js';
 import { resolveWrappersBinPath } from './session-access.js';
-import {
-  installLifecycleWrappers,
-  type LifecycleWrapperError,
-  uninstallLifecycleWrappers,
-} from './wrappers.js';
+import { installLifecycleWrappers, uninstallLifecycleWrappers } from './wrappers.js';
 
 /**
  * Citty command that enables, disables, or shows continuous restore/pack lifecycle.
@@ -38,12 +32,10 @@ export const lifecycleCommand = defineCommand({
     },
   },
   run: async ({ args }) => {
-    await Effect.runPromise(
-      runLifecycleCommand({
-        action: args.action,
-        json: args.json,
-      }),
-    );
+    await runLifecycleCommand({
+      action: args.action,
+      json: args.json,
+    });
   },
 });
 
@@ -61,97 +53,87 @@ export type LifecycleArgs = {
 /**
  * Runs lifecycle enable/disable/status for human and agent callers.
  *
- * @param args - Decoded command-line arguments.
- * @returns Effect that writes lifecycle output and may persist setup config.
- * @example
- * ```ts
- * import { Effect } from 'effect';
- * import { runLifecycleCommand } from './command.js';
+ * Writes lifecycle output and may persist setup config.
  *
- * await Effect.runPromise(runLifecycleCommand({ action: 'status', json: true }));
- * ```
+ * @param args - Decoded command-line arguments.
  */
-export const runLifecycleCommand = (
-  args: LifecycleArgs,
-): Effect.Effect<void, Error | LifecycleWrapperError> =>
-  Effect.gen(function* () {
-    const home = requireHome(args.home);
+export const runLifecycleCommand = async (args: LifecycleArgs): Promise<void> => {
+  const home = requireHome(args.home);
 
-    if (home === undefined) {
-      return;
-    }
+  if (home === undefined) {
+    return;
+  }
 
-    const action = args.action?.trim().toLowerCase();
+  const action = args.action?.trim().toLowerCase();
 
-    if (action !== 'enable' && action !== 'disable' && action !== 'status') {
-      process.stderr.write('Unknown lifecycle action. Use enable, disable, or status.\n');
-      process.exitCode = 2;
-      return;
-    }
+  if (action !== 'enable' && action !== 'disable' && action !== 'status') {
+    process.stderr.write('Unknown lifecycle action. Use enable, disable, or status.\n');
+    process.exitCode = 2;
+    return;
+  }
 
-    const existingConfig = yield* promiseAsEffect(() => readSetupConfig(home));
-    const now = args.now ?? new Date();
-    const vaultPath = existingConfig?.vaultPath ?? resolveDefaultVaultPath(home);
-    const wrappersBin = resolveWrappersBinPath(vaultPath);
-    const cliEntrypoint = args.cliEntrypoint ?? pickCliEntrypoint();
+  const existingConfig = await readSetupConfig(home);
+  const now = args.now ?? new Date();
+  const vaultPath = existingConfig?.vaultPath ?? resolveDefaultVaultPath(home);
+  const wrappersBin = resolveWrappersBinPath(vaultPath);
+  const cliEntrypoint = args.cliEntrypoint ?? pickCliEntrypoint();
+  const isJsonOutput = args.json === true;
 
-    if (action === 'status') {
-      writeLifecycleStatus(
-        {
-          restoreOnLaunch: isRestoreOnLaunchEnabled(existingConfig),
-          restoreCacheAfter: existingConfig?.restoreCacheAfter,
-          coldAfter: existingConfig?.coldAfter,
-          vaultPath,
-          wrappersBin,
-          pathHint: `export PATH="${wrappersBin}:$PATH"`,
-          configPresent: existingConfig !== undefined,
-          openCommand: 'agent-session-pack open --provider <id> <session> --json',
-          maintainCommand: 'agent-session-pack maintain --dry-run --json',
-        },
-        args.json === true,
-      );
-      return;
-    }
-
-    const nextConfig = buildLifecycleConfig({
-      existingConfig,
-      home,
-      now,
-      restoreOnLaunch: action === 'enable',
-    });
-
-    yield* promiseAsEffect(() =>
-      writeSetupConfig({
-        home,
-        config: nextConfig,
-      }),
-    );
-
-    if (action === 'enable') {
-      yield* installLifecycleWrappers({
-        vaultPath: nextConfig.vaultPath,
-        cliEntrypoint,
-      });
-    } else {
-      yield* uninstallLifecycleWrappers(nextConfig.vaultPath);
-    }
-
+  if (action === 'status') {
     writeLifecycleStatus(
       {
-        restoreOnLaunch: nextConfig.restoreOnLaunch === true,
-        restoreCacheAfter: nextConfig.restoreCacheAfter,
-        coldAfter: nextConfig.coldAfter,
-        vaultPath: nextConfig.vaultPath,
-        wrappersBin: resolveWrappersBinPath(nextConfig.vaultPath),
-        pathHint: `export PATH="${resolveWrappersBinPath(nextConfig.vaultPath)}:$PATH"`,
-        configPresent: true,
-        action,
+        restoreOnLaunch: isRestoreOnLaunchEnabled(existingConfig),
+        restoreCacheAfter: existingConfig?.restoreCacheAfter,
+        coldAfter: existingConfig?.coldAfter,
+        vaultPath,
+        wrappersBin,
+        pathHint: `export PATH="${wrappersBin}:$PATH"`,
+        configPresent: existingConfig !== undefined,
         openCommand: 'agent-session-pack open --provider <id> <session> --json',
-        maintainCommand: 'agent-session-pack maintain --apply --yes --json',
+        maintainCommand: 'agent-session-pack maintain --dry-run --json',
       },
-      args.json === true,
+      isJsonOutput,
     );
+    return;
+  }
+
+  const nextConfig = buildLifecycleConfig({
+    existingConfig,
+    home,
+    now,
+    restoreOnLaunch: action === 'enable',
   });
+
+  await writeSetupConfig({
+    home,
+    config: nextConfig,
+  });
+
+  if (action === 'enable') {
+    await installLifecycleWrappers({
+      vaultPath: nextConfig.vaultPath,
+      cliEntrypoint,
+    });
+  } else {
+    await uninstallLifecycleWrappers(nextConfig.vaultPath);
+  }
+
+  writeLifecycleStatus(
+    {
+      restoreOnLaunch: nextConfig.restoreOnLaunch === true,
+      restoreCacheAfter: nextConfig.restoreCacheAfter,
+      coldAfter: nextConfig.coldAfter,
+      vaultPath: nextConfig.vaultPath,
+      wrappersBin: resolveWrappersBinPath(nextConfig.vaultPath),
+      pathHint: `export PATH="${resolveWrappersBinPath(nextConfig.vaultPath)}:$PATH"`,
+      configPresent: true,
+      action,
+      openCommand: 'agent-session-pack open --provider <id> <session> --json',
+      maintainCommand: 'agent-session-pack maintain --apply --yes --json',
+    },
+    isJsonOutput,
+  );
+};
 
 const buildLifecycleConfig = (request: {
   readonly existingConfig: SetupConfig | undefined;

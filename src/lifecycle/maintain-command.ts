@@ -1,10 +1,8 @@
 import { defineCommand } from 'citty';
-import { Effect } from 'effect';
 import { resolveApplyConfirmation } from '@/apply-confirmation.js';
 import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
-import { promiseAsEffect } from '@/effect-bridge.js';
 import { requireHome } from '@/home-env.js';
 import { formatHumanPackReport } from '@/pack/output.js';
 import { DEFAULT_COLD_AFTER, parseDurationMs } from '@/pack/plan.js';
@@ -47,15 +45,13 @@ export const maintainCommand = defineCommand({
       yes: args.yes,
     });
 
-    await Effect.runPromise(
-      runMaintainCommand({
-        apply: args.apply,
-        confirmed,
-        dryRun: args['dry-run'],
-        json: args.json,
-        yes: args.yes,
-      }),
-    );
+    await runMaintainCommand({
+      apply: args.apply,
+      confirmed,
+      dryRun: args['dry-run'],
+      json: args.json,
+      yes: args.yes,
+    });
   },
 });
 
@@ -74,70 +70,69 @@ type MaintainArgs = {
   readonly vaultPath?: string | undefined;
 };
 
-const runMaintainCommand = (args: MaintainArgs): Effect.Effect<void, Error> =>
-  Effect.gen(function* () {
-    const home = requireHome(args.home);
+const runMaintainCommand = async (args: MaintainArgs): Promise<void> => {
+  const home = requireHome(args.home);
 
-    if (home === undefined) {
-      return;
-    }
+  if (home === undefined) {
+    return;
+  }
 
-    const setupConfig = yield* promiseAsEffect(() => readSetupConfig(home));
+  const setupConfig = await readSetupConfig(home);
 
-    if (!isRestoreOnLaunchEnabled(setupConfig)) {
-      process.stderr.write(
-        'Lifecycle is disabled. Run `agent-session-pack lifecycle enable` for continuous maintain, or use `pack` directly.\n',
-      );
-      process.exitCode = 3;
-      return;
-    }
-
-    if (args.apply === true && args.confirmed !== true) {
-      process.stderr.write(
-        'Cancelled. Re-run with --apply and confirm with y (or --yes) to pack cold sessions.\n',
-      );
-      process.exitCode = 2;
-      return;
-    }
-
-    const olderThan = setupConfig?.coldAfter ?? DEFAULT_COLD_AFTER;
-    const coldAfter = olderThan.trim().toLowerCase();
-    const olderThanMs = parseDurationMs(coldAfter);
-    const vaultPath = args.vaultPath ?? setupConfig?.vaultPath ?? resolveDefaultVaultPath(home);
-    const apply = args.apply === true;
-    const archiveProviders = allProviders.filter((provider) => provider.mode === 'archive');
-
-    const report = yield* packProviderSessions({
-      home,
-      vaultPath,
-      providers: archiveProviders,
-      olderThan,
-      olderThanMs,
-      now: args.now ?? new Date(),
-      apply,
-      compression: args.compression ?? createZstdCompression(),
-    });
-
-    if (args.json === true) {
-      process.stdout.write(
-        `${JSON.stringify(
-          {
-            command: 'maintain',
-            lifecycleEnabled: true,
-            olderThan,
-            pack: report,
-          },
-          null,
-          2,
-        )}\n`,
-      );
-      return;
-    }
-
-    process.stdout.write(
-      [
-        `maintain: cold pack (${apply ? 'apply' : 'dry-run'}) olderThan=${olderThan}`,
-        formatHumanPackReport(report, { olderThan }),
-      ].join('\n'),
+  if (!isRestoreOnLaunchEnabled(setupConfig)) {
+    process.stderr.write(
+      'Lifecycle is disabled. Run `agent-session-pack lifecycle enable` for continuous maintain, or use `pack` directly.\n',
     );
+    process.exitCode = 3;
+    return;
+  }
+
+  if (args.apply === true && args.confirmed !== true) {
+    process.stderr.write(
+      'Cancelled. Re-run with --apply and confirm with y (or --yes) to pack cold sessions.\n',
+    );
+    process.exitCode = 2;
+    return;
+  }
+
+  const olderThan = setupConfig?.coldAfter ?? DEFAULT_COLD_AFTER;
+  const coldAfter = olderThan.trim().toLowerCase();
+  const olderThanMs = parseDurationMs(coldAfter);
+  const vaultPath = args.vaultPath ?? setupConfig?.vaultPath ?? resolveDefaultVaultPath(home);
+  const apply = args.apply === true;
+  const archiveProviders = allProviders.filter((provider) => provider.mode === 'archive');
+
+  const report = await packProviderSessions({
+    home,
+    vaultPath,
+    providers: archiveProviders,
+    olderThan,
+    olderThanMs,
+    now: args.now ?? new Date(),
+    apply,
+    compression: args.compression ?? createZstdCompression(),
   });
+
+  if (args.json === true) {
+    process.stdout.write(
+      `${JSON.stringify(
+        {
+          command: 'maintain',
+          lifecycleEnabled: true,
+          olderThan,
+          pack: report,
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    return;
+  }
+
+  process.stdout.write(
+    [
+      `maintain: cold pack (${apply ? 'apply' : 'dry-run'}) olderThan=${olderThan}`,
+      formatHumanPackReport(report, { olderThan }),
+    ].join('\n'),
+  );
+};

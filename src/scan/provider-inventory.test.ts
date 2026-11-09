@@ -1,7 +1,6 @@
 import { mkdir, mkdtemp, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Effect } from 'effect';
 import { describe, expect, it } from 'vitest';
 import { codexProvider } from '@/providers/codex.js';
 import type { ProviderAdapter } from '@/session-model.js';
@@ -36,14 +35,12 @@ describe('provider inventory', () => {
       new Date('2026-07-05T12:00:00.000Z'),
     );
 
-    const report = await Effect.runPromise(
-      inspectProviderInventory({
-        home,
-        providers: [codexProvider],
-        olderThanMs,
-        now,
-      }),
-    );
+    const report = await inspectProviderInventory({
+      home,
+      providers: [codexProvider],
+      olderThanMs,
+      now,
+    });
 
     expect(report.rows).toEqual([
       {
@@ -70,7 +67,7 @@ describe('provider inventory', () => {
       mode: 'backup-only',
       defaultRoots: () => [root],
       discover: () =>
-        Effect.succeed([
+        Promise.resolve([
           {
             id: 'devin-session',
             provider: 'devin',
@@ -85,14 +82,12 @@ describe('provider inventory', () => {
 
     await mkdir(root, { recursive: true });
 
-    const report = await Effect.runPromise(
-      inspectProviderInventory({
-        home,
-        providers: [provider],
-        olderThanMs,
-        now,
-      }),
-    );
+    const report = await inspectProviderInventory({
+      home,
+      providers: [provider],
+      olderThanMs,
+      now,
+    });
 
     expect(report.rows[0]).toMatchObject({
       provider: 'devin',

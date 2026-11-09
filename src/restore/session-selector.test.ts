@@ -1,13 +1,6 @@
-import { Effect } from 'effect';
 import { describe, expect, it } from 'vitest';
 import type { SessionManifest } from '@/archive/manifest-store.js';
-import {
-  resolveSessionSelector,
-  SessionSelectorAmbiguousError,
-  type SessionSelectorError,
-  SessionSelectorNotFoundError,
-  type SessionSelectorRequest,
-} from './session-selector.js';
+import { resolveSessionSelector, type SessionSelectorRequest } from './session-selector.js';
 
 type SelectorQuery = Omit<SessionSelectorRequest, 'manifests'>;
 
@@ -45,71 +38,71 @@ const MANIFESTS: ReadonlyArray<SessionManifest> = [
   manifestFor({ sessionId: 'abcdef', provider: 'codex', title: 'Long id', slug: 'long-id' }),
 ];
 
-const resolvedSessionId = async (query: SelectorQuery): Promise<string> => {
-  const resolution = resolveSessionSelector({ ...query, manifests: MANIFESTS });
-  const manifest = await Effect.runPromise(resolution);
-  return manifest.sessionId;
-};
-
-const selectorFailure = (query: SelectorQuery): Promise<SessionSelectorError> => {
-  const resolution = resolveSessionSelector({ ...query, manifests: MANIFESTS });
-  return Effect.runPromise(Effect.flip(resolution));
-};
+const selectionFor = (query: SelectorQuery) =>
+  resolveSessionSelector({ ...query, manifests: MANIFESTS });
 
 describe('session selector', () => {
-  it('resolves a provider-prefixed slug', async () => {
-    await expect(
-      resolvedSessionId({
-        selector: 'codex:oly-app-migration',
-        provider: undefined,
-        match: 'fuzzy',
-      }),
-    ).resolves.toBe('019a2f10-oly');
+  it('resolves a provider-prefixed slug', () => {
+    const selection = selectionFor({
+      selector: 'codex:oly-app-migration',
+      provider: undefined,
+      match: 'fuzzy',
+    });
+
+    expect(selection).toMatchObject({ status: 'found', manifest: { sessionId: '019a2f10-oly' } });
   });
 
-  it('resolves an exact session name in any case', async () => {
-    await expect(
-      resolvedSessionId({
-        selector: 'kiro CLIMB game blueprint',
-        provider: undefined,
-        match: 'exact',
-      }),
-    ).resolves.toBe('kiro-1');
+  it('resolves an exact session name in any case', () => {
+    const selection = selectionFor({
+      selector: 'kiro CLIMB game blueprint',
+      provider: undefined,
+      match: 'exact',
+    });
+
+    expect(selection).toMatchObject({ status: 'found', manifest: { sessionId: 'kiro-1' } });
   });
 
-  it('resolves a unique session id prefix', async () => {
-    await expect(
-      resolvedSessionId({ selector: '019a', provider: undefined, match: 'fuzzy' }),
-    ).resolves.toBe('019a2f10-oly');
+  it('resolves a unique session id prefix', () => {
+    const selection = selectionFor({ selector: '019a', provider: undefined, match: 'fuzzy' });
+
+    expect(selection).toMatchObject({ status: 'found', manifest: { sessionId: '019a2f10-oly' } });
   });
 
-  it('prefers an exact id over longer ids that share it', async () => {
-    await expect(
-      resolvedSessionId({ selector: 'abc', provider: undefined, match: 'fuzzy' }),
-    ).resolves.toBe('abc');
+  it('prefers an exact id over longer ids that share it', () => {
+    const selection = selectionFor({ selector: 'abc', provider: undefined, match: 'fuzzy' });
+
+    expect(selection).toMatchObject({ status: 'found', manifest: { sessionId: 'abc' } });
   });
 
-  it('resolves words found in the session name', async () => {
-    await expect(
-      resolvedSessionId({ selector: 'climb blueprint', provider: undefined, match: 'fuzzy' }),
-    ).resolves.toBe('kiro-1');
+  it('resolves words found in the session name', () => {
+    const selection = selectionFor({
+      selector: 'climb blueprint',
+      provider: undefined,
+      match: 'fuzzy',
+    });
+
+    expect(selection).toMatchObject({ status: 'found', manifest: { sessionId: 'kiro-1' } });
   });
 
-  it('narrows fuzzy words to the provider flag', async () => {
-    await expect(
-      resolvedSessionId({ selector: 'oly migration', provider: 'claude', match: 'fuzzy' }),
-    ).resolves.toBe('c7e4-notes');
+  it('narrows fuzzy words to the provider flag', () => {
+    const selection = selectionFor({
+      selector: 'oly migration',
+      provider: 'claude',
+      match: 'fuzzy',
+    });
+
+    expect(selection).toMatchObject({ status: 'found', manifest: { sessionId: 'c7e4-notes' } });
   });
 
-  it('returns every candidate when a selector is ambiguous', async () => {
-    const failure = await selectorFailure({
+  it('returns every candidate when a selector is ambiguous', () => {
+    const selection = selectionFor({
       selector: 'oly migration',
       provider: undefined,
       match: 'fuzzy',
     });
 
-    expect(failure).toBeInstanceOf(SessionSelectorAmbiguousError);
-    expect(failure).toMatchObject({
+    expect(selection).toMatchObject({
+      status: 'ambiguous',
       candidates: [
         expect.objectContaining({ sessionId: '019a2f10-oly' }),
         expect.objectContaining({ sessionId: 'c7e4-notes' }),
@@ -117,18 +110,29 @@ describe('session selector', () => {
     });
   });
 
-  it('ignores id prefixes and words in exact mode', async () => {
-    await expect(
-      selectorFailure({ selector: 'abcd', provider: undefined, match: 'exact' }),
-    ).resolves.toBeInstanceOf(SessionSelectorNotFoundError);
-    await expect(
-      selectorFailure({ selector: 'climb blueprint', provider: undefined, match: 'exact' }),
-    ).resolves.toBeInstanceOf(SessionSelectorNotFoundError);
+  it('ignores id prefixes and words in exact mode', () => {
+    const idPrefixSelection = selectionFor({
+      selector: 'abcd',
+      provider: undefined,
+      match: 'exact',
+    });
+    const wordSelection = selectionFor({
+      selector: 'climb blueprint',
+      provider: undefined,
+      match: 'exact',
+    });
+
+    expect(idPrefixSelection).toEqual({ status: 'not-found' });
+    expect(wordSelection).toEqual({ status: 'not-found' });
   });
 
-  it('matches nothing for a selector without words', async () => {
-    await expect(
-      selectorFailure({ selector: 'codex: ?? ', provider: undefined, match: 'fuzzy' }),
-    ).resolves.toBeInstanceOf(SessionSelectorNotFoundError);
+  it('matches nothing for a selector without words', () => {
+    const selection = selectionFor({
+      selector: 'codex: ?? ',
+      provider: undefined,
+      match: 'fuzzy',
+    });
+
+    expect(selection).toEqual({ status: 'not-found' });
   });
 });

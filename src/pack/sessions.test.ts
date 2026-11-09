@@ -1,7 +1,6 @@
 import { mkdtemp, readFile, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Effect } from 'effect';
 import { describe, expect, it } from 'vitest';
 import { copyCompression, createArchiveProvider, writeColdSession } from '@/archive/fixtures.js';
 import type { DiscoveredSession, ProviderAdapter } from '@/session-model.js';
@@ -77,40 +76,38 @@ describe('packProviderSessions', () => {
         id: 'codex',
         mode: 'archive',
         rootRelative: join('.codex', 'sessions'),
-        discover: () => Effect.succeed([coldDiscovered]),
+        discover: () => Promise.resolve([coldDiscovered]),
       }),
       createArchiveProvider({
         id: 'claude',
         mode: 'archive',
         rootRelative: join('.claude', 'projects'),
-        discover: () => Effect.succeed([warmDiscovered]),
+        discover: () => Promise.resolve([warmDiscovered]),
       }),
       createArchiveProvider({
         id: 'cursor',
         mode: 'backup-only',
         rootRelative: join('.cursor', 'projects'),
-        discover: () => Effect.succeed([backupDiscovered]),
+        discover: () => Promise.resolve([backupDiscovered]),
       }),
       createArchiveProvider({
         id: 'kiro',
         mode: 'archive',
         rootRelative: join('.kiro', 'sessions'),
-        discover: () => Effect.succeed([]),
+        discover: () => Promise.resolve([]),
       }),
     ];
 
-    const report = await Effect.runPromise(
-      packProviderSessions({
-        home,
-        vaultPath,
-        providers,
-        olderThan: '24h',
-        olderThanMs,
-        now,
-        apply: false,
-        compression: copyCompression,
-      }),
-    );
+    const report = await packProviderSessions({
+      home,
+      vaultPath,
+      providers,
+      olderThan: '24h',
+      olderThanMs,
+      now,
+      apply: false,
+      compression: copyCompression,
+    });
 
     expect(report.command).toBe('pack');
     expect(report.apply).toBe(false);

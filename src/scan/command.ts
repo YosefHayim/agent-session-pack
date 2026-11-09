@@ -1,5 +1,4 @@
 import { defineCommand } from 'citty';
-import { Effect, Schema } from 'effect';
 import { requireHome } from '@/home-env.js';
 import { selectProviders } from '@/providers/flag.js';
 import type { SessionStore } from '@/session-model.js';
@@ -7,54 +6,41 @@ import { renderHumanScan, renderJsonScan } from './output.js';
 import { scanStores } from './stores.js';
 
 /**
- * Schema describing the scan command arguments.
+ * Arguments for the scan command.
  */
-const ScanArgsSchema = Schema.Struct({
-  provider: Schema.optional(Schema.String),
-  json: Schema.optional(Schema.Boolean),
-});
+export interface ScanArgs {
+  readonly provider?: string;
+  readonly json?: boolean;
+}
 
 /**
- * Decoded arguments for the scan command.
+ * Scans provider stores and writes the sessions found for humans or agents.
  */
-export type ScanArgs = typeof ScanArgsSchema.Type;
+export const runScanCommand = async (args: ScanArgs): Promise<void> => {
+  const home = requireHome();
+  const isHomeMissing = home === undefined;
 
-/**
- * Runs the scan command for human and agent callers.
- *
- * @param args - Decoded command-line arguments.
- * @returns Effect that writes scan output.
- * @example
- * ```ts
- * import { Effect } from 'effect';
- * import { runScanCommand } from './command.js';
- *
- * await Effect.runPromise(runScanCommand({ json: true }));
- * ```
- */
-export const runScanCommand = (args: ScanArgs): Effect.Effect<void, Error> =>
-  Effect.gen(function* () {
-    const home = requireHome();
+  if (isHomeMissing) {
+    return;
+  }
 
-    if (home === undefined) {
-      return;
-    }
-
-    const providers = selectProviders(args.provider);
-    const stores = providers.flatMap((provider) =>
-      provider.defaultRoots(home).map((path): SessionStore => ({ provider: provider.id, path })),
-    );
-    const report = yield* scanStores({
-      providers,
-      stores,
-    });
-
-    if (args.json === true) {
-      return yield* renderJsonScan(report);
-    }
-
-    return yield* renderHumanScan(report);
+  const providers = selectProviders(args.provider);
+  const stores = providers.flatMap((provider) =>
+    provider.defaultRoots(home).map((path): SessionStore => ({ provider: provider.id, path })),
+  );
+  const report = await scanStores({
+    providers,
+    stores,
   });
+  const isJsonRequested = args.json === true;
+
+  if (isJsonRequested) {
+    renderJsonScan(report);
+    return;
+  }
+
+  renderHumanScan(report);
+};
 
 /**
  * Citty command that scans provider stores and estimates sessions.
@@ -77,11 +63,9 @@ export const scanCommand = defineCommand({
     },
   },
   run: async ({ args }) => {
-    await Effect.runPromise(
-      runScanCommand({
-        provider: args.provider,
-        json: args.json,
-      }),
-    );
+    await runScanCommand({
+      provider: args.provider,
+      json: args.json,
+    });
   },
 });

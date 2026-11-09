@@ -1,6 +1,5 @@
 import { appendFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { Effect, Schema } from 'effect';
 import type { ProviderId } from '@/session-model.js';
 
 /**
@@ -31,17 +30,6 @@ export type SessionHotCheckRequest = {
   readonly sessionId: string;
   readonly sinceMs: number;
 };
-
-/**
- * Typed error raised when the vault access log cannot be read or written.
- */
-export class SessionAccessLogError extends Schema.TaggedError<SessionAccessLogError>()(
-  'SessionAccessLogError',
-  {
-    path: Schema.String,
-    message: Schema.String,
-  },
-) {}
 
 const SESSION_ID_PATTERN =
   /\b([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{26,})\b/gi;
@@ -120,24 +108,8 @@ export const extractSessionIdsFromArgv = (argv: ReadonlyArray<string>): Readonly
  * Appends a session access event so maintain can keep hot sessions live.
  *
  * @param request - Access write fields for vault logging.
- * @returns Effect completing after the log append.
- * @example
- * ```ts
- * import { recordSessionAccess } from './session-access.js';
- *
- * await Effect.runPromise(
- *   recordSessionAccess({
- *     vaultPath: '/vault',
- *     provider: 'codex',
- *     sessionId: 'cold',
- *     accessedAt: new Date(),
- *   }),
- * );
- * ```
  */
-export const recordSessionAccess = (
-  request: RecordSessionAccessRequest,
-): Effect.Effect<void, SessionAccessLogError> => {
+export const recordSessionAccess = async (request: RecordSessionAccessRequest): Promise<void> => {
   const path = resolveAccessLogPath(request.vaultPath);
   const event: SessionAccessEvent = {
     provider: request.provider,
@@ -145,17 +117,12 @@ export const recordSessionAccess = (
     accessedAt: request.accessedAt.toISOString(),
   };
 
-  return Effect.tryPromise({
-    try: async () => {
-      await mkdir(request.vaultPath, { recursive: true });
-      await appendFile(path, `${JSON.stringify(event)}\n`);
-    },
-    catch: (cause) =>
-      new SessionAccessLogError({
-        path,
-        message: String(cause),
-      }),
-  });
+  try {
+    await mkdir(request.vaultPath, { recursive: true });
+    await appendFile(path, `${JSON.stringify(event)}\n`);
+  } catch (cause) {
+    throw new Error(String(cause), { cause });
+  }
 };
 
 /**

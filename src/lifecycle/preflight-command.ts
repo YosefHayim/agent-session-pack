@@ -1,18 +1,12 @@
 import { defineCommand } from 'citty';
-import { Effect, Schema } from 'effect';
 import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
-import { promiseAsEffect } from '@/effect-bridge.js';
 import { requireHome } from '@/home-env.js';
 import { type EnsureRestoredReport, ensureSessionRestored } from '@/restore/ensure-restored.js';
 import { type ProviderId, ProviderIdSchema } from '@/session-model.js';
 import { isRestoreOnLaunchEnabled, readSetupConfig } from '@/setup/config.js';
-import {
-  extractSessionIdsFromArgv,
-  recordSessionAccess,
-  type SessionAccessLogError,
-} from './session-access.js';
+import { extractSessionIdsFromArgv, recordSessionAccess } from './session-access.js';
 
 /**
  * Citty command used by provider wrappers to auto-restore sessions before launch.
@@ -37,13 +31,11 @@ export const preflightCommand = defineCommand({
   },
   run: async ({ args, rawArgs }) => {
     const passthrough = extractPassthroughArgv(rawArgs);
-    await Effect.runPromise(
-      runPreflightCommand({
-        json: args.json,
-        provider: args.provider,
-        passthroughArgv: passthrough,
-      }),
-    );
+    await runPreflightCommand({
+      json: args.json,
+      provider: args.provider,
+      passthroughArgv: passthrough,
+    });
   },
 });
 
@@ -63,117 +55,102 @@ export type PreflightArgs = {
 /**
  * Runs preflight restore for session ids discovered in provider argv.
  *
- * @param args - Provider, passthrough argv, and output flags.
- * @returns Effect that writes preflight JSON/human output; always exits 0 on soft failures.
- * @example
- * ```ts
- * import { Effect } from 'effect';
- * import { runPreflightCommand } from './preflight-command.js';
+ * Writes preflight JSON or human output. Always exits 0 on soft failures.
  *
- * await Effect.runPromise(
- *   runPreflightCommand({
- *     json: true,
- *     provider: 'codex',
- *     passthroughArgv: ['resume', 'session-id'],
- *   }),
- * );
- * ```
+ * @param args - Provider, passthrough argv, and output flags.
  */
-export const runPreflightCommand = (
-  args: PreflightArgs,
-): Effect.Effect<void, Error | Error | Error | SessionAccessLogError | Error> =>
-  Effect.gen(function* () {
-    const home = requireHome(args.home);
+export const runPreflightCommand = async (args: PreflightArgs): Promise<void> => {
+  const home = requireHome(args.home);
 
-    if (home === undefined) {
-      return;
-    }
+  if (home === undefined) {
+    return;
+  }
 
-    const provider = parseProvider(args.provider);
+  const provider = parseProvider(args.provider);
 
-    if (provider === undefined) {
-      process.stderr.write(`Unknown or missing provider: ${args.provider ?? ''}\n`);
-      process.exitCode = 2;
-      return;
-    }
+  if (provider === undefined) {
+    process.stderr.write(`Unknown or missing provider: ${args.provider ?? ''}\n`);
+    process.exitCode = 2;
+    return;
+  }
 
-    const setupConfig = yield* promiseAsEffect(() => readSetupConfig(home));
-    const restoreOnLaunchEnabled = isRestoreOnLaunchEnabled(setupConfig);
-    const vaultPath = args.vaultPath ?? setupConfig?.vaultPath ?? resolveDefaultVaultPath(home);
-    const compression = args.compression ?? createZstdCompression();
-    const now = args.now ?? new Date();
-    const sessionIds = extractSessionIdsFromArgv(args.passthroughArgv);
+  const setupConfig = await readSetupConfig(home);
+  const restoreOnLaunchEnabled = isRestoreOnLaunchEnabled(setupConfig);
+  const vaultPath = args.vaultPath ?? setupConfig?.vaultPath ?? resolveDefaultVaultPath(home);
+  const compression = args.compression ?? createZstdCompression();
+  const now = args.now ?? new Date();
+  const sessionIds = extractSessionIdsFromArgv(args.passthroughArgv);
+  const isJsonOutput = args.json === true;
 
-    if (!restoreOnLaunchEnabled) {
-      writePreflightOutput(
-        {
-          command: 'preflight',
-          provider,
-          restoreOnLaunchEnabled: false,
-          sessionIds,
-          restores: [],
-          reason: 'lifecycle disabled; no auto-restore',
-        },
-        args.json === true,
-      );
-      return;
-    }
-
-    if (sessionIds.length === 0) {
-      writePreflightOutput(
-        {
-          command: 'preflight',
-          provider,
-          restoreOnLaunchEnabled: true,
-          sessionIds: [],
-          restores: [],
-          reason: 'no session ids found in argv',
-        },
-        args.json === true,
-      );
-      return;
-    }
-
-    const restores: EnsureRestoredReport[] = [];
-
-    for (const sessionId of sessionIds) {
-      const report = yield* ensureSessionRestored({
-        command: 'ensure-restored',
-        vaultPath,
-        selector: sessionId,
-        selectorMatch: 'exact',
+  if (!restoreOnLaunchEnabled) {
+    writePreflightOutput(
+      {
+        command: 'preflight',
         provider,
-        compression,
-        restoreOnLaunchEnabled: true,
-        requireLifecycleEnabled: true,
-      });
-      restores.push(report);
+        restoreOnLaunchEnabled: false,
+        sessionIds,
+        restores: [],
+        reason: 'lifecycle disabled; no auto-restore',
+      },
+      isJsonOutput,
+    );
+    return;
+  }
 
-      if (
-        (report.status === 'restored' || report.status === 'already-present') &&
-        report.sessionId !== undefined
-      ) {
-        yield* recordSessionAccess({
-          vaultPath,
-          provider,
-          sessionId: report.sessionId,
-          accessedAt: now,
-        });
-      }
-    }
-
+  if (sessionIds.length === 0) {
     writePreflightOutput(
       {
         command: 'preflight',
         provider,
         restoreOnLaunchEnabled: true,
-        sessionIds,
-        restores,
-        reason: undefined,
+        sessionIds: [],
+        restores: [],
+        reason: 'no session ids found in argv',
       },
-      args.json === true,
+      isJsonOutput,
     );
-  });
+    return;
+  }
+
+  const restores: EnsureRestoredReport[] = [];
+
+  for (const sessionId of sessionIds) {
+    const report = await ensureSessionRestored({
+      command: 'ensure-restored',
+      vaultPath,
+      selector: sessionId,
+      selectorMatch: 'exact',
+      provider,
+      compression,
+      restoreOnLaunchEnabled: true,
+      requireLifecycleEnabled: true,
+    });
+    restores.push(report);
+
+    const isReportUsable = report.status === 'restored' || report.status === 'already-present';
+    const hasReportSessionId = report.sessionId !== undefined;
+    if (isReportUsable && hasReportSessionId) {
+      await recordSessionAccess({
+        vaultPath,
+        provider,
+        sessionId: report.sessionId,
+        accessedAt: now,
+      });
+    }
+  }
+
+  writePreflightOutput(
+    {
+      command: 'preflight',
+      provider,
+      restoreOnLaunchEnabled: true,
+      sessionIds,
+      restores,
+      reason: undefined,
+    },
+    isJsonOutput,
+  );
+};
 
 const extractPassthroughArgv = (rawArgs: ReadonlyArray<string>): ReadonlyArray<string> => {
   const separatorIndex = rawArgs.indexOf('--');
@@ -197,13 +174,13 @@ const parseProvider = (provider: string | undefined): ProviderId | undefined => 
     return undefined;
   }
 
-  const decoded = Schema.decodeUnknownEither(ProviderIdSchema)(provider);
+  const providerReply = ProviderIdSchema.safeParse(provider);
 
-  if (decoded._tag === 'Left') {
+  if (!providerReply.success) {
     return undefined;
   }
 
-  return decoded.right;
+  return providerReply.data;
 };
 
 const writePreflightOutput = (

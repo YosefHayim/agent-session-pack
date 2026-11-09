@@ -92,6 +92,31 @@ describe('lifecycle command', () => {
     await rm(home, { recursive: true, force: true });
   });
 
+  it('points the provider wrappers at the running CLI script', async () => {
+    const home = await mkdtemp(join(tmpdir(), 'asp-lifecycle-entry-'));
+    const runningCliPath = '/usr/local/lib/agent-session-pack/dist/cli/main.js';
+    const argvBeforeTest = [...process.argv];
+
+    process.argv[1] = runningCliPath;
+    try {
+      await Effect.runPromise(
+        runLifecycleCommand({
+          action: 'enable',
+          json: true,
+          home,
+          now: new Date('2026-07-07T00:00:00.000Z'),
+        }),
+      );
+    } finally {
+      process.argv.splice(0, process.argv.length, ...argvBeforeTest);
+    }
+
+    const { wrappersBin } = JSON.parse(stdoutWrites.join('')) as { wrappersBin: string };
+    const codexWrapper = await readFile(join(wrappersBin, 'codex'), 'utf8');
+    expect(codexWrapper).toContain(`CLI_ENTRY="${runningCliPath}"`);
+    await rm(home, { recursive: true, force: true });
+  });
+
   it('rejects unknown lifecycle actions', async () => {
     const home = await mkdtemp(join(tmpdir(), 'asp-lifecycle-bad-'));
 

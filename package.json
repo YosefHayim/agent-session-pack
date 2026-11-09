@@ -61,7 +61,7 @@
     "access": "public"
   },
   "scripts": {
-    "dev": "tsx src/cli/main.ts",
+    "dev": "tsx watch src/cli/main.ts",
     "dev:guide": "tsx src/cli/main.ts guide",
     "dev:savings": "tsx src/cli/main.ts savings",
     "prod": "pnpm build && node dist/cli/main.js",
@@ -69,7 +69,7 @@
     "test": "vitest run",
     "test:watch": "vitest watch",
     "test:integration": "vitest run --config vitest.integration.config.ts",
-    "typecheck": "tsc --noEmit --incremental --tsBuildInfoFile node_modules/.cache/tsc/agentSessionPack.tsbuildinfo",
+    "typecheck": "tsc --noEmit",
     "lint": "biome check . && knip",
     "lint:fix": "biome check --write .",
     "check": "turbo run lint typecheck test build --output-logs=errors-only",

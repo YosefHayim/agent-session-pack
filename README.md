@@ -65,17 +65,17 @@ No daemon, no cloud sync, no summarizing. Your sessions never leave your machine
 
 ## Supported agents
 
-| Agent | Mode | Session store |
-| --- | --- | --- |
-| Codex | Archive | `~/.codex/sessions` |
-| Claude Code | Archive | `~/.claude/projects` |
-| Kiro | Archive | `~/.kiro/sessions` |
-| Grok | Archive | `~/.grok/sessions` (whole session folders) |
-| Kimi Code | Archive | `~/.kimi-code/sessions` (whole session folders) |
-| OpenCode | Archive | `~/.local/share/opencode`, `~/.opencode` |
-| Gemini CLI | Archive | `~/.gemini`, `~/.gemini/tmp` |
-| Cursor | Backup-only | `~/Library/Application Support/Cursor` |
-| Devin | Backup-only | `~/.local/share/devin/cli` (reads `sessions.db` metadata only) |
+| Agent       | Mode        | Session store                                                  |
+| ----------- | ----------- | -------------------------------------------------------------- |
+| Codex       | Archive     | `~/.codex/sessions`                                            |
+| Claude Code | Archive     | `~/.claude/projects`                                           |
+| Kiro        | Archive     | `~/.kiro/sessions`                                             |
+| Grok        | Archive     | `~/.grok/sessions` (whole session folders)                     |
+| Kimi Code   | Archive     | `~/.kimi-code/sessions` (whole session folders)                |
+| OpenCode    | Archive     | `~/.local/share/opencode`, `~/.opencode`                       |
+| Gemini CLI  | Archive     | `~/.gemini`, `~/.gemini/tmp`                                   |
+| Cursor      | Backup-only | `~/Library/Application Support/Cursor`                         |
+| Devin       | Backup-only | `~/.local/share/devin/cli` (reads `sessions.db` metadata only) |
 
 **Archive** means sessions can be packed into the vault and restored. **Backup-only** means the agent is listed as supported, but its native store is never changed. Cursor discovery currently returns no sessions.
 
@@ -85,26 +85,26 @@ No daemon, no cloud sync, no summarizing. Your sessions never leave your machine
   <img src="https://raw.githubusercontent.com/YosefHayim/agent-session-pack/main/assets/benchmarks.svg" alt="Session storage before and after pack on one machine: Codex 2.22 GB to 782 MB, Claude Code 2.10 GB to 457 MB, Kiro 1.95 GB to 190 MB, Cursor backup 7.27 GB to 957 MB" width="820" />
 </p>
 
-| Agent | Before | After | Saved |
-| --- | ---: | ---: | ---: |
-| Codex | 2.22 GB | 782 MB | **65.6%** |
-| Claude Code | 2.10 GB | 457 MB | **78.7%** |
-| Kiro | 1.95 GB | 190 MB | **90.5%** |
-| Cursor (backup copy) | 7.27 GB | 957 MB | **87.1%** |
-| **Total** | **13.5 GB** | **2.3 GB** | **~83%** |
+| Agent                |      Before |      After |     Saved |
+| -------------------- | ----------: | ---------: | --------: |
+| Codex                |     2.22 GB |     782 MB | **65.6%** |
+| Claude Code          |     2.10 GB |     457 MB | **78.7%** |
+| Kiro                 |     1.95 GB |     190 MB | **90.5%** |
+| Cursor (backup copy) |     7.27 GB |     957 MB | **87.1%** |
+| **Total**            | **13.5 GB** | **2.3 GB** |  **~83%** |
 
 This is one machine's real session history, not a universal benchmark. Run `npx --yes agent-session-pack check` to measure yours; it only works on copies.
 
 ## Agent Session Pack vs. deleting or zipping
 
-| | **Agent Session Pack** | **Deleting old files** | **zstd or tar by hand** |
-| --- | --- | --- | --- |
-| Get the session back | Byte-exact, verified before removal | Gone for good | Only if you check it yourself |
-| Finds every agent's store | Built in for 9 agents | You hunt for paths | You hunt for paths |
-| Puts files back where the agent expects | Restore manifest per session | Not applicable | You track paths yourself |
-| Changed files on restore | Skipped, never overwritten | Not applicable | Overwritten silently |
-| Multi-file sessions (Grok, Kimi) | Packed as whole folders | Easy to half-delete | Easy to miss files |
-| Preview first | Dry-run is the default | No | No |
+|                                         | **Agent Session Pack**              | **Deleting old files** | **zstd or tar by hand**       |
+| --------------------------------------- | ----------------------------------- | ---------------------- | ----------------------------- |
+| Get the session back                    | Byte-exact, verified before removal | Gone for good          | Only if you check it yourself |
+| Finds every agent's store               | Built in for 9 agents               | You hunt for paths     | You hunt for paths            |
+| Puts files back where the agent expects | Restore manifest per session        | Not applicable         | You track paths yourself      |
+| Changed files on restore                | Skipped, never overwritten          | Not applicable         | Overwritten silently          |
+| Multi-file sessions (Grok, Kimi)        | Packed as whole folders             | Easy to half-delete    | Easy to miss files            |
+| Preview first                           | Dry-run is the default              | No                     | No                            |
 
 ## One-click AI setup
 
@@ -176,21 +176,21 @@ Prefer a guided menu? Run `npx --yes agent-session-pack` with no arguments in a 
 
 ## Commands
 
-| Command | What it does | Changes files |
-| --- | --- | --- |
-| `guide [--json]` | Safe command map for agents and automation | No |
-| `check [--json]` | No-install savings proof on copies | No |
-| `savings [--json]` | Same copy-only before/after proof | No |
-| `scan [--json]` | Lists session stores, sizes, and cold candidates | No |
-| `doctor [--json]` | Checks that `zstd` and `sqlite3` are installed | No |
-| `init` | Shows the vault policy; in a terminal, opens guided setup that writes the config | Config only |
-| `pack --dry-run` | Previews cold sessions to pack | No |
-| `pack --apply [--yes]` | Archives, verifies, then removes originals | Yes |
-| `unpack --apply [--yes]` | Restores archived sessions to their original paths | Yes |
-| `restore <selector>` | Restores one session by id, id prefix, name, slug, or words from its name | Yes |
-| `open <session>` | Finds a session the same way and restores it if packed | Yes |
-| `lifecycle enable\|disable\|status` | Installs or removes the auto-restore wrappers | Wrappers and config |
-| `maintain --apply [--yes]` | Re-packs sessions that went cold again | Yes |
+| Command                             | What it does                                                                     | Changes files       |
+| ----------------------------------- | -------------------------------------------------------------------------------- | ------------------- |
+| `guide [--json]`                    | Safe command map for agents and automation                                       | No                  |
+| `check [--json]`                    | No-install savings proof on copies                                               | No                  |
+| `savings [--json]`                  | Same copy-only before/after proof                                                | No                  |
+| `scan [--json]`                     | Lists session stores, sizes, and cold candidates                                 | No                  |
+| `doctor [--json]`                   | Checks that `zstd` and `sqlite3` are installed                                   | No                  |
+| `init`                              | Shows the vault policy; in a terminal, opens guided setup that writes the config | Config only         |
+| `pack --dry-run`                    | Previews cold sessions to pack                                                   | No                  |
+| `pack --apply [--yes]`              | Archives, verifies, then removes originals                                       | Yes                 |
+| `unpack --apply [--yes]`            | Restores archived sessions to their original paths                               | Yes                 |
+| `restore <selector>`                | Restores one session by id, id prefix, name, slug, or words from its name        | Yes                 |
+| `open <session>`                    | Finds a session the same way and restores it if packed                           | Yes                 |
+| `lifecycle enable\|disable\|status` | Installs or removes the auto-restore wrappers                                    | Wrappers and config |
+| `maintain --apply [--yes]`          | Re-packs sessions that went cold again                                           | Yes                 |
 
 `preflight`, `watch`, and `ensure-restored` are called by the lifecycle wrappers; you rarely run them yourself.
 
@@ -199,12 +199,12 @@ Common flags: `--provider <id>`, `--all-providers`, `--older-than`, `--json`. Ag
 <details>
 <summary><strong>Choosing <code>--older-than</code></strong></summary>
 
-| Value | Use it for |
-| --- | --- |
-| `12h` | A short cleanup window |
-| `1d` | Skip roughly today's active work |
-| `7d` | The default setup policy |
-| `30d` | A conservative archive pass |
+| Value             | Use it for                                                             |
+| ----------------- | ---------------------------------------------------------------------- |
+| `12h`             | A short cleanup window                                                 |
+| `1d`              | Skip roughly today's active work                                       |
+| `7d`              | The default setup policy                                               |
+| `30d`             | A conservative archive pass                                            |
 | `--max --dry-run` | Curiosity preview of every archive-mode session (never with `--apply`) |
 
 </details>
@@ -258,12 +258,12 @@ zstd -d -c examples/hello-world/archives/codex-session.jsonl.zst | shasum -a 256
 
 Agent Session Pack is intentionally narrow: it archives cold local session files and verifies byte-exact restore. It pairs well with usage, search, and disk-analysis tools.
 
-| Tool | Main focus | Difference |
-| --- | --- | --- |
-| [`ccusage`](https://ccusage.com/guide/) | Token and cost reports for coding agents | Explains usage; does not pack session stores. |
-| [`claude-code-history-viewer`](https://github.com/jhlee0409/claude-code-history-viewer) | Offline browsing and search of AI coding history | Views history; does not archive or restore. |
-| [`claude-code-cleaner`](https://github.com/garrickz2/claude-code-cleaner) | Claude Code disk cleanup | Claude only; no verified multi-agent vault. |
-| `zstd`, `tar`, backups, disk analyzers | Generic storage tools | Compress or find bytes; do not know agent sessions or restore paths. |
+| Tool                                                                                    | Main focus                                       | Difference                                                           |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------ | -------------------------------------------------------------------- |
+| [`ccusage`](https://ccusage.com/guide/)                                                 | Token and cost reports for coding agents         | Explains usage; does not pack session stores.                        |
+| [`claude-code-history-viewer`](https://github.com/jhlee0409/claude-code-history-viewer) | Offline browsing and search of AI coding history | Views history; does not archive or restore.                          |
+| [`claude-code-cleaner`](https://github.com/garrickz2/claude-code-cleaner)               | Claude Code disk cleanup                         | Claude only; no verified multi-agent vault.                          |
+| `zstd`, `tar`, backups, disk analyzers                                                  | Generic storage tools                            | Compress or find bytes; do not know agent sessions or restore paths. |
 
 ## FAQ
 
@@ -320,7 +320,7 @@ pnpm install
 pnpm check        # lint, typecheck, test and build through Turborepo
 pnpm lint:fix     # write the Biome fixes
 pnpm test:watch   # Vitest in watch mode; tests use synthetic fixtures only
-pnpm dev          # run the CLI from source, e.g. pnpm dev doctor
+pnpm dev          # run the CLI from source, rerun on every change, e.g. pnpm dev doctor
 pnpm prod         # build, then run the built CLI
 ```
 

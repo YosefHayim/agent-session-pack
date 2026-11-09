@@ -3,6 +3,7 @@ import { resolveApplyConfirmation } from '@/apply-confirmation.js';
 import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
+import type { CommandOutcome } from '@/command-outcome.js';
 import { requireHome } from '@/home-env.js';
 import { formatHumanPackReport } from '@/pack/output.js';
 import { DEFAULT_COLD_AFTER, parseDurationMs } from '@/pack/plan.js';
@@ -45,7 +46,7 @@ export const maintainCommand = defineCommand({
       yes: args.yes,
     });
 
-    await runMaintainCommand({
+    return runMaintainCommand({
       apply: args.apply,
       confirmed,
       dryRun: args['dry-run'],
@@ -70,11 +71,11 @@ type MaintainArgs = {
   readonly vaultPath?: string | undefined;
 };
 
-const runMaintainCommand = async (args: MaintainArgs): Promise<void> => {
+const runMaintainCommand = async (args: MaintainArgs): Promise<CommandOutcome> => {
   const home = requireHome(args.home);
 
   if (home === undefined) {
-    return;
+    return { exitCode: 1 };
   }
 
   const setupConfig = await readSetupConfig(home);
@@ -83,16 +84,14 @@ const runMaintainCommand = async (args: MaintainArgs): Promise<void> => {
     process.stderr.write(
       'Lifecycle is disabled. Run `agent-session-pack lifecycle enable` for continuous maintain, or use `pack` directly.\n',
     );
-    process.exitCode = 3;
-    return;
+    return { exitCode: 1 };
   }
 
   if (args.apply === true && args.confirmed !== true) {
     process.stderr.write(
       'Cancelled. Re-run with --apply and confirm with y (or --yes) to pack cold sessions.\n',
     );
-    process.exitCode = 2;
-    return;
+    return { exitCode: 2 };
   }
 
   const olderThan = setupConfig?.coldAfter ?? DEFAULT_COLD_AFTER;
@@ -126,7 +125,7 @@ const runMaintainCommand = async (args: MaintainArgs): Promise<void> => {
         2,
       )}\n`,
     );
-    return;
+    return { exitCode: 0 };
   }
 
   process.stdout.write(
@@ -135,4 +134,5 @@ const runMaintainCommand = async (args: MaintainArgs): Promise<void> => {
       formatHumanPackReport(report, { olderThan }),
     ].join('\n'),
   );
+  return { exitCode: 0 };
 };

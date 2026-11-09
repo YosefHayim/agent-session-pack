@@ -31,7 +31,6 @@ describe('scan command', () => {
   beforeEach(() => {
     stdoutWrites.length = 0;
     stderrWrites.length = 0;
-    process.exitCode = undefined;
     vi.spyOn(process.stdout, 'write').mockImplementation((chunk) => {
       stdoutWrites.push(String(chunk));
       return true;
@@ -47,7 +46,6 @@ describe('scan command', () => {
 
   afterEach(() => {
     process.env.HOME = originalHome;
-    process.exitCode = undefined;
     consoleLogSpy?.mockRestore();
     vi.restoreAllMocks();
   });
@@ -55,9 +53,9 @@ describe('scan command', () => {
   it('exits with code 1 when HOME is unset', async () => {
     delete process.env.HOME;
 
-    await runScanCommand({ json: true });
+    const commandOutcome = await runScanCommand({ json: true });
 
-    expect(process.exitCode).toBe(1);
+    expect(commandOutcome.exitCode).toBe(1);
     const stderr = stderrWrites.join('');
     expect(stderr).toContain('HOME is not set.');
     expect(stderr).toContain('.env.example');
@@ -68,9 +66,9 @@ describe('scan command', () => {
     const home = await createWorkspace();
     process.env.HOME = home;
 
-    await runScanCommand({ provider: 'not-a-provider', json: true });
+    const commandOutcome = await runScanCommand({ provider: 'not-a-provider', json: true });
 
-    expect(process.exitCode).toBe(2);
+    expect(commandOutcome.exitCode).toBe(2);
     expect(stderrWrites.join('')).toContain('Unknown provider: not-a-provider');
   });
 
@@ -79,27 +77,27 @@ describe('scan command', () => {
     await mkdir(join(home, '.codex', 'sessions'), { recursive: true });
     process.env.HOME = home;
 
-    await runScanCommand({ provider: 'codex', json: true });
+    const commandOutcome = await runScanCommand({ provider: 'codex', json: true });
 
     const payload = JSON.parse(stdoutWrites.join('')) as {
       readonly sessions: ReadonlyArray<unknown>;
     };
     expect(payload.sessions).toEqual([]);
-    expect(process.exitCode).toBeUndefined();
+    expect(commandOutcome.exitCode).toBe(0);
   });
 
   it('treats absent provider roots as providers without installed stores', async () => {
     const home = await createWorkspace();
     process.env.HOME = home;
 
-    await runScanCommand({ json: true });
+    const commandOutcome = await runScanCommand({ json: true });
 
     const payload = JSON.parse(stdoutWrites.join('')) as {
       readonly sessions: ReadonlyArray<unknown>;
     };
     expect(payload.sessions).toEqual([]);
     expect(stderrWrites).toEqual([]);
-    expect(process.exitCode).toBeUndefined();
+    expect(commandOutcome.exitCode).toBe(0);
   });
 
   it('discovers synthetic codex sessions in JSON mode', async () => {

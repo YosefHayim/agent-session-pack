@@ -15,7 +15,6 @@ describe('ensure-restored command', () => {
   beforeEach(() => {
     stdoutWrites.length = 0;
     stderrWrites.length = 0;
-    process.exitCode = undefined;
     vi.spyOn(process.stdout, 'write').mockImplementation((chunk) => {
       stdoutWrites.push(String(chunk));
       return true;
@@ -27,11 +26,10 @@ describe('ensure-restored command', () => {
   });
 
   afterEach(() => {
-    process.exitCode = undefined;
     vi.restoreAllMocks();
   });
 
-  it('exits 3 with JSON when restore-on-launch is disabled', async () => {
+  it('exits 1 with JSON when restore-on-launch is disabled', async () => {
     const home = await mkdtemp(join(tmpdir(), 'asp-ensure-disabled-'));
     const vaultPath = join(home, '.agent-session-pack');
 
@@ -48,7 +46,7 @@ describe('ensure-restored command', () => {
       },
     });
 
-    await runEnsureRestoredCommand({
+    const commandOutcome = await runEnsureRestoredCommand({
       home,
       vaultPath,
       provider: 'codex',
@@ -57,7 +55,7 @@ describe('ensure-restored command', () => {
       compression: copyCompression,
     });
 
-    expect(process.exitCode).toBe(3);
+    expect(commandOutcome.exitCode).toBe(1);
     expect(JSON.parse(stdoutWrites.join(''))).toMatchObject({
       command: 'ensure-restored',
       status: 'lifecycle-disabled',
@@ -102,7 +100,7 @@ describe('ensure-restored command', () => {
       },
     });
 
-    await runEnsureRestoredCommand({
+    const commandOutcome = await runEnsureRestoredCommand({
       home,
       vaultPath,
       provider: 'codex',
@@ -111,7 +109,7 @@ describe('ensure-restored command', () => {
       compression: copyCompression,
     });
 
-    expect(process.exitCode).toBeUndefined();
+    expect(commandOutcome.exitCode).toBe(0);
     expect(JSON.parse(stdoutWrites.join(''))).toMatchObject({
       command: 'ensure-restored',
       status: 'restored',

@@ -47,7 +47,6 @@ describe('restore command', () => {
   beforeEach(() => {
     stdoutWrites.length = 0;
     stderrWrites.length = 0;
-    process.exitCode = undefined;
     vi.spyOn(process.stdout, 'write').mockImplementation((chunk) => {
       stdoutWrites.push(String(chunk));
       return true;
@@ -59,12 +58,11 @@ describe('restore command', () => {
   });
 
   afterEach(() => {
-    process.exitCode = undefined;
     vi.restoreAllMocks();
   });
 
   it('exits with code 2 when selector is missing', async () => {
-    await runRestoreCommand({
+    const commandOutcome = await runRestoreCommand({
       selector: undefined,
       provider: undefined,
       to: undefined,
@@ -75,7 +73,7 @@ describe('restore command', () => {
     expect(stderrWrites.join('')).toContain(
       'Missing selector. Use agent-session-pack restore <selector>.',
     );
-    expect(process.exitCode).toBe(2);
+    expect(commandOutcome.exitCode).toBe(2);
   });
 
   it('restores an archived session without requiring lifecycle enable', async () => {
@@ -87,7 +85,7 @@ describe('restore command', () => {
       title: 'manual restore',
     });
 
-    await runRestoreCommand({
+    const commandOutcome = await runRestoreCommand({
       home,
       vaultPath,
       selector: 'codex:cold',
@@ -97,7 +95,7 @@ describe('restore command', () => {
       compression: copyCompression,
     });
 
-    expect(process.exitCode).toBeUndefined();
+    expect(commandOutcome.exitCode).toBe(0);
     expect(JSON.parse(stdoutWrites.join(''))).toMatchObject({
       command: 'restore',
       status: 'restored',
@@ -117,7 +115,7 @@ describe('restore command', () => {
     });
     await writeArchivedSession({ home, sessionId: 'cold-b2', title: 'Fix login api' });
 
-    await runRestoreCommand({
+    const commandOutcome = await runRestoreCommand({
       home,
       selector: 'cold-a',
       provider: undefined,
@@ -126,7 +124,7 @@ describe('restore command', () => {
       compression: copyCompression,
     });
 
-    expect(process.exitCode).toBeUndefined();
+    expect(commandOutcome.exitCode).toBe(0);
     expect(JSON.parse(stdoutWrites.join(''))).toMatchObject({
       status: 'restored',
       sessionId: 'cold-a1',
@@ -144,7 +142,7 @@ describe('restore command', () => {
     });
     await writeArchivedSession({ home, sessionId: 'cold-b2', title: 'Fix login api' });
 
-    await runRestoreCommand({
+    const commandOutcome = await runRestoreCommand({
       home,
       selector: 'fix login',
       provider: undefined,
@@ -153,7 +151,7 @@ describe('restore command', () => {
       compression: copyCompression,
     });
 
-    expect(process.exitCode).toBe(2);
+    expect(commandOutcome.exitCode).toBe(2);
     expect(JSON.parse(stdoutWrites.join(''))).toMatchObject({
       status: 'ambiguous-selector',
       candidates: [

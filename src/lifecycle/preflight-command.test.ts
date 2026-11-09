@@ -13,7 +13,6 @@ describe('preflight command', () => {
 
   beforeEach(() => {
     stdoutWrites.length = 0;
-    process.exitCode = undefined;
     vi.spyOn(process.stdout, 'write').mockImplementation((chunk) => {
       stdoutWrites.push(String(chunk));
       return true;
@@ -22,7 +21,6 @@ describe('preflight command', () => {
   });
 
   afterEach(() => {
-    process.exitCode = undefined;
     vi.restoreAllMocks();
   });
 

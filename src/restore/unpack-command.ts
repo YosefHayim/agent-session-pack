@@ -3,6 +3,7 @@ import { resolveApplyConfirmation } from '@/apply-confirmation.js';
 import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
+import type { CommandOutcome } from '@/command-outcome.js';
 import { requireHome } from '@/home-env.js';
 import { selectProviders } from '@/providers/flag.js';
 import type { ProviderAdapter } from '@/session-model.js';
@@ -48,7 +49,7 @@ export const unpackCommand = defineCommand({
       yes: args.yes,
     });
 
-    await runUnpackCommand({
+    return runUnpackCommand({
       allProviders: args['all-providers'],
       apply: args.apply,
       confirmed,
@@ -80,31 +81,33 @@ export type UnpackArgs = {
  *
  * @param args - Decoded command-line arguments.
  */
-export const runUnpackCommand = async (args: UnpackArgs): Promise<void> => {
+export const runUnpackCommand = async (args: UnpackArgs): Promise<CommandOutcome> => {
   const home = requireHome(args.home);
 
   if (home === undefined) {
-    return;
+    return { exitCode: 1 };
   }
 
   if (args.apply === true && args.confirmed !== true) {
     process.stderr.write('Cancelled. Re-run with --apply and confirm with y to unpack sessions.\n');
     process.stderr.write('\n');
-    process.exitCode = 2;
-    return;
+    return { exitCode: 2 };
   }
 
+  const { providers, isProviderUnknown } = selectProviders(args.provider, args.providers);
+  const providerExitCode = isProviderUnknown ? 2 : 0;
   const report = await unpackProviderSessions({
     vaultPath: args.vaultPath ?? resolveDefaultVaultPath(home),
-    providers: args.providers ?? selectProviders(args.provider),
+    providers,
     apply: args.apply === true,
     compression: args.compression ?? createZstdCompression(),
   });
 
   if (args.json === true) {
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
-    return;
+    return { exitCode: providerExitCode };
   }
 
   process.stdout.write(`${formatHumanUnpackReport(report)}\n`);
+  return { exitCode: providerExitCode };
 };

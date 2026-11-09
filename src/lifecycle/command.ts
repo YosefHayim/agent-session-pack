@@ -1,5 +1,6 @@
 import { defineCommand } from 'citty';
 import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
+import type { CommandOutcome } from '@/command-outcome.js';
 import { requireHome } from '@/home-env.js';
 import { DEFAULT_COLD_AFTER } from '@/pack/plan.js';
 import {
@@ -32,7 +33,7 @@ export const lifecycleCommand = defineCommand({
     },
   },
   run: async ({ args }) => {
-    await runLifecycleCommand({
+    return runLifecycleCommand({
       action: args.action,
       json: args.json,
     });
@@ -57,19 +58,18 @@ export type LifecycleArgs = {
  *
  * @param args - Decoded command-line arguments.
  */
-export const runLifecycleCommand = async (args: LifecycleArgs): Promise<void> => {
+export const runLifecycleCommand = async (args: LifecycleArgs): Promise<CommandOutcome> => {
   const home = requireHome(args.home);
 
   if (home === undefined) {
-    return;
+    return { exitCode: 1 };
   }
 
   const action = args.action?.trim().toLowerCase();
 
   if (action !== 'enable' && action !== 'disable' && action !== 'status') {
     process.stderr.write('Unknown lifecycle action. Use enable, disable, or status.\n');
-    process.exitCode = 2;
-    return;
+    return { exitCode: 2 };
   }
 
   const existingConfig = await readSetupConfig(home);
@@ -94,7 +94,7 @@ export const runLifecycleCommand = async (args: LifecycleArgs): Promise<void> =>
       },
       isJsonOutput,
     );
-    return;
+    return { exitCode: 0 };
   }
 
   const nextConfig = buildLifecycleConfig({
@@ -133,6 +133,7 @@ export const runLifecycleCommand = async (args: LifecycleArgs): Promise<void> =>
     },
     isJsonOutput,
   );
+  return { exitCode: 0 };
 };
 
 const buildLifecycleConfig = (request: {

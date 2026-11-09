@@ -7,7 +7,6 @@ describe('doctor command', () => {
 
   beforeEach(() => {
     writes.length = 0;
-    process.exitCode = undefined;
     vi.spyOn(process.stdout, 'write').mockImplementation((chunk) => {
       writes.push(String(chunk));
       return true;
@@ -15,7 +14,6 @@ describe('doctor command', () => {
   });
 
   afterEach(() => {
-    process.exitCode = undefined;
     vi.restoreAllMocks();
   });
 

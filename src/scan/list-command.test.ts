@@ -7,7 +7,6 @@ describe('list command', () => {
 
   beforeEach(() => {
     writes.length = 0;
-    process.exitCode = undefined;
     vi.spyOn(process.stdout, 'write').mockImplementation((chunk) => {
       writes.push(String(chunk));
       return true;
@@ -15,7 +14,6 @@ describe('list command', () => {
   });
 
   afterEach(() => {
-    process.exitCode = undefined;
     vi.restoreAllMocks();
   });
 
@@ -23,15 +21,12 @@ describe('list command', () => {
     await runCommand(listCommand, { rawArgs: [] });
 
     expect(writes.join('')).toBe('No indexed sessions yet. Run agent-session-pack scan first.\n');
-
-    expect(process.exitCode).toBeUndefined();
   });
 
   it('does not prompt under --json', async () => {
     await runCommand(listCommand, { rawArgs: ['--json', '--provider', 'codex'] });
 
     expect(writes.join('')).toContain('No indexed sessions yet');
-    expect(process.exitCode).toBeUndefined();
   });
 
   it('exposes citty metadata and flags', () => {

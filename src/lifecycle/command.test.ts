@@ -12,7 +12,6 @@ describe('lifecycle command', () => {
   beforeEach(() => {
     stdoutWrites.length = 0;
     stderrWrites.length = 0;
-    process.exitCode = undefined;
     vi.spyOn(process.stdout, 'write').mockImplementation((chunk) => {
       stdoutWrites.push(String(chunk));
       return true;
@@ -24,7 +23,6 @@ describe('lifecycle command', () => {
   });
 
   afterEach(() => {
-    process.exitCode = undefined;
     vi.restoreAllMocks();
   });
 
@@ -32,14 +30,14 @@ describe('lifecycle command', () => {
     const home = await mkdtemp(join(tmpdir(), 'asp-lifecycle-'));
     const now = new Date('2026-07-07T00:00:00.000Z');
 
-    await runLifecycleCommand({
+    const commandOutcome = await runLifecycleCommand({
       action: 'enable',
       json: true,
       home,
       now,
     });
 
-    expect(process.exitCode).toBeUndefined();
+    expect(commandOutcome.exitCode).toBe(0);
     expect(JSON.parse(stdoutWrites.join(''))).toMatchObject({
       command: 'lifecycle',
       action: 'enable',
@@ -111,13 +109,13 @@ describe('lifecycle command', () => {
   it('rejects unknown lifecycle actions', async () => {
     const home = await mkdtemp(join(tmpdir(), 'asp-lifecycle-bad-'));
 
-    await runLifecycleCommand({
+    const commandOutcome = await runLifecycleCommand({
       action: 'explode',
       json: true,
       home,
     });
 
-    expect(process.exitCode).toBe(2);
+    expect(commandOutcome.exitCode).toBe(2);
     expect(stderrWrites.join('')).toContain('Unknown lifecycle action');
     await rm(home, { recursive: true, force: true });
   });

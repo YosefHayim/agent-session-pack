@@ -1,8 +1,7 @@
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import { Effect, Schema } from 'effect';
+import { rethrowAsError } from '@/rethrow-as-error.js';
 import type { ProviderId, SessionSourceKind } from '@/session-model.js';
-import { ArchiveFileSystemError } from './file-system.js';
 
 /**
  * Magic marker written into packed-session stubs so GUI list/open can find them.
@@ -11,21 +10,13 @@ export const ARCHIVED_STUB_KIND = 'agent-session-pack-archived-stub' as const;
 
 const STUB_MARKER_FILE = '.agent-session-pack-archived.json';
 
-/**
- * Schema for archived session stub metadata.
- */
-const ArchivedStubSchema = Schema.Struct({
-  agentSessionPack: Schema.Literal(ARCHIVED_STUB_KIND),
-  version: Schema.Literal(1),
-  sessionId: Schema.String,
-  provider: Schema.String,
-  sourceKind: Schema.Literal('file', 'directory'),
-});
-
-/**
- * Decoded archived stub metadata.
- */
-type ArchivedStub = typeof ArchivedStubSchema.Type;
+type ArchivedStub = {
+  readonly agentSessionPack: typeof ARCHIVED_STUB_KIND;
+  readonly version: 1;
+  readonly sessionId: string;
+  readonly provider: string;
+  readonly sourceKind: SessionSourceKind;
+};
 
 /**
  * Inputs for writing an archived-session stub.
@@ -39,106 +30,64 @@ export type WriteArchivedStubRequest = {
 
 /**
  * Writes a tiny listable stub at the original session path after pack removes the full session.
- *
- * @param request - Stub write fields for path, identity, and source kind.
- * @returns Effect completing after the stub is written.
- * @example
- * ```ts
- * import { writeArchivedStub } from './session-stub.js';
- *
- * await Effect.runPromise(
- *   writeArchivedStub({
- *     originalPath: '/sessions/abc',
- *     sessionId: 'abc',
- *     provider: 'grok',
- *     sourceKind: 'directory',
- *   }),
- * );
- * ```
  */
-export const writeArchivedStub = (
-  request: WriteArchivedStubRequest,
-): Effect.Effect<void, ArchiveFileSystemError> =>
-  Effect.tryPromise({
-    try: async () => {
-      const stub: ArchivedStub = {
-        agentSessionPack: ARCHIVED_STUB_KIND,
-        version: 1,
-        sessionId: request.sessionId,
-        provider: request.provider,
-        sourceKind: request.sourceKind,
-      };
-      const body = `${JSON.stringify(stub, null, 2)}\n`;
+export const writeArchivedStub = async (request: WriteArchivedStubRequest): Promise<void> => {
+  const stub: ArchivedStub = {
+    agentSessionPack: ARCHIVED_STUB_KIND,
+    version: 1,
+    sessionId: request.sessionId,
+    provider: request.provider,
+    sourceKind: request.sourceKind,
+  };
+  const body = `${JSON.stringify(stub, null, 2)}\n`;
+  const isDirectorySource = request.sourceKind === 'directory';
 
-      if (request.sourceKind === 'directory') {
-        await mkdir(request.originalPath, { recursive: true });
-        await writeFile(join(request.originalPath, STUB_MARKER_FILE), body, 'utf8');
-        return;
-      }
+  if (isDirectorySource) {
+    await mkdir(request.originalPath, { recursive: true }).catch(rethrowAsError);
+    await writeFile(join(request.originalPath, STUB_MARKER_FILE), body, 'utf8').catch(
+      rethrowAsError,
+    );
+    return;
+  }
 
-      await mkdir(dirname(request.originalPath), { recursive: true });
-      await writeFile(request.originalPath, body, 'utf8');
-    },
-    catch: (cause) =>
-      new ArchiveFileSystemError({
-        path: request.originalPath,
-        message: String(cause),
-      }),
-  });
+  await mkdir(dirname(request.originalPath), { recursive: true }).catch(rethrowAsError);
+  await writeFile(request.originalPath, body, 'utf8').catch(rethrowAsError);
+};
 
 /**
  * Returns true when the path is an archived stub (not a full live session).
- *
- * @param path - Original provider session path.
- * @param sourceKind - File or directory session kind.
- * @returns Effect containing whether the path is a stub.
- * @example
- * ```ts
- * import { isArchivedStubPath } from './session-stub.js';
- *
- * const stub = await Effect.runPromise(isArchivedStubPath('/sessions/abc', 'directory'));
- * ```
  */
-export const isArchivedStubPath = (
+export const isArchivedStubPath = async (
   path: string,
   sourceKind: SessionSourceKind,
-): Effect.Effect<boolean, never> =>
-  Effect.promise(async () => {
-    try {
-      if (sourceKind === 'directory') {
-        const markerPath = join(path, STUB_MARKER_FILE);
-        const content = await readFile(markerPath, 'utf8');
-        return isStubJson(content);
-      }
+): Promise<boolean> => {
+  try {
+    const isDirectorySource = sourceKind === 'directory';
 
-      const content = await readFile(path, 'utf8');
+    if (isDirectorySource) {
+      const markerPath = join(path, STUB_MARKER_FILE);
+      const content = await readFile(markerPath, 'utf8');
       return isStubJson(content);
-    } catch {
-      return false;
     }
-  });
+
+    const content = await readFile(path, 'utf8');
+    return isStubJson(content);
+  } catch {
+    return false;
+  }
+};
 
 /**
  * Returns true when a directory stub has been touched beyond the marker (provider open signal).
- *
- * @param path - Session directory path.
- * @returns Effect containing whether non-marker files exist.
- * @example
- * ```ts
- * import { directoryStubWasOpened } from './session-stub.js';
- *
- * await Effect.runPromise(directoryStubWasOpened('/sessions/abc'));
- * ```
  */
-export const directoryStubWasOpened = (path: string): Effect.Effect<boolean, never> =>
-  Effect.promise(async () => {
-    try {
-      const entries = await readdir(path);
-      return entries.some((entry) => entry !== STUB_MARKER_FILE);
-    } catch {
-      return false;
-    }
-  });
+export const directoryStubWasOpened = async (path: string): Promise<boolean> => {
+  try {
+    const entries = await readdir(path);
+    return entries.some((entry) => entry !== STUB_MARKER_FILE);
+  } catch {
+    return false;
+  }
+};
 
 const isStubJson = (content: string): boolean => {
   try {

@@ -1,6 +1,6 @@
 import { Effect } from 'effect';
 import { pathExists, removePath } from '@/archive/file-system.js';
-import { type ManifestStoreError, writeSessionManifest } from '@/archive/manifest-store.js';
+import { writeSessionManifest } from '@/archive/manifest-store.js';
 import { writeArchivedStub } from '@/archive/session-stub.js';
 import {
   archivePathForSession,
@@ -8,16 +8,15 @@ import {
   verificationPathForSession,
 } from '@/archive/vault-paths.js';
 import {
-  type ArchiveWriteError,
   type CompressionAdapter,
   removeOriginalSession,
   writeVerifiedArchive,
 } from '@/archive/writer.js';
 import { savedPercent, sumSessionBytes } from '@/byte-savings.js';
+import { promiseAsEffect } from '@/effect-bridge.js';
 import type {
   DiscoveredSession,
   ProviderAdapter,
-  ProviderDiscoveryError,
   ProviderId,
   ProviderMode,
   SessionSourceKind,
@@ -98,10 +97,7 @@ export type PackProviderSessionsRequest = {
  */
 export const packProviderSessions = (
   request: PackProviderSessionsRequest,
-): Effect.Effect<
-  PackSessionsReport,
-  ArchiveWriteError | ManifestStoreError | ProviderDiscoveryError
-> =>
+): Effect.Effect<PackSessionsReport, Error> =>
   Effect.gen(function* () {
     const packSessionRows: PackSessionRow[] = [];
     const packableSessions: DiscoveredSession[] = [];
@@ -172,24 +168,26 @@ export const packProviderSessions = (
 const discoverExistingProviderSessions = (request: {
   readonly home: string;
   readonly provider: ProviderAdapter;
-}): Effect.Effect<ReadonlyArray<DiscoveredSession> | undefined, ProviderDiscoveryError> =>
+}): Effect.Effect<ReadonlyArray<DiscoveredSession> | undefined, Error> =>
   Effect.gen(function* () {
     const roots = request.provider.defaultRoots(request.home);
     const sessions: DiscoveredSession[] = [];
     let existingRoots = 0;
 
     for (const root of roots) {
-      const exists = yield* pathExists(root);
+      const exists = yield* promiseAsEffect(() => pathExists(root));
 
       if (!exists) {
         continue;
       }
 
       existingRoots += 1;
-      const discovered = yield* request.provider.discover({
-        provider: request.provider.id,
-        path: root,
-      });
+      const discovered = yield* promiseAsEffect(() =>
+        request.provider.discover({
+          provider: request.provider.id,
+          path: root,
+        }),
+      );
       sessions.push(...discovered);
     }
 
@@ -211,7 +209,7 @@ const archiveCandidateSessions = (request: {
     readonly beforeBytes: number;
     readonly packedSessions: number;
   },
-  ArchiveWriteError | ManifestStoreError
+  Error
 > =>
   Effect.gen(function* () {
     let archiveBytes = 0;
@@ -223,38 +221,44 @@ const archiveCandidateSessions = (request: {
       const archivePath = archivePathForSession(request.vaultPath, session, sourceKind);
       const restoredPath = verificationPathForSession(request.vaultPath, session, sourceKind);
       const manifestPath = manifestPathForSession(request.vaultPath, session);
-      const archived = yield* writeVerifiedArchive({
-        sessionId: session.id,
-        sourcePath: session.originalPath,
-        archivePath,
-        restoredPath,
-        apply: false,
-        compression: request.compression,
-        sourceKind,
-      });
+      const archived = yield* promiseAsEffect(() =>
+        writeVerifiedArchive({
+          sessionId: session.id,
+          sourcePath: session.originalPath,
+          archivePath,
+          restoredPath,
+          apply: false,
+          compression: request.compression,
+          sourceKind,
+        }),
+      );
 
-      yield* writeSessionManifest(manifestPath, {
-        sessionId: session.id,
-        provider: session.provider,
-        title: session.title,
-        slug: session.slug,
-        originalPath: session.originalPath,
-        archivePath,
-        sourceSha256: archived.sourceSha256,
-        sourceBytes: archived.sourceBytes,
-        archiveBytes: archived.archiveBytes,
-        archivedAt: request.now.toISOString(),
-        sourceKind,
-      });
-      yield* removeOriginalSession(session.originalPath);
+      yield* promiseAsEffect(() =>
+        writeSessionManifest(manifestPath, {
+          sessionId: session.id,
+          provider: session.provider,
+          title: session.title,
+          slug: session.slug,
+          originalPath: session.originalPath,
+          archivePath,
+          sourceSha256: archived.sourceSha256,
+          sourceBytes: archived.sourceBytes,
+          archiveBytes: archived.archiveBytes,
+          archivedAt: request.now.toISOString(),
+          sourceKind,
+        }),
+      );
+      yield* promiseAsEffect(() => removeOriginalSession(session.originalPath));
       // Leave a tiny listable stub so GUIs can still see the session; watch materializes on open.
-      yield* writeArchivedStub({
-        originalPath: session.originalPath,
-        sessionId: session.id,
-        provider: session.provider,
-        sourceKind,
-      });
-      yield* removePath(restoredPath);
+      yield* promiseAsEffect(() =>
+        writeArchivedStub({
+          originalPath: session.originalPath,
+          sessionId: session.id,
+          provider: session.provider,
+          sourceKind,
+        }),
+      );
+      yield* promiseAsEffect(() => removePath(restoredPath));
 
       archiveBytes += archived.archiveBytes;
       beforeBytes += archived.sourceBytes;

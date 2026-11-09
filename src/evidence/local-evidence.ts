@@ -2,12 +2,12 @@ import { cp, mkdir, rm } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import { Effect } from 'effect';
 import { sha256Path } from '@/archive/hash.js';
-import { type ArchiveWriteError, writeVerifiedArchive } from '@/archive/writer.js';
+import { writeVerifiedArchive } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
+import { promiseAsEffect } from '@/effect-bridge.js';
 import { discoverStoreSessions } from '@/scan/stores.js';
 import type {
   ProviderAdapter,
-  ProviderDiscoveryError,
   ProviderId,
   ProviderMode,
   SessionSourceKind,
@@ -85,7 +85,7 @@ export type LocalEvidenceRequest = {
  */
 export const runLocalEvidence = (
   request: LocalEvidenceRequest,
-): Effect.Effect<LocalEvidenceReport, ArchiveWriteError | ProviderDiscoveryError> =>
+): Effect.Effect<LocalEvidenceReport, Error> =>
   Effect.gen(function* () {
     const compression = createZstdCompression();
     const evidence: LocalEvidenceEntry[] = [];
@@ -135,16 +135,20 @@ export const runLocalEvidence = (
         }),
       );
 
-      const verified = yield* writeVerifiedArchive({
-        sessionId: selected.id,
-        sourcePath: fixturePath,
-        archivePath,
-        restoredPath,
-        apply: false,
-        compression,
-        sourceKind,
-      });
-      const originalSha256 = yield* sha256Path(selected.originalPath, sourceKind);
+      const verified = yield* promiseAsEffect(() =>
+        writeVerifiedArchive({
+          sessionId: selected.id,
+          sourcePath: fixturePath,
+          archivePath,
+          restoredPath,
+          apply: false,
+          compression,
+          sourceKind,
+        }),
+      );
+      const originalSha256 = yield* promiseAsEffect(() =>
+        sha256Path(selected.originalPath, sourceKind),
+      );
 
       evidence.push({
         provider: provider.id,
@@ -183,10 +187,7 @@ export const runLocalEvidence = (
 const discoverProviderSessions = (
   provider: ProviderAdapter,
   roots: ReadonlyArray<string>,
-): Effect.Effect<
-  ReadonlyArray<import('@/session-model.js').DiscoveredSession>,
-  ProviderDiscoveryError
-> =>
+): Effect.Effect<ReadonlyArray<import('@/session-model.js').DiscoveredSession>, Error> =>
   Effect.gen(function* () {
     const discovered = [];
 

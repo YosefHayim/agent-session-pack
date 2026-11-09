@@ -1,40 +1,22 @@
-import { Either, Schema } from 'effect';
 import { type ProviderAdapter, type ProviderId, ProviderIdSchema } from '@/session-model.js';
 import { allProviders } from './all-providers.js';
 
 /**
- * Parses an optional `--provider` value into a provider id.
- *
- * @param provider - Raw `--provider` flag value.
- * @returns The provider id, or undefined when the flag is missing or unknown.
- * @example
- * ```ts
- * import { parseOptionalProvider } from './flag.js';
- *
- * parseOptionalProvider('codex');
- * ```
+ * Parses an optional `--provider` value into a provider id, or undefined when missing or unknown.
  */
 export const parseOptionalProvider = (provider: string | undefined): ProviderId | undefined => {
   if (provider === undefined) {
     return undefined;
   }
 
-  const decoded = Schema.decodeUnknownEither(ProviderIdSchema)(provider);
+  const providerReply = ProviderIdSchema.safeParse(provider);
+  const isProviderKnown = providerReply.success;
 
-  return Either.getOrUndefined(decoded);
+  return isProviderKnown ? providerReply.data : undefined;
 };
 
 /**
  * Resolves the `--provider` flag to provider adapters, reporting an unknown id with exit code 2.
- *
- * @param provider - Raw `--provider` flag value; undefined selects every provider.
- * @returns Matching provider adapters, or an empty list for an unknown id.
- * @example
- * ```ts
- * import { selectProviders } from './flag.js';
- *
- * const providers = selectProviders('codex');
- * ```
  */
 export const selectProviders = (provider: string | undefined): ReadonlyArray<ProviderAdapter> => {
   if (provider === undefined) {

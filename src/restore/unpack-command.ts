@@ -1,10 +1,8 @@
 import { defineCommand } from 'citty';
 import { Effect } from 'effect';
 import { resolveApplyConfirmation } from '@/apply-confirmation.js';
-import type { ArchiveFileSystemError } from '@/archive/file-system.js';
-import type { ManifestStoreError } from '@/archive/manifest-store.js';
 import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
-import type { ArchiveVerificationError, CompressionAdapter } from '@/archive/writer.js';
+import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
 import { requireHome } from '@/home-env.js';
 import { selectProviders } from '@/providers/flag.js';
@@ -101,9 +99,7 @@ export type UnpackArgs = {
  * );
  * ```
  */
-export const runUnpackCommand = (
-  args: UnpackArgs,
-): Effect.Effect<void, ArchiveFileSystemError | ArchiveVerificationError | ManifestStoreError> =>
+export const runUnpackCommand = (args: UnpackArgs): Effect.Effect<void, Error> =>
   Effect.gen(function* () {
     const home = requireHome(args.home);
 

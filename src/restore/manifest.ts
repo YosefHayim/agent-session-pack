@@ -1,20 +1,11 @@
 import { Effect } from 'effect';
-import {
-  type ArchiveFileSystemError,
-  copyPath,
-  ensureParentDirectory,
-  pathExists,
-  removePath,
-} from '@/archive/file-system.js';
+import { copyPath, ensureParentDirectory, pathExists, removePath } from '@/archive/file-system.js';
 import { sha256File, sha256Path } from '@/archive/hash.js';
 import type { SessionManifest } from '@/archive/manifest-store.js';
 import { isArchivedStubPath } from '@/archive/session-stub.js';
 import { restorePathForManifest } from '@/archive/vault-paths.js';
-import {
-  ArchiveVerificationError,
-  type CompressionAdapter,
-  restoreDirectoryArchive,
-} from '@/archive/writer.js';
+import { type CompressionAdapter, restoreDirectoryArchive } from '@/archive/writer.js';
+import { promiseAsEffect } from '@/effect-bridge.js';
 import type { SessionSourceKind } from '@/session-model.js';
 
 /**
@@ -35,18 +26,19 @@ const resolveLiveOriginalOutcome = (request: {
   readonly originalPath: string;
   readonly sourceKind: SessionSourceKind;
   readonly sourceSha256: string;
-}): Effect.Effect<
-  RestoreOutcome | 'continue-restore',
-  ArchiveFileSystemError | ArchiveVerificationError
-> =>
+}): Effect.Effect<RestoreOutcome | 'continue-restore', Error> =>
   Effect.gen(function* () {
-    const isStub = yield* isArchivedStubPath(request.originalPath, request.sourceKind);
+    const isStub = yield* promiseAsEffect(() =>
+      isArchivedStubPath(request.originalPath, request.sourceKind),
+    );
     if (isStub) {
-      yield* removePath(request.originalPath);
+      yield* promiseAsEffect(() => removePath(request.originalPath));
       return 'continue-restore' as const;
     }
 
-    const existingSha256 = yield* sha256Path(request.originalPath, request.sourceKind);
+    const existingSha256 = yield* promiseAsEffect(() =>
+      sha256Path(request.originalPath, request.sourceKind),
+    );
     if (existingSha256 === request.sourceSha256) {
       return 'already-present' as const;
     }
@@ -71,10 +63,10 @@ const resolveLiveOriginalOutcome = (request: {
  */
 export const restoreManifest = (
   request: RestoreManifestRequest,
-): Effect.Effect<RestoreOutcome, ArchiveFileSystemError | ArchiveVerificationError> =>
+): Effect.Effect<RestoreOutcome, Error> =>
   Effect.gen(function* () {
     const sourceKind = manifestSourceKind(request.manifest);
-    const originalExists = yield* pathExists(request.manifest.originalPath);
+    const originalExists = yield* promiseAsEffect(() => pathExists(request.manifest.originalPath));
 
     if (originalExists) {
       const liveOutcome = yield* resolveLiveOriginalOutcome({
@@ -91,51 +83,51 @@ export const restoreManifest = (
     const restoredPath = restorePathForManifest(request.vaultPath, request.manifest, sourceKind);
 
     if (sourceKind === 'directory') {
-      yield* restoreDirectoryArchive({
-        sessionId: request.manifest.sessionId,
-        archivePath: request.manifest.archivePath,
-        restoredPath,
-        originalPath: request.manifest.originalPath,
-        expectedSha256: request.manifest.sourceSha256,
-        compression: request.compression,
-      });
+      yield* promiseAsEffect(() =>
+        restoreDirectoryArchive({
+          sessionId: request.manifest.sessionId,
+          archivePath: request.manifest.archivePath,
+          restoredPath,
+          originalPath: request.manifest.originalPath,
+          expectedSha256: request.manifest.sourceSha256,
+          compression: request.compression,
+        }),
+      );
       return 'restored';
     }
 
-    yield* ensureParentDirectory(restoredPath);
-    yield* request.compression.decompress({
-      archivePath: request.manifest.archivePath,
-      restoredPath,
-    });
+    yield* promiseAsEffect(() => ensureParentDirectory(restoredPath));
+    yield* promiseAsEffect(() =>
+      request.compression.decompress({
+        archivePath: request.manifest.archivePath,
+        restoredPath,
+      }),
+    );
 
-    const restoredSha256 = yield* sha256File(restoredPath);
+    const restoredSha256 = yield* promiseAsEffect(() => sha256File(restoredPath));
 
     if (restoredSha256 !== request.manifest.sourceSha256) {
       return yield* Effect.fail(
-        new ArchiveVerificationError({
-          sessionId: request.manifest.sessionId,
-          sourceSha256: request.manifest.sourceSha256,
-          restoredSha256,
-        }),
+        new Error(
+          `Archive verification failed for session ${request.manifest.sessionId}: source ${request.manifest.sourceSha256} does not match restored ${restoredSha256}`,
+        ),
       );
     }
 
-    yield* ensureParentDirectory(request.manifest.originalPath);
-    yield* copyPath(restoredPath, request.manifest.originalPath);
+    yield* promiseAsEffect(() => ensureParentDirectory(request.manifest.originalPath));
+    yield* promiseAsEffect(() => copyPath(restoredPath, request.manifest.originalPath));
 
-    const originalSha256 = yield* sha256File(request.manifest.originalPath);
+    const originalSha256 = yield* promiseAsEffect(() => sha256File(request.manifest.originalPath));
 
     if (originalSha256 !== request.manifest.sourceSha256) {
       return yield* Effect.fail(
-        new ArchiveVerificationError({
-          sessionId: request.manifest.sessionId,
-          sourceSha256: request.manifest.sourceSha256,
-          restoredSha256: originalSha256,
-        }),
+        new Error(
+          `Archive verification failed for session ${request.manifest.sessionId}: source ${request.manifest.sourceSha256} does not match restored ${originalSha256}`,
+        ),
       );
     }
 
-    yield* removePath(restoredPath);
+    yield* promiseAsEffect(() => removePath(restoredPath));
 
     return 'restored';
   });

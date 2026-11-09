@@ -1,18 +1,13 @@
 import { defineCommand } from 'citty';
 import { Effect } from 'effect';
-import type { ArchiveFileSystemError } from '@/archive/file-system.js';
-import type { ManifestStoreError } from '@/archive/manifest-store.js';
 import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
-import type { ArchiveVerificationError, CompressionAdapter } from '@/archive/writer.js';
+import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
+import { promiseAsEffect } from '@/effect-bridge.js';
 import { requireHome } from '@/home-env.js';
 import { recordSessionAccess, type SessionAccessLogError } from '@/lifecycle/session-access.js';
 import { parseOptionalProvider } from '@/providers/flag.js';
-import {
-  isRestoreOnLaunchEnabled,
-  readSetupConfig,
-  type SetupConfigFileError,
-} from '@/setup/config.js';
+import { isRestoreOnLaunchEnabled, readSetupConfig } from '@/setup/config.js';
 import { type EnsureRestoredReport, ensureSessionRestored } from './ensure-restored.js';
 
 /**
@@ -81,14 +76,7 @@ export type OpenArgs = {
  */
 export const runOpenCommand = (
   args: OpenArgs,
-): Effect.Effect<
-  void,
-  | ArchiveFileSystemError
-  | ArchiveVerificationError
-  | ManifestStoreError
-  | SessionAccessLogError
-  | SetupConfigFileError
-> =>
+): Effect.Effect<void, Error | Error | Error | SessionAccessLogError | Error> =>
   Effect.gen(function* () {
     const home = requireHome(args.home);
 
@@ -114,7 +102,7 @@ export const runOpenCommand = (
       return;
     }
 
-    const setupConfig = yield* readSetupConfig(home);
+    const setupConfig = yield* promiseAsEffect(() => readSetupConfig(home));
     const restoreOnLaunchEnabled = isRestoreOnLaunchEnabled(setupConfig);
     const vaultPath = args.vaultPath ?? setupConfig?.vaultPath ?? resolveDefaultVaultPath(home);
     const compression = args.compression ?? createZstdCompression();

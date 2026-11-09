@@ -1,11 +1,9 @@
 import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Effect, Either } from 'effect';
 import { describe, expect, it } from 'vitest';
 import {
   listSessionManifestPaths,
-  ManifestStoreError,
   readSessionManifest,
   type SessionManifest,
   writeSessionManifest,
@@ -38,8 +36,8 @@ describe('manifestStore', () => {
       archiveBytes: 99,
     });
 
-    await Effect.runPromise(writeSessionManifest(manifestPath, manifest));
-    const decoded = await Effect.runPromise(readSessionManifest(manifestPath));
+    await writeSessionManifest(manifestPath, manifest);
+    const decoded = await readSessionManifest(manifestPath);
 
     expect(decoded).toEqual(manifest);
   });
@@ -51,20 +49,18 @@ describe('manifestStore', () => {
     const claudePath = join(root, 'claude', 'nested', 'session-b.json');
     const ignored = join(root, 'codex', 'notes.txt');
 
-    await Effect.runPromise(writeSessionManifest(codexPath, sampleManifest({ sessionId: 'a' })));
-    await Effect.runPromise(
-      writeSessionManifest(
-        claudePath,
-        sampleManifest({
-          sessionId: 'b',
-          provider: 'claude',
-        }),
-      ),
+    await writeSessionManifest(codexPath, sampleManifest({ sessionId: 'a' }));
+    await writeSessionManifest(
+      claudePath,
+      sampleManifest({
+        sessionId: 'b',
+        provider: 'claude',
+      }),
     );
     await mkdir(join(root, 'codex'), { recursive: true });
     await writeFile(ignored, 'not a manifest');
 
-    const paths = await Effect.runPromise(listSessionManifestPaths(root));
+    const paths = await listSessionManifestPaths(root);
 
     expect(paths).toHaveLength(2);
     expect(paths).toEqual(expect.arrayContaining([codexPath, claudePath]));
@@ -75,64 +71,32 @@ describe('manifestStore', () => {
     const workspace = await createWorkspace();
     const missingRoot = join(workspace, 'does-not-exist');
 
-    const paths = await Effect.runPromise(listSessionManifestPaths(missingRoot));
+    const paths = await listSessionManifestPaths(missingRoot);
 
     expect(paths).toEqual([]);
   });
 
-  it('returns ManifestStoreError when reading a missing manifest', async () => {
+  it('throws when reading a missing manifest', async () => {
     const workspace = await createWorkspace();
     const missingPath = join(workspace, 'missing.json');
 
-    const result = await Effect.runPromise(Effect.either(readSessionManifest(missingPath)));
-
-    expect(Either.isLeft(result)).toBe(true);
-    if (Either.isRight(result)) {
-      expect.fail('expected readSessionManifest to fail for a missing file');
-    }
-    expect(result.left).toBeInstanceOf(ManifestStoreError);
-    expect(result.left).toMatchObject({
-      _tag: 'ManifestStoreError',
-      path: missingPath,
-    });
+    await expect(readSessionManifest(missingPath)).rejects.toThrow(missingPath);
   });
 
-  it('returns ManifestStoreError when the manifest JSON is invalid', async () => {
+  it('throws when the manifest JSON is invalid', async () => {
     const workspace = await createWorkspace();
     const badPath = join(workspace, 'bad.json');
     await writeFile(badPath, '{"sessionId":123}\n');
 
-    const result = await Effect.runPromise(Effect.either(readSessionManifest(badPath)));
-
-    expect(Either.isLeft(result)).toBe(true);
-    if (Either.isRight(result)) {
-      expect.fail('expected readSessionManifest to fail for invalid schema');
-    }
-    expect(result.left).toBeInstanceOf(ManifestStoreError);
-    expect(result.left).toMatchObject({
-      _tag: 'ManifestStoreError',
-      path: badPath,
-    });
+    await expect(readSessionManifest(badPath)).rejects.toThrow(badPath);
   });
 
-  it('returns ManifestStoreError when writing to an unwritable path', async () => {
+  it('throws when writing to an unwritable path', async () => {
     const workspace = await createWorkspace();
     const blockedParent = join(workspace, 'blocked');
     await writeFile(blockedParent, 'I am a file, not a directory');
     const destination = join(blockedParent, 'child', 'manifest.json');
 
-    const result = await Effect.runPromise(
-      Effect.either(writeSessionManifest(destination, sampleManifest())),
-    );
-
-    expect(Either.isLeft(result)).toBe(true);
-    if (Either.isRight(result)) {
-      expect.fail('expected writeSessionManifest to fail for an unwritable path');
-    }
-    expect(result.left).toBeInstanceOf(ManifestStoreError);
-    expect(result.left).toMatchObject({
-      _tag: 'ManifestStoreError',
-      path: destination,
-    });
+    await expect(writeSessionManifest(destination, sampleManifest())).rejects.toThrow(destination);
   });
 });

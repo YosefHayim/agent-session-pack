@@ -1,41 +1,33 @@
-import { constants } from 'node:fs';
+import { constants, type Stats } from 'node:fs';
 import { access, mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
-import { Effect, Schema } from 'effect';
+import { z } from 'zod';
+import { rethrowAsError } from '@/rethrow-as-error.js';
 import { ProviderIdSchema } from '@/session-model.js';
 
 /**
  * Schema describing persisted setup configuration.
  */
-const SetupConfigSchema = Schema.Struct({
-  version: Schema.Literal(1),
-  providers: Schema.Array(ProviderIdSchema),
-  vaultPath: Schema.String,
-  coldAfter: Schema.String,
-  createdAt: Schema.String,
-  updatedAt: Schema.String,
+const SetupConfigSchema = z.object({
+  version: z.literal(1),
+  providers: z.array(ProviderIdSchema),
+  vaultPath: z.string(),
+  coldAfter: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
   /** When true, `ensure-restored` may write native session files on launch helpers. */
-  restoreOnLaunch: Schema.optional(Schema.Boolean),
+  restoreOnLaunch: z.boolean().optional(),
   /** Optional cache window (e.g. `7d`) for how long restored sessions stay live. */
-  restoreCacheAfter: Schema.optional(Schema.String),
+  restoreCacheAfter: z.string().optional(),
 });
 
 /**
  * Decoded setup configuration record.
  */
-export type SetupConfig = typeof SetupConfigSchema.Type;
+export type SetupConfig = z.infer<typeof SetupConfigSchema>;
 
 /**
  * Reports whether restore-on-launch lifecycle helpers are enabled in setup config.
- *
- * @param config - Optional setup config from disk.
- * @returns True only when the user explicitly opted in.
- * @example
- * ```ts
- * import { isRestoreOnLaunchEnabled } from './config.js';
- *
- * isRestoreOnLaunchEnabled({ restoreOnLaunch: true } as SetupConfig);
- * ```
  */
 export const isRestoreOnLaunchEnabled = (config: SetupConfig | undefined): boolean =>
   config?.restoreOnLaunch === true;
@@ -65,48 +57,7 @@ export type WriteSetupConfigRequest = {
 };
 
 /**
- * Typed error raised when a proposed vault path is rejected.
- */
-export class VaultPathValidationError extends Schema.TaggedError<VaultPathValidationError>()(
-  'VaultPathValidationError',
-  {
-    inputPath: Schema.String,
-    reason: Schema.Literal(
-      'empty',
-      'inside-provider-store',
-      'not-directory',
-      'parent-missing',
-      'parent-not-directory',
-      'not-writable',
-      'stat-failed',
-    ),
-    message: Schema.String,
-  },
-) {}
-
-/**
- * Typed error raised when reading or writing the setup config file fails.
- */
-export class SetupConfigFileError extends Schema.TaggedError<SetupConfigFileError>()(
-  'SetupConfigFileError',
-  {
-    path: Schema.String,
-    message: Schema.String,
-  },
-) {}
-
-/**
  * Expands a user-entered path against the current home directory.
- *
- * @param path - Raw path from CLI input.
- * @param home - User home directory.
- * @returns Absolute path with leading `~` resolved.
- * @example
- * ```ts
- * import { expandHomePath } from './config.js';
- *
- * const absolutePath = expandHomePath('~/vault', process.env.HOME ?? '');
- * ```
  */
 export const expandHomePath = (path: string, home: string): string => {
   if (path === '~') {
@@ -117,251 +68,141 @@ export const expandHomePath = (path: string, home: string): string => {
     return join(home, path.slice(2));
   }
 
-  if (isAbsolute(path)) {
-    return resolve(path);
-  }
-
   return resolve(path);
 };
 
 /**
  * Resolves the setup config pointer stored below the default Agent Session Pack directory.
- *
- * @param home - User home directory.
- * @returns Config file path.
- * @example
- * ```ts
- * import { resolveConfigPath } from './config.js';
- *
- * const configPath = resolveConfigPath(process.env.HOME ?? '');
- * ```
  */
 export const resolveConfigPath = (home: string): string =>
   join(home, '.agent-session-pack', 'config.json');
 
 /**
- * Validates a proposed archive vault path before setup writes config.
- *
- * @param request - Home, raw path, and provider roots to protect.
- * @returns Validated absolute vault path.
- * @example
- * ```ts
- * import { validateVaultPath } from './config.js';
- *
- * const validated = await Effect.runPromise(
- *   validateVaultPath({ home: process.env.HOME ?? '', inputPath: '~/vault', providerRoots: [] }),
- * );
- * ```
+ * Validates a proposed archive vault path before setup writes config, throwing when it is rejected.
  */
-export const validateVaultPath = (
+export const validateVaultPath = async (
   request: VaultPathValidationRequest,
-): Effect.Effect<ValidatedVaultPath, VaultPathValidationError> =>
-  Effect.gen(function* () {
-    const trimmedPath = request.inputPath.trim();
+): Promise<ValidatedVaultPath> => {
+  const trimmedPath = request.inputPath.trim();
+  const isPathEmpty = trimmedPath.length === 0;
 
-    if (trimmedPath.length === 0) {
-      return yield* Effect.fail(
-        createVaultPathError({
-          inputPath: request.inputPath,
-          reason: 'empty',
-          message: 'Vault path cannot be empty.',
-        }),
-      );
-    }
+  if (isPathEmpty) {
+    throw new Error('Vault path cannot be empty.');
+  }
 
-    const path = expandHomePath(trimmedPath, request.home);
-    const providerRoots = request.providerRoots.map((providerRoot) =>
-      expandHomePath(providerRoot, request.home),
-    );
+  const path = expandHomePath(trimmedPath, request.home);
+  const providerRoots = request.providerRoots.map((providerRoot) =>
+    expandHomePath(providerRoot, request.home),
+  );
+  const isInsideProviderStore = providerRoots.some((providerRoot) =>
+    isPathInsideOrSame(path, providerRoot),
+  );
 
-    if (providerRoots.some((providerRoot) => isPathInsideOrSame(path, providerRoot))) {
-      return yield* Effect.fail(
-        createVaultPathError({
-          inputPath: request.inputPath,
-          reason: 'inside-provider-store',
-          message: 'Vault path cannot be inside a provider session store.',
-        }),
-      );
-    }
+  if (isInsideProviderStore) {
+    throw new Error('Vault path cannot be inside a provider session store.');
+  }
 
-    const targetStat = yield* statOptional({
-      inputPath: request.inputPath,
-      path,
-    });
+  const targetStat = await statOptional(path);
+  const isTargetFound = targetStat !== undefined;
 
-    if (targetStat !== undefined) {
-      if (!targetStat.isDirectory()) {
-        return yield* Effect.fail(
-          createVaultPathError({
-            inputPath: request.inputPath,
-            reason: 'not-directory',
-            message: 'Vault path exists but is not a directory.',
-          }),
-        );
-      }
-
-      yield* assertWritable({
-        inputPath: request.inputPath,
-        path,
-      });
-
-      return { path };
-    }
-
-    const parentPath = dirname(path);
-    const parentStat = yield* statOptional({
-      inputPath: request.inputPath,
-      path: parentPath,
-    });
-
-    if (parentStat === undefined) {
-      return yield* Effect.fail(
-        createVaultPathError({
-          inputPath: request.inputPath,
-          reason: 'parent-missing',
-          message: 'Vault parent directory does not exist.',
-        }),
-      );
-    }
-
-    if (!parentStat.isDirectory()) {
-      return yield* Effect.fail(
-        createVaultPathError({
-          inputPath: request.inputPath,
-          reason: 'parent-not-directory',
-          message: 'Vault parent path exists but is not a directory.',
-        }),
-      );
-    }
-
-    yield* assertWritable({
-      inputPath: request.inputPath,
-      path: parentPath,
-    });
-
+  if (isTargetFound) {
+    await assertExistingVaultDirectory({ path, targetStat });
     return { path };
-  });
+  }
+
+  await assertNewVaultParent(path);
+  return { path };
+};
 
 /**
- * Reads saved setup config when it exists.
- *
- * @param home - User home directory.
- * @returns Parsed setup config, or undefined when setup has not run.
- * @example
- * ```ts
- * import { readSetupConfig } from './config.js';
- *
- * const config = await Effect.runPromise(readSetupConfig(process.env.HOME ?? ''));
- * ```
+ * Reads saved setup config when it exists, or undefined when setup has not run.
  */
-export const readSetupConfig = (
-  home: string,
-): Effect.Effect<SetupConfig | undefined, SetupConfigFileError> => {
+export const readSetupConfig = async (home: string): Promise<SetupConfig | undefined> => {
   const configPath = resolveConfigPath(home);
+  const configText = await readConfigText(configPath).catch(rethrowAsError);
+  const isConfigMissing = configText === null;
 
-  return Effect.tryPromise({
-    try: async () => {
-      const content = await readFile(configPath, 'utf8').catch((cause: unknown) => {
-        if (errorCode(cause) === 'ENOENT') {
-          return undefined;
-        }
+  if (isConfigMissing) {
+    return undefined;
+  }
 
-        return Promise.reject(cause);
-      });
-
-      if (content === undefined) {
-        return undefined;
-      }
-
-      return Schema.decodeUnknownSync(SetupConfigSchema)(JSON.parse(content));
-    },
-    catch: (cause) =>
-      new SetupConfigFileError({
-        path: configPath,
-        message: String(cause),
-      }),
-  });
+  return SetupConfigSchema.parse(JSON.parse(configText));
 };
 
 /**
  * Writes setup config and creates the selected vault directory.
- *
- * @param request - Config and home directory.
- * @returns Effect that completes after config has been persisted.
- * @example
- * ```ts
- * import { writeSetupConfig } from './config.js';
- *
- * await Effect.runPromise(writeSetupConfig({ home: process.env.HOME ?? '', config }));
- * ```
  */
-export const writeSetupConfig = (
-  request: WriteSetupConfigRequest,
-): Effect.Effect<void, SetupConfigFileError> => {
+export const writeSetupConfig = async (request: WriteSetupConfigRequest): Promise<void> => {
   const configPath = resolveConfigPath(request.home);
-
-  return Effect.tryPromise({
-    try: async () => {
-      await mkdir(dirname(configPath), { recursive: true });
-      await mkdir(request.config.vaultPath, { recursive: true });
-      await writeFile(configPath, `${JSON.stringify(request.config, null, 2)}\n`);
-    },
-    catch: (cause) =>
-      new SetupConfigFileError({
-        path: configPath,
-        message: String(cause),
-      }),
-  });
+  await mkdir(dirname(configPath), { recursive: true }).catch(rethrowAsError);
+  await mkdir(request.config.vaultPath, { recursive: true }).catch(rethrowAsError);
+  await writeFile(configPath, `${JSON.stringify(request.config, null, 2)}\n`).catch(rethrowAsError);
 };
 
-const createVaultPathError = (error: {
-  readonly inputPath: string;
-  readonly reason: VaultPathValidationError['reason'];
-  readonly message: string;
-}): VaultPathValidationError =>
-  new VaultPathValidationError({
-    inputPath: error.inputPath,
-    reason: error.reason,
-    message: error.message,
-  });
+const readConfigText = async (configPath: string): Promise<string | null> => {
+  try {
+    return await readFile(configPath, 'utf8');
+  } catch (cause) {
+    const isConfigMissing = errorCode(cause) === 'ENOENT';
 
-const statOptional = (request: {
-  readonly inputPath: string;
+    if (isConfigMissing) {
+      return null;
+    }
+
+    return rethrowAsError(cause);
+  }
+};
+
+const assertExistingVaultDirectory = async (request: {
   readonly path: string;
-}): Effect.Effect<Awaited<ReturnType<typeof stat>> | undefined, VaultPathValidationError> =>
-  Effect.tryPromise({
-    try: async () => {
-      const entry = await stat(request.path).catch((cause: unknown) => {
-        if (errorCode(cause) === 'ENOENT') {
-          return undefined;
-        }
+  readonly targetStat: Stats;
+}): Promise<void> => {
+  const isTargetDirectory = request.targetStat.isDirectory();
 
-        return Promise.reject(cause);
-      });
+  if (!isTargetDirectory) {
+    throw new Error('Vault path exists but is not a directory.');
+  }
 
-      return entry;
-    },
-    catch: (cause) =>
-      createVaultPathError({
-        inputPath: request.inputPath,
-        reason: 'stat-failed',
-        message: String(cause),
-      }),
+  await assertWritable(request.path);
+};
+
+const assertNewVaultParent = async (path: string): Promise<void> => {
+  const parentPath = dirname(path);
+  const parentStat = await statOptional(parentPath);
+  const isParentMissing = parentStat === undefined;
+
+  if (isParentMissing) {
+    throw new Error('Vault parent directory does not exist.');
+  }
+
+  const isParentDirectory = parentStat.isDirectory();
+
+  if (!isParentDirectory) {
+    throw new Error('Vault parent path exists but is not a directory.');
+  }
+
+  await assertWritable(parentPath);
+};
+
+const statOptional = async (path: string): Promise<Stats | undefined> => {
+  try {
+    return await stat(path);
+  } catch (cause) {
+    const isPathMissing = errorCode(cause) === 'ENOENT';
+
+    if (isPathMissing) {
+      return undefined;
+    }
+
+    throw new Error(String(cause), { cause });
+  }
+};
+
+const assertWritable = async (path: string): Promise<void> => {
+  await access(path, constants.W_OK).catch(() => {
+    throw new Error('Vault path is not writable.');
   });
-
-const assertWritable = (request: {
-  readonly inputPath: string;
-  readonly path: string;
-}): Effect.Effect<void, VaultPathValidationError> =>
-  Effect.tryPromise({
-    try: () => access(request.path, constants.W_OK),
-    catch: () =>
-      createVaultPathError({
-        inputPath: request.inputPath,
-        reason: 'not-writable',
-        message: 'Vault path is not writable.',
-      }),
-  });
+};
 
 const isPathInsideOrSame = (path: string, parentPath: string): boolean => {
   const relativePath = relative(resolve(parentPath), resolve(path));

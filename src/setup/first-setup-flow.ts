@@ -1,4 +1,3 @@
-import { Effect } from 'effect';
 import { HOME_NOT_SET_CANCEL_MESSAGE } from '@/home-env.js';
 import type { InteractiveCliRequest } from '@/interactive-cli-request.js';
 import { DEFAULT_COLD_AFTER, DEFAULT_COLD_AFTER_MS } from '@/pack/plan.js';
@@ -111,19 +110,17 @@ export const runFirstSetup = async (request: FirstSetupRequest = {}): Promise<Fl
   }
 
   const timestamp = now.toISOString();
-  await Effect.runPromise(
-    writeSetupConfig({
-      home,
-      config: {
-        version: 1,
-        providers: selectedProviders,
-        vaultPath,
-        coldAfter,
-        createdAt: timestamp,
-        updatedAt: timestamp,
-      },
-    }),
-  );
+  await writeSetupConfig({
+    home,
+    config: {
+      version: 1,
+      providers: selectedProviders,
+      vaultPath,
+      coldAfter,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    },
+  });
 
   prompts.outro(formatSetupSavedCopy());
   return 'saved';
@@ -262,22 +259,19 @@ const validateVaultPathInput = async (request: {
   const providerRoots = request.providers.flatMap((provider) =>
     provider.defaultRoots(request.home),
   );
-  const vaultPathValidation = await Effect.runPromise(
-    Effect.either(
-      validateVaultPath({
-        home: request.home,
-        inputPath: request.inputPath,
-        providerRoots,
-      }),
-    ),
-  );
-
-  if (vaultPathValidation._tag === 'Right') {
-    return vaultPathValidation.right.path;
+  try {
+    const validatedPath = await validateVaultPath({
+      home: request.home,
+      inputPath: request.inputPath,
+      providerRoots,
+    });
+    return validatedPath.path;
+  } catch (validationError) {
+    const isErrorObject = validationError instanceof Error;
+    const validationMessage = isErrorObject ? validationError.message : String(validationError);
+    request.prompts.note(validationMessage, 'Invalid vault path');
+    return undefined;
   }
-
-  request.prompts.note(vaultPathValidation.left.message, 'Invalid vault path');
-  return undefined;
 };
 
 const providerPromptOption = (

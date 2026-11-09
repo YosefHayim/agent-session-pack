@@ -1,14 +1,13 @@
 import { stat } from 'node:fs/promises';
 import { Effect } from 'effect';
 import { sumSessionBytes } from '@/byte-savings.js';
+import { promiseAsEffect } from '@/effect-bridge.js';
 import type {
   DiscoveredSession,
   ProviderAdapter,
-  ProviderDiscoveryError,
   ProviderId,
   ProviderMode,
 } from '@/session-model.js';
-import { ProviderDiscoveryError as ProviderDiscoveryFailure } from '@/session-model.js';
 
 /**
  * Readiness status reported for a provider store during inventory.
@@ -70,7 +69,7 @@ export type ProviderInventoryRequest = {
  */
 export const inspectProviderInventory = (
   request: ProviderInventoryRequest,
-): Effect.Effect<ProviderInventoryReport, ProviderDiscoveryError> =>
+): Effect.Effect<ProviderInventoryReport, Error> =>
   Effect.gen(function* () {
     const inventoryRows: ProviderInventoryRow[] = [];
     const cutoffTime = request.now.getTime() - request.olderThanMs;
@@ -108,7 +107,7 @@ type RootDiscovery = {
 const discoverProviderRoots = (request: {
   readonly home: string;
   readonly provider: ProviderAdapter;
-}): Effect.Effect<ProviderRootDiscovery, ProviderDiscoveryError> =>
+}): Effect.Effect<ProviderRootDiscovery, Error> =>
   Effect.gen(function* () {
     const roots = request.provider.defaultRoots(request.home);
     const discoveredRoots = yield* Effect.all(
@@ -131,7 +130,7 @@ const discoverProviderRoots = (request: {
 const discoverProviderRoot = (request: {
   readonly provider: ProviderAdapter;
   readonly root: string;
-}): Effect.Effect<RootDiscovery | undefined, ProviderDiscoveryError> =>
+}): Effect.Effect<RootDiscovery | undefined, Error> =>
   Effect.gen(function* () {
     const exists = yield* pathExists({
       provider: request.provider,
@@ -142,10 +141,12 @@ const discoverProviderRoot = (request: {
       return undefined;
     }
 
-    const sessions = yield* request.provider.discover({
-      provider: request.provider.id,
-      path: request.root,
-    });
+    const sessions = yield* promiseAsEffect(() =>
+      request.provider.discover({
+        provider: request.provider.id,
+        path: request.root,
+      }),
+    );
 
     return {
       root: request.root,
@@ -210,7 +211,7 @@ const createInventoryRow = (request: {
 const pathExists = (request: {
   readonly provider: ProviderAdapter;
   readonly path: string;
-}): Effect.Effect<boolean, ProviderDiscoveryError> =>
+}): Effect.Effect<boolean, Error> =>
   Effect.tryPromise({
     try: async () => {
       const entry = await stat(request.path).catch((cause: unknown) => {
@@ -223,12 +224,7 @@ const pathExists = (request: {
 
       return entry !== undefined;
     },
-    catch: (cause) =>
-      new ProviderDiscoveryFailure({
-        provider: request.provider.id,
-        path: request.path,
-        message: String(cause),
-      }),
+    catch: (cause) => new Error(String(cause), { cause }),
   });
 
 const isRootDiscovery = (discovery: RootDiscovery | undefined): discovery is RootDiscovery =>

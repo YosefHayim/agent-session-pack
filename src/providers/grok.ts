@@ -1,6 +1,5 @@
 import { readFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
-import { Effect } from 'effect';
 import type { ProviderAdapter } from '@/session-model.js';
 import { discoverDirectoryProviderSessions, readJsonFile } from './directory-sessions.js';
 
@@ -12,22 +11,21 @@ export const grokProvider: ProviderAdapter = {
   label: 'Grok',
   mode: 'archive',
   defaultRoots: (home: string): ReadonlyArray<string> => [join(home, '.grok', 'sessions')],
-  discover: (store) =>
-    Effect.gen(function* () {
-      const activeSessionIds = yield* Effect.promise(() =>
-        readActiveGrokSessionIds(join(store.path, '..', 'active_sessions.json')),
-      );
+  discover: async (store) => {
+    const activeSessionIds = await readActiveGrokSessionIds(
+      join(store.path, '..', 'active_sessions.json'),
+    );
 
-      return yield* discoverDirectoryProviderSessions({
-        provider: 'grok',
-        store,
-        markers: ['summary.json', 'updates.jsonl', 'events.jsonl'],
-        maxDepth: 3,
-        activeSessionIds,
-        titleFromDirectory: readGrokSessionTitle,
-        sessionIdFromDirectory: (path) => basename(path),
-      });
-    }),
+    return discoverDirectoryProviderSessions({
+      provider: 'grok',
+      store,
+      markers: ['summary.json', 'updates.jsonl', 'events.jsonl'],
+      maxDepth: 3,
+      activeSessionIds,
+      titleFromDirectory: readGrokSessionTitle,
+      sessionIdFromDirectory: (path) => basename(path),
+    });
+  },
 };
 
 const readActiveGrokSessionIds = async (path: string): Promise<ReadonlySet<string>> => {
@@ -48,7 +46,7 @@ const readActiveGrokSessionIds = async (path: string): Promise<ReadonlySet<strin
         const sessionId = (entry as { readonly session_id?: unknown }).session_id;
         return typeof sessionId === 'string' ? sessionId : undefined;
       })
-      .filter((value): value is string => value !== undefined);
+      .filter((sessionId): sessionId is string => sessionId !== undefined);
 
     return new Set(ids);
   } catch {

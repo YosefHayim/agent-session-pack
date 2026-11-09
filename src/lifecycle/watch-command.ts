@@ -1,18 +1,13 @@
 import { spawn } from 'node:child_process';
 import { defineCommand } from 'citty';
 import { Effect } from 'effect';
-import type { ArchiveFileSystemError } from '@/archive/file-system.js';
-import type { ManifestStoreError } from '@/archive/manifest-store.js';
 import { resolveDefaultVaultPath } from '@/archive/vault-paths.js';
-import type { ArchiveVerificationError, CompressionAdapter } from '@/archive/writer.js';
+import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
+import { promiseAsEffect } from '@/effect-bridge.js';
 import { requireHome } from '@/home-env.js';
 import { parseOptionalProvider } from '@/providers/flag.js';
-import {
-  isRestoreOnLaunchEnabled,
-  readSetupConfig,
-  type SetupConfigFileError,
-} from '@/setup/config.js';
+import { isRestoreOnLaunchEnabled, readSetupConfig } from '@/setup/config.js';
 import {
   type SessionWatchError,
   type SessionWatchEvent,
@@ -71,14 +66,7 @@ type WatchArgs = {
 
 const runWatchCommand = (
   args: WatchArgs,
-): Effect.Effect<
-  void,
-  | ArchiveFileSystemError
-  | ArchiveVerificationError
-  | ManifestStoreError
-  | SessionWatchError
-  | SetupConfigFileError
-> =>
+): Effect.Effect<void, Error | Error | Error | SessionWatchError | Error> =>
   Effect.gen(function* () {
     const home = requireHome(args.home);
 
@@ -93,7 +81,7 @@ const runWatchCommand = (
       return;
     }
 
-    const setupConfig = yield* readSetupConfig(home);
+    const setupConfig = yield* promiseAsEffect(() => readSetupConfig(home));
     if (!isRestoreOnLaunchEnabled(setupConfig) && args.execArgv.length === 0) {
       // Allow explicit watch even if disabled when following a child; wrappers enable lifecycle first.
     }

@@ -1,12 +1,7 @@
+import type { Dirent } from 'node:fs';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { basename, join } from 'node:path';
-import { Effect } from 'effect';
-import {
-  type DiscoveredSession,
-  ProviderDiscoveryError,
-  type ProviderId,
-  type SessionStore,
-} from '@/session-model.js';
+import type { DiscoveredSession, ProviderId, SessionStore } from '@/session-model.js';
 import { measureDirectorySession, slugifyTitle } from './session-discovery.js';
 
 /**
@@ -30,100 +25,51 @@ export type DirectoryProviderDiscoveryOptions = {
 
 /**
  * Discovers directory-backed provider sessions under a store root.
- *
- * @param options - Provider markers, depth, and title extraction hooks.
- * @returns Effect containing discovered directory sessions.
- * @example
- * ```ts
- * import { discoverDirectoryProviderSessions } from './directory-sessions.js';
- *
- * const sessions = discoverDirectoryProviderSessions({
- *   provider: 'grok',
- *   store,
- *   markers: ['summary.json', 'updates.jsonl'],
- *   maxDepth: 3,
- * });
- * ```
  */
-export const discoverDirectoryProviderSessions = (
+export const discoverDirectoryProviderSessions = async (
   options: DirectoryProviderDiscoveryOptions,
-): Effect.Effect<ReadonlyArray<DiscoveredSession>, ProviderDiscoveryError> =>
-  Effect.gen(function* () {
-    const directories = yield* Effect.tryPromise({
-      try: () =>
-        collectSessionDirectories(options.store.path, {
-          markers: options.markers,
-          maxDepth: options.maxDepth,
-          excludedNames: options.excludedNames ?? [],
-        }),
-      catch: (cause) =>
-        new ProviderDiscoveryError({
-          provider: options.provider,
-          path: options.store.path,
-          message: String(cause),
-        }),
-    });
+): Promise<ReadonlyArray<DiscoveredSession>> => {
+  const directories = await collectSessionDirectories(options.store.path, {
+    markers: options.markers,
+    maxDepth: options.maxDepth,
+    excludedNames: options.excludedNames ?? [],
+  });
+  const sessions: DiscoveredSession[] = [];
 
-    const sessions: DiscoveredSession[] = [];
+  for (const directory of directories) {
+    const sessionId =
+      options.sessionIdFromDirectory?.(directory) ?? defaultSessionIdFromDirectory(directory);
+    const isSessionActive = options.activeSessionIds?.has(sessionId) === true;
 
-    for (const directory of directories) {
-      const sessionId =
-        options.sessionIdFromDirectory?.(directory) ?? defaultSessionIdFromDirectory(directory);
-
-      if (options.activeSessionIds?.has(sessionId) === true) {
-        continue;
-      }
-
-      const measured = yield* measureDirectorySession(directory).pipe(
-        Effect.mapError(
-          (error) =>
-            new ProviderDiscoveryError({
-              provider: options.provider,
-              path: directory,
-              message: error.message,
-            }),
-        ),
-      );
-      const title = yield* Effect.promise(async () => {
-        if (options.titleFromDirectory === undefined) {
-          return sessionId;
-        }
-
-        try {
-          const value = await options.titleFromDirectory(directory);
-          return value.length > 0 ? value : sessionId;
-        } catch {
-          return sessionId;
-        }
-      });
-
-      sessions.push({
-        id: sessionId,
-        provider: options.provider,
-        title,
-        slug: slugifyTitle(title),
-        originalPath: directory,
-        modifiedAt: measured.modifiedAt,
-        sizeBytes: measured.sizeBytes,
-        sourceKind: 'directory',
-        status: 'live',
-      });
+    if (isSessionActive) {
+      continue;
     }
 
-    return sessions;
-  });
+    const measured = await measureDirectorySession(directory);
+    const title = await readDirectoryTitle({
+      directory,
+      sessionId,
+      titleFromDirectory: options.titleFromDirectory,
+    });
+
+    sessions.push({
+      id: sessionId,
+      provider: options.provider,
+      title,
+      slug: slugifyTitle(title),
+      originalPath: directory,
+      modifiedAt: measured.modifiedAt,
+      sizeBytes: measured.sizeBytes,
+      sourceKind: 'directory',
+      status: 'live',
+    });
+  }
+
+  return sessions;
+};
 
 /**
  * Reads JSON text from a file when present.
- *
- * @param path - JSON file path.
- * @returns Parsed JSON value or undefined when missing/invalid.
- * @example
- * ```ts
- * import { readJsonFile } from './directory-sessions.js';
- *
- * const value = await readJsonFile('/sessions/abc/summary.json');
- * ```
  */
 export const readJsonFile = async (path: string): Promise<unknown | undefined> => {
   try {
@@ -131,6 +77,25 @@ export const readJsonFile = async (path: string): Promise<unknown | undefined> =
     return JSON.parse(content) as unknown;
   } catch {
     return undefined;
+  }
+};
+
+const readDirectoryTitle = async (request: {
+  readonly directory: string;
+  readonly sessionId: string;
+  readonly titleFromDirectory?: (path: string) => Promise<string>;
+}): Promise<string> => {
+  if (request.titleFromDirectory === undefined) {
+    return request.sessionId;
+  }
+
+  try {
+    const titleFound = await request.titleFromDirectory(request.directory);
+    const isTitleFound = titleFound.length > 0;
+    return isTitleFound ? titleFound : request.sessionId;
+  } catch {
+    // A title reader that fails falls back to the session id, as discovery always did.
+    return request.sessionId;
   }
 };
 
@@ -153,9 +118,9 @@ const collectSessionDirectories = async (
     readonly excludedNames: ReadonlyArray<string>;
   },
 ): Promise<ReadonlyArray<string>> => {
-  const rootStat = await stat(root).catch(() => undefined);
+  const isRootDirectory = await isDirectoryPath(root);
 
-  if (rootStat === undefined || !rootStat.isDirectory()) {
+  if (!isRootDirectory) {
     return [];
   }
 
@@ -175,7 +140,7 @@ const collectSessionDirectories = async (
       return;
     }
 
-    const entries = await readdir(directory, { withFileTypes: true }).catch(() => []);
+    const entries = await readChildEntries(directory);
 
     for (const entry of entries) {
       if (!entry.isDirectory()) {
@@ -198,15 +163,36 @@ const collectSessionDirectories = async (
   return found;
 };
 
+const readChildEntries = async (directory: string): Promise<ReadonlyArray<Dirent>> => {
+  try {
+    return await readdir(directory, { withFileTypes: true });
+  } catch {
+    // An unreadable subfolder is skipped, as discovery always did.
+    return [];
+  }
+};
+
+const isDirectoryPath = (path: string): Promise<boolean> =>
+  stat(path).then(
+    (pathStat) => pathStat.isDirectory(),
+    () => false,
+  );
+
+const isFilePath = (path: string): Promise<boolean> =>
+  stat(path).then(
+    (pathStat) => pathStat.isFile(),
+    () => false,
+  );
+
 const directoryHasMarkers = async (
   directory: string,
   markers: DirectorySessionMarkers,
 ): Promise<boolean> => {
   for (const marker of markers) {
     const markerPath = join(directory, marker);
-    const markerStat = await stat(markerPath).catch(() => undefined);
+    const isMarkerFound = await isFilePath(markerPath);
 
-    if (markerStat?.isFile() === true) {
+    if (isMarkerFound) {
       return true;
     }
   }

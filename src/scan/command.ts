@@ -2,7 +2,7 @@ import { defineCommand } from 'citty';
 import { Effect, Schema } from 'effect';
 import { requireHome } from '@/home-env.js';
 import { selectProviders } from '@/providers/flag.js';
-import type { ProviderDiscoveryError, SessionStore } from '@/session-model.js';
+import type { SessionStore } from '@/session-model.js';
 import { renderHumanScan, renderJsonScan } from './output.js';
 import { scanStores } from './stores.js';
 
@@ -32,7 +32,7 @@ export type ScanArgs = typeof ScanArgsSchema.Type;
  * await Effect.runPromise(runScanCommand({ json: true }));
  * ```
  */
-export const runScanCommand = (args: ScanArgs): Effect.Effect<void, ProviderDiscoveryError> =>
+export const runScanCommand = (args: ScanArgs): Effect.Effect<void, Error> =>
   Effect.gen(function* () {
     const home = requireHome();
 

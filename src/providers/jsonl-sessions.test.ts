@@ -2,7 +2,6 @@ import { constants as bufferConstants } from 'node:buffer';
 import { mkdir, mkdtemp, truncate, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Effect } from 'effect';
 import { describe, expect, it } from 'vitest';
 import { claudeCodeProvider } from './claude-code.js';
 import { codexProvider } from './codex.js';
@@ -22,12 +21,10 @@ describe('jsonlSessions', () => {
     await writeFile(sessionPath, '{"type":"user","text":"Build Agent Session Pack"}\n');
     await writeFile(join(nested, 'notes.txt'), 'ignore me');
 
-    const sessions = await Effect.runPromise(
-      codexProvider.discover({
-        provider: 'codex',
-        path: workspace,
-      }),
-    );
+    const sessions = await codexProvider.discover({
+      provider: 'codex',
+      path: workspace,
+    });
 
     expect(sessions).toHaveLength(1);
     expect(sessions[0]).toMatchObject({
@@ -50,12 +47,10 @@ describe('jsonlSessions', () => {
     await writeFile(sessionPath, '{"type":"user","message":{"content":"Catalog worker"}}\n');
     await writeFile(join(subagents, 'ignored.jsonl'), '{"type":"user","text":"ignore"}\n');
 
-    const sessions = await Effect.runPromise(
-      claudeCodeProvider.discover({
-        provider: 'claude',
-        path: workspace,
-      }),
-    );
+    const sessions = await claudeCodeProvider.discover({
+      provider: 'claude',
+      path: workspace,
+    });
 
     expect(sessions).toHaveLength(1);
     expect(sessions[0]).toMatchObject({
@@ -75,12 +70,10 @@ describe('jsonlSessions', () => {
     await writeFile(sessionPath, '{"type":"user","text":"Large local session"}\n');
     await truncate(sessionPath, bufferConstants.MAX_STRING_LENGTH + 1);
 
-    const sessions = await Effect.runPromise(
-      codexProvider.discover({
-        provider: 'codex',
-        path: workspace,
-      }),
-    );
+    const sessions = await codexProvider.discover({
+      provider: 'codex',
+      path: workspace,
+    });
 
     expect(sessions).toHaveLength(1);
     expect(sessions[0]).toMatchObject({

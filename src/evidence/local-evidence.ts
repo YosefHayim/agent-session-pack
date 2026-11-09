@@ -103,10 +103,10 @@ export const runLocalEvidence = async (
     const fileName = basename(selected.originalPath);
     const fixtureDir = join(request.workRoot, provider.id);
     const fixturePath = join(fixtureDir, fileName);
-    const isKindDirectory = sourceKind === 'directory';
+    const isSourceDirectory = sourceKind === 'directory';
     const archivePath = join(
       fixtureDir,
-      isKindDirectory ? `${fileName}.tar.zst` : `${fileName}.zst`,
+      isSourceDirectory ? `${fileName}.tar.zst` : `${fileName}.zst`,
     );
     const restoredPath = join(fixtureDir, `restored-${fileName}`);
 

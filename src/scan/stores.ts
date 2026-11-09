@@ -60,18 +60,18 @@ export const discoverStoreSessions = async (
   provider: ProviderAdapter,
   store: SessionStore,
 ): Promise<ReadonlyArray<DiscoveredSession>> => {
-  const isNotStorePresent = !(await isPathPresent(store.path));
+  const isStoreMissing = !(await isPathPresent(store.path));
 
-  if (isNotStorePresent) {
+  if (isStoreMissing) {
     return [];
   }
 
   try {
     return await provider.discover(store);
   } catch (discoveryError) {
-    const isNotStorePresentAfterFailure = !(await isPathPresent(store.path));
+    const isStoreMissingAfterFailure = !(await isPathPresent(store.path));
 
-    if (isNotStorePresentAfterFailure) {
+    if (isStoreMissingAfterFailure) {
       return [];
     }
 

@@ -55,8 +55,8 @@ const discoverDevinSessions = async (root: string): Promise<ReadonlyArray<Discov
   const dbPath = join(root, 'sessions.db');
   const dbStat = await readStatOrNull(dbPath);
 
-  const isDbStatMissing = dbStat === null;
-  if (isDbStatMissing) {
+  const isDatabaseFileMissing = dbStat === null;
+  if (isDatabaseFileMissing) {
     return [];
   }
 

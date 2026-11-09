@@ -135,8 +135,8 @@ export const runPackCommand = async (args: PackArgs): Promise<CommandOutcome> =>
     return { exitCode: 2 };
   }
 
-  const isMaxTrue = args.max === true;
-  const olderThan = isMaxTrue ? '0h' : (args.olderThan ?? DEFAULT_COLD_AFTER);
+  const isMaxRequested = args.max === true;
+  const olderThan = isMaxRequested ? '0h' : (args.olderThan ?? DEFAULT_COLD_AFTER);
   const olderThanMs = parseDurationMs(olderThan);
   const { providers, isProviderUnknown } = selectProviders(args.provider, args.providers);
   const providerExitCode = isProviderUnknown ? 2 : 0;
@@ -191,18 +191,18 @@ export const runPackCommand = async (args: PackArgs): Promise<CommandOutcome> =>
 };
 
 const shouldUseArchiveWorkflow = (args: PackArgs): boolean => {
-  const isApplyTrue = args.apply === true;
-  if (isApplyTrue) {
+  const isApplyRequested = args.apply === true;
+  if (isApplyRequested) {
     return true;
   }
 
-  const isAllProvidersTrue = args.allProviders === true;
-  if (isAllProvidersTrue) {
+  const isAllProvidersRequested = args.allProviders === true;
+  if (isAllProvidersRequested) {
     return true;
   }
 
-  const isMaxTrue = args.max === true;
-  if (isMaxTrue) {
+  const isMaxRequested = args.max === true;
+  if (isMaxRequested) {
     return true;
   }
 

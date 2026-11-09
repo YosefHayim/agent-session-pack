@@ -67,8 +67,8 @@ export const unpackProviderSessions = async (
     const archiveBytes = await sumArchiveBytes(providerManifests);
     const beforeBytes = sumManifestSourceBytes(providerManifests);
 
-    const isRequestApplyFalse = request.apply === false;
-    if (isRequestApplyFalse) {
+    const isPreviewOnly = request.apply === false;
+    if (isPreviewOnly) {
       unpackSessionRows.push(createDryRunUnpackRow(provider.id, providerManifests, archiveBytes));
       continue;
     }

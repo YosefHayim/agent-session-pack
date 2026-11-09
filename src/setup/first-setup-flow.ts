@@ -109,8 +109,8 @@ export const runFirstSetup = async (request: FirstSetupRequest = {}): Promise<Fl
     initialValue: true,
   });
 
-  const shouldSaveCancelOrNotTrue = prompts.isCancel(shouldSave) || shouldSave !== true;
-  if (shouldSaveCancelOrNotTrue) {
+  const isSaveStopped = prompts.isCancel(shouldSave) || shouldSave !== true;
+  if (isSaveStopped) {
     prompts.cancel('No files changed.');
     return 'cancelled';
   }
@@ -258,8 +258,8 @@ const promptCustomVaultPath = async (request: {
       providers: request.providers,
     });
 
-    const isValidatedPathPresent = validatedPath != null;
-    if (isValidatedPathPresent) {
+    const isValidatedPathFound = validatedPath != null;
+    if (isValidatedPathFound) {
       return validatedPath;
     }
   }

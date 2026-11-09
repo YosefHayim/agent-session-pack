@@ -92,8 +92,8 @@ export const watchSessionStubs = async (request: WatchSessionStubsRequest): Prom
       return;
     }
 
-    const isNotForceFromFsEventAndKindDirectory = !forceFromFsEvent && sourceKind === 'directory';
-    if (isNotForceFromFsEventAndKindDirectory) {
+    const isDirectoryEventWithoutForce = !forceFromFsEvent && sourceKind === 'directory';
+    if (isDirectoryEventWithoutForce) {
       const opened = await directoryStubWasOpened(manifest.originalPath);
 
       const isOpenedMissing = !opened;
@@ -102,8 +102,8 @@ export const watchSessionStubs = async (request: WatchSessionStubsRequest): Prom
       }
     }
 
-    const isNotForceFromFsEventAndKindFile = !forceFromFsEvent && sourceKind === 'file';
-    if (isNotForceFromFsEventAndKindFile) {
+    const isFileEventWithoutForce = !forceFromFsEvent && sourceKind === 'file';
+    if (isFileEventWithoutForce) {
       // File stubs only materialize on fs events (reads/writes from the provider).
       return;
     }

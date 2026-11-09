@@ -84,8 +84,8 @@ export const runPreflightCommand = async (args: PreflightArgs): Promise<CommandO
   const sessionIds = extractSessionIdsFromArgv(args.passthroughArgv);
   const isJsonOutput = args.json === true;
 
-  const isRestoreOnLaunchEnabledMissing = !restoreOnLaunchEnabled;
-  if (isRestoreOnLaunchEnabledMissing) {
+  const isRestoreOnLaunchDisabled = !restoreOnLaunchEnabled;
+  if (isRestoreOnLaunchDisabled) {
     writePreflightOutput(
       {
         command: 'preflight',

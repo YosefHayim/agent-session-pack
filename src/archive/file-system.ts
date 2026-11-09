@@ -57,8 +57,8 @@ export const resolveSourceKind = async (
   }
 
   const pathStat = await stat(path).catch(rethrowAsError);
-  const isDirectoryPathStat = pathStat.isDirectory();
-  return isDirectoryPathStat ? 'directory' : 'file';
+  const isPathDirectory = pathStat.isDirectory();
+  return isPathDirectory ? 'directory' : 'file';
 };
 
 /**

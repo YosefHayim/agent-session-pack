@@ -35,8 +35,8 @@ export const archivePathForSession = (
   session: DiscoveredSession,
   sourceKind: SessionSourceKind,
 ): string => {
-  const isKindDirectory = sourceKind === 'directory';
-  const extension = isKindDirectory ? 'tar.zst' : 'jsonl.zst';
+  const isSourceDirectory = sourceKind === 'directory';
+  const extension = isSourceDirectory ? 'tar.zst' : 'jsonl.zst';
   return join(
     vaultPath,
     'archives',
@@ -80,8 +80,8 @@ export const verificationPathForSession = (
   session: DiscoveredSession,
   sourceKind: SessionSourceKind,
 ): string => {
-  const isKindDirectory = sourceKind === 'directory';
-  if (isKindDirectory) {
+  const isSourceDirectory = sourceKind === 'directory';
+  if (isSourceDirectory) {
     return join(vaultPath, 'verify', session.provider, safePathSegment(session.id));
   }
 
@@ -107,8 +107,8 @@ export const restorePathForManifest = (
   manifest: SessionManifest,
   sourceKind: SessionSourceKind,
 ): string => {
-  const isKindDirectory = sourceKind === 'directory';
-  if (isKindDirectory) {
+  const isSourceDirectory = sourceKind === 'directory';
+  if (isSourceDirectory) {
     return join(vaultPath, 'restore', manifest.provider, safePathSegment(manifest.sessionId));
   }
 

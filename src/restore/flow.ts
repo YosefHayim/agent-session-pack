@@ -18,9 +18,8 @@ export const runRestoreFlow = async (
     initialValue: true,
   });
 
-  const shouldPreviewCancelOrNotTrue =
-    request.prompts.isCancel(shouldPreview) || shouldPreview !== true;
-  if (shouldPreviewCancelOrNotTrue) {
+  const isPreviewStopped = request.prompts.isCancel(shouldPreview) || shouldPreview !== true;
+  if (isPreviewStopped) {
     request.prompts.cancel('No files changed.');
     return { exitCode: 0 };
   }
@@ -45,8 +44,8 @@ export const runRestoreFlow = async (
     initialValue: false,
   });
 
-  const shouldApplyCancelOrNotTrue = request.prompts.isCancel(shouldApply) || shouldApply !== true;
-  if (shouldApplyCancelOrNotTrue) {
+  const isApplyStopped = request.prompts.isCancel(shouldApply) || shouldApply !== true;
+  if (isApplyStopped) {
     request.prompts.outro('No files changed.');
     return previewOutcome;
   }

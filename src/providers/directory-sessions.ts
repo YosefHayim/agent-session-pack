@@ -105,8 +105,8 @@ const defaultSessionIdFromDirectory = (path: string): string => {
   const name = basename(path);
   const uuidMatch = name.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
 
-  const isUuidPresent = uuidMatch != null;
-  if (isUuidPresent) {
+  const isUuidFound = uuidMatch != null;
+  if (isUuidFound) {
     return uuidMatch[0];
   }
 
@@ -159,8 +159,8 @@ const collectSessionDirectories = async (
         continue;
       }
 
-      const isNameStartsWithEmpty = entry.name.startsWith('.');
-      if (isNameStartsWithEmpty) {
+      const isHiddenEntry = entry.name.startsWith('.');
+      if (isHiddenEntry) {
         continue;
       }
 

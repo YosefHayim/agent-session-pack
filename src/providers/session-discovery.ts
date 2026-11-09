@@ -144,8 +144,8 @@ export const sessionIdFromPath = (path: string): string => {
   const fileName = basename(path, extname(path));
   const idMatch = fileName.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
 
-  const isIdPresent = idMatch != null;
-  if (isIdPresent) {
+  const isIdFound = idMatch != null;
+  if (isIdFound) {
     return idMatch[0];
   }
 

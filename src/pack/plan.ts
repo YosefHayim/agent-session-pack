@@ -283,24 +283,24 @@ const multiplyDuration = (duration: Duration, factor: number): Duration => ({
 });
 
 const halveDuration = (duration: Duration): Duration => {
-  const isDurationUnitH = duration.unit === 'h';
-  if (isDurationUnitH) {
+  const isDurationInHours = duration.unit === 'h';
+  if (isDurationInHours) {
     return {
       value: Math.max(0, Math.floor(duration.value / 2)),
       unit: 'h',
     };
   }
 
-  const isDurationUnitDAndAtMost1 = duration.unit === 'd' && duration.value <= 1;
-  if (isDurationUnitDAndAtMost1) {
+  const isDurationAtMostOneDay = duration.unit === 'd' && duration.value <= 1;
+  if (isDurationAtMostOneDay) {
     return {
       value: 12,
       unit: 'h',
     };
   }
 
-  const isDurationUnitWAndAtMost1 = duration.unit === 'w' && duration.value <= 1;
-  if (isDurationUnitWAndAtMost1) {
+  const isDurationAtMostOneWeek = duration.unit === 'w' && duration.value <= 1;
+  if (isDurationAtMostOneWeek) {
     return {
       value: 3,
       unit: 'd',
@@ -314,8 +314,8 @@ const halveDuration = (duration: Duration): Duration => {
 };
 
 const durationMs = (duration: Duration): number => {
-  const isDurationUnitH = duration.unit === 'h';
-  if (isDurationUnitH) {
+  const isDurationInHours = duration.unit === 'h';
+  if (isDurationInHours) {
     return duration.value * 60 * 60 * 1000;
   }
 

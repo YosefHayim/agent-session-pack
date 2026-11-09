@@ -65,8 +65,8 @@ export const expandHomePath = (path: string, home: string): string => {
     return home;
   }
 
-  const isPathStartsWithEmpty = path.startsWith('~/');
-  if (isPathStartsWithEmpty) {
+  const isHomeRelativePath = path.startsWith('~/');
+  if (isHomeRelativePath) {
     return join(home, path.slice(2));
   }
 
@@ -219,8 +219,8 @@ const isPathInsideOrSame = (path: string, parentPath: string): boolean => {
     return true;
   }
 
-  const isRelativePathStartsWithEmpty = relativePath.startsWith('..');
-  if (isRelativePathStartsWithEmpty) {
+  const isOutsideRoot = relativePath.startsWith('..');
+  if (isOutsideRoot) {
     return false;
   }
 

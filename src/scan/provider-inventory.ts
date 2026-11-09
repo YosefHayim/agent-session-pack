@@ -113,9 +113,9 @@ const discoverProviderRoot = async (request: {
   readonly provider: ProviderAdapter;
   readonly root: string;
 }): Promise<RootDiscovery | undefined> => {
-  const isNotRootPresent = !(await isPathPresent(request.root));
+  const isRootMissing = !(await isPathPresent(request.root));
 
-  if (isNotRootPresent) {
+  if (isRootMissing) {
     return undefined;
   }
 

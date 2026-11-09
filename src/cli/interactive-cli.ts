@@ -115,8 +115,8 @@ const runInteractiveAction = async (
     readonly prompts: PromptAdapter;
   },
 ): Promise<CommandOutcome> => {
-  const isRequestActionSetup = request.action === 'setup';
-  if (isRequestActionSetup) {
+  const isSetupRequested = request.action === 'setup';
+  if (isSetupRequested) {
     await runFirstSetup({
       ...request,
       showIntro: false,
@@ -124,8 +124,8 @@ const runInteractiveAction = async (
     return { exitCode: 0 };
   }
 
-  const isRequestActionSavings = request.action === 'savings';
-  if (isRequestActionSavings) {
+  const isSavingsRequested = request.action === 'savings';
+  if (isSavingsRequested) {
     const savingsOutcome = await runWithSpinner({
       prompts: request.prompts,
       startMessage: 'Checking savings...',
@@ -136,18 +136,18 @@ const runInteractiveAction = async (
     return savingsOutcome;
   }
 
-  const isRequestActionReview = request.action === 'review';
-  if (isRequestActionReview) {
+  const isReviewRequested = request.action === 'review';
+  if (isReviewRequested) {
     return runReviewSessions(request);
   }
 
-  const isRequestActionPack = request.action === 'pack';
-  if (isRequestActionPack) {
+  const isPackRequested = request.action === 'pack';
+  if (isPackRequested) {
     return runPackFlow(request);
   }
 
-  const isRequestActionRestore = request.action === 'restore';
-  if (isRequestActionRestore) {
+  const isRestoreRequested = request.action === 'restore';
+  if (isRestoreRequested) {
     return runRestoreFlow(request);
   }
 

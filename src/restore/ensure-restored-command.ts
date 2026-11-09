@@ -81,8 +81,8 @@ export const runEnsureRestoredCommand = async (
 
   const provider = parseOptionalProvider(args.provider);
 
-  const isProviderPresentAndProviderMissing = args.provider != null && provider === undefined;
-  if (isProviderPresentAndProviderMissing) {
+  const isUnknownProviderGiven = args.provider != null && provider == null;
+  if (isUnknownProviderGiven) {
     process.stderr.write(`Unknown provider: ${args.provider}\n`);
     return { exitCode: 2 };
   }

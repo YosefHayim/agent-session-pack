@@ -99,8 +99,8 @@ export const extractSessionIdsFromArgv = (argv: ReadonlyArray<string>): Readonly
       continue;
     }
 
-    const isNotArgStartsWithEmpty = !arg.startsWith('-');
-    if (isNotArgStartsWithEmpty) {
+    const isPositionalArgument = !arg.startsWith('-');
+    if (isPositionalArgument) {
       addUuidMatches(found, arg);
     }
   }

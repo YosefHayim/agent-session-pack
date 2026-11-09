@@ -26,26 +26,26 @@ export type RestoreManifestRequest = {
 export const restoreManifest = async (request: RestoreManifestRequest): Promise<RestoreOutcome> => {
   const sourceKind = manifestSourceKind(request.manifest);
 
-  const isOriginalPresent = await pathExists(request.manifest.originalPath);
+  const isOriginalOnDisk = await pathExists(request.manifest.originalPath);
 
-  if (isOriginalPresent) {
+  if (isOriginalOnDisk) {
     const liveOutcome = await resolveLiveOriginalOutcome({
       originalPath: request.manifest.originalPath,
       sourceKind,
       sourceSha256: request.manifest.sourceSha256,
     });
 
-    const isNotRestoreStillNeeded = liveOutcome !== 'continue-restore';
+    const isRestoreFinished = liveOutcome !== 'continue-restore';
 
-    if (isNotRestoreStillNeeded) {
+    if (isRestoreFinished) {
       return liveOutcome;
     }
   }
 
   const restoredPath = restorePathForManifest(request.vaultPath, request.manifest, sourceKind);
 
-  const isKindDirectory = sourceKind === 'directory';
-  if (isKindDirectory) {
+  const isSourceDirectory = sourceKind === 'directory';
+  if (isSourceDirectory) {
     await restoreDirectoryArchive({
       sessionId: request.manifest.sessionId,
       archivePath: request.manifest.archivePath,

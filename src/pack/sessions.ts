@@ -107,8 +107,8 @@ export const packProviderSessions = async (
       continue;
     }
 
-    const isRequestApplyFalse = request.apply === false;
-    if (isRequestApplyFalse) {
+    const isPreviewOnly = request.apply === false;
+    if (isPreviewOnly) {
       packSessionRows.push(createDryRunPackRow(provider, sessions.length, candidates));
       continue;
     }
@@ -154,9 +154,9 @@ const discoverExistingProviderSessions = async (request: {
   let existingRoots = 0;
 
   for (const root of roots) {
-    const isNotRootPresent = !(await pathExists(root));
+    const isRootMissing = !(await pathExists(root));
 
-    if (isNotRootPresent) {
+    if (isRootMissing) {
       continue;
     }
 

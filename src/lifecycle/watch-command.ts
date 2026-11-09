@@ -6,7 +6,7 @@ import { createZstdCompression } from '@/archive/zstd-compression.js';
 import type { CommandOutcome } from '@/command-outcome.js';
 import { requireHome } from '@/home-env.js';
 import { parseOptionalProvider } from '@/providers/flag.js';
-import { isRestoreOnLaunchEnabled, readSetupConfig } from '@/setup/config.js';
+import { readSetupConfig } from '@/setup/config.js';
 import { type SessionWatchEvent, watchSessionStubs } from './session-watch.js';
 
 /**
@@ -67,19 +67,13 @@ const runWatchCommand = async (args: WatchArgs): Promise<CommandOutcome> => {
 
   const provider = parseOptionalProvider(args.provider);
 
-  const isProviderNotFound = args.provider != null && provider === undefined;
+  const isProviderNotFound = args.provider != null && provider == null;
   if (isProviderNotFound) {
     process.stderr.write(`Unknown provider: ${args.provider}\n`);
     return { exitCode: 2 };
   }
 
   const setupConfig = await readSetupConfig(home);
-
-  const isRestoreOnLaunchOffWithoutExecArgs =
-    !isRestoreOnLaunchEnabled(setupConfig) && args.execArgv.length === 0;
-  if (isRestoreOnLaunchOffWithoutExecArgs) {
-    // Allow explicit watch even if disabled when following a child; wrappers enable lifecycle first.
-  }
 
   const vaultPath = args.vaultPath ?? setupConfig?.vaultPath ?? resolveDefaultVaultPath(home);
   const pollIntervalMs = parsePollMs(args.pollMs);
@@ -89,16 +83,16 @@ const runWatchCommand = async (args: WatchArgs): Promise<CommandOutcome> => {
   let childExitCode: number | undefined;
   let stop = false;
 
+  // Watch runs even when restore on launch is off; wrappers enable lifecycle first.
   const isExecArgvNotEmpty = args.execArgv.length > 0;
+  const [command, ...commandArgs] = args.execArgv;
+  const isExecCommandMissing = isExecArgvNotEmpty && command == null;
+  if (isExecCommandMissing) {
+    process.stderr.write('Missing command after -- for watch --exec.\n');
+    return { exitCode: 2 };
+  }
+
   if (isExecArgvNotEmpty) {
-    const [command, ...commandArgs] = args.execArgv;
-
-    const isCommandMissing = command == null;
-    if (isCommandMissing) {
-      process.stderr.write('Missing command after -- for watch --exec.\n');
-      return { exitCode: 2 };
-    }
-
     const child = spawn(command, commandArgs, {
       stdio: 'inherit',
       env: process.env,

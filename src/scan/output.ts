@@ -51,8 +51,8 @@ const formatSessionRow = (session: DiscoveredSession): string => {
 };
 
 const formatStatus = (session: DiscoveredSession): string => {
-  const isSessionStatusPresent = session.status != null;
-  if (isSessionStatusPresent) {
+  const isSessionStatusKnown = session.status != null;
+  if (isSessionStatusKnown) {
     return session.status;
   }
 

@@ -46,7 +46,7 @@
   },
   "homepage": "https://github.com/YosefHayim/agent-session-pack#readme",
   "type": "module",
-  "packageManager": "pnpm@10.12.1",
+  "packageManager": "pnpm@10.34.9",
   "bin": {
     "agent-session-pack": "dist/cli/main.js"
   },
@@ -54,8 +54,6 @@
     "dist",
     "README.md",
     "llms.txt",
-    "PROJECT.md",
-    "AGENTS.md",
     "LICENSE",
     "examples"
   ],
@@ -63,40 +61,37 @@
     "access": "public"
   },
   "scripts": {
-    "dev": "tsx src/cli/main.ts",
-    "guide": "tsx src/cli/main.ts guide",
-    "health": "tsx src/cli/main.ts doctor",
-    "scan": "tsx src/cli/main.ts scan",
-    "savings": "tsx src/cli/main.ts savings",
-    "pack:dry-run": "tsx src/cli/main.ts pack --all-providers --dry-run",
-    "pack:all": "tsx src/cli/main.ts pack --all-providers",
-    "unpack:all": "tsx src/cli/main.ts unpack --all-providers",
+    "dev": "tsx watch src/cli/main.ts",
+    "dev:guide": "tsx src/cli/main.ts guide",
+    "dev:savings": "tsx src/cli/main.ts savings",
+    "prod": "pnpm build && node dist/cli/main.js",
     "build": "tsup",
-    "lint": "biome ci . && knip",
-    "check": "turbo run lint typecheck test build --output-logs=errors-only",
     "test": "vitest run",
+    "test:watch": "vitest watch",
     "test:integration": "vitest run --config vitest.integration.config.ts",
-    "typecheck": "tsc --noEmit --incremental --tsBuildInfoFile node_modules/.cache/tsc/agentSessionPack.tsbuildinfo",
-    "evidence:local": "tsx src/cli/main.ts savings",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check . && knip",
+    "lint:fix": "biome check --write .",
+    "check": "turbo run lint typecheck test build --output-logs=errors-only",
     "prepare": "husky"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.0.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.2",
-    "@types/node": "^24.0.0",
-    "husky": "^9.1.7",
-    "knip": "6.43.0",
-    "tsup": "^8.5.1",
-    "tsx": "^4.20.0",
-    "turbo": "2.11.8",
-    "typescript": "^5.8.0",
-    "vitest": "^3.2.0"
+    "@biomejs/biome": "2.6.6",
+    "@types/node": "24.19.2",
+    "husky": "9.1.7",
+    "knip": "6.44.2",
+    "tsup": "8.5.1",
+    "tsx": "4.23.15",
+    "turbo": "2.11.10",
+    "typescript": "5.9.3",
+    "vitest": "3.2.7"
   },
   "dependencies": {
-    "@clack/prompts": "^1.7.0",
-    "citty": "^0.2.2",
-    "effect": "^3.21.4"
+    "@clack/prompts": "1.9.0",
+    "citty": "0.2.2",
+    "effect": "3.22.4"
   }
 }

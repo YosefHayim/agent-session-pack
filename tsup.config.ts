@@ -5,7 +5,7 @@ export default defineConfig({
     'cli/main': 'src/cli/main.ts',
   },
   format: ['esm'],
-  target: 'node20',
+  target: 'node22',
   outDir: 'dist',
   clean: true,
   dts: true,

@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import { defineCommand, runMain } from 'citty';
+import packageJson from '../../package.json' with { type: 'json' };
 import { doctorCommand } from '../features/doctor/doctorCommand.js';
 import { checkCommand, savingsCommand } from '../features/evidence/savingsCommand.js';
 import { guideCommand } from '../features/guide/guideCommand.js';
@@ -25,7 +26,7 @@ import { isCliEntrypoint } from './mainEntrypoint.js';
 export const mainCommand = defineCommand({
   meta: {
     name: 'agent-session-pack',
-    version: '0.3.0',
+    version: packageJson.version,
     description:
       'Pack cold local AI coding-agent sessions with byte-exact restore. Run guide for agent-safe commands.',
   },

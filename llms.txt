@@ -10,7 +10,7 @@
 - [Agent instructions](https://github.com/YosefHayim/agent-session-pack/blob/main/AGENTS.md): Editing rules for coding agents.
 - [Hello-world example](https://github.com/YosefHayim/agent-session-pack/tree/main/examples/hello-world): Tiny before/archive/after fixtures that show byte-exact restore.
 
-## What It Does In v0.3.0
+## What It Does
 
 - Finds local AI coding-agent session stores for nine agents.
 - Shows before/after compression evidence without touching originals.

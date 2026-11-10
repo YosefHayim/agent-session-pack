@@ -63,17 +63,17 @@
 
 ## 支持的代理
 
-| 代理 | 模式 | 会话存储 |
-| --- | --- | --- |
-| Codex | 归档 | `~/.codex/sessions` |
-| Claude Code | 归档 | `~/.claude/projects` |
-| Kiro | 归档 | `~/.kiro/sessions` |
-| Grok | 归档 | `~/.grok/sessions`（整个会话文件夹） |
-| Kimi Code | 归档 | `~/.kimi-code/sessions`（整个会话文件夹） |
-| OpenCode | 归档 | `~/.local/share/opencode`、`~/.opencode` |
-| Gemini CLI | 归档 | `~/.gemini`、`~/.gemini/tmp` |
-| Cursor | 仅备份 | `~/Library/Application Support/Cursor` |
-| Devin | 仅备份 | `~/.local/share/devin/cli`（只读取 `sessions.db` 的元数据） |
+| 代理        | 模式   | 会话存储                                                    |
+| ----------- | ------ | ----------------------------------------------------------- |
+| Codex       | 归档   | `~/.codex/sessions`                                         |
+| Claude Code | 归档   | `~/.claude/projects`                                        |
+| Kiro        | 归档   | `~/.kiro/sessions`                                          |
+| Grok        | 归档   | `~/.grok/sessions`（整个会话文件夹）                        |
+| Kimi Code   | 归档   | `~/.kimi-code/sessions`（整个会话文件夹）                   |
+| OpenCode    | 归档   | `~/.local/share/opencode`、`~/.opencode`                    |
+| Gemini CLI  | 归档   | `~/.gemini`、`~/.gemini/tmp`                                |
+| Cursor      | 仅备份 | `~/Library/Application Support/Cursor`                      |
+| Devin       | 仅备份 | `~/.local/share/devin/cli`（只读取 `sessions.db` 的元数据） |
 
 **归档** 表示会话可以打包进保险库并还原。**仅备份** 表示该代理已列为支持，但它的原生存储从不会被修改。目前 Cursor 的发现功能不会返回任何会话。
 
@@ -83,26 +83,26 @@
   <img src="https://raw.githubusercontent.com/YosefHayim/agent-session-pack/main/assets/benchmarks.svg" alt="一台机器上打包前后的会话存储：Codex 从 2.22 GB 到 782 MB，Claude Code 从 2.10 GB 到 457 MB，Kiro 从 1.95 GB 到 190 MB，Cursor 备份从 7.27 GB 到 957 MB" width="820" />
 </p>
 
-| 代理 | 之前 | 之后 | 节省 |
-| --- | ---: | ---: | ---: |
-| Codex | 2.22 GB | 782 MB | **65.6%** |
-| Claude Code | 2.10 GB | 457 MB | **78.7%** |
-| Kiro | 1.95 GB | 190 MB | **90.5%** |
-| Cursor（备份副本） | 7.27 GB | 957 MB | **87.1%** |
-| **合计** | **13.5 GB** | **2.3 GB** | **约 83%** |
+| 代理               |        之前 |       之后 |       节省 |
+| ------------------ | ----------: | ---------: | ---------: |
+| Codex              |     2.22 GB |     782 MB |  **65.6%** |
+| Claude Code        |     2.10 GB |     457 MB |  **78.7%** |
+| Kiro               |     1.95 GB |     190 MB |  **90.5%** |
+| Cursor（备份副本） |     7.27 GB |     957 MB |  **87.1%** |
+| **合计**           | **13.5 GB** | **2.3 GB** | **约 83%** |
 
 这是一台机器的真实会话历史，并非通用基准。运行 `npx --yes agent-session-pack check` 即可测量你自己的数据；它只在副本上工作。
 
 ## Agent Session Pack 与删除或压缩对比
 
-| | **Agent Session Pack** | **删除旧文件** | **手动 zstd 或 tar** |
-| --- | --- | --- | --- |
-| 取回会话 | 逐字节，删除前校验 | 永久丢失 | 只有你自己检查才行 |
-| 找到每个代理的存储 | 内置支持 9 种代理 | 你需要自己找路径 | 你需要自己找路径 |
-| 把文件放回代理期望的位置 | 每个会话一份还原清单 | 不适用 | 你自己跟踪路径 |
-| 还原时已改动的文件 | 跳过，从不覆盖 | 不适用 | 会被悄悄覆盖 |
-| 多文件会话（Grok、Kimi） | 作为整个文件夹打包 | 容易只删掉一半 | 容易漏掉文件 |
-| 先预览 | 默认就是预览 | 否 | 否 |
+|                          | **Agent Session Pack** | **删除旧文件**   | **手动 zstd 或 tar** |
+| ------------------------ | ---------------------- | ---------------- | -------------------- |
+| 取回会话                 | 逐字节，删除前校验     | 永久丢失         | 只有你自己检查才行   |
+| 找到每个代理的存储       | 内置支持 9 种代理      | 你需要自己找路径 | 你需要自己找路径     |
+| 把文件放回代理期望的位置 | 每个会话一份还原清单   | 不适用           | 你自己跟踪路径       |
+| 还原时已改动的文件       | 跳过，从不覆盖         | 不适用           | 会被悄悄覆盖         |
+| 多文件会话（Grok、Kimi） | 作为整个文件夹打包     | 容易只删掉一半   | 容易漏掉文件         |
+| 先预览                   | 默认就是预览           | 否               | 否                   |
 
 ## 一键 AI 设置
 
@@ -174,21 +174,21 @@ npx --yes agent-session-pack restore SESSION_ID_OR_NAME       # 单个会话
 
 ## 命令
 
-| 命令 | 作用 | 是否修改文件 |
-| --- | --- | --- |
-| `guide [--json]` | 供代理和自动化使用的安全命令列表 | 否 |
-| `check [--json]` | 无需安装，在副本上证明节省空间 | 否 |
-| `savings [--json]` | 同样只在副本上运行的前后对比证明 | 否 |
-| `scan [--json]` | 列出会话存储、大小和冷会话候选 | 否 |
-| `doctor [--json]` | 检查 `zstd` 和 `sqlite3` 是否已安装 | 否 |
-| `init` | 显示保险库策略；在终端中打开引导式设置，写入配置 | 仅配置 |
-| `pack --dry-run` | 预览将要打包的冷会话 | 否 |
-| `pack --apply [--yes]` | 归档、校验，然后删除原始文件 | 是 |
-| `unpack --apply [--yes]` | 把已归档的会话还原到原始路径 | 是 |
-| `restore <selector>` | 按 ID、ID 前缀、名称、slug 或名称中的词还原一个会话 | 是 |
-| `open <session>` | 以同样的方式查找会话，若已打包则还原 | 是 |
-| `lifecycle enable\|disable\|status` | 安装或移除自动还原包装器 | 包装器和配置 |
-| `maintain --apply [--yes]` | 重新打包再次变冷的会话 | 是 |
+| 命令                                | 作用                                                | 是否修改文件 |
+| ----------------------------------- | --------------------------------------------------- | ------------ |
+| `guide [--json]`                    | 供代理和自动化使用的安全命令列表                    | 否           |
+| `check [--json]`                    | 无需安装，在副本上证明节省空间                      | 否           |
+| `savings [--json]`                  | 同样只在副本上运行的前后对比证明                    | 否           |
+| `scan [--json]`                     | 列出会话存储、大小和冷会话候选                      | 否           |
+| `doctor [--json]`                   | 检查 `zstd` 和 `sqlite3` 是否已安装                 | 否           |
+| `init`                              | 显示保险库策略；在终端中打开引导式设置，写入配置    | 仅配置       |
+| `pack --dry-run`                    | 预览将要打包的冷会话                                | 否           |
+| `pack --apply [--yes]`              | 归档、校验，然后删除原始文件                        | 是           |
+| `unpack --apply [--yes]`            | 把已归档的会话还原到原始路径                        | 是           |
+| `restore <selector>`                | 按 ID、ID 前缀、名称、slug 或名称中的词还原一个会话 | 是           |
+| `open <session>`                    | 以同样的方式查找会话，若已打包则还原                | 是           |
+| `lifecycle enable\|disable\|status` | 安装或移除自动还原包装器                            | 包装器和配置 |
+| `maintain --apply [--yes]`          | 重新打包再次变冷的会话                              | 是           |
 
 `preflight`、`watch` 和 `ensure-restored` 由生命周期包装器调用；你很少需要自己运行它们。
 
@@ -197,12 +197,12 @@ npx --yes agent-session-pack restore SESSION_ID_OR_NAME       # 单个会话
 <details>
 <summary><strong>如何选择 <code>--older-than</code></strong></summary>
 
-| 值 | 适用场景 |
-| --- | --- |
-| `12h` | 短时间的清理窗口 |
-| `1d` | 大致跳过今天正在进行的工作 |
-| `7d` | 默认的配置策略 |
-| `30d` | 保守的归档一轮 |
+| 值                | 适用场景                                                  |
+| ----------------- | --------------------------------------------------------- |
+| `12h`             | 短时间的清理窗口                                          |
+| `1d`              | 大致跳过今天正在进行的工作                                |
+| `7d`              | 默认的配置策略                                            |
+| `30d`             | 保守的归档一轮                                            |
 | `--max --dry-run` | 好奇地预览所有归档模式的会话（不要与 `--apply` 一起使用） |
 
 </details>
@@ -256,12 +256,12 @@ zstd -d -c examples/hello-world/archives/codex-session.jsonl.zst | shasum -a 256
 
 Agent Session Pack 有意保持狭窄的范围：它归档本地冷会话文件，并校验逐字节还原。它可以很好地与用量、搜索和磁盘分析工具搭配使用。
 
-| 工具 | 主要用途 | 区别 |
-| --- | --- | --- |
-| [`ccusage`](https://ccusage.com/guide/) | 编程代理的 token 和费用报告 | 解释用量；不打包会话存储。 |
-| [`claude-code-history-viewer`](https://github.com/jhlee0409/claude-code-history-viewer) | AI 编程历史的离线浏览和搜索 | 查看历史；不归档也不还原。 |
-| [`claude-code-cleaner`](https://github.com/garrickz2/claude-code-cleaner) | Claude Code 磁盘清理 | 仅支持 Claude；没有经过校验的多代理保险库。 |
-| `zstd`、`tar`、备份、磁盘分析工具 | 通用存储工具 | 压缩或查找字节；不了解代理会话和还原路径。 |
+| 工具                                                                                    | 主要用途                    | 区别                                        |
+| --------------------------------------------------------------------------------------- | --------------------------- | ------------------------------------------- |
+| [`ccusage`](https://ccusage.com/guide/)                                                 | 编程代理的 token 和费用报告 | 解释用量；不打包会话存储。                  |
+| [`claude-code-history-viewer`](https://github.com/jhlee0409/claude-code-history-viewer) | AI 编程历史的离线浏览和搜索 | 查看历史；不归档也不还原。                  |
+| [`claude-code-cleaner`](https://github.com/garrickz2/claude-code-cleaner)               | Claude Code 磁盘清理        | 仅支持 Claude；没有经过校验的多代理保险库。 |
+| `zstd`、`tar`、备份、磁盘分析工具                                                       | 通用存储工具                | 压缩或查找字节；不了解代理会话和还原路径。  |
 
 ## 常见问题
 

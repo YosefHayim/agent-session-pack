@@ -8,12 +8,12 @@ sha256(before/*.jsonl) == sha256(after/*.jsonl)
 
 ## What is here
 
-| Path | Contents |
-| --- | --- |
-| `before/` | Three tiny synthetic sessions, one each for Codex, Claude Code, and Kiro. |
-| `archives/` | Real `zstd -9` archives of the matching `before/` files. |
-| `after/` | The files restored from `archives/`. |
-| `evidence.json` | Sizes, savings, and SHA-256 hashes for every file. |
+| Path            | Contents                                                                  |
+| --------------- | ------------------------------------------------------------------------- |
+| `before/`       | Three tiny synthetic sessions, one each for Codex, Claude Code, and Kiro. |
+| `archives/`     | Real `zstd -9` archives of the matching `before/` files.                  |
+| `after/`        | The files restored from `archives/`.                                      |
+| `evidence.json` | Sizes, savings, and SHA-256 hashes for every file.                        |
 
 These fixtures are not real private sessions. The provider names only show the shape.
 

@@ -23,15 +23,15 @@ export const kimiProvider: ProviderAdapter = {
 };
 
 const readKimiSessionTitle = async (directory: string): Promise<string> => {
-  const kimiStateDocument = await readDocumentFile(join(directory, 'state.json'));
+  const kimiSessionDocument = await readDocumentFile(join(directory, 'state.json'));
 
-  const isKimiStateDocumentMissing =
-    typeof kimiStateDocument !== 'object' || kimiStateDocument === null;
-  if (isKimiStateDocumentMissing) {
+  const isKimiSessionDocumentMissing =
+    typeof kimiSessionDocument !== 'object' || kimiSessionDocument === null;
+  if (isKimiSessionDocumentMissing) {
     return basename(directory);
   }
 
-  const title = (kimiStateDocument as { readonly title?: unknown }).title;
+  const title = (kimiSessionDocument as { readonly title?: unknown }).title;
 
   const hasTitleString = typeof title === 'string' && title.trim().length > 0;
   if (hasTitleString) {

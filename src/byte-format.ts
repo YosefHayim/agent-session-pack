@@ -15,8 +15,8 @@ export const describeBytes = (bytes: number): string => {
     unitIndex += 1;
   }
 
-  const minimumThreeDigitValue = 100;
-  const hasThreeOrMoreDigits = remainingBytes >= minimumThreeDigitValue;
+  const threeDigitsMinimum = 100;
+  const hasThreeOrMoreDigits = remainingBytes >= threeDigitsMinimum;
   if (hasThreeOrMoreDigits) {
     return `${remainingBytes.toFixed(0)} ${BYTE_UNITS[unitIndex]}`;
   }

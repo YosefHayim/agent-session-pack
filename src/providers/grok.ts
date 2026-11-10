@@ -3,9 +3,6 @@ import { basename, join } from 'node:path';
 import type { ProviderAdapter } from '@/session-model.js';
 import { discoverDirectoryProviderSessions, readDocumentFile } from './directory-sessions.js';
 
-/**
- * Archive provider adapter for Grok Build multi-file sessions.
- */
 export const grokProvider: ProviderAdapter = {
   id: 'grok',
   label: 'Grok',

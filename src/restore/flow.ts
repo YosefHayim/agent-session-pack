@@ -4,12 +4,6 @@ import type { PromptAdapter } from '@/prompt-adapter.js';
 import { runWithSpinner } from '@/spinner-task.js';
 import { runUnpackCommand } from './unpack-command.js';
 
-/**
- * Runs the interactive restore flow: vault preview, then confirmed unpack apply.
- *
- * @param request - Interactive request plus resolved prompt adapter.
- * @returns Promise that resolves after restore preview or apply completes.
- */
 export const runRestoreFlow = async (
   request: InteractiveCliRequest & { readonly prompts: PromptAdapter },
 ): Promise<CommandExit> => {

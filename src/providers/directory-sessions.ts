@@ -4,14 +4,8 @@ import { basename, join } from 'node:path';
 import type { DiscoveredSession, ProviderId, SessionStore } from '@/session-model.js';
 import { measureDirectorySession, slugifyTitle } from './session-discovery.js';
 
-/**
- * Marker files that identify a directory-backed provider session.
- */
 type DirectorySessionMarkers = ReadonlyArray<string>;
 
-/**
- * Options for discovering directory-backed provider sessions.
- */
 export type DirectoryProviderDiscoverySettings = {
   readonly provider: ProviderId;
   readonly store: SessionStore;
@@ -23,9 +17,6 @@ export type DirectoryProviderDiscoverySettings = {
   readonly sessionIdFromDirectory?: (path: string) => string;
 };
 
-/**
- * Discovers directory-backed provider sessions under a store root.
- */
 export const discoverDirectoryProviderSessions = async (
   settings: DirectoryProviderDiscoverySettings,
 ): Promise<ReadonlyArray<DiscoveredSession>> => {
@@ -69,9 +60,6 @@ export const discoverDirectoryProviderSessions = async (
   return sessions;
 };
 
-/**
- * Reads JSON text from a file when present.
- */
 export const readDocumentFile = async (path: string): Promise<unknown | null> => {
   try {
     const fileString = await readFile(path, 'utf8');
@@ -96,7 +84,6 @@ const readDirectoryTitle = async (request: {
     const isTitleFound = titleFound.length > 0;
     return isTitleFound ? titleFound : request.sessionId;
   } catch {
-    // A title reader that fails falls back to the session id, as discovery always did.
     return request.sessionId;
   }
 };
@@ -177,7 +164,6 @@ const readChildDirents = async (directory: string): Promise<ReadonlyArray<Dirent
   try {
     return await readdir(directory, { withFileTypes: true });
   } catch {
-    // An unreadable subfolder is skipped, as discovery always did.
     return [];
   }
 };

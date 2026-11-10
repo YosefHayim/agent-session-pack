@@ -1,8 +1,5 @@
 import type { PromptAdapter } from './prompt-adapter.js';
 
-/**
- * Inputs for running an async task under a TTY spinner.
- */
 export type SpinnerTaskRequest<Produced> = {
   readonly prompts: PromptAdapter;
   readonly startMessage: string;
@@ -10,24 +7,6 @@ export type SpinnerTaskRequest<Produced> = {
   readonly task: () => Promise<Produced>;
 };
 
-/**
- * Runs a promise-backed task under a TTY spinner with start/stop/error messages.
- *
- * @param request - Spinner messages, prompt adapter, and async task.
- * @returns Task result after a successful stop message.
- * @example
- * ```ts
- * import { runWithSpinner } from './spinner-task.js';
- * import { clackPromptAdapter } from './prompt-adapter.js';
- *
- * const value = await runWithSpinner({
- *   prompts: clackPromptAdapter,
- *   startMessage: 'Working...',
- *   stopMessage: 'Done.',
- *   task: async () => 42,
- * });
- * ```
- */
 export const runWithSpinner = async <Produced>(
   request: SpinnerTaskRequest<Produced>,
 ): Promise<Produced> => {

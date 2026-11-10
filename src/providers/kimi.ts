@@ -2,9 +2,6 @@ import { basename, join } from 'node:path';
 import type { ProviderAdapter } from '@/session-model.js';
 import { discoverDirectoryProviderSessions, readDocumentFile } from './directory-sessions.js';
 
-/**
- * Archive provider adapter for Kimi Code multi-file sessions.
- */
 export const kimiProvider: ProviderAdapter = {
   id: 'kimi',
   label: 'Kimi Code',

@@ -21,14 +21,8 @@ import type {
 } from '@/session-model.js';
 import { createPackThresholdPreviews, type PackThresholdPreview } from './plan.js';
 
-/**
- * Outcome status reported for one provider during a pack run.
- */
 type PackSessionStatus = 'backup-only' | 'dry-run' | 'missing' | 'no-candidates' | 'packed';
 
-/**
- * Per-provider pack result row with byte totals and status.
- */
 type PackSessionSummary = {
   readonly provider: ProviderId;
   readonly mode: ProviderMode;
@@ -44,9 +38,6 @@ type PackSessionSummary = {
   readonly reason: string | undefined;
 };
 
-/**
- * Full pack report covering all providers and threshold previews.
- */
 export type PackSessionsReport = {
   readonly command: 'pack';
   readonly apply: boolean;
@@ -55,9 +46,6 @@ export type PackSessionsReport = {
   readonly thresholdPreviews: ReadonlyArray<PackThresholdPreview>;
 };
 
-/**
- * Inputs required to pack cold provider sessions into the vault.
- */
 export type PackProviderSessionsRequest = {
   readonly home: string;
   readonly vaultPath: string;
@@ -69,9 +57,6 @@ export type PackProviderSessionsRequest = {
   readonly compression: CompressionAdapter;
 };
 
-/**
- * Packs cold sessions for the selected providers into the vault.
- */
 export const packProviderSessions = async (
   request: PackProviderSessionsRequest,
 ): Promise<PackSessionsReport> => {

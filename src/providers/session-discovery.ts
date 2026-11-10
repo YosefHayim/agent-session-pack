@@ -3,37 +3,25 @@ import { createReadStream } from 'node:fs';
 import { readdir, stat } from 'node:fs/promises';
 import { basename, extname, join } from 'node:path';
 
-const TITLE_SEARCH_LIMIT_BYTES = 1024 * 1024;
-const TITLE_READ_HIGH_WATER_MARK_BYTES = 64 * 1024;
+const titleSearchLimitBytes = 1024 * 1024;
+const titleReadHighWaterMarkBytes = 64 * 1024;
 
-/**
- * File metadata for a discovered JSONL session file.
- */
 export type JsonlSessionFile = {
   readonly path: string;
   readonly sizeBytes: number;
   readonly modifiedAt: Date;
 };
 
-/**
- * Directory metadata for a multi-file provider session.
- */
 export type DirectorySessionFile = {
   readonly path: string;
   readonly sizeBytes: number;
   readonly modifiedAt: Date;
 };
 
-/**
- * Options controlling which directories are skipped while collecting JSONL files.
- */
 export type CollectJsonlSettings = {
   readonly excludePathParts: ReadonlyArray<string>;
 };
 
-/**
- * Collects JSONL files below a provider store, skipping the excluded directory names.
- */
 export const collectJsonlSessions = async (
   root: string,
   settings: CollectJsonlSettings,
@@ -76,9 +64,6 @@ export const collectJsonlSessions = async (
   return files;
 };
 
-/**
- * Measures total file bytes and newest mtime for a session directory tree.
- */
 export const measureDirectorySession = async (path: string): Promise<DirectorySessionFile> => {
   const rootStat = await stat(path);
   let sizeBytes = 0;
@@ -120,9 +105,6 @@ export const measureDirectorySession = async (path: string): Promise<DirectorySe
   };
 };
 
-/**
- * Converts text into a stable session slug.
- */
 export const slugifyTitle = (title: string): string => {
   const slug = title
     .toLowerCase()
@@ -137,9 +119,6 @@ export const slugifyTitle = (title: string): string => {
   return slug;
 };
 
-/**
- * Extracts a provider session id from a file path: the UUID when present, else the basename.
- */
 export const readSessionIdFromPath = (path: string): string => {
   const fileName = basename(path, extname(path));
   const idHit = fileName.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
@@ -152,9 +131,6 @@ export const readSessionIdFromPath = (path: string): string => {
   return fileName;
 };
 
-/**
- * Reads the first meaningful user text from a JSONL session file, falling back to the basename.
- */
 export const readSessionTitle = (path: string): Promise<string> => readSessionTitleFromFile(path);
 
 const readSessionTitleFromFile = async (path: string): Promise<string> => {
@@ -162,7 +138,7 @@ const readSessionTitleFromFile = async (path: string): Promise<string> => {
   let bytesRead = 0;
   const stream = createReadStream(path, {
     encoding: 'utf8',
-    highWaterMark: TITLE_READ_HIGH_WATER_MARK_BYTES,
+    highWaterMark: titleReadHighWaterMarkBytes,
   });
 
   for await (const chunk of stream) {
@@ -179,7 +155,7 @@ const readSessionTitleFromFile = async (path: string): Promise<string> => {
 
     carry = scan.rest;
 
-    const isSearchLimitReached = bytesRead >= TITLE_SEARCH_LIMIT_BYTES;
+    const isSearchLimitReached = bytesRead >= titleSearchLimitBytes;
     if (isSearchLimitReached) {
       stream.destroy();
       return basename(path, extname(path));

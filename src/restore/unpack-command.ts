@@ -10,9 +10,6 @@ import type { ProviderAdapter } from '@/session-model.js';
 import { createHumanUnpackReport } from './unpack-output.js';
 import { unpackProviderSessions } from './unpack-sessions.js';
 
-/**
- * Citty command that restores archived sessions from the vault.
- */
 export const unpackCommand = defineCommand({
   meta: {
     name: 'unpack',
@@ -60,9 +57,6 @@ export const unpackCommand = defineCommand({
   },
 });
 
-/**
- * Decoded arguments for the unpack command.
- */
 export type UnpackFlags = {
   readonly allProviders: boolean | undefined;
   readonly apply: boolean | undefined;
@@ -76,11 +70,6 @@ export type UnpackFlags = {
   readonly vaultPath?: string | undefined;
 };
 
-/**
- * Runs the unpack command for human and agent callers.
- *
- * @param flags - Decoded command-line arguments.
- */
 export const runUnpackCommand = async (flags: UnpackFlags): Promise<CommandExit> => {
   const home = requireHome(flags.home);
 

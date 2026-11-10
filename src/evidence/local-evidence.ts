@@ -3,6 +3,7 @@ import { basename, join } from 'node:path';
 import { readSha256Path } from '@/archive/hash.js';
 import { writeVerifiedArchive } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
+import { SAVED_PERCENT_DECIMAL_PLACES, WHOLE_PERCENT } from '@/byte-savings.js';
 import { discoverStoreSessions } from '@/scan/stores.js';
 import type {
   DiscoveredSession,
@@ -13,18 +14,13 @@ import type {
 } from '@/session-model.js';
 import { selectNewestSessionWithinSize } from './sample.js';
 
-const MAX_ARCHIVE_EVIDENCE_ORIGIN_BYTES = 25 * 1024 * 1024;
-const MAX_BACKUP_EVIDENCE_ORIGIN_BYTES = 128 * 1024 * 1024;
+const maxArchiveEvidenceOriginBytes = 25 * 1024 * 1024;
+const maxBackupEvidenceOriginBytes = 128 * 1024 * 1024;
 const MAX_TITLE_PREVIEW_LENGTH = 96;
 
-/**
- * Describes discovered sessions and copied proof samples for one provider.
- */
 export interface ProviderEvidence {
   readonly provider: ProviderId;
-  /** Sessions discovered in the provider store before proof sampling. */
   readonly foundSessions: number;
-  /** Sources copied into the isolated proof workspace and measured. */
   readonly sampledSources: number;
   readonly mode: ProviderMode;
   readonly sourceBytes?: number;
@@ -44,28 +40,18 @@ export interface ProviderEvidence {
   readonly sourceKind?: SessionOriginKind;
 }
 
-/**
- * Aggregates provider discovery under the sampled-copy proof scope.
- */
 export interface LocalEvidenceReport {
-  /** Declares that byte measurements describe copied samples rather than whole stores. */
   readonly scope: 'sampled-copy-proof';
   readonly workRoot: string;
   readonly evidence: ReadonlyArray<ProviderEvidence>;
 }
 
-/**
- * Inputs required to run a local evidence pass over provider sessions.
- */
 export interface LocalEvidenceRequest {
   readonly home: string;
   readonly workRoot: string;
   readonly providers: ReadonlyArray<ProviderAdapter>;
 }
 
-/**
- * Creates copy-only local compression evidence from provider sessions.
- */
 export const runLocalEvidence = async (
   request: LocalEvidenceRequest,
 ): Promise<LocalEvidenceReport> => {
@@ -77,8 +63,8 @@ export const runLocalEvidence = async (
     const sessions = await discoverProviderSessions(provider, roots);
     const isProviderModeBackupOnly = provider.mode === 'backup-only';
     const maxEvidenceOriginBytes = isProviderModeBackupOnly
-      ? MAX_BACKUP_EVIDENCE_ORIGIN_BYTES
-      : MAX_ARCHIVE_EVIDENCE_ORIGIN_BYTES;
+      ? maxBackupEvidenceOriginBytes
+      : maxArchiveEvidenceOriginBytes;
     const selected = selectNewestSessionWithinSize(sessions, maxEvidenceOriginBytes);
 
     const isSelectedMissing = selected == null;
@@ -150,7 +136,11 @@ export const runLocalEvidence = async (
       sourceBytes: verified.sourceBytes,
       archiveBytes: verified.archiveBytes,
       maxEvidenceSourceBytes: maxEvidenceOriginBytes,
-      savedPercent: Number((100 - (verified.archiveBytes / verified.sourceBytes) * 100).toFixed(1)),
+      savedPercent: Number(
+        (WHOLE_PERCENT - (verified.archiveBytes / verified.sourceBytes) * WHOLE_PERCENT).toFixed(
+          SAVED_PERCENT_DECIMAL_PLACES,
+        ),
+      ),
     });
   }
 

@@ -21,9 +21,6 @@ import { canRunInteractiveCli, runInteractiveCli } from './interactive-cli.js';
 import { rewriteCommandFlagAliases } from './main-args.js';
 import { isCliEntrypoint } from './main-entrypoint.js';
 
-/**
- * Subcommands of the root command, keyed by the name typed on the command line.
- */
 const subCommands: SubCommandsDef = {
   check: checkCommand,
   guide: guideCommand,
@@ -43,9 +40,6 @@ const subCommands: SubCommandsDef = {
   doctor: doctorCommand,
 };
 
-/**
- * Root citty command that wires all Agent Session Pack subcommands.
- */
 export const mainCommand = defineCommand({
   meta: {
     name: 'agent-session-pack',
@@ -57,9 +51,6 @@ export const mainCommand = defineCommand({
   default: 'scan',
 });
 
-/**
- * The command whose usage text is shown, and the root it is shown under.
- */
 interface UsageTarget {
   readonly command: CommandDef;
   readonly parent: CommandDef | undefined;

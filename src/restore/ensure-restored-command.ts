@@ -8,9 +8,6 @@ import { parseOptionalProvider } from '@/providers/flag.js';
 import { isRestoreOnLaunchEnabled, readSetupSettings } from '@/setup/config.js';
 import { type EnsureRestoredReport, ensureSessionRestored } from './ensure-restored.js';
 
-/**
- * Citty command that restores one archived session when restore-on-launch is enabled.
- */
 export const ensureRestoredCommand = defineCommand({
   meta: {
     name: 'ensure-restored',
@@ -42,9 +39,6 @@ export const ensureRestoredCommand = defineCommand({
   },
 });
 
-/**
- * Decoded arguments for ensure-restored.
- */
 export type EnsureRestoredFlags = {
   readonly json: boolean | undefined;
   readonly provider: string | undefined;
@@ -54,11 +48,6 @@ export type EnsureRestoredFlags = {
   readonly vaultPath?: string | undefined;
 };
 
-/**
- * Runs ensure-restored for human and agent callers.
- *
- * @param flags - Decoded command-line arguments.
- */
 export const runEnsureRestoredCommand = async (
   flags: EnsureRestoredFlags,
 ): Promise<CommandExit> => {

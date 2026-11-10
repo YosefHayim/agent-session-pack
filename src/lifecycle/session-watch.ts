@@ -7,9 +7,8 @@ import { createZstdCompression } from '@/archive/zstd-compression.js';
 import { ensureSessionRestored } from '@/restore/ensure-restored.js';
 import type { ProviderId } from '@/session-model.js';
 
-/**
- * One materialization event emitted while watching stubs for provider open activity.
- */
+export const DEFAULT_POLL_INTERVAL_MS = 750;
+
 export type SessionWatchEvent = {
   readonly sessionId: string;
   readonly provider: ProviderId;
@@ -17,9 +16,6 @@ export type SessionWatchEvent = {
   readonly originalPath: string;
 };
 
-/**
- * Inputs for watching session stubs and materializing on open.
- */
 export type WatchSessionStubsRequest = {
   readonly vaultPath: string;
   readonly provider: ProviderId | undefined;
@@ -29,17 +25,9 @@ export type WatchSessionStubsRequest = {
   readonly onEvent?: (event: SessionWatchEvent) => void;
 };
 
-/**
- * Watches archived stubs and materializes a session when the provider opens it.
- *
- * Detection: directory stubs gain non-marker files, or file stubs are replaced/touched.
- * Polls as a fallback when fs.watch misses events.
- *
- * @param request - Watch configuration for vault, provider, and stop signal.
- */
 export const watchSessionStubs = async (request: WatchSessionStubsRequest): Promise<void> => {
   const compression = request.compression ?? createZstdCompression();
-  const pollIntervalMs = request.pollIntervalMs ?? 750;
+  const pollIntervalMs = request.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS;
   const watchers = new Map<string, ReturnType<typeof watch>>();
   const restoringPaths = new Set<string>();
 
@@ -62,7 +50,6 @@ export const watchSessionStubs = async (request: WatchSessionStubsRequest): Prom
 
       try {
         const watcher = watch(manifest.originalPath, { persistent: true }, () => {
-          // Any FS event on a stub is treated as provider open intent.
           void materializeIfNeeded(manifest, true);
         });
         watchers.set(manifest.originalPath, watcher);

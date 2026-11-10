@@ -8,7 +8,7 @@ import { slugifyTitle } from './session-discovery.js';
 
 const execFileAsync = promisify(execFile);
 
-const DEVIN_SESSIONS_SQL = `
+const devinSessionsQuery = `
 SELECT
   s.id AS id,
   COALESCE(NULLIF(TRIM(s.title), ''), s.id) AS title,
@@ -38,9 +38,6 @@ const DevinSessionSummariesSchema = z.array(DevinSessionSummarySchema);
 
 type DevinSessionSummary = z.infer<typeof DevinSessionSummarySchema>;
 
-/**
- * Backup-only provider adapter for Devin CLI sessions.
- */
 export const devinProvider: ProviderAdapter = {
   id: 'devin',
   label: 'Devin',
@@ -77,14 +74,13 @@ const readStatOrNull = async (path: string): Promise<Stats | null> => {
   try {
     return await stat(path);
   } catch {
-    // A missing database means no Devin sessions.
     return null;
   }
 };
 
 const readDevinSessions = async (dbPath: string): Promise<ReadonlyArray<DevinSessionSummary>> => {
   try {
-    const printout = await execFileAsync('sqlite3', ['-json', dbPath, DEVIN_SESSIONS_SQL]);
+    const printout = await execFileAsync('sqlite3', ['-json', dbPath, devinSessionsQuery]);
     const parsed = JSON.parse(printout.stdout) as unknown;
     const decodedReply = DevinSessionSummariesSchema.safeParse(parsed);
 
@@ -96,7 +92,6 @@ const readDevinSessions = async (dbPath: string): Promise<ReadonlyArray<DevinSes
 
     return decodedReply.data;
   } catch {
-    // An unreadable sqlite database falls back to one snapshot entry, as discovery always did.
     return [];
   }
 };
@@ -138,11 +133,13 @@ const readSessionFromDatabaseSnapshot = (
 });
 
 const readDateFromDevinTimestamp = (timestamp: number): Date => {
-  const isMillisecondTimestamp = timestamp > 9_999_999_999;
+  const largestUnixSecondsTimestamp = 9_999_999_999;
+  const isMillisecondTimestamp = timestamp > largestUnixSecondsTimestamp;
 
   if (isMillisecondTimestamp) {
     return new Date(timestamp);
   }
 
-  return new Date(timestamp * 1000);
+  const millisecondsPerSecond = 1000;
+  return new Date(timestamp * millisecondsPerSecond);
 };

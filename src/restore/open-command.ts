@@ -9,9 +9,6 @@ import { parseOptionalProvider } from '@/providers/flag.js';
 import { isRestoreOnLaunchEnabled, readSetupSettings } from '@/setup/config.js';
 import { type EnsureRestoredReport, ensureSessionRestored } from './ensure-restored.js';
 
-/**
- * Citty command that looks up a session and auto-restores it when packed.
- */
 export const openCommand = defineCommand({
   meta: {
     name: 'open',
@@ -43,9 +40,6 @@ export const openCommand = defineCommand({
   },
 });
 
-/**
- * Decoded arguments for the open command.
- */
 export type OpenFlags = {
   readonly json: boolean | undefined;
   readonly provider: string | undefined;
@@ -56,11 +50,6 @@ export type OpenFlags = {
   readonly vaultPath?: string | undefined;
 };
 
-/**
- * Opens (looks up) a session and restores it when lifecycle is enabled.
- *
- * @param flags - Decoded command-line arguments.
- */
 export const runOpenCommand = async (flags: OpenFlags): Promise<CommandExit> => {
   const home = requireHome(flags.home);
 

@@ -1,24 +1,15 @@
 import { isPathPresent } from '@/archive/file-system.js';
 import type { DiscoveredSession, ProviderAdapter, SessionStore } from '@/session-model.js';
 
-/**
- * Stores and providers to inspect during a scan.
- */
 export interface ScanRequest {
   readonly stores: ReadonlyArray<SessionStore>;
   readonly providers: ReadonlyArray<ProviderAdapter>;
 }
 
-/**
- * Aggregated sessions discovered across all scanned stores.
- */
 export interface ScanReport {
   readonly sessions: ReadonlyArray<DiscoveredSession>;
 }
 
-/**
- * Scans each store with its provider and returns every session found.
- */
 export const scanStores = async (request: ScanRequest): Promise<ScanReport> => {
   const sessions: DiscoveredSession[] = [];
 

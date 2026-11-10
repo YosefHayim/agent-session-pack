@@ -6,15 +6,9 @@ import { throwWrappedError } from '@/rethrow-as-error.js';
 import type { SessionOriginKind } from '@/session-model.js';
 import { findOriginKind } from './file-system.js';
 
-/**
- * Hashes a file as SHA-256.
- */
 export const readSha256File = (path: string): Promise<string> =>
   hashFile(path).catch(throwWrappedError);
 
-/**
- * Hashes a file or directory tree as SHA-256.
- */
 export const readSha256Path = async (
   path: string,
   originKind?: SessionOriginKind,
@@ -30,9 +24,6 @@ export const readSha256Path = async (
   return readSha256File(path);
 };
 
-/**
- * Hashes every file under a directory into one stable content digest.
- */
 export const readSha256Directory = (path: string): Promise<string> =>
   hashDirectoryTree(path).catch(throwWrappedError);
 

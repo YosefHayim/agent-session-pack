@@ -2,18 +2,6 @@ import { describeBytes } from '@/byte-format.js';
 import { describeStatus, describeTouched } from '@/report-cells.js';
 import type { UnpackSessionsReport } from './unpack-sessions.js';
 
-/**
- * Formats an unpack report for terminal users.
- *
- * @param report - Unpack workflow report.
- * @returns Human-readable unpack table.
- * @example
- * ```ts
- * import { createHumanUnpackReport } from './unpack-output.js';
- *
- * createHumanUnpackReport(report);
- * ```
- */
 export const createHumanUnpackReport = (report: UnpackSessionsReport): string => {
   const totals = sumUnpackTotals(report);
 

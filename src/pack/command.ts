@@ -17,9 +17,6 @@ import {
 import { createPackPlan, DEFAULT_COLD_AFTER, parseDurationMs } from './plan.js';
 import { type PackSessionsReport, packProviderSessions } from './sessions.js';
 
-/**
- * Citty command that packs cold sessions after verified archive restore.
- */
 export const packCommand = defineCommand({
   meta: {
     name: 'pack',
@@ -85,9 +82,6 @@ export const packCommand = defineCommand({
   },
 });
 
-/**
- * Arguments for the pack command, after citty has parsed the flags.
- */
 export type PackFlags = {
   readonly allProviders: boolean | undefined;
   readonly provider: string | undefined;
@@ -105,9 +99,6 @@ export type PackFlags = {
   readonly vaultPath?: string | undefined;
 };
 
-/**
- * Runs the pack command: a dry-run plan, or an archive run when applying.
- */
 export const runPackCommand = async (flags: PackFlags): Promise<CommandExit> => {
   const isStructuredRequested = flags.json === true;
 

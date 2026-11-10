@@ -13,25 +13,10 @@ type ColdThresholdChoice = '14d' | '30d' | '7d' | 'custom';
 type VaultPathChoice = 'custom' | 'default';
 type FlowReport = 'cancelled' | 'saved';
 
-/**
- * Interactive request options extended with first-setup wizard controls.
- */
 export type FirstSetupRequest = InteractiveCliRequest & {
   readonly showIntro?: boolean;
 };
 
-/**
- * Runs the first setup wizard.
- *
- * @param request - Optional test overrides for prompts, home, providers, and time.
- * @returns Flow status.
- * @example
- * ```ts
- * import { runFirstSetup } from './first-setup-flow.js';
- *
- * const setupStatus = await runFirstSetup();
- * ```
- */
 export const runFirstSetup = async (request: FirstSetupRequest = {}): Promise<FlowReport> => {
   const prompts = request.prompts ?? clackPromptAdapter;
   const home = request.home ?? process.env.HOME;
@@ -378,11 +363,6 @@ const createSetupSummary = (summary: {
     '  - changed live files never overwritten',
   ].join('\n');
 
-/**
- * Formats the setup success copy with explicit command paths.
- *
- * @returns Human next-step copy for local, one-off, and installed usage.
- */
 const createSetupSavedCopy = (): string =>
   [
     'Setup saved.',

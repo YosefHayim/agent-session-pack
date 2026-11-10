@@ -6,17 +6,11 @@ import type { SessionStore } from '@/session-model.js';
 import { writeHumanScan, writeStructuredScan } from './output.js';
 import { scanStores } from './stores.js';
 
-/**
- * Arguments for the scan command.
- */
 export interface ScanFlags {
   readonly provider?: string;
   readonly json?: boolean;
 }
 
-/**
- * Scans provider stores and writes the sessions found for humans or agents.
- */
 export const runScanCommand = async (flags: ScanFlags): Promise<CommandExit> => {
   const home = requireHome();
 
@@ -47,9 +41,6 @@ export const runScanCommand = async (flags: ScanFlags): Promise<CommandExit> => 
   return { exitCode: providerExitCode };
 };
 
-/**
- * Citty command that scans provider stores and estimates sessions.
- */
 export const scanCommand = defineCommand({
   meta: {
     name: 'scan',

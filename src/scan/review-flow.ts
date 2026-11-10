@@ -7,19 +7,6 @@ import { allProviders } from '@/providers/all-providers.js';
 import { runScanCommand } from './command.js';
 import { createProviderInventoryTable, loadInventoryWithSpinner } from './inventory-prompt.js';
 
-/**
- * Reviews provider sessions with a spinner-backed inventory scan and scan command.
- *
- * @param request - Interactive request plus resolved prompt adapter.
- * @returns Promise that resolves after review output is shown.
- * @example
- * ```ts
- * import { runReviewSessions } from './review-flow.js';
- * import { clackPromptAdapter } from '@/prompt-adapter.js';
- *
- * await runReviewSessions({ prompts: clackPromptAdapter });
- * ```
- */
 export const runReviewSessions = async (
   request: InteractiveCliRequest & { readonly prompts: PromptAdapter },
 ): Promise<CommandExit> => {

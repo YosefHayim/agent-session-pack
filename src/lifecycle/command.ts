@@ -12,9 +12,6 @@ import {
 import { createWrappersBinPath } from './session-access.js';
 import { installLifecycleWrappers, uninstallLifecycleWrappers } from './wrappers.js';
 
-/**
- * Citty command that enables, disables, or shows continuous restore/pack lifecycle.
- */
 export const lifecycleCommand = defineCommand({
   meta: {
     name: 'lifecycle',
@@ -40,9 +37,6 @@ export const lifecycleCommand = defineCommand({
   },
 });
 
-/**
- * Decoded arguments for the lifecycle command.
- */
 export type LifecycleFlags = {
   readonly action: string | undefined;
   readonly json: boolean | undefined;
@@ -51,13 +45,6 @@ export type LifecycleFlags = {
   readonly cliEntrypoint?: string | undefined;
 };
 
-/**
- * Runs lifecycle enable/disable/status for human and agent callers.
- *
- * Writes lifecycle output and may persist setup config.
- *
- * @param flags - Decoded command-line arguments.
- */
 export const runLifecycleCommand = async (flags: LifecycleFlags): Promise<CommandExit> => {
   const home = requireHome(flags.home);
 

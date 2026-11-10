@@ -3,9 +3,6 @@ import type { ProviderAdapter } from '@/session-model.js';
 import { discoverDirectoryProviderSessions } from './directory-sessions.js';
 import { discoverJsonlProviderSessions } from './jsonl-sessions.js';
 
-/**
- * Archive provider adapter for OpenCode local session stores.
- */
 export const opencodeProvider: ProviderAdapter = {
   id: 'opencode',
   label: 'OpenCode',

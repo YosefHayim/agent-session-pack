@@ -15,7 +15,7 @@ const readManifest = (
   archivedAt: '2026-07-01T00:00:00.000Z',
 });
 
-const MANIFESTS: ReadonlyArray<SessionManifest> = [
+const sessionManifests: ReadonlyArray<SessionManifest> = [
   readManifest({
     sessionId: '019a2f10-oly',
     provider: 'codex',
@@ -39,7 +39,7 @@ const MANIFESTS: ReadonlyArray<SessionManifest> = [
 ];
 
 const readSelection = (query: SelectorQuery) =>
-  findSessionSelector({ ...query, manifests: MANIFESTS });
+  findSessionSelector({ ...query, manifests: sessionManifests });
 
 describe('session selector', () => {
   it('resolves a provider-prefixed slug', () => {

@@ -9,9 +9,6 @@ import { type ProviderId, ProviderIdSchema } from '@/session-model.js';
 import { isRestoreOnLaunchEnabled, readSetupSettings } from '@/setup/config.js';
 import { extractSessionIdsFromArgv, saveSessionAccess } from './session-access.js';
 
-/**
- * Citty command used by provider wrappers to auto-restore sessions before launch.
- */
 export const preflightCommand = defineCommand({
   meta: {
     name: 'preflight',
@@ -40,9 +37,6 @@ export const preflightCommand = defineCommand({
   },
 });
 
-/**
- * Decoded arguments for preflight.
- */
 export type PreflightFlags = {
   readonly json: boolean | undefined;
   readonly provider: string | undefined;
@@ -53,13 +47,6 @@ export type PreflightFlags = {
   readonly vaultPath?: string | undefined;
 };
 
-/**
- * Runs preflight restore for session ids discovered in provider argv.
- *
- * Writes preflight JSON or human output. Always exits 0 on soft failures.
- *
- * @param flags - Provider, passthrough argv, and output flags.
- */
 export const runPreflightCommand = async (flags: PreflightFlags): Promise<CommandExit> => {
   const home = requireHome(flags.home);
 
@@ -164,7 +151,6 @@ const extractPassthroughArgv = (argumentList: ReadonlyArray<string>): ReadonlyAr
 
   const isSeparatorNotFound = separatorIndex === -1;
   if (isSeparatorNotFound) {
-    // Everything after subcommand name flags; drop known flags.
     return argumentList.filter(
       (arg, index, all) =>
         arg !== 'preflight' &&

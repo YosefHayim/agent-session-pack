@@ -8,9 +8,6 @@ import { parseOptionalProvider } from '@/providers/flag.js';
 import { readSetupSettings } from '@/setup/config.js';
 import { type EnsureRestoredReport, ensureSessionRestored } from './ensure-restored.js';
 
-/**
- * Citty command that restores a packed session by id, id prefix, name, slug, or fuzzy words.
- */
 export const restoreCommand = defineCommand({
   meta: {
     name: 'restore',
@@ -47,9 +44,6 @@ export const restoreCommand = defineCommand({
   },
 });
 
-/**
- * Decoded arguments for the restore command.
- */
 export type RestoreFlags = {
   readonly json: boolean | undefined;
   readonly provider: string | undefined;
@@ -60,11 +54,6 @@ export type RestoreFlags = {
   readonly vaultPath?: string | undefined;
 };
 
-/**
- * Runs the restore command for human and agent callers.
- *
- * @param flags - Decoded command-line arguments.
- */
 export const runRestoreCommand = async (flags: RestoreFlags): Promise<CommandExit> => {
   const home = requireHome(flags.home);
 

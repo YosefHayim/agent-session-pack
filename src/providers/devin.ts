@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process';
-import { type Stats, stat } from 'node:fs/promises';
+import type { Stats } from 'node:fs';
+import { stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { z } from 'zod';

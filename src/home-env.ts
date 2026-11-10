@@ -16,6 +16,7 @@ export const requireHome = (homeOverride?: string): string | null => {
   const isHomeMissing = home == null;
   if (isHomeMissing) {
     process.stderr.write(homeNotSetStderrMessage);
+    return null;
   }
 
   return home;

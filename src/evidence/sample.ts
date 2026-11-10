@@ -38,7 +38,7 @@ const selectNewestSession = <Session extends { readonly modifiedAt: Date }>(
 ): Session | undefined => {
   const [firstSession, ...remainingSessions] = sessions;
 
-  const isFirstSessionMissing = firstSession === undefined;
+  const isFirstSessionMissing = firstSession == null;
   if (isFirstSessionMissing) {
     return undefined;
   }
@@ -58,7 +58,7 @@ const selectSmallestSession = <Session extends { readonly sizeBytes: number }>(
 ): Session | undefined => {
   const [firstSession, ...remainingSessions] = sessions;
 
-  const isFirstSessionMissing = firstSession === undefined;
+  const isFirstSessionMissing = firstSession == null;
   if (isFirstSessionMissing) {
     return undefined;
   }

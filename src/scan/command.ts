@@ -1,15 +1,15 @@
 import { defineCommand } from 'citty';
-import type { CommandOutcome } from '@/command-outcome.js';
+import type { CommandExit } from '@/command-outcome.js';
 import { requireHome } from '@/home-env.js';
 import { selectProviders } from '@/providers/flag.js';
 import type { SessionStore } from '@/session-model.js';
-import { writeHumanScan, writeJsonScan } from './output.js';
+import { writeHumanScan, writeStructuredScan } from './output.js';
 import { scanStores } from './stores.js';
 
 /**
  * Arguments for the scan command.
  */
-export interface ScanArgs {
+export interface ScanFlags {
   readonly provider?: string;
   readonly json?: boolean;
 }
@@ -17,7 +17,7 @@ export interface ScanArgs {
 /**
  * Scans provider stores and writes the sessions found for humans or agents.
  */
-export const runScanCommand = async (args: ScanArgs): Promise<CommandOutcome> => {
+export const runScanCommand = async (flags: ScanFlags): Promise<CommandExit> => {
   const home = requireHome();
 
   const isHomeMissing = home == null;
@@ -26,7 +26,7 @@ export const runScanCommand = async (args: ScanArgs): Promise<CommandOutcome> =>
     return { exitCode: 1 };
   }
 
-  const { providers, isProviderUnknown } = selectProviders(args.provider);
+  const { providers, isProviderUnknown } = selectProviders(flags.provider);
   const providerExitCode = isProviderUnknown ? 2 : 0;
   const stores = providers.flatMap((provider) =>
     provider.defaultRoots(home).map((path): SessionStore => ({ provider: provider.id, path })),
@@ -36,10 +36,10 @@ export const runScanCommand = async (args: ScanArgs): Promise<CommandOutcome> =>
     stores,
   });
 
-  const isJsonRequested = args.json === true;
+  const isStructuredRequested = flags.json === true;
 
-  if (isJsonRequested) {
-    writeJsonScan(report);
+  if (isStructuredRequested) {
+    writeStructuredScan(report);
     return { exitCode: providerExitCode };
   }
 

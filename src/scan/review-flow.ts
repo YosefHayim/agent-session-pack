@@ -1,4 +1,4 @@
-import type { CommandOutcome } from '@/command-outcome.js';
+import type { CommandExit } from '@/command-outcome.js';
 import { HOME_NOT_SET_CANCEL_MESSAGE } from '@/home-env.js';
 import type { InteractiveCliRequest } from '@/interactive-cli-request.js';
 import { DEFAULT_COLD_AFTER_MS } from '@/pack/plan.js';
@@ -22,7 +22,7 @@ import { createProviderInventoryTable, loadInventoryWithSpinner } from './invent
  */
 export const runReviewSessions = async (
   request: InteractiveCliRequest & { readonly prompts: PromptAdapter },
-): Promise<CommandOutcome> => {
+): Promise<CommandExit> => {
   const home = request.home ?? process.env.HOME;
 
   const isHomeMissing = home == null;

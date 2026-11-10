@@ -3,10 +3,10 @@ import { defineCommand } from 'citty';
 import { createDefaultVaultPath } from '@/archive/vault-paths.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
-import type { CommandOutcome } from '@/command-outcome.js';
+import type { CommandExit } from '@/command-outcome.js';
 import { requireHome } from '@/home-env.js';
 import { parseOptionalProvider } from '@/providers/flag.js';
-import { readSetupConfig } from '@/setup/config.js';
+import { readSetupSettings } from '@/setup/config.js';
 import { type SessionWatchEvent, watchSessionStubs } from './session-watch.js';
 
 /**
@@ -34,12 +34,12 @@ export const watchCommand = defineCommand({
     },
   },
   run: async ({ args, rawArgs }) => {
-    const execArgs = extractExecArgs(rawArgs);
+    const execArgumentList = extractExecArgumentList(rawArgs);
     return runWatchCommand({
       provider: args.provider,
       json: args.json,
       pollMs: args['poll-ms'],
-      execArgv: execArgs,
+      execArgv: execArgumentList,
     });
   },
 });
@@ -47,7 +47,7 @@ export const watchCommand = defineCommand({
 /**
  * Decoded arguments for watch.
  */
-type WatchArgs = {
+type WatchFlags = {
   readonly provider: string | undefined;
   readonly json: boolean | undefined;
   readonly pollMs: string | undefined;
@@ -57,35 +57,35 @@ type WatchArgs = {
   readonly vaultPath?: string | undefined;
 };
 
-const runWatchCommand = async (args: WatchArgs): Promise<CommandOutcome> => {
-  const home = requireHome(args.home);
+const runWatchCommand = async (flags: WatchFlags): Promise<CommandExit> => {
+  const home = requireHome(flags.home);
 
   const isHomeMissing = home == null;
   if (isHomeMissing) {
     return { exitCode: 1 };
   }
 
-  const provider = parseOptionalProvider(args.provider);
+  const provider = parseOptionalProvider(flags.provider);
 
-  const isProviderNotFound = args.provider != null && provider == null;
+  const isProviderNotFound = flags.provider != null && provider == null;
   if (isProviderNotFound) {
-    process.stderr.write(`Unknown provider: ${args.provider}\n`);
+    process.stderr.write(`Unknown provider: ${flags.provider}\n`);
     return { exitCode: 2 };
   }
 
-  const setupConfig = await readSetupConfig(home);
+  const setupSettings = await readSetupSettings(home);
 
-  const vaultPath = args.vaultPath ?? setupConfig?.vaultPath ?? createDefaultVaultPath(home);
-  const pollIntervalMs = parsePollMs(args.pollMs);
-  const compression = args.compression ?? createZstdCompression();
-  const json = args.json === true;
+  const vaultPath = flags.vaultPath ?? setupSettings?.vaultPath ?? createDefaultVaultPath(home);
+  const pollIntervalMs = parsePollMs(flags.pollMs);
+  const compression = flags.compression ?? createZstdCompression();
+  const isStructuredRequested = flags.json === true;
 
   let childExitCode: number | undefined;
   let stop = false;
 
   // Watch runs even when restore on launch is off; wrappers enable lifecycle first.
-  const hasExecCommand = args.execArgv.length > 0;
-  const [command, ...commandArgs] = args.execArgv;
+  const hasExecCommand = flags.execArgv.length > 0;
+  const [command, ...commandArgumentList] = flags.execArgv;
   const isExecCommandMissing = hasExecCommand && command == null;
   if (isExecCommandMissing) {
     process.stderr.write('Missing command after -- for watch --exec.\n');
@@ -93,7 +93,7 @@ const runWatchCommand = async (args: WatchArgs): Promise<CommandOutcome> => {
   }
 
   if (hasExecCommand) {
-    const child = spawn(command, commandArgs, {
+    const child = spawn(command, commandArgumentList, {
       stdio: 'inherit',
       env: process.env,
     });
@@ -111,7 +111,7 @@ const runWatchCommand = async (args: WatchArgs): Promise<CommandOutcome> => {
   }
 
   const writeWatchEvent = (event: SessionWatchEvent): void => {
-    if (json) {
+    if (isStructuredRequested) {
       process.stdout.write(`${JSON.stringify({ command: 'watch', ...event })}\n`);
       return;
     }
@@ -119,7 +119,7 @@ const runWatchCommand = async (args: WatchArgs): Promise<CommandOutcome> => {
     process.stderr.write(`watch: ${event.provider}/${event.sessionId} → ${event.status}\n`);
   };
 
-  const isHumanWatchWithoutExec = !json && args.execArgv.length === 0;
+  const isHumanWatchWithoutExec = !isStructuredRequested && flags.execArgv.length === 0;
   if (isHumanWatchWithoutExec) {
     const isProviderMissing = provider == null;
     process.stderr.write(
@@ -139,24 +139,24 @@ const runWatchCommand = async (args: WatchArgs): Promise<CommandOutcome> => {
   return { exitCode: childExitCode ?? 0 };
 };
 
-const extractExecArgs = (rawArgs: ReadonlyArray<string>): ReadonlyArray<string> => {
-  const separator = rawArgs.indexOf('--');
+const extractExecArgumentList = (argumentList: ReadonlyArray<string>): ReadonlyArray<string> => {
+  const separator = argumentList.indexOf('--');
 
   const isSeparatorNotFound = separator === -1;
   if (isSeparatorNotFound) {
     return [];
   }
 
-  return rawArgs.slice(separator + 1);
+  return argumentList.slice(separator + 1);
 };
 
-const parsePollMs = (value: string | undefined): number => {
-  const isValueMissing = value == null;
-  if (isValueMissing) {
+const parsePollMs = (millisecondsString: string | undefined): number => {
+  const isMillisecondsStringMissing = millisecondsString == null;
+  if (isMillisecondsStringMissing) {
     return 750;
   }
 
-  const parsed = Number(value);
+  const parsed = Number(millisecondsString);
 
   const isPollIntervalInvalid = !Number.isFinite(parsed) || parsed < 100;
   if (isPollIntervalInvalid) {

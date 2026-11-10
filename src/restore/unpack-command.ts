@@ -3,7 +3,7 @@ import { askApplyConfirmation } from '@/apply-confirmation.js';
 import { createDefaultVaultPath } from '@/archive/vault-paths.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
-import type { CommandOutcome } from '@/command-outcome.js';
+import type { CommandExit } from '@/command-outcome.js';
 import { requireHome } from '@/home-env.js';
 import { selectProviders } from '@/providers/flag.js';
 import type { ProviderAdapter } from '@/session-model.js';
@@ -63,7 +63,7 @@ export const unpackCommand = defineCommand({
 /**
  * Decoded arguments for the unpack command.
  */
-export type UnpackArgs = {
+export type UnpackFlags = {
   readonly allProviders: boolean | undefined;
   readonly apply: boolean | undefined;
   readonly json: boolean | undefined;
@@ -79,34 +79,34 @@ export type UnpackArgs = {
 /**
  * Runs the unpack command for human and agent callers.
  *
- * @param args - Decoded command-line arguments.
+ * @param flags - Decoded command-line arguments.
  */
-export const runUnpackCommand = async (args: UnpackArgs): Promise<CommandOutcome> => {
-  const home = requireHome(args.home);
+export const runUnpackCommand = async (flags: UnpackFlags): Promise<CommandExit> => {
+  const home = requireHome(flags.home);
 
   const isHomeMissing = home == null;
   if (isHomeMissing) {
     return { exitCode: 1 };
   }
 
-  const isApplyUnconfirmed = args.apply === true && args.confirmed !== true;
+  const isApplyUnconfirmed = flags.apply === true && flags.confirmed !== true;
   if (isApplyUnconfirmed) {
     process.stderr.write('Cancelled. Re-run with --apply and confirm with y to unpack sessions.\n');
     process.stderr.write('\n');
     return { exitCode: 2 };
   }
 
-  const { providers, isProviderUnknown } = selectProviders(args.provider, args.providers);
+  const { providers, isProviderUnknown } = selectProviders(flags.provider, flags.providers);
   const providerExitCode = isProviderUnknown ? 2 : 0;
   const report = await unpackProviderSessions({
-    vaultPath: args.vaultPath ?? createDefaultVaultPath(home),
+    vaultPath: flags.vaultPath ?? createDefaultVaultPath(home),
     providers,
-    apply: args.apply === true,
-    compression: args.compression ?? createZstdCompression(),
+    apply: flags.apply === true,
+    compression: flags.compression ?? createZstdCompression(),
   });
 
-  const isJsonOutput = args.json === true;
-  if (isJsonOutput) {
+  const isStructuredRequested = flags.json === true;
+  if (isStructuredRequested) {
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
     return { exitCode: providerExitCode };
   }

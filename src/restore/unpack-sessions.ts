@@ -12,7 +12,7 @@ type UnpackSessionStatus = 'already-present' | 'conflict' | 'dry-run' | 'no-arch
 /**
  * Per-provider unpack result row with restore counts and byte totals.
  */
-type UnpackSessionRow = {
+type UnpackSessionSummary = {
   readonly provider: ProviderId;
   readonly archivedSessions: number;
   readonly restoredSessions: number;
@@ -33,7 +33,7 @@ export type UnpackSessionsReport = {
   readonly command: 'unpack';
   readonly apply: boolean;
   readonly vaultPath: string;
-  readonly rows: ReadonlyArray<UnpackSessionRow>;
+  readonly rows: ReadonlyArray<UnpackSessionSummary>;
 };
 
 /**
@@ -53,23 +53,25 @@ export const unpackProviderSessions = async (
   request: UnpackProviderSessionsRequest,
 ): Promise<UnpackSessionsReport> => {
   const manifests = await listVaultSessionManifests(request.vaultPath);
-  const unpackSessionRows: UnpackSessionRow[] = [];
+  const unpackSessionSummaries: UnpackSessionSummary[] = [];
 
   for (const provider of request.providers) {
     const providerManifests = manifests.filter((manifest) => manifest.provider === provider.id);
 
     const isProviderManifestsEmpty = providerManifests.length === 0;
     if (isProviderManifestsEmpty) {
-      unpackSessionRows.push(createNoArchivesUnpackRow(provider.id));
+      unpackSessionSummaries.push(createNoArchivesUnpackSummary(provider.id));
       continue;
     }
 
     const archiveBytes = await sumArchiveBytes(providerManifests);
-    const beforeBytes = sumManifestSourceBytes(providerManifests);
+    const beforeBytes = sumManifestOriginBytes(providerManifests);
 
     const isPreviewOnly = request.apply === false;
     if (isPreviewOnly) {
-      unpackSessionRows.push(createDryRunUnpackRow(provider.id, providerManifests, archiveBytes));
+      unpackSessionSummaries.push(
+        createDryRunUnpackSummary(provider.id, providerManifests, archiveBytes),
+      );
       continue;
     }
 
@@ -80,7 +82,7 @@ export const unpackProviderSessions = async (
     });
 
     const hasConflictSessions = restored.conflictSessions > 0;
-    unpackSessionRows.push({
+    unpackSessionSummaries.push({
       provider: provider.id,
       archivedSessions: providerManifests.length,
       restoredSessions: restored.restoredSessions,
@@ -99,7 +101,7 @@ export const unpackProviderSessions = async (
     command: 'unpack',
     apply: request.apply,
     vaultPath: request.vaultPath,
-    rows: unpackSessionRows,
+    rows: unpackSessionSummaries,
   };
 };
 
@@ -119,20 +121,20 @@ const restoreProviderManifests = async (request: {
   let restoredSessions = 0;
 
   for (const manifest of request.manifests) {
-    const outcome = await restoreManifest({
+    const exit = await restoreManifest({
       compression: request.compression,
       manifest,
       vaultPath: request.vaultPath,
     });
 
-    const isAlreadyPresent = outcome === 'already-present';
+    const isAlreadyPresent = exit === 'already-present';
     if (isAlreadyPresent) {
       alreadyPresentSessions += 1;
       continue;
     }
 
-    const isConflictOutcome = outcome === 'conflict';
-    if (isConflictOutcome) {
+    const isConflictExit = exit === 'conflict';
+    if (isConflictExit) {
       conflictSessions += 1;
       continue;
     }
@@ -163,7 +165,7 @@ const sumArchiveBytes = async (manifests: ReadonlyArray<SessionManifest>): Promi
 const archiveBytesForManifest = async (manifest: SessionManifest): Promise<number> => {
   const knownArchiveBytes = manifest.archiveBytes;
 
-  const isArchiveBytesKnown = knownArchiveBytes !== undefined;
+  const isArchiveBytesKnown = knownArchiveBytes != null;
 
   if (isArchiveBytesKnown) {
     return knownArchiveBytes;
@@ -173,7 +175,7 @@ const archiveBytesForManifest = async (manifest: SessionManifest): Promise<numbe
   return archiveStats.size;
 };
 
-const createNoArchivesUnpackRow = (provider: ProviderId): UnpackSessionRow => ({
+const createNoArchivesUnpackSummary = (provider: ProviderId): UnpackSessionSummary => ({
   provider,
   archivedSessions: 0,
   restoredSessions: 0,
@@ -187,17 +189,17 @@ const createNoArchivesUnpackRow = (provider: ProviderId): UnpackSessionRow => ({
   reason: 'no manifests found in vault',
 });
 
-const createDryRunUnpackRow = (
+const createDryRunUnpackSummary = (
   provider: ProviderId,
   manifests: ReadonlyArray<SessionManifest>,
   archiveBytes: number,
-): UnpackSessionRow => ({
+): UnpackSessionSummary => ({
   provider,
   archivedSessions: manifests.length,
   restoredSessions: 0,
   alreadyPresentSessions: 0,
   conflictSessions: 0,
-  beforeBytes: sumManifestSourceBytes(manifests),
+  beforeBytes: sumManifestOriginBytes(manifests),
   archiveBytes,
   restoredBytes: 0,
   touchedOriginals: false,
@@ -223,5 +225,5 @@ const readUnpackStatus = (restored: {
   return 'already-present';
 };
 
-const sumManifestSourceBytes = (manifests: ReadonlyArray<SessionManifest>): number =>
+const sumManifestOriginBytes = (manifests: ReadonlyArray<SessionManifest>): number =>
   manifests.reduce((totalBytes, manifest) => totalBytes + manifest.sourceBytes, 0);

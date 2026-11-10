@@ -170,4 +170,4 @@ export const createHumanAgentGuide = (): string =>
  * createJsonAgentGuide();
  * ```
  */
-export const createJsonAgentGuide = (): string => `${JSON.stringify(AGENT_GUIDE, null, 2)}\n`;
+export const createStructuredAgentGuide = (): string => `${JSON.stringify(AGENT_GUIDE, null, 2)}\n`;

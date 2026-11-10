@@ -23,12 +23,12 @@ export type ProviderId = z.infer<typeof ProviderIdSchema>;
 /**
  * Schema enumerating whether a session is stored as one file or a directory tree.
  */
-export const SessionSourceKindSchema = z.enum(['file', 'directory']);
+export const SessionOriginKindSchema = z.enum(['file', 'directory']);
 
 /**
  * Session source storage kind value.
  */
-export type SessionSourceKind = z.infer<typeof SessionSourceKindSchema>;
+export type SessionOriginKind = z.infer<typeof SessionOriginKindSchema>;
 
 /**
  * Provider handling mode value.
@@ -51,7 +51,7 @@ export interface DiscoveredSession {
   readonly originalPath: string;
   readonly modifiedAt: Date;
   readonly sizeBytes: number;
-  readonly sourceKind?: SessionSourceKind;
+  readonly sourceKind?: SessionOriginKind;
   readonly createdAt?: Date;
   readonly status?: SessionStatus;
   readonly archivePath?: string;

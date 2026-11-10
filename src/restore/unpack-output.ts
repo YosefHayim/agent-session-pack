@@ -27,24 +27,26 @@ export const createHumanUnpackReport = (report: UnpackSessionsReport): string =>
       : 'No files changed. Re-run with --apply to restore archived sessions.',
     '',
     'Provider   Archived  Restored  Present  Conflicts  Before     Archive    Restored   Touch  Status',
-    ...report.rows.map(createUnpackReportRow),
+    ...report.rows.map(createUnpackReportSummary),
     '--------   --------  --------  -------  ---------  ------     -------    --------   -----  ------',
     `${'total'.padEnd(10)} ${String(totals.archivedSessions).padEnd(9)} ${String(totals.restoredSessions).padEnd(9)} ${String(totals.alreadyPresentSessions).padEnd(8)} ${String(totals.conflictSessions).padEnd(10)} ${describeBytes(totals.beforeBytes).padEnd(10)} ${describeBytes(totals.archiveBytes).padEnd(10)} ${describeBytes(totals.restoredBytes).padEnd(10)} ${describeTouched(totals.touchedOriginals).padEnd(6)} ${report.apply ? 'applied' : 'dry-run'}`,
   ].join('\n');
 };
 
-const createUnpackReportRow = (unpackSessionRow: UnpackSessionsReport['rows'][number]): string => {
-  const provider = unpackSessionRow.provider.padEnd(10);
-  const archived = String(unpackSessionRow.archivedSessions).padEnd(9);
-  const restored = String(unpackSessionRow.restoredSessions).padEnd(9);
-  const present = String(unpackSessionRow.alreadyPresentSessions).padEnd(8);
-  const conflicts = String(unpackSessionRow.conflictSessions).padEnd(10);
-  const before = describeBytes(unpackSessionRow.beforeBytes).padEnd(10);
-  const archive = describeBytes(unpackSessionRow.archiveBytes).padEnd(10);
-  const restoredBytes = describeBytes(unpackSessionRow.restoredBytes).padEnd(10);
-  const touched = describeTouched(unpackSessionRow.touchedOriginals).padEnd(6);
+const createUnpackReportSummary = (
+  unpackSessionSummary: UnpackSessionsReport['rows'][number],
+): string => {
+  const provider = unpackSessionSummary.provider.padEnd(10);
+  const archived = String(unpackSessionSummary.archivedSessions).padEnd(9);
+  const restored = String(unpackSessionSummary.restoredSessions).padEnd(9);
+  const present = String(unpackSessionSummary.alreadyPresentSessions).padEnd(8);
+  const conflicts = String(unpackSessionSummary.conflictSessions).padEnd(10);
+  const before = describeBytes(unpackSessionSummary.beforeBytes).padEnd(10);
+  const archive = describeBytes(unpackSessionSummary.archiveBytes).padEnd(10);
+  const restoredBytes = describeBytes(unpackSessionSummary.restoredBytes).padEnd(10);
+  const touched = describeTouched(unpackSessionSummary.touchedOriginals).padEnd(6);
 
-  return `${provider} ${archived} ${restored} ${present} ${conflicts} ${before} ${archive} ${restoredBytes} ${touched} ${describeStatus(unpackSessionRow.status, unpackSessionRow.reason)}`;
+  return `${provider} ${archived} ${restored} ${present} ${conflicts} ${before} ${archive} ${restoredBytes} ${touched} ${describeStatus(unpackSessionSummary.status, unpackSessionSummary.reason)}`;
 };
 
 const sumUnpackTotals = (
@@ -60,32 +62,35 @@ const sumUnpackTotals = (
   readonly touchedOriginals: boolean;
 } => ({
   alreadyPresentSessions: report.rows.reduce(
-    (totalSessions, unpackSessionRow) => totalSessions + unpackSessionRow.alreadyPresentSessions,
+    (totalSessions, unpackSessionSummary) =>
+      totalSessions + unpackSessionSummary.alreadyPresentSessions,
     0,
   ),
   archiveBytes: report.rows.reduce(
-    (totalBytes, unpackSessionRow) => totalBytes + unpackSessionRow.archiveBytes,
+    (totalBytes, unpackSessionSummary) => totalBytes + unpackSessionSummary.archiveBytes,
     0,
   ),
   archivedSessions: report.rows.reduce(
-    (totalSessions, unpackSessionRow) => totalSessions + unpackSessionRow.archivedSessions,
+    (totalSessions, unpackSessionSummary) => totalSessions + unpackSessionSummary.archivedSessions,
     0,
   ),
   beforeBytes: report.rows.reduce(
-    (totalBytes, unpackSessionRow) => totalBytes + unpackSessionRow.beforeBytes,
+    (totalBytes, unpackSessionSummary) => totalBytes + unpackSessionSummary.beforeBytes,
     0,
   ),
   conflictSessions: report.rows.reduce(
-    (totalSessions, unpackSessionRow) => totalSessions + unpackSessionRow.conflictSessions,
+    (totalSessions, unpackSessionSummary) => totalSessions + unpackSessionSummary.conflictSessions,
     0,
   ),
   restoredBytes: report.rows.reduce(
-    (totalBytes, unpackSessionRow) => totalBytes + unpackSessionRow.restoredBytes,
+    (totalBytes, unpackSessionSummary) => totalBytes + unpackSessionSummary.restoredBytes,
     0,
   ),
   restoredSessions: report.rows.reduce(
-    (totalSessions, unpackSessionRow) => totalSessions + unpackSessionRow.restoredSessions,
+    (totalSessions, unpackSessionSummary) => totalSessions + unpackSessionSummary.restoredSessions,
     0,
   ),
-  touchedOriginals: report.rows.some((unpackSessionRow) => unpackSessionRow.touchedOriginals),
+  touchedOriginals: report.rows.some(
+    (unpackSessionSummary) => unpackSessionSummary.touchedOriginals,
+  ),
 });

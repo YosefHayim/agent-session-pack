@@ -18,7 +18,7 @@ export type JsonlSessionFile = {
 /**
  * Directory metadata for a multi-file provider session.
  */
-export type DirectorySessionEntry = {
+export type DirectorySessionFile = {
   readonly path: string;
   readonly sizeBytes: number;
   readonly modifiedAt: Date;
@@ -27,7 +27,7 @@ export type DirectorySessionEntry = {
 /**
  * Options controlling which directories are skipped while collecting JSONL files.
  */
-export type CollectJsonlOptions = {
+export type CollectJsonlSettings = {
   readonly excludePathParts: ReadonlyArray<string>;
 };
 
@@ -36,38 +36,38 @@ export type CollectJsonlOptions = {
  */
 export const collectJsonlSessions = async (
   root: string,
-  options: CollectJsonlOptions,
+  settings: CollectJsonlSettings,
 ): Promise<ReadonlyArray<JsonlSessionFile>> => {
-  const entries = await readdir(root, { withFileTypes: true });
+  const dirents = await readdir(root, { withFileTypes: true });
   const files: JsonlSessionFile[] = [];
 
-  for (const entry of entries) {
-    const isExcludedName = options.excludePathParts.includes(entry.name);
+  for (const dirent of dirents) {
+    const isExcludedName = settings.excludePathParts.includes(dirent.name);
     if (isExcludedName) {
       continue;
     }
 
-    const entryPath = join(root, entry.name);
+    const childPath = join(root, dirent.name);
 
-    const isDirectoryEntry = entry.isDirectory();
-    if (isDirectoryEntry) {
-      files.push(...(await collectJsonlSessions(entryPath, options)));
+    const isChildDirectory = dirent.isDirectory();
+    if (isChildDirectory) {
+      files.push(...(await collectJsonlSessions(childPath, settings)));
       continue;
     }
 
-    const isNotFile = !entry.isFile();
+    const isNotFile = !dirent.isFile();
     if (isNotFile) {
       continue;
     }
 
-    const isNotNameEndsWithJsonl = !entry.name.endsWith('.jsonl');
-    if (isNotNameEndsWithJsonl) {
+    const isNotJsonlName = !dirent.name.endsWith('.jsonl');
+    if (isNotJsonlName) {
       continue;
     }
 
-    const fileStat = await stat(entryPath);
+    const fileStat = await stat(childPath);
     files.push({
-      path: entryPath,
+      path: childPath,
       sizeBytes: fileStat.size,
       modifiedAt: fileStat.mtime,
     });
@@ -79,29 +79,29 @@ export const collectJsonlSessions = async (
 /**
  * Measures total file bytes and newest mtime for a session directory tree.
  */
-export const measureDirectorySession = async (path: string): Promise<DirectorySessionEntry> => {
+export const measureDirectorySession = async (path: string): Promise<DirectorySessionFile> => {
   const rootStat = await stat(path);
   let sizeBytes = 0;
   let modifiedAt = rootStat.mtime;
 
   const walk = async (directory: string): Promise<void> => {
-    const entries = await readdir(directory, { withFileTypes: true });
+    const dirents = await readdir(directory, { withFileTypes: true });
 
-    for (const entry of entries) {
-      const entryPath = join(directory, entry.name);
+    for (const dirent of dirents) {
+      const childPath = join(directory, dirent.name);
 
-      const isDirectoryEntry = entry.isDirectory();
-      if (isDirectoryEntry) {
-        await walk(entryPath);
+      const isChildDirectory = dirent.isDirectory();
+      if (isChildDirectory) {
+        await walk(childPath);
         continue;
       }
 
-      const isNotFile = !entry.isFile();
+      const isNotFile = !dirent.isFile();
       if (isNotFile) {
         continue;
       }
 
-      const fileStat = await stat(entryPath);
+      const fileStat = await stat(childPath);
       sizeBytes += fileStat.size;
 
       const isFileNewer = fileStat.mtime.getTime() > modifiedAt.getTime();
@@ -142,11 +142,11 @@ export const slugifyTitle = (title: string): string => {
  */
 export const readSessionIdFromPath = (path: string): string => {
   const fileName = basename(path, extname(path));
-  const idMatch = fileName.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+  const idHit = fileName.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
 
-  const isIdFound = idMatch != null;
+  const isIdFound = idHit != null;
   if (isIdFound) {
-    return idMatch[0];
+    return idHit[0];
   }
 
   return fileName;
@@ -166,10 +166,10 @@ const readSessionTitleFromFile = async (path: string): Promise<string> => {
   });
 
   for await (const chunk of stream) {
-    const text = streamChunkToString(chunk);
-    bytesRead += Buffer.byteLength(text, 'utf8');
+    const chunkString = streamChunkToString(chunk);
+    bytesRead += Buffer.byteLength(chunkString, 'utf8');
 
-    const scan = readTitleFromDelimitedLines(`${carry}${text}`);
+    const scan = readTitleFromDelimitedLines(`${carry}${chunkString}`);
 
     const hasScanTitle = scan.title.length > 0;
     if (hasScanTitle) {
@@ -186,11 +186,11 @@ const readSessionTitleFromFile = async (path: string): Promise<string> => {
     }
   }
 
-  const finalTitle = readTitleFromJsonLine(carry);
+  const lastTitle = readTitleFromJsonlLine(carry);
 
-  const hasTitle = finalTitle.length > 0;
+  const hasTitle = lastTitle.length > 0;
   if (hasTitle) {
-    return finalTitle;
+    return lastTitle;
   }
 
   return basename(path, extname(path));
@@ -206,9 +206,9 @@ const streamChunkToString = (chunk: string | Buffer): string => {
 };
 
 const readTitleFromDelimitedLines = (
-  content: string,
+  fileString: string,
 ): { readonly title: string; readonly rest: string } => {
-  const lines = content.split(/\r?\n/);
+  const lines = fileString.split(/\r?\n/);
   const rest = lines.pop();
 
   const isRestMissing = rest == null;
@@ -220,7 +220,7 @@ const readTitleFromDelimitedLines = (
   }
 
   for (const line of lines) {
-    const title = readTitleFromJsonLine(line);
+    const title = readTitleFromJsonlLine(line);
 
     const hasTitle = title.length > 0;
     if (hasTitle) {
@@ -237,7 +237,7 @@ const readTitleFromDelimitedLines = (
   };
 };
 
-const readTitleFromJsonLine = (line: string): string => {
+const readTitleFromJsonlLine = (line: string): string => {
   try {
     const event = JSON.parse(line) as {
       readonly type?: unknown;

@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import type { PromptAdapter, PromptOption } from '@/prompt-adapter.js';
 import type { ProviderAdapter } from '@/session-model.js';
 import { runFirstSetup } from '@/setup/first-setup-flow.js';
-import { canRunInteractiveCli, createMainMenuOptions } from './interactive-cli.js';
+import { canRunInteractiveCli, createMainMenuChoices } from './interactive-cli.js';
 
 const createWorkspace = (): Promise<string> =>
   mkdtemp(join(tmpdir(), 'agent-session-pack-interactive-'));
@@ -35,21 +35,21 @@ const createPromptAdapter = (answers: ReadonlyArray<unknown>): RecordingPromptAd
     spinnerEvents: [],
     texts: [],
     cancel: () => undefined,
-    confirm: async (options) => {
-      adapter.confirms.push(options);
+    confirm: async (question) => {
+      adapter.confirms.push(question);
       return queue.shift() as boolean;
     },
     intro: () => undefined,
-    isCancel: (value: unknown): value is symbol =>
-      typeof value === 'symbol' && value.description === 'cancel',
-    multiselect: async (options) => {
-      adapter.multiselects.push(options);
+    isCancel: (answer: unknown): answer is symbol =>
+      typeof answer === 'symbol' && answer.description === 'cancel',
+    multiselect: async (question) => {
+      adapter.multiselects.push(question);
       return queue.shift() as ReadonlyArray<string> as never;
     },
     note: () => undefined,
     outro: (message) => adapter.outros.push(message ?? ''),
-    select: async (options) => {
-      adapter.selects.push(options);
+    select: async (question) => {
+      adapter.selects.push(question);
       return queue.shift() as never;
     },
     spinner: () => ({
@@ -61,8 +61,8 @@ const createPromptAdapter = (answers: ReadonlyArray<unknown>): RecordingPromptAd
       start: (message?: string) => adapter.spinnerEvents.push(`start:${message ?? ''}`),
       stop: (message?: string) => adapter.spinnerEvents.push(`stop:${message ?? ''}`),
     }),
-    text: async (options) => {
-      adapter.texts.push(options);
+    text: async (question) => {
+      adapter.texts.push(question);
       return queue.shift() as string;
     },
   };
@@ -115,7 +115,7 @@ describe('interactive CLI flow', () => {
   });
 
   it('renders main menu options with explanatory hints', () => {
-    expect(createMainMenuOptions()).toEqual([
+    expect(createMainMenuChoices()).toEqual([
       {
         value: 'setup',
         label: 'First setup',

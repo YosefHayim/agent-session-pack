@@ -1,4 +1,4 @@
-import type { CommandOutcome } from '@/command-outcome.js';
+import type { CommandExit } from '@/command-outcome.js';
 import { runDoctorCommand } from '@/doctor/command.js';
 import { runSavingsCommand } from '@/evidence/savings-command.js';
 import type { InteractiveCliRequest } from '@/interactive-cli-request.js';
@@ -40,7 +40,7 @@ export const canRunInteractiveCli = (request: InteractiveCliDetectionRequest): b
  *
  * @returns Main menu options.
  */
-export const createMainMenuOptions = (): ReadonlyArray<PromptOption<MainMenuAction>> => [
+export const createMainMenuChoices = (): ReadonlyArray<PromptOption<MainMenuAction>> => [
   {
     value: 'setup',
     label: 'First setup',
@@ -86,14 +86,14 @@ export const createMainMenuOptions = (): ReadonlyArray<PromptOption<MainMenuActi
  */
 export const runInteractiveCli = async (
   request: InteractiveCliRequest = {},
-): Promise<CommandOutcome> => {
+): Promise<CommandExit> => {
   const prompts = request.prompts ?? clackPromptAdapter;
   prompts.intro('Agent Session Pack');
   prompts.note(readFirstScreenCopy());
 
   const action = await prompts.select({
     message: 'What do you want to do?',
-    options: createMainMenuOptions(),
+    options: createMainMenuChoices(),
   });
 
   const isActionCancelOrExit = prompts.isCancel(action) || action === 'exit';
@@ -114,7 +114,7 @@ const runInteractiveAction = async (
     readonly action: MainMenuAction;
     readonly prompts: PromptAdapter;
   },
-): Promise<CommandOutcome> => {
+): Promise<CommandExit> => {
   const isSetupRequested = request.action === 'setup';
   if (isSetupRequested) {
     await runFirstSetup({
@@ -126,14 +126,14 @@ const runInteractiveAction = async (
 
   const isSavingsRequested = request.action === 'savings';
   if (isSavingsRequested) {
-    const savingsOutcome = await runWithSpinner({
+    const savingsExit = await runWithSpinner({
       prompts: request.prompts,
       startMessage: 'Checking savings...',
       stopMessage: 'Savings check complete.',
       task: () => runSavingsCommand({}),
     });
     request.prompts.outro('Original sessions touched: no');
-    return savingsOutcome;
+    return savingsExit;
   }
 
   const isReviewRequested = request.action === 'review';

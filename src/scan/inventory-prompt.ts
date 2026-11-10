@@ -68,27 +68,27 @@ export const loadInventoryWithSpinner = (
  * ```
  */
 export const createProviderInventoryTable = (report: ProviderInventoryReport): string => {
-  const isReportRowsEmpty = report.rows.length === 0;
-  if (isReportRowsEmpty) {
+  const isReportSummariesEmpty = report.rows.length === 0;
+  if (isReportSummariesEmpty) {
     return 'No provider stores found.';
   }
 
   return [
     'Provider   Mode         Sessions   Cold   Guarded recent   Size       Path',
-    ...report.rows.map(createProviderInventoryRow),
+    ...report.rows.map(createProviderInventorySummary),
   ].join('\n');
 };
 
-const createProviderInventoryRow = (
-  inventoryRow: ProviderInventoryReport['rows'][number],
+const createProviderInventorySummary = (
+  inventorySummary: ProviderInventoryReport['rows'][number],
 ): string => {
-  const provider = inventoryRow.provider.padEnd(10);
-  const mode = inventoryRow.mode.padEnd(12);
-  const sessions = String(inventoryRow.sessions).padStart(8);
-  const cold = String(inventoryRow.coldSessions).padStart(6);
-  const guarded = String(inventoryRow.guardedRecentSessions).padStart(16);
-  const size = describeBytes(inventoryRow.candidateBytes).padEnd(10);
-  const path = inventoryRow.paths.join(', ');
+  const provider = inventorySummary.provider.padEnd(10);
+  const mode = inventorySummary.mode.padEnd(12);
+  const sessions = String(inventorySummary.sessions).padStart(8);
+  const cold = String(inventorySummary.coldSessions).padStart(6);
+  const guarded = String(inventorySummary.guardedRecentSessions).padStart(16);
+  const size = describeBytes(inventorySummary.candidateBytes).padEnd(10);
+  const path = inventorySummary.paths.join(', ');
 
   return `${provider} ${mode} ${sessions}   ${cold}   ${guarded}   ${size} ${path}`;
 };

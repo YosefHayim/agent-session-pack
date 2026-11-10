@@ -1,8 +1,8 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { z } from 'zod';
-import { ProviderIdSchema, SessionSourceKindSchema } from '@/session-model.js';
-import { readDirectoryEntries } from './file-system.js';
+import { ProviderIdSchema, SessionOriginKindSchema } from '@/session-model.js';
+import { readDirectoryDirents } from './file-system.js';
 
 /**
  * Schema describing the restore manifest recorded for an archived session.
@@ -18,7 +18,7 @@ export const SessionManifestSchema = z.object({
   sourceBytes: z.number(),
   archiveBytes: z.number().optional(),
   archivedAt: z.string(),
-  sourceKind: SessionSourceKindSchema.optional(),
+  sourceKind: SessionOriginKindSchema.optional(),
 });
 
 /**
@@ -46,9 +46,9 @@ export const writeSessionManifest = async (
  */
 export const readSessionManifest = async (path: string): Promise<SessionManifest> => {
   try {
-    const manifestText = await readFile(path, 'utf8');
-    const manifestJson: unknown = JSON.parse(manifestText);
-    return SessionManifestSchema.parse(manifestJson);
+    const manifestString = await readFile(path, 'utf8');
+    const manifestDocument: unknown = JSON.parse(manifestString);
+    return SessionManifestSchema.parse(manifestDocument);
   } catch (error) {
     throw new Error(`Could not read session manifest ${path}`, { cause: error });
   }
@@ -78,29 +78,29 @@ export const listVaultSessionManifests = async (
 };
 
 const collectManifestPaths = async (root: string): Promise<ReadonlyArray<string>> => {
-  const entries = await readDirectoryEntries(root);
+  const dirents = await readDirectoryDirents(root);
   const paths: string[] = [];
 
-  for (const entry of entries) {
-    const entryPath = join(root, entry.name);
+  for (const dirent of dirents) {
+    const childPath = join(root, dirent.name);
 
-    const isDirectoryEntry = entry.isDirectory();
-    if (isDirectoryEntry) {
-      paths.push(...(await collectManifestPaths(entryPath)));
+    const isChildDirectory = dirent.isDirectory();
+    if (isChildDirectory) {
+      paths.push(...(await collectManifestPaths(childPath)));
       continue;
     }
 
-    const isNotFile = !entry.isFile();
+    const isNotFile = !dirent.isFile();
     if (isNotFile) {
       continue;
     }
 
-    const isNotNameEndsWith = !entry.name.endsWith('.json');
+    const isNotNameEndsWith = !dirent.name.endsWith('.json');
     if (isNotNameEndsWith) {
       continue;
     }
 
-    paths.push(entryPath);
+    paths.push(childPath);
   }
 
   return paths;

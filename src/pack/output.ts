@@ -1,4 +1,4 @@
-import { describeBytes } from '@/byte-format.js';
+import { describeBytes, describeOptionalBytes, describeOptionalPercent } from '@/byte-format.js';
 import { calculateSavedPercent } from '@/byte-savings.js';
 import { describeStatus, describeTouched } from '@/report-cells.js';
 import type { PackPlan } from './plan.js';
@@ -7,7 +7,7 @@ import type { PackSessionsReport } from './sessions.js';
 /**
  * Render options for pack plan and report output.
  */
-export type PackPlanOutputOptions = {
+export type PackPlanPrintoutSettings = {
   readonly olderThan: string;
 };
 
@@ -15,7 +15,7 @@ export type PackPlanOutputOptions = {
  * Formats a non-destructive pack plan for terminal users.
  *
  * @param plan - Dry-run pack plan.
- * @param options - Render options.
+ * @param settings - Render options.
  * @returns Human-readable dry-run table.
  * @example
  * ```ts
@@ -24,20 +24,20 @@ export type PackPlanOutputOptions = {
  * createHumanPackPlan(plan, { olderThan: '7d' });
  * ```
  */
-export const createHumanPackPlan = (plan: PackPlan, options: PackPlanOutputOptions): string => {
+export const createHumanPackPlan = (plan: PackPlan, settings: PackPlanPrintoutSettings): string => {
   const totalBeforeBytes = plan.rows.reduce(
-    (totalBytes, packPlanRow) => totalBytes + packPlanRow.beforeBytes,
+    (totalBytes, packPlanSummary) => totalBytes + packPlanSummary.beforeBytes,
     0,
   );
 
   return [
     'Pack dry run',
     '',
-    `Cold threshold: ${options.olderThan}`,
+    `Cold threshold: ${settings.olderThan}`,
     'No files changed. Cleanup is 0 B until --apply is enabled and runs.',
     '',
     'Provider   Mode         Found   Candidates   Before     After dry-run   Cleanup',
-    ...plan.rows.map(createPackPlanRow),
+    ...plan.rows.map(createPackPlanSummary),
     '--------   ----         -----   ----------   ------     -------------   -------',
     `${'total'.padEnd(10)} ${''.padEnd(12)} ${''.padStart(5)}   ${''.padStart(10)}   ${describeBytes(totalBeforeBytes).padEnd(10)} ${describeBytes(totalBeforeBytes).padEnd(15)} ${describeBytes(0)}`,
     '',
@@ -60,13 +60,14 @@ export const createHumanPackPlan = (plan: PackPlan, options: PackPlanOutputOptio
  * createJsonPackPlan(plan);
  * ```
  */
-export const createJsonPackPlan = (plan: PackPlan): string => `${JSON.stringify(plan, null, 2)}\n`;
+export const createStructuredPackPlan = (plan: PackPlan): string =>
+  `${JSON.stringify(plan, null, 2)}\n`;
 
 /**
  * Formats a pack report for terminal users.
  *
  * @param report - Pack workflow report.
- * @param options - Render options.
+ * @param settings - Render options.
  * @returns Human-readable pack table.
  * @example
  * ```ts
@@ -77,7 +78,7 @@ export const createJsonPackPlan = (plan: PackPlan): string => `${JSON.stringify(
  */
 export const createHumanPackReport = (
   report: PackSessionsReport,
-  options: PackPlanOutputOptions,
+  settings: PackPlanPrintoutSettings,
 ): string => {
   const totals = sumPackTotals(report);
 
@@ -85,14 +86,14 @@ export const createHumanPackReport = (
     'Pack all providers',
     '',
     `Mode: ${report.apply ? 'apply' : 'dry-run'}`,
-    `Cold threshold: ${options.olderThan}`,
+    `Cold threshold: ${settings.olderThan}`,
     `Vault: ${report.vaultPath}`,
     report.apply
       ? 'Confirmed. Originals are removed only after verified archives and manifests.'
       : 'No files changed. Re-run with --apply to pack cold sessions.',
     '',
     'Provider   Sessions  Mode         Candidates  Packed  Before     Archive    Saved      Saved %  Touch  Status',
-    ...report.rows.map(createPackReportRow),
+    ...report.rows.map(createPackReportSummary),
     '--------   --------  ----         ----------  ------  ------     -------    -----      -------  -----  ------',
     `${'total'.padEnd(10)} ${String(totals.foundSessions).padEnd(9)} ${''.padEnd(12)} ${String(totals.candidateSessions).padStart(10)}  ${String(totals.packedSessions).padStart(6)}  ${describeBytes(totals.beforeBytes).padEnd(10)} ${describeOptionalBytes(totals.archiveBytes).padEnd(10)} ${describeOptionalBytes(totals.savedBytes).padEnd(10)} ${describeOptionalPercent(totals.savedPercent).padEnd(8)} ${describeTouched(totals.touchedOriginals).padEnd(6)} ${report.apply ? 'applied' : 'dry-run'}`,
     '',
@@ -112,17 +113,17 @@ export const createHumanPackReport = (
  * createJsonPackReport(report);
  * ```
  */
-export const createJsonPackReport = (report: PackSessionsReport): string =>
+export const createStructuredPackReport = (report: PackSessionsReport): string =>
   `${JSON.stringify(report, null, 2)}\n`;
 
-const createPackPlanRow = (packPlanRow: PackPlan['rows'][number]): string => {
-  const provider = packPlanRow.provider.padEnd(10);
-  const mode = packPlanRow.mode.padEnd(12);
-  const found = String(packPlanRow.scannedSessions).padStart(5);
-  const candidates = String(packPlanRow.candidateSessions).padStart(10);
-  const before = describeBytes(packPlanRow.beforeBytes).padEnd(10);
-  const after = describeBytes(packPlanRow.afterDryRunBytes).padEnd(15);
-  const cleanup = describeBytes(packPlanRow.cleanupBytes);
+const createPackPlanSummary = (packPlanSummary: PackPlan['rows'][number]): string => {
+  const provider = packPlanSummary.provider.padEnd(10);
+  const mode = packPlanSummary.mode.padEnd(12);
+  const found = String(packPlanSummary.scannedSessions).padStart(5);
+  const candidates = String(packPlanSummary.candidateSessions).padStart(10);
+  const before = describeBytes(packPlanSummary.beforeBytes).padEnd(10);
+  const after = describeBytes(packPlanSummary.afterDryRunBytes).padEnd(15);
+  const cleanup = describeBytes(packPlanSummary.cleanupBytes);
 
   return `${provider} ${mode} ${found}   ${candidates}   ${before} ${after} ${cleanup}`;
 };
@@ -182,19 +183,23 @@ const describeSessionCount = (sessions: number): string => {
   return `${sessions} sessions`;
 };
 
-const createPackReportRow = (packSessionRow: PackSessionsReport['rows'][number]): string => {
-  const provider = packSessionRow.provider.padEnd(10);
-  const sessions = String(packSessionRow.foundSessions).padEnd(9);
-  const mode = packSessionRow.mode.padEnd(12);
-  const candidates = String(packSessionRow.candidateSessions).padStart(10);
-  const packed = String(packSessionRow.packedSessions).padStart(6);
-  const before = describeBytes(packSessionRow.beforeBytes).padEnd(10);
-  const archive = describeOptionalBytes(packSessionRow.archiveBytes).padEnd(10);
-  const saved = describeOptionalBytes(packSessionRow.savedBytes).padEnd(10);
-  const savedPercent = describeOptionalPercent(packSessionRow.savedPercent).padEnd(8);
-  const touched = describeTouched(packSessionRow.touchedOriginals).padEnd(6);
+const createPackReportSummary = (
+  packSessionSummary: PackSessionsReport['rows'][number],
+): string => {
+  const provider = packSessionSummary.provider.padEnd(10);
+  const sessions = String(packSessionSummary.foundSessions).padEnd(9);
+  const mode = packSessionSummary.mode.padEnd(12);
+  const candidates = String(packSessionSummary.candidateSessions).padStart(10);
+  const packed = String(packSessionSummary.packedSessions).padStart(6);
+  const before = describeBytes(packSessionSummary.beforeBytes).padEnd(10);
+  const archive = describeOptionalBytes(packSessionSummary.archiveBytes, 'pending').padEnd(10);
+  const saved = describeOptionalBytes(packSessionSummary.savedBytes, 'pending').padEnd(10);
+  const savedPercent = describeOptionalPercent(packSessionSummary.savedPercent, 'pending').padEnd(
+    8,
+  );
+  const touched = describeTouched(packSessionSummary.touchedOriginals).padEnd(6);
 
-  return `${provider} ${sessions} ${mode} ${candidates}  ${packed}  ${before} ${archive} ${saved} ${savedPercent} ${touched} ${describeStatus(packSessionRow.status, packSessionRow.reason)}`;
+  return `${provider} ${sessions} ${mode} ${candidates}  ${packed}  ${before} ${archive} ${saved} ${savedPercent} ${touched} ${describeStatus(packSessionSummary.status, packSessionSummary.reason)}`;
 };
 
 const sumPackTotals = (
@@ -209,9 +214,11 @@ const sumPackTotals = (
   readonly savedPercent: number | undefined;
   readonly touchedOriginals: boolean;
 } => {
-  const archiveBytes = sumMaybe(report.rows.map((packSessionRow) => packSessionRow.archiveBytes));
+  const archiveBytes = sumMaybe(
+    report.rows.map((packSessionSummary) => packSessionSummary.archiveBytes),
+  );
   const beforeBytes = report.rows.reduce(
-    (totalBytes, packSessionRow) => totalBytes + packSessionRow.beforeBytes,
+    (totalBytes, packSessionSummary) => totalBytes + packSessionSummary.beforeBytes,
     0,
   );
   const isArchiveBytesMissing = archiveBytes == null;
@@ -221,54 +228,36 @@ const sumPackTotals = (
     archiveBytes,
     beforeBytes,
     candidateSessions: report.rows.reduce(
-      (totalSessions, packSessionRow) => totalSessions + packSessionRow.candidateSessions,
+      (totalSessions, packSessionSummary) => totalSessions + packSessionSummary.candidateSessions,
       0,
     ),
     foundSessions: report.rows.reduce(
-      (totalSessions, packSessionRow) => totalSessions + packSessionRow.foundSessions,
+      (totalSessions, packSessionSummary) => totalSessions + packSessionSummary.foundSessions,
       0,
     ),
     packedSessions: report.rows.reduce(
-      (totalSessions, packSessionRow) => totalSessions + packSessionRow.packedSessions,
+      (totalSessions, packSessionSummary) => totalSessions + packSessionSummary.packedSessions,
       0,
     ),
     savedBytes,
     savedPercent: isArchiveBytesMissing
       ? undefined
       : calculateSavedPercent(beforeBytes, archiveBytes),
-    touchedOriginals: report.rows.some((packSessionRow) => packSessionRow.touchedOriginals),
+    touchedOriginals: report.rows.some((packSessionSummary) => packSessionSummary.touchedOriginals),
   };
 };
 
-const sumMaybe = (values: ReadonlyArray<number | undefined>): number | undefined => {
-  const hasMissingValue = values.some((value) => value == null);
-  if (hasMissingValue) {
+const sumMaybe = (numbers: ReadonlyArray<number | undefined>): number | undefined => {
+  const hasMissingNumber = numbers.some((number) => number == null);
+  if (hasMissingNumber) {
     return undefined;
   }
 
   let totalBytes = 0;
 
-  for (const value of values) {
-    totalBytes += Number(value);
+  for (const number of numbers) {
+    totalBytes += Number(number);
   }
 
   return totalBytes;
-};
-
-const describeOptionalBytes = (bytes: number | undefined): string => {
-  const isBytesMissing = bytes == null;
-  if (isBytesMissing) {
-    return 'pending';
-  }
-
-  return describeBytes(bytes);
-};
-
-const describeOptionalPercent = (percent: number | undefined): string => {
-  const isPercentMissing = percent == null;
-  if (isPercentMissing) {
-    return 'pending';
-  }
-
-  return `${percent.toFixed(1)}%`;
 };

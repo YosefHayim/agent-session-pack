@@ -1,4 +1,4 @@
-import { isPathOnDisk, removePath } from '@/archive/file-system.js';
+import { isPathPresent, removePath } from '@/archive/file-system.js';
 import { writeSessionManifest } from '@/archive/manifest-store.js';
 import { writeArchivedStub } from '@/archive/session-stub.js';
 import {
@@ -17,7 +17,7 @@ import type {
   ProviderAdapter,
   ProviderId,
   ProviderMode,
-  SessionSourceKind,
+  SessionOriginKind,
 } from '@/session-model.js';
 import { createPackThresholdPreviews, type PackThresholdPreview } from './plan.js';
 
@@ -29,7 +29,7 @@ type PackSessionStatus = 'backup-only' | 'dry-run' | 'missing' | 'no-candidates'
 /**
  * Per-provider pack result row with byte totals and status.
  */
-type PackSessionRow = {
+type PackSessionSummary = {
   readonly provider: ProviderId;
   readonly mode: ProviderMode;
   readonly foundSessions: number;
@@ -51,7 +51,7 @@ export type PackSessionsReport = {
   readonly command: 'pack';
   readonly apply: boolean;
   readonly vaultPath: string;
-  readonly rows: ReadonlyArray<PackSessionRow>;
+  readonly rows: ReadonlyArray<PackSessionSummary>;
   readonly thresholdPreviews: ReadonlyArray<PackThresholdPreview>;
 };
 
@@ -75,7 +75,7 @@ export type PackProviderSessionsRequest = {
 export const packProviderSessions = async (
   request: PackProviderSessionsRequest,
 ): Promise<PackSessionsReport> => {
-  const packSessionRows: PackSessionRow[] = [];
+  const packSessionSummaries: PackSessionSummary[] = [];
   const packableSessions: DiscoveredSession[] = [];
   const cutoffTime = request.now.getTime() - request.olderThanMs;
 
@@ -87,13 +87,13 @@ export const packProviderSessions = async (
 
     const isSessionsMissing = sessions == null;
     if (isSessionsMissing) {
-      packSessionRows.push(createMissingPackRow(provider));
+      packSessionSummaries.push(createMissingPackSummary(provider));
       continue;
     }
 
     const isProviderModeBackupOnly = provider.mode === 'backup-only';
     if (isProviderModeBackupOnly) {
-      packSessionRows.push(createBackupOnlyPackRow(provider, sessions.length));
+      packSessionSummaries.push(createBackupOnlyPackSummary(provider, sessions.length));
       continue;
     }
 
@@ -103,13 +103,13 @@ export const packProviderSessions = async (
 
     const isCandidatesEmpty = candidates.length === 0;
     if (isCandidatesEmpty) {
-      packSessionRows.push(createNoCandidatesPackRow(provider, sessions.length));
+      packSessionSummaries.push(createNoCandidatesPackSummary(provider, sessions.length));
       continue;
     }
 
     const isPreviewOnly = request.apply === false;
     if (isPreviewOnly) {
-      packSessionRows.push(createDryRunPackRow(provider, sessions.length, candidates));
+      packSessionSummaries.push(createDryRunPackSummary(provider, sessions.length, candidates));
       continue;
     }
 
@@ -120,8 +120,8 @@ export const packProviderSessions = async (
       vaultPath: request.vaultPath,
     });
 
-    packSessionRows.push(
-      createPackedRow({
+    packSessionSummaries.push(
+      createPackedSummary({
         provider,
         foundSessions: sessions.length,
         packedSessions: archived.packedSessions,
@@ -135,7 +135,7 @@ export const packProviderSessions = async (
     command: 'pack',
     apply: request.apply,
     vaultPath: request.vaultPath,
-    rows: packSessionRows,
+    rows: packSessionSummaries,
     thresholdPreviews: createPackThresholdPreviews({
       now: request.now,
       olderThan: request.olderThan,
@@ -154,10 +154,10 @@ const discoverExistingProviderSessions = async (request: {
   let existingRoots = 0;
 
   for (const root of roots) {
-    const doesRootExist = await isPathOnDisk(root);
-    const isRootMissing = !doesRootExist;
+    const doesRootExist = await isPathPresent(root);
+    const isRootAbsent = !doesRootExist;
 
-    if (isRootMissing) {
+    if (isRootAbsent) {
       continue;
     }
 
@@ -193,9 +193,9 @@ const archiveCandidateSessions = async (request: {
   let packedSessions = 0;
 
   for (const session of request.candidates) {
-    const sourceKind = readSessionSourceKind(session);
-    const archivePath = archivePathForSession(request.vaultPath, session, sourceKind);
-    const restoredPath = createSessionVerificationPath(request.vaultPath, session, sourceKind);
+    const originKind = readSessionOriginKind(session);
+    const archivePath = archivePathForSession(request.vaultPath, session, originKind);
+    const restoredPath = createSessionVerificationPath(request.vaultPath, session, originKind);
     const manifestPath = createSessionManifestPath(request.vaultPath, session);
     const archived = await writeVerifiedArchive({
       sessionId: session.id,
@@ -204,7 +204,7 @@ const archiveCandidateSessions = async (request: {
       restoredPath,
       apply: false,
       compression: request.compression,
-      sourceKind,
+      sourceKind: originKind,
     });
 
     await writeSessionManifest(manifestPath, {
@@ -218,7 +218,7 @@ const archiveCandidateSessions = async (request: {
       sourceBytes: archived.sourceBytes,
       archiveBytes: archived.archiveBytes,
       archivedAt: request.now.toISOString(),
-      sourceKind,
+      sourceKind: originKind,
     });
     await removeOriginalSession(session.originalPath);
     // Leave a tiny listable stub so GUIs can still see the session; watch materializes on open.
@@ -226,7 +226,7 @@ const archiveCandidateSessions = async (request: {
       originalPath: session.originalPath,
       sessionId: session.id,
       provider: session.provider,
-      sourceKind,
+      sourceKind: originKind,
     });
     await removePath(restoredPath);
 
@@ -242,7 +242,7 @@ const archiveCandidateSessions = async (request: {
   };
 };
 
-const createMissingPackRow = (provider: ProviderAdapter): PackSessionRow => ({
+const createMissingPackSummary = (provider: ProviderAdapter): PackSessionSummary => ({
   provider: provider.id,
   mode: provider.mode,
   foundSessions: 0,
@@ -257,10 +257,10 @@ const createMissingPackRow = (provider: ProviderAdapter): PackSessionRow => ({
   reason: 'provider store not found',
 });
 
-const createBackupOnlyPackRow = (
+const createBackupOnlyPackSummary = (
   provider: ProviderAdapter,
   foundSessions: number,
-): PackSessionRow => ({
+): PackSessionSummary => ({
   provider: provider.id,
   mode: provider.mode,
   foundSessions,
@@ -275,10 +275,10 @@ const createBackupOnlyPackRow = (
   reason: 'backup-only provider is not mutated',
 });
 
-const createNoCandidatesPackRow = (
+const createNoCandidatesPackSummary = (
   provider: ProviderAdapter,
   foundSessions: number,
-): PackSessionRow => ({
+): PackSessionSummary => ({
   provider: provider.id,
   mode: provider.mode,
   foundSessions,
@@ -293,11 +293,11 @@ const createNoCandidatesPackRow = (
   reason: 'no sessions older than threshold',
 });
 
-const createDryRunPackRow = (
+const createDryRunPackSummary = (
   provider: ProviderAdapter,
   foundSessions: number,
   candidates: ReadonlyArray<DiscoveredSession>,
-): PackSessionRow => ({
+): PackSessionSummary => ({
   provider: provider.id,
   mode: provider.mode,
   foundSessions,
@@ -312,13 +312,13 @@ const createDryRunPackRow = (
   reason: '--apply required to write archives',
 });
 
-const createPackedRow = (request: {
+const createPackedSummary = (request: {
   readonly provider: ProviderAdapter;
   readonly foundSessions: number;
   readonly packedSessions: number;
   readonly beforeBytes: number;
   readonly archiveBytes: number;
-}): PackSessionRow => ({
+}): PackSessionSummary => ({
   provider: request.provider.id,
   mode: request.provider.mode,
   foundSessions: request.foundSessions,
@@ -333,5 +333,5 @@ const createPackedRow = (request: {
   reason: undefined,
 });
 
-const readSessionSourceKind = (session: DiscoveredSession): SessionSourceKind =>
+const readSessionOriginKind = (session: DiscoveredSession): SessionOriginKind =>
   session.sourceKind ?? 'file';

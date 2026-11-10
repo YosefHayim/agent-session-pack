@@ -42,7 +42,7 @@ export const selectProviders = (
 
   const providerId = parseOptionalProvider(provider);
 
-  const isProviderUnknown = providerId === undefined;
+  const isProviderUnknown = providerId == null;
 
   if (isProviderUnknown) {
     process.stderr.write(`Unknown provider: ${provider}\n`);

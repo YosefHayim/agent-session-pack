@@ -21,8 +21,8 @@ export const initCommand = defineCommand({
     },
   },
   run: async ({ args }) => {
-    const isJsonOutput = args.json === true;
-    if (isJsonOutput) {
+    const isStructuredRequested = args.json === true;
+    if (isStructuredRequested) {
       process.stdout.write(
         `${JSON.stringify({
           vaultPath: '~/.agent-session-pack',

@@ -1,3 +1,4 @@
+import { isPathPresent } from '@/archive/file-system.js';
 import { sumSessionBytes } from '@/byte-savings.js';
 import type {
   DiscoveredSession,
@@ -5,7 +6,6 @@ import type {
   ProviderId,
   ProviderMode,
 } from '@/session-model.js';
-import { isPathPresent } from './stores.js';
 
 /**
  * Readiness status reported for a provider store during inventory.
@@ -15,7 +15,7 @@ type ProviderInventoryStatus = 'backup-only' | 'missing' | 'ready';
 /**
  * Read-only inventory row summarizing one provider's sessions and bytes.
  */
-type ProviderInventoryRow = {
+type ProviderInventorySummary = {
   readonly provider: ProviderId;
   readonly label: string;
   readonly mode: ProviderMode;
@@ -32,7 +32,7 @@ type ProviderInventoryRow = {
  * Aggregated inventory report across all inspected providers.
  */
 export type ProviderInventoryReport = {
-  readonly rows: ReadonlyArray<ProviderInventoryRow>;
+  readonly rows: ReadonlyArray<ProviderInventorySummary>;
 };
 
 /**
@@ -51,7 +51,7 @@ export type ProviderInventoryRequest = {
 export const inspectProviderInventory = async (
   request: ProviderInventoryRequest,
 ): Promise<ProviderInventoryReport> => {
-  const inventoryRows: ProviderInventoryRow[] = [];
+  const inventorySummaries: ProviderInventorySummary[] = [];
   const cutoffTime = request.now.getTime() - request.olderThanMs;
 
   for (const provider of request.providers) {
@@ -61,8 +61,8 @@ export const inspectProviderInventory = async (
     });
 
     const hasExistingRoots = discovered.existingRoots.length > 0;
-    inventoryRows.push(
-      createInventoryRow({
+    inventorySummaries.push(
+      createInventorySummary({
         cutoffTime,
         paths: hasExistingRoots ? discovered.existingRoots : discovered.roots,
         provider,
@@ -71,7 +71,7 @@ export const inspectProviderInventory = async (
     );
   }
 
-  return { rows: inventoryRows };
+  return { rows: inventorySummaries };
 };
 
 type ProviderRootDiscovery = {
@@ -90,7 +90,7 @@ const discoverProviderRoots = async (request: {
   readonly provider: ProviderAdapter;
 }): Promise<ProviderRootDiscovery> => {
   const roots = request.provider.defaultRoots(request.home);
-  const discoveredRoots: Array<RootDiscovery | undefined> = [];
+  const discoveredRoots: Array<RootDiscovery | null> = [];
 
   for (const root of roots) {
     const rootDiscovery = await discoverProviderRoot({
@@ -112,12 +112,12 @@ const discoverProviderRoots = async (request: {
 const discoverProviderRoot = async (request: {
   readonly provider: ProviderAdapter;
   readonly root: string;
-}): Promise<RootDiscovery | undefined> => {
+}): Promise<RootDiscovery | null> => {
   const isRootPresent = await isPathPresent(request.root);
-  const isRootMissing = !isRootPresent;
+  const isRootAbsent = !isRootPresent;
 
-  if (isRootMissing) {
-    return undefined;
+  if (isRootAbsent) {
+    return null;
   }
 
   const sessions = await request.provider.discover({
@@ -131,12 +131,12 @@ const discoverProviderRoot = async (request: {
   };
 };
 
-const createInventoryRow = (request: {
+const createInventorySummary = (request: {
   readonly cutoffTime: number;
   readonly paths: ReadonlyArray<string>;
   readonly provider: ProviderAdapter;
   readonly sessions: ReadonlyArray<DiscoveredSession>;
-}): ProviderInventoryRow => {
+}): ProviderInventorySummary => {
   const isNothingToScan = request.paths.length === 0 || request.sessions.length === 0;
   if (isNothingToScan) {
     const isRequestSessionsEmpty = request.sessions.length === 0;
@@ -188,5 +188,5 @@ const createInventoryRow = (request: {
   };
 };
 
-const isRootDiscovery = (discovery: RootDiscovery | undefined): discovery is RootDiscovery =>
+const isRootDiscovery = (discovery: RootDiscovery | null): discovery is RootDiscovery =>
   discovery != null;

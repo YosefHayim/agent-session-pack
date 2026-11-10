@@ -5,7 +5,7 @@ import { type ProviderId, ProviderIdSchema } from '@/session-model.js';
  * How far a selector reaches: `exact` matches id, name, or slug only; `fuzzy` also tries
  * id prefixes and then words found in the name or slug.
  */
-export type SelectorMatch = 'exact' | 'fuzzy';
+export type SelectorMode = 'exact' | 'fuzzy';
 
 /**
  * Selector text paired with the vault manifests it should resolve against.
@@ -14,7 +14,7 @@ export type SessionSelectorRequest = {
   readonly selector: string;
   readonly provider: ProviderId | undefined;
   readonly manifests: ReadonlyArray<SessionManifest>;
-  readonly match: SelectorMatch;
+  readonly match: SelectorMode;
 };
 
 /**
@@ -40,25 +40,25 @@ export const findSessionSelector = (request: SessionSelectorRequest): SessionSel
   const parsed = parseSelector(request.selector);
   const provider = request.provider ?? parsed.provider;
   const candidates = request.manifests.filter(
-    (manifest) => provider === undefined || manifest.provider === provider,
+    (manifest) => provider == null || manifest.provider === provider,
   );
-  const matches = listMatchingManifests(parsed.query, candidates, request.match);
-  const isNoMatch = matches.length === 0;
-  const isAmbiguous = matches.length > 1;
+  const hits = listMatchingManifests(parsed.query, candidates, request.match);
+  const isNoHit = hits.length === 0;
+  const isAmbiguous = hits.length > 1;
 
-  if (isNoMatch) {
+  if (isNoHit) {
     return { status: 'not-found' };
   }
 
   if (isAmbiguous) {
-    return { status: 'ambiguous', candidates: matches };
+    return { status: 'ambiguous', candidates: hits };
   }
 
-  return { status: 'found', manifest: matches[0] };
+  return { status: 'found', manifest: hits[0] };
 };
 
-const isProviderId = (value: string): value is ProviderId =>
-  ProviderIdSchema.safeParse(value).success;
+const isProviderId = (candidate: string): candidate is ProviderId =>
+  ProviderIdSchema.safeParse(candidate).success;
 
 const parseSelector = (selector: string): ParsedSelector => {
   const trimmedSelector = selector.trim();
@@ -86,31 +86,31 @@ const parseSelector = (selector: string): ParsedSelector => {
 const listMatchingManifests = (
   query: string,
   candidates: ReadonlyArray<SessionManifest>,
-  match: SelectorMatch,
+  hit: SelectorMode,
 ): ReadonlyArray<SessionManifest> => {
   const isQueryEmpty = query.length === 0;
   if (isQueryEmpty) {
     return [];
   }
 
-  const exactMatches = candidates.filter((manifest) =>
+  const exactHits = candidates.filter((manifest) =>
     [manifest.sessionId, manifest.slug, manifest.title].some(
       (name) => name.toLowerCase() === query,
     ),
   );
 
-  const hasExactMatch = exactMatches.length > 0 || match === 'exact';
-  if (hasExactMatch) {
-    return exactMatches;
+  const hasExactHit = exactHits.length > 0 || hit === 'exact';
+  if (hasExactHit) {
+    return exactHits;
   }
 
-  const idPrefixMatches = candidates.filter((manifest) =>
+  const idPrefixHits = candidates.filter((manifest) =>
     manifest.sessionId.toLowerCase().startsWith(query),
   );
 
-  const hasIdPrefixMatch = idPrefixMatches.length > 0;
-  if (hasIdPrefixMatch) {
-    return idPrefixMatches;
+  const hasIdPrefixHit = idPrefixHits.length > 0;
+  if (hasIdPrefixHit) {
+    return idPrefixHits;
   }
 
   const words = query.split(/[^a-z0-9]+/).filter((word) => word.length > 0);

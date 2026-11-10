@@ -48,7 +48,7 @@ export const watchSessionStubs = async (request: WatchSessionStubsRequest): Prom
 
     for (const manifest of manifests) {
       const isProviderMismatched =
-        request.provider !== undefined && manifest.provider !== request.provider;
+        request.provider != null && manifest.provider !== request.provider;
       if (isProviderMismatched) {
         continue;
       }
@@ -84,16 +84,16 @@ export const watchSessionStubs = async (request: WatchSessionStubsRequest): Prom
     manifest: SessionManifest,
     forceFromFsEvent: boolean,
   ): Promise<void> => {
-    const sourceKind = manifest.sourceKind ?? 'file';
+    const originKind = manifest.sourceKind ?? 'file';
 
-    const isPathArchivedStub = await isArchivedStubPath(manifest.originalPath, sourceKind);
+    const isPathArchivedStub = await isArchivedStubPath(manifest.originalPath, originKind);
     const isNotStub = !isPathArchivedStub;
 
     if (isNotStub) {
       return;
     }
 
-    const isDirectoryStubCheckNeeded = !forceFromFsEvent && sourceKind === 'directory';
+    const isDirectoryStubCheckNeeded = !forceFromFsEvent && originKind === 'directory';
     const isStubOpenedWhenChecked =
       isDirectoryStubCheckNeeded && (await isDirectoryStubOpened(manifest.originalPath));
     const isDirectoryStubClosed = isDirectoryStubCheckNeeded && !isStubOpenedWhenChecked;
@@ -102,7 +102,7 @@ export const watchSessionStubs = async (request: WatchSessionStubsRequest): Prom
       return;
     }
 
-    const isFileEventWithoutForce = !forceFromFsEvent && sourceKind === 'file';
+    const isFileEventWithoutForce = !forceFromFsEvent && originKind === 'file';
     if (isFileEventWithoutForce) {
       // File stubs only materialize on fs events (reads/writes from the provider).
       return;
@@ -141,7 +141,7 @@ export const watchSessionStubs = async (request: WatchSessionStubsRequest): Prom
   while (!request.shouldStop()) {
     const manifests = await listVaultSessionManifests(request.vaultPath);
     const scoped = manifests.filter(
-      (manifest) => request.provider === undefined || manifest.provider === request.provider,
+      (manifest) => request.provider == null || manifest.provider === request.provider,
     );
 
     refreshWatchers(scoped);

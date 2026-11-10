@@ -1,5 +1,5 @@
 import { join } from 'node:path';
-import type { DiscoveredSession, SessionSourceKind } from '@/session-model.js';
+import type { DiscoveredSession, SessionOriginKind } from '@/session-model.js';
 import type { SessionManifest } from './manifest-store.js';
 
 /**
@@ -21,7 +21,7 @@ export const createDefaultVaultPath = (home: string): string => join(home, '.age
  *
  * @param vaultPath - Vault root path.
  * @param session - Session being archived.
- * @param sourceKind - File or directory session kind.
+ * @param originKind - File or directory session kind.
  * @returns Archive path ending in `.jsonl.zst` or `.tar.zst`.
  * @example
  * ```ts
@@ -33,10 +33,10 @@ export const createDefaultVaultPath = (home: string): string => join(home, '.age
 export const archivePathForSession = (
   vaultPath: string,
   session: DiscoveredSession,
-  sourceKind: SessionSourceKind,
+  originKind: SessionOriginKind,
 ): string => {
-  const isSourceDirectory = sourceKind === 'directory';
-  const extension = isSourceDirectory ? 'tar.zst' : 'jsonl.zst';
+  const isOriginDirectory = originKind === 'directory';
+  const extension = isOriginDirectory ? 'tar.zst' : 'jsonl.zst';
   return join(
     vaultPath,
     'archives',
@@ -66,7 +66,7 @@ export const createSessionManifestPath = (vaultPath: string, session: Discovered
  *
  * @param vaultPath - Vault root path.
  * @param session - Session being archived.
- * @param sourceKind - File or directory session kind.
+ * @param originKind - File or directory session kind.
  * @returns Verification path under the vault.
  * @example
  * ```ts
@@ -78,10 +78,10 @@ export const createSessionManifestPath = (vaultPath: string, session: Discovered
 export const createSessionVerificationPath = (
   vaultPath: string,
   session: DiscoveredSession,
-  sourceKind: SessionSourceKind,
+  originKind: SessionOriginKind,
 ): string => {
-  const isSourceDirectory = sourceKind === 'directory';
-  if (isSourceDirectory) {
+  const isOriginDirectory = originKind === 'directory';
+  if (isOriginDirectory) {
     return join(vaultPath, 'verify', session.provider, createSafePathSegment(session.id));
   }
 
@@ -93,7 +93,7 @@ export const createSessionVerificationPath = (
  *
  * @param vaultPath - Vault root path.
  * @param manifest - Manifest of the archived session.
- * @param sourceKind - File or directory session kind.
+ * @param originKind - File or directory session kind.
  * @returns Restore staging path under the vault.
  * @example
  * ```ts
@@ -105,10 +105,10 @@ export const createSessionVerificationPath = (
 export const restorePathForManifest = (
   vaultPath: string,
   manifest: SessionManifest,
-  sourceKind: SessionSourceKind,
+  originKind: SessionOriginKind,
 ): string => {
-  const isSourceDirectory = sourceKind === 'directory';
-  if (isSourceDirectory) {
+  const isOriginDirectory = originKind === 'directory';
+  if (isOriginDirectory) {
     return join(vaultPath, 'restore', manifest.provider, createSafePathSegment(manifest.sessionId));
   }
 
@@ -120,8 +120,8 @@ export const restorePathForManifest = (
   );
 };
 
-const createSafePathSegment = (value: string): string => {
-  const segment = value
+const createSafePathSegment = (unsafeSegment: string): string => {
+  const segment = unsafeSegment
     .toLowerCase()
     .replace(/[^a-z0-9._-]+/g, '-')
     .replace(/^-+|-+$/g, '');

@@ -76,7 +76,7 @@ describe('packCommand', () => {
     const home = await createWorkspace();
     process.env.HOME = home;
 
-    const commandOutcome = await runPackCommand({
+    const commandExit = await runPackCommand({
       allProviders: true,
       apply: true,
       compression: copyCompression,
@@ -91,14 +91,14 @@ describe('packCommand', () => {
       now: new Date('2026-07-06T12:00:00.000Z'),
     });
 
-    expect(commandOutcome.exitCode).toBe(2);
+    expect(commandExit.exitCode).toBe(2);
     expect(writes.join('')).toContain('Refusing --max with --apply');
   });
 
   it('pack exits with code 1 when HOME is unset', async () => {
     delete process.env.HOME;
 
-    const commandOutcome = await runPackCommand({
+    const commandExit = await runPackCommand({
       allProviders: true,
       apply: undefined,
       compression: copyCompression,
@@ -110,7 +110,7 @@ describe('packCommand', () => {
       yes: undefined,
     });
 
-    expect(commandOutcome.exitCode).toBe(1);
+    expect(commandExit.exitCode).toBe(1);
     const stderr = writes.join('');
     expect(stderr).toContain('HOME is not set.');
     expect(stderr).toContain('.env.example');
@@ -121,7 +121,7 @@ describe('packCommand', () => {
     const home = await createWorkspace();
     process.env.HOME = home;
 
-    const commandOutcome = await runPackCommand({
+    const commandExit = await runPackCommand({
       allProviders: true,
       apply: true,
       compression: copyCompression,
@@ -135,7 +135,7 @@ describe('packCommand', () => {
       yes: undefined,
     });
 
-    expect(commandOutcome.exitCode).toBe(2);
+    expect(commandExit.exitCode).toBe(2);
     expect(writes.join('')).toContain('Cancelled. Re-run with --apply and confirm with y');
   });
 
@@ -144,7 +144,7 @@ describe('packCommand', () => {
     await createColdCodexSession(home);
     process.env.HOME = home;
 
-    const commandOutcome = await runPackCommand({
+    const commandExit = await runPackCommand({
       allProviders: true,
       apply: false,
       compression: copyCompression,
@@ -159,19 +159,19 @@ describe('packCommand', () => {
       now: new Date('2026-07-06T12:00:00.000Z'),
     });
 
-    const payload = JSON.parse(writes.join('')) as {
+    const printedDocument = JSON.parse(writes.join('')) as {
       readonly rows: ReadonlyArray<{ readonly provider: string; readonly status: string }>;
     };
-    expect(Array.isArray(payload.rows)).toBe(true);
-    expect(payload.rows.some((row) => row.provider === 'codex')).toBe(true);
-    expect(commandOutcome.exitCode).toBe(0);
+    expect(Array.isArray(printedDocument.rows)).toBe(true);
+    expect(printedDocument.rows.some((session) => session.provider === 'codex')).toBe(true);
+    expect(commandExit.exitCode).toBe(0);
   });
 
   it('pack reports unknown provider without prompting', async () => {
     const home = await createWorkspace();
     process.env.HOME = home;
 
-    const commandOutcome = await runPackCommand({
+    const commandExit = await runPackCommand({
       allProviders: undefined,
       apply: undefined,
       compression: copyCompression,
@@ -184,7 +184,7 @@ describe('packCommand', () => {
       yes: undefined,
     });
 
-    expect(commandOutcome.exitCode).toBe(2);
+    expect(commandExit.exitCode).toBe(2);
     expect(writes.join('')).toContain('Unknown provider: unknown-agent');
   });
 });

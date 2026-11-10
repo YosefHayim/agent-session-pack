@@ -1,13 +1,13 @@
 import { defineCommand } from 'citty';
 import { createDefaultVaultPath } from '@/archive/vault-paths.js';
-import type { CommandOutcome } from '@/command-outcome.js';
+import type { CommandExit } from '@/command-outcome.js';
 import { requireHome } from '@/home-env.js';
 import { DEFAULT_COLD_AFTER } from '@/pack/plan.js';
 import {
   isRestoreOnLaunchEnabled,
-  readSetupConfig,
-  type SetupConfig,
-  writeSetupConfig,
+  readSetupSettings,
+  type SetupSettings,
+  writeSetupSettings,
 } from '@/setup/config.js';
 import { createWrappersBinPath } from './session-access.js';
 import { installLifecycleWrappers, uninstallLifecycleWrappers } from './wrappers.js';
@@ -43,7 +43,7 @@ export const lifecycleCommand = defineCommand({
 /**
  * Decoded arguments for the lifecycle command.
  */
-export type LifecycleArgs = {
+export type LifecycleFlags = {
   readonly action: string | undefined;
   readonly json: boolean | undefined;
   readonly home?: string | undefined;
@@ -56,17 +56,17 @@ export type LifecycleArgs = {
  *
  * Writes lifecycle output and may persist setup config.
  *
- * @param args - Decoded command-line arguments.
+ * @param flags - Decoded command-line arguments.
  */
-export const runLifecycleCommand = async (args: LifecycleArgs): Promise<CommandOutcome> => {
-  const home = requireHome(args.home);
+export const runLifecycleCommand = async (flags: LifecycleFlags): Promise<CommandExit> => {
+  const home = requireHome(flags.home);
 
   const isHomeMissing = home == null;
   if (isHomeMissing) {
     return { exitCode: 1 };
   }
 
-  const action = args.action?.trim().toLowerCase();
+  const action = flags.action?.trim().toLowerCase();
 
   const isActionUnknown = action !== 'enable' && action !== 'disable' && action !== 'status';
   if (isActionUnknown) {
@@ -74,83 +74,83 @@ export const runLifecycleCommand = async (args: LifecycleArgs): Promise<CommandO
     return { exitCode: 2 };
   }
 
-  const existingConfig = await readSetupConfig(home);
-  const now = args.now ?? new Date();
-  const vaultPath = existingConfig?.vaultPath ?? createDefaultVaultPath(home);
+  const existingSettings = await readSetupSettings(home);
+  const now = flags.now ?? new Date();
+  const vaultPath = existingSettings?.vaultPath ?? createDefaultVaultPath(home);
   const wrappersBin = createWrappersBinPath(vaultPath);
-  const cliEntrypoint = args.cliEntrypoint ?? pickCliEntrypoint();
-  const isJsonOutput = args.json === true;
+  const cliEntrypoint = flags.cliEntrypoint ?? pickCliEntrypoint();
+  const isStructuredRequested = flags.json === true;
 
   const isActionStatus = action === 'status';
   if (isActionStatus) {
     writeLifecycleStatus(
       {
-        restoreOnLaunch: isRestoreOnLaunchEnabled(existingConfig),
-        restoreCacheAfter: existingConfig?.restoreCacheAfter,
-        coldAfter: existingConfig?.coldAfter,
+        restoreOnLaunch: isRestoreOnLaunchEnabled(existingSettings),
+        restoreCacheAfter: existingSettings?.restoreCacheAfter,
+        coldAfter: existingSettings?.coldAfter,
         vaultPath,
         wrappersBin,
         pathHint: `export PATH="${wrappersBin}:$PATH"`,
-        configPresent: existingConfig !== undefined,
+        configPresent: existingSettings != null,
         openCommand: 'agent-session-pack open --provider <id> <session> --json',
         maintainCommand: 'agent-session-pack maintain --dry-run --json',
       },
-      isJsonOutput,
+      isStructuredRequested,
     );
     return { exitCode: 0 };
   }
 
-  const nextConfig = createLifecycleConfig({
-    existingConfig,
+  const nextSettings = createLifecycleSettings({
+    existingConfig: existingSettings,
     home,
     now,
     restoreOnLaunch: action === 'enable',
   });
 
-  await writeSetupConfig({
+  await writeSetupSettings({
     home,
-    config: nextConfig,
+    config: nextSettings,
   });
 
   const isActionEnable = action === 'enable';
   if (isActionEnable) {
     await installLifecycleWrappers({
-      vaultPath: nextConfig.vaultPath,
+      vaultPath: nextSettings.vaultPath,
       cliEntrypoint,
     });
   } else {
-    await uninstallLifecycleWrappers(nextConfig.vaultPath);
+    await uninstallLifecycleWrappers(nextSettings.vaultPath);
   }
 
   writeLifecycleStatus(
     {
-      restoreOnLaunch: nextConfig.restoreOnLaunch === true,
-      restoreCacheAfter: nextConfig.restoreCacheAfter,
-      coldAfter: nextConfig.coldAfter,
-      vaultPath: nextConfig.vaultPath,
-      wrappersBin: createWrappersBinPath(nextConfig.vaultPath),
-      pathHint: `export PATH="${createWrappersBinPath(nextConfig.vaultPath)}:$PATH"`,
+      restoreOnLaunch: nextSettings.restoreOnLaunch === true,
+      restoreCacheAfter: nextSettings.restoreCacheAfter,
+      coldAfter: nextSettings.coldAfter,
+      vaultPath: nextSettings.vaultPath,
+      wrappersBin: createWrappersBinPath(nextSettings.vaultPath),
+      pathHint: `export PATH="${createWrappersBinPath(nextSettings.vaultPath)}:$PATH"`,
       configPresent: true,
       action,
       openCommand: 'agent-session-pack open --provider <id> <session> --json',
       maintainCommand: 'agent-session-pack maintain --apply --yes --json',
     },
-    isJsonOutput,
+    isStructuredRequested,
   );
   return { exitCode: 0 };
 };
 
-const createLifecycleConfig = (request: {
-  readonly existingConfig: SetupConfig | undefined;
+const createLifecycleSettings = (request: {
+  readonly existingConfig: SetupSettings | null;
   readonly home: string;
   readonly now: Date;
   readonly restoreOnLaunch: boolean;
-}): SetupConfig => {
+}): SetupSettings => {
   const timestamp = request.now.toISOString();
   const vaultPath = request.existingConfig?.vaultPath ?? createDefaultVaultPath(request.home);
 
-  const isExistingConfigMissing = request.existingConfig === undefined;
-  if (isExistingConfigMissing) {
+  const isExistingSettingsMissing = request.existingConfig == null;
+  if (isExistingSettingsMissing) {
     return {
       version: 1,
       providers: ['codex', 'claude', 'grok', 'gemini'],
@@ -197,9 +197,9 @@ const writeLifecycleStatus = (
     readonly openCommand?: string;
     readonly maintainCommand?: string;
   },
-  json: boolean,
+  isStructuredRequested: boolean,
 ): void => {
-  if (json) {
+  if (isStructuredRequested) {
     process.stdout.write(
       `${JSON.stringify(
         {
@@ -221,13 +221,13 @@ const writeLifecycleStatus = (
   const lines = [
     isStatusActionMissing ? 'lifecycle status' : `lifecycle ${status.action}`,
     `restoreOnLaunch: ${String(status.restoreOnLaunch)}`,
-    isRestoreCacheAfterMissing ? undefined : `restoreCacheAfter: ${status.restoreCacheAfter}`,
-    isStatusColdAfterMissing ? undefined : `coldAfter: ${status.coldAfter}`,
+    isRestoreCacheAfterMissing ? null : `restoreCacheAfter: ${status.restoreCacheAfter}`,
+    isStatusColdAfterMissing ? null : `coldAfter: ${status.coldAfter}`,
     `vaultPath: ${status.vaultPath}`,
     `wrappersBin: ${status.wrappersBin}`,
     `pathHint: ${status.pathHint}`,
-    isStatusOpenCommandMissing ? undefined : `open: ${status.openCommand}`,
-    isStatusMaintainCommandMissing ? undefined : `maintain: ${status.maintainCommand}`,
+    isStatusOpenCommandMissing ? null : `open: ${status.openCommand}`,
+    isStatusMaintainCommandMissing ? null : `maintain: ${status.maintainCommand}`,
     `configPresent: ${String(status.configPresent)}`,
   ].filter((line): line is string => line != null);
 

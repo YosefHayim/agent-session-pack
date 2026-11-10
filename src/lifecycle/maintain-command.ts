@@ -3,13 +3,13 @@ import { askApplyConfirmation } from '@/apply-confirmation.js';
 import { createDefaultVaultPath } from '@/archive/vault-paths.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
-import type { CommandOutcome } from '@/command-outcome.js';
+import type { CommandExit } from '@/command-outcome.js';
 import { requireHome } from '@/home-env.js';
 import { createHumanPackReport } from '@/pack/output.js';
 import { DEFAULT_COLD_AFTER, parseDurationMs } from '@/pack/plan.js';
 import { packProviderSessions } from '@/pack/sessions.js';
 import { allProviders } from '@/providers/all-providers.js';
-import { isRestoreOnLaunchEnabled, readSetupConfig } from '@/setup/config.js';
+import { isRestoreOnLaunchEnabled, readSetupSettings } from '@/setup/config.js';
 
 /**
  * Citty command that re-packs cold sessions so storage stays low over time.
@@ -59,7 +59,7 @@ export const maintainCommand = defineCommand({
 /**
  * Decoded arguments for maintain.
  */
-type MaintainArgs = {
+type MaintainFlags = {
   readonly apply: boolean | undefined;
   readonly confirmed?: boolean | undefined;
   readonly dryRun: boolean | undefined;
@@ -71,17 +71,17 @@ type MaintainArgs = {
   readonly vaultPath?: string | undefined;
 };
 
-const runMaintainCommand = async (args: MaintainArgs): Promise<CommandOutcome> => {
-  const home = requireHome(args.home);
+const runMaintainCommand = async (flags: MaintainFlags): Promise<CommandExit> => {
+  const home = requireHome(flags.home);
 
   const isHomeMissing = home == null;
   if (isHomeMissing) {
     return { exitCode: 1 };
   }
 
-  const setupConfig = await readSetupConfig(home);
+  const setupSettings = await readSetupSettings(home);
 
-  const isRestoreOnLaunchOff = !isRestoreOnLaunchEnabled(setupConfig);
+  const isRestoreOnLaunchOff = !isRestoreOnLaunchEnabled(setupSettings);
   if (isRestoreOnLaunchOff) {
     process.stderr.write(
       'Lifecycle is disabled. Run `agent-session-pack lifecycle enable` for continuous maintain, or use `pack` directly.\n',
@@ -89,7 +89,7 @@ const runMaintainCommand = async (args: MaintainArgs): Promise<CommandOutcome> =
     return { exitCode: 1 };
   }
 
-  const isApplyUnconfirmed = args.apply === true && args.confirmed !== true;
+  const isApplyUnconfirmed = flags.apply === true && flags.confirmed !== true;
   if (isApplyUnconfirmed) {
     process.stderr.write(
       'Cancelled. Re-run with --apply and confirm with y (or --yes) to pack cold sessions.\n',
@@ -97,11 +97,11 @@ const runMaintainCommand = async (args: MaintainArgs): Promise<CommandOutcome> =
     return { exitCode: 2 };
   }
 
-  const olderThan = setupConfig?.coldAfter ?? DEFAULT_COLD_AFTER;
+  const olderThan = setupSettings?.coldAfter ?? DEFAULT_COLD_AFTER;
   const coldAfter = olderThan.trim().toLowerCase();
   const olderThanMs = parseDurationMs(coldAfter);
-  const vaultPath = args.vaultPath ?? setupConfig?.vaultPath ?? createDefaultVaultPath(home);
-  const apply = args.apply === true;
+  const vaultPath = flags.vaultPath ?? setupSettings?.vaultPath ?? createDefaultVaultPath(home);
+  const apply = flags.apply === true;
   const archiveProviders = allProviders.filter((provider) => provider.mode === 'archive');
 
   const report = await packProviderSessions({
@@ -110,13 +110,13 @@ const runMaintainCommand = async (args: MaintainArgs): Promise<CommandOutcome> =
     providers: archiveProviders,
     olderThan,
     olderThanMs,
-    now: args.now ?? new Date(),
+    now: flags.now ?? new Date(),
     apply,
-    compression: args.compression ?? createZstdCompression(),
+    compression: flags.compression ?? createZstdCompression(),
   });
 
-  const isJsonOutput = args.json === true;
-  if (isJsonOutput) {
+  const isStructuredRequested = flags.json === true;
+  if (isStructuredRequested) {
     process.stdout.write(
       `${JSON.stringify(
         {

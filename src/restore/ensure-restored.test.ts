@@ -16,12 +16,12 @@ describe('ensureSessionRestored', () => {
     const vaultPath = join(home, '.agent-session-pack-test');
     const now = new Date('2026-07-06T12:00:00.000Z');
     const coldModifiedAt = new Date('2026-06-01T12:00:00.000Z');
-    const content = '{"type":"user","text":"ensure restored"}\n';
+    const sessionJsonl = '{"type":"user","text":"ensure restored"}\n';
     const session = await writeColdSession({
       home,
       relativeDir: join('.codex', 'sessions', '2026', '06', '01'),
       fileName: 'ensure-session.jsonl',
-      content,
+      content: sessionJsonl,
       modifiedAt: coldModifiedAt,
     });
 
@@ -32,7 +32,7 @@ describe('ensureSessionRestored', () => {
       slug: 'ensure-restored',
       originalPath: session.path,
       modifiedAt: coldModifiedAt,
-      sizeBytes: Buffer.byteLength(content, 'utf8'),
+      sizeBytes: Buffer.byteLength(sessionJsonl, 'utf8'),
       sourceKind: 'file',
     };
 
@@ -91,7 +91,7 @@ describe('ensureSessionRestored', () => {
       sessionId: 'ensure-session',
       originalPath: session.path,
     });
-    await expect(readFile(session.path, 'utf8')).resolves.toBe(content);
+    await expect(readFile(session.path, 'utf8')).resolves.toBe(sessionJsonl);
 
     const alreadyPresent = await ensureSessionRestored({
       command: 'restore',

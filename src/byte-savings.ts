@@ -18,7 +18,7 @@ export const sumSessionBytes = (sessions: ReadonlyArray<DiscoveredSession>): num
 /**
  * Computes the percent of source bytes saved by an archive, rounded to one decimal.
  *
- * @param sourceBytes - Original size in bytes.
+ * @param originBytes - Original size in bytes.
  * @param archiveBytes - Compressed size in bytes.
  * @returns Saved percent, or 0 when the source is empty.
  * @example
@@ -28,11 +28,11 @@ export const sumSessionBytes = (sessions: ReadonlyArray<DiscoveredSession>): num
  * calculateSavedPercent(1000, 250);
  * ```
  */
-export const calculateSavedPercent = (sourceBytes: number, archiveBytes: number): number => {
-  const isSourceEmpty = sourceBytes === 0;
-  if (isSourceEmpty) {
+export const calculateSavedPercent = (originBytes: number, archiveBytes: number): number => {
+  const isOriginEmpty = originBytes === 0;
+  if (isOriginEmpty) {
     return 0;
   }
 
-  return Number((100 - (archiveBytes / sourceBytes) * 100).toFixed(1));
+  return Number((100 - (archiveBytes / originBytes) * 100).toFixed(1));
 };

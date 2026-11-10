@@ -3,7 +3,7 @@ import { askApplyConfirmation } from '@/apply-confirmation.js';
 import { createDefaultVaultPath } from '@/archive/vault-paths.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
-import type { CommandOutcome } from '@/command-outcome.js';
+import type { CommandExit } from '@/command-outcome.js';
 import { requireHome } from '@/home-env.js';
 import { selectProviders } from '@/providers/flag.js';
 import { scanStores } from '@/scan/stores.js';
@@ -11,8 +11,8 @@ import type { ProviderAdapter, SessionStore } from '@/session-model.js';
 import {
   createHumanPackPlan,
   createHumanPackReport,
-  createJsonPackPlan,
-  createJsonPackReport,
+  createStructuredPackPlan,
+  createStructuredPackReport,
 } from './output.js';
 import { createPackPlan, DEFAULT_COLD_AFTER, parseDurationMs } from './plan.js';
 import { type PackSessionsReport, packProviderSessions } from './sessions.js';
@@ -88,7 +88,7 @@ export const packCommand = defineCommand({
 /**
  * Arguments for the pack command, after citty has parsed the flags.
  */
-export type PackArgs = {
+export type PackFlags = {
   readonly allProviders: boolean | undefined;
   readonly provider: string | undefined;
   readonly max?: boolean | undefined;
@@ -108,10 +108,10 @@ export type PackArgs = {
 /**
  * Runs the pack command: a dry-run plan, or an archive run when applying.
  */
-export const runPackCommand = async (args: PackArgs): Promise<CommandOutcome> => {
-  const isJsonOutput = args.json === true;
+export const runPackCommand = async (flags: PackFlags): Promise<CommandExit> => {
+  const isStructuredRequested = flags.json === true;
 
-  const isMaxApplyRequested = args.max === true && args.apply === true;
+  const isMaxApplyRequested = flags.max === true && flags.apply === true;
 
   if (isMaxApplyRequested) {
     process.stderr.write('Refusing --max with --apply. Use --max as a dry-run preview only.\n');
@@ -119,7 +119,7 @@ export const runPackCommand = async (args: PackArgs): Promise<CommandOutcome> =>
     return { exitCode: 2 };
   }
 
-  const home = requireHome(args.home);
+  const home = requireHome(flags.home);
 
   const isHomeMissing = home == null;
 
@@ -127,7 +127,7 @@ export const runPackCommand = async (args: PackArgs): Promise<CommandOutcome> =>
     return { exitCode: 1 };
   }
 
-  const isApplyUnconfirmed = args.apply === true && args.confirmed !== true;
+  const isApplyUnconfirmed = flags.apply === true && flags.confirmed !== true;
 
   if (isApplyUnconfirmed) {
     process.stderr.write('Cancelled. Re-run with --apply and confirm with y to pack sessions.\n');
@@ -135,25 +135,25 @@ export const runPackCommand = async (args: PackArgs): Promise<CommandOutcome> =>
     return { exitCode: 2 };
   }
 
-  const isMaxRequested = args.max === true;
-  const olderThan = isMaxRequested ? '0h' : (args.olderThan ?? DEFAULT_COLD_AFTER);
+  const isMaxRequested = flags.max === true;
+  const olderThan = isMaxRequested ? '0h' : (flags.olderThan ?? DEFAULT_COLD_AFTER);
   const olderThanMs = parseDurationMs(olderThan);
-  const { providers, isProviderUnknown } = selectProviders(args.provider, args.providers);
+  const { providers, isProviderUnknown } = selectProviders(flags.provider, flags.providers);
   const providerExitCode = isProviderUnknown ? 2 : 0;
 
-  if (canUseArchiveWorkflow(args)) {
+  if (canUseArchiveWorkflow(flags)) {
     const report = await packProviderSessions({
       home,
-      vaultPath: args.vaultPath ?? createDefaultVaultPath(home),
+      vaultPath: flags.vaultPath ?? createDefaultVaultPath(home),
       providers,
       olderThan,
       olderThanMs,
-      now: args.now ?? new Date(),
-      apply: args.apply === true,
-      compression: args.compression ?? createZstdCompression(),
+      now: flags.now ?? new Date(),
+      apply: flags.apply === true,
+      compression: flags.compression ?? createZstdCompression(),
     });
 
-    writeArchiveReport({ report, olderThan, isJsonOutput });
+    writeArchiveReport({ report, olderThan, isJsonOutput: isStructuredRequested });
     return { exitCode: providerExitCode };
   }
 
@@ -176,8 +176,8 @@ export const runPackCommand = async (args: PackArgs): Promise<CommandOutcome> =>
     })),
   });
 
-  if (isJsonOutput) {
-    process.stdout.write(createJsonPackPlan(plan));
+  if (isStructuredRequested) {
+    process.stdout.write(createStructuredPackPlan(plan));
     return { exitCode: providerExitCode };
   }
 
@@ -192,9 +192,9 @@ type ArchiveReportDetails = {
 };
 
 const writeArchiveReport = (details: ArchiveReportDetails): void => {
-  const isJsonRequested = details.isJsonOutput;
-  if (isJsonRequested) {
-    process.stdout.write(createJsonPackReport(details.report));
+  const isStructuredRequested = details.isJsonOutput;
+  if (isStructuredRequested) {
+    process.stdout.write(createStructuredPackReport(details.report));
     return;
   }
 
@@ -203,18 +203,18 @@ const writeArchiveReport = (details: ArchiveReportDetails): void => {
   );
 };
 
-const canUseArchiveWorkflow = (args: PackArgs): boolean => {
-  const isApplyRequested = args.apply === true;
+const canUseArchiveWorkflow = (flags: PackFlags): boolean => {
+  const isApplyRequested = flags.apply === true;
   if (isApplyRequested) {
     return true;
   }
 
-  const isAllProvidersRequested = args.allProviders === true;
+  const isAllProvidersRequested = flags.allProviders === true;
   if (isAllProvidersRequested) {
     return true;
   }
 
-  const isMaxRequested = args.max === true;
+  const isMaxRequested = flags.max === true;
   if (isMaxRequested) {
     return true;
   }

@@ -38,8 +38,8 @@ describe('init command', () => {
   it('writes stable JSON defaults without prompting when --json is set', async () => {
     await runCommand(initCommand, { rawArgs: ['--json'] });
 
-    const payload = JSON.parse(writes.join(''));
-    expect(payload).toEqual({
+    const printedDocument = JSON.parse(writes.join(''));
+    expect(printedDocument).toEqual({
       vaultPath: '~/.agent-session-pack',
       coldAfter: '7d',
       restoreCacheAfter: '7d',
@@ -52,17 +52,17 @@ describe('init command', () => {
   it('includes apply:true in JSON when --apply is set', async () => {
     await runCommand(initCommand, { rawArgs: ['--json', '--apply'] });
 
-    const payload = JSON.parse(writes.join(''));
-    expect(payload.apply).toBe(true);
+    const printedDocument = JSON.parse(writes.join(''));
+    expect(printedDocument.apply).toBe(true);
   });
 
   it('prints dry-run human defaults on non-TTY without prompts', async () => {
     await runCommand(initCommand, { rawArgs: [] });
 
-    const output = writes.join('');
-    expect(output).toContain('Defaults: vault ~/.agent-session-pack');
-    expect(output).toContain('Dry run only. Re-run with --apply to write config.');
-    expect(output).toContain('No files changed.');
+    const printout = writes.join('');
+    expect(printout).toContain('Defaults: vault ~/.agent-session-pack');
+    expect(printout).toContain('Dry run only. Re-run with --apply to write config.');
+    expect(printout).toContain('No files changed.');
   });
 
   it('exposes citty metadata and flags', () => {

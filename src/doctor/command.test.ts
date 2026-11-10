@@ -20,31 +20,31 @@ describe('doctor command', () => {
   it('writes stable JSON prerequisite status', async () => {
     await runDoctorCommand({ json: true });
 
-    const payload = JSON.parse(writes.join('')) as {
+    const printedDocument = JSON.parse(writes.join('')) as {
       readonly sqlite3: { readonly available: boolean; readonly version?: string };
       readonly zstd: { readonly available: boolean; readonly version?: string };
     };
 
-    expect(payload).toHaveProperty('sqlite3');
-    expect(payload).toHaveProperty('zstd');
-    expect(typeof payload.sqlite3.available).toBe('boolean');
-    expect(typeof payload.zstd.available).toBe('boolean');
+    expect(printedDocument).toHaveProperty('sqlite3');
+    expect(printedDocument).toHaveProperty('zstd');
+    expect(typeof printedDocument.sqlite3.available).toBe('boolean');
+    expect(typeof printedDocument.zstd.available).toBe('boolean');
 
-    if (payload.zstd.available) {
-      expect(typeof payload.zstd.version).toBe('string');
+    if (printedDocument.zstd.available) {
+      expect(typeof printedDocument.zstd.version).toBe('string');
     }
 
-    if (payload.sqlite3.available) {
-      expect(typeof payload.sqlite3.version).toBe('string');
+    if (printedDocument.sqlite3.available) {
+      expect(typeof printedDocument.sqlite3.version).toBe('string');
     }
   });
 
   it('writes human-readable prerequisite lines', async () => {
     await runDoctorCommand({ json: undefined });
 
-    const output = writes.join('');
-    expect(output).toMatch(/^zstd: (missing|.+)/m);
-    expect(output).toMatch(/^sqlite3: (missing|.+)/m);
+    const printout = writes.join('');
+    expect(printout).toMatch(/^zstd: (missing|.+)/m);
+    expect(printout).toMatch(/^sqlite3: (missing|.+)/m);
   });
 
   it('exposes citty metadata and --json flag', () => {
@@ -62,8 +62,8 @@ describe('doctor command', () => {
   it('routes citty run through JSON mode', async () => {
     await runCommand(doctorCommand, { rawArgs: ['--json'] });
 
-    const payload = JSON.parse(writes.join(''));
-    expect(payload).toHaveProperty('zstd');
-    expect(payload).toHaveProperty('sqlite3');
+    const printedDocument = JSON.parse(writes.join(''));
+    expect(printedDocument).toHaveProperty('zstd');
+    expect(printedDocument).toHaveProperty('sqlite3');
   });
 });

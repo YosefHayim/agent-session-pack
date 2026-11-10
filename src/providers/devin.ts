@@ -26,7 +26,7 @@ WHERE s.hidden = 0
 ORDER BY s.last_activity_at DESC
 `;
 
-const DevinSessionRowSchema = z.object({
+const DevinSessionSummarySchema = z.object({
   id: z.string(),
   title: z.string(),
   createdAt: z.number(),
@@ -34,9 +34,9 @@ const DevinSessionRowSchema = z.object({
   sizeBytes: z.number(),
 });
 
-const DevinSessionRowsSchema = z.array(DevinSessionRowSchema);
+const DevinSessionSummariesSchema = z.array(DevinSessionSummarySchema);
 
-type DevinSessionRow = z.infer<typeof DevinSessionRowSchema>;
+type DevinSessionSummary = z.infer<typeof DevinSessionSummarySchema>;
 
 /**
  * Backup-only provider adapter for Devin CLI sessions.
@@ -60,16 +60,16 @@ const discoverDevinSessions = async (root: string): Promise<ReadonlyArray<Discov
     return [];
   }
 
-  const devinSessionRows = await readDevinSessionRows(dbPath);
+  const devinSessionSummaries = await readDevinSessions(dbPath);
 
-  const isSessionListEmpty = devinSessionRows.length === 0;
+  const isSessionListEmpty = devinSessionSummaries.length === 0;
 
   if (isSessionListEmpty) {
     return [readSessionFromDatabaseSnapshot(dbPath, dbStat.size, dbStat.mtime)];
   }
 
-  return devinSessionRows.map((devinSessionRow) =>
-    readSessionFromDevinRow(devinSessionRow, dbPath, dbStat.size),
+  return devinSessionSummaries.map((devinSessionSummary) =>
+    readSessionFromDevin(devinSessionSummary, dbPath, dbStat.size),
   );
 };
 
@@ -82,11 +82,11 @@ const readStatOrNull = async (path: string): Promise<Stats | null> => {
   }
 };
 
-const readDevinSessionRows = async (dbPath: string): Promise<ReadonlyArray<DevinSessionRow>> => {
+const readDevinSessions = async (dbPath: string): Promise<ReadonlyArray<DevinSessionSummary>> => {
   try {
-    const output = await execFileAsync('sqlite3', ['-json', dbPath, DEVIN_SESSIONS_SQL]);
-    const parsed = JSON.parse(output.stdout) as unknown;
-    const decodedReply = DevinSessionRowsSchema.safeParse(parsed);
+    const printout = await execFileAsync('sqlite3', ['-json', dbPath, DEVIN_SESSIONS_SQL]);
+    const parsed = JSON.parse(printout.stdout) as unknown;
+    const decodedReply = DevinSessionSummariesSchema.safeParse(parsed);
 
     const isDecodeFailed = !decodedReply.success;
 
@@ -101,22 +101,22 @@ const readDevinSessionRows = async (dbPath: string): Promise<ReadonlyArray<Devin
   }
 };
 
-const readSessionFromDevinRow = (
-  devinSessionRow: DevinSessionRow,
+const readSessionFromDevin = (
+  devinSessionSummary: DevinSessionSummary,
   dbPath: string,
   dbBytes: number,
 ): DiscoveredSession => {
-  const isRowSizeKnown = devinSessionRow.sizeBytes > 0;
-  const sizeBytes = isRowSizeKnown ? devinSessionRow.sizeBytes : dbBytes;
+  const isStoredSizeKnown = devinSessionSummary.sizeBytes > 0;
+  const sizeBytes = isStoredSizeKnown ? devinSessionSummary.sizeBytes : dbBytes;
 
   return {
-    id: devinSessionRow.id,
+    id: devinSessionSummary.id,
     provider: 'devin',
-    title: devinSessionRow.title,
-    slug: slugifyTitle(devinSessionRow.title),
+    title: devinSessionSummary.title,
+    slug: slugifyTitle(devinSessionSummary.title),
     originalPath: dbPath,
-    createdAt: readDateFromDevinTimestamp(devinSessionRow.createdAt),
-    modifiedAt: readDateFromDevinTimestamp(devinSessionRow.modifiedAt),
+    createdAt: readDateFromDevinTimestamp(devinSessionSummary.createdAt),
+    modifiedAt: readDateFromDevinTimestamp(devinSessionSummary.modifiedAt),
     sizeBytes,
     status: 'live',
   };

@@ -1,7 +1,7 @@
 import {
   copyPath,
   ensureParentDirectory,
-  isPathOnDisk,
+  isPathPresent,
   removePath,
 } from '@/archive/file-system.js';
 import { readSha256File, readSha256Path } from '@/archive/hash.js';
@@ -9,12 +9,12 @@ import type { SessionManifest } from '@/archive/manifest-store.js';
 import { isArchivedStubPath } from '@/archive/session-stub.js';
 import { restorePathForManifest } from '@/archive/vault-paths.js';
 import { type CompressionAdapter, restoreDirectoryArchive } from '@/archive/writer.js';
-import type { SessionSourceKind } from '@/session-model.js';
+import type { SessionOriginKind } from '@/session-model.js';
 
 /**
  * Result of restoring one archived session to its original path.
  */
-export type RestoreOutcome = 'already-present' | 'conflict' | 'restored';
+export type RestoreExit = 'already-present' | 'conflict' | 'restored';
 
 /**
  * Inputs for restoring one archived session.
@@ -28,20 +28,20 @@ export type RestoreManifestRequest = {
 /**
  * Restores one archived session to its original path unless a changed live copy is there.
  */
-export const restoreManifest = async (request: RestoreManifestRequest): Promise<RestoreOutcome> => {
-  const sourceKind = readManifestSourceKind(request.manifest);
+export const restoreManifest = async (request: RestoreManifestRequest): Promise<RestoreExit> => {
+  const originKind = readManifestOriginKind(request.manifest);
 
-  const liveOutcome = await findLiveOutcomeWhenPresent(request.manifest, sourceKind);
+  const liveExit = await findLiveExitWhenPresent(request.manifest, originKind);
 
-  const hasLiveOutcome = liveOutcome != null;
-  if (hasLiveOutcome) {
-    return liveOutcome;
+  const hasLiveExit = liveExit != null;
+  if (hasLiveExit) {
+    return liveExit;
   }
 
-  const restoredPath = restorePathForManifest(request.vaultPath, request.manifest, sourceKind);
+  const restoredPath = restorePathForManifest(request.vaultPath, request.manifest, originKind);
 
-  const isSourceDirectory = sourceKind === 'directory';
-  if (isSourceDirectory) {
+  const isOriginDirectory = originKind === 'directory';
+  if (isOriginDirectory) {
     await restoreDirectoryArchive({
       sessionId: request.manifest.sessionId,
       archivePath: request.manifest.archivePath,
@@ -91,36 +91,36 @@ export const restoreManifest = async (request: RestoreManifestRequest): Promise<
   return 'restored';
 };
 
-const findLiveOutcomeWhenPresent = async (
+const findLiveExitWhenPresent = async (
   manifest: SessionManifest,
-  sourceKind: SessionSourceKind,
-): Promise<RestoreOutcome | null> => {
-  const isOriginalOnDisk = await isPathOnDisk(manifest.originalPath);
+  originKind: SessionOriginKind,
+): Promise<RestoreExit | null> => {
+  const isOriginalPresent = await isPathPresent(manifest.originalPath);
 
-  const isOriginalMissing = !isOriginalOnDisk;
-  if (isOriginalMissing) {
+  const isOriginalAbsent = !isOriginalPresent;
+  if (isOriginalAbsent) {
     return null;
   }
 
-  const liveOutcome = await findLiveOriginalOutcome({
+  const liveExit = await findLiveOriginalExit({
     originalPath: manifest.originalPath,
-    sourceKind,
+    sourceKind: originKind,
     sourceSha256: manifest.sourceSha256,
   });
 
-  const isRestoreStillNeeded = liveOutcome === 'continue-restore';
+  const isRestoreStillNeeded = liveExit === 'continue-restore';
   if (isRestoreStillNeeded) {
     return null;
   }
 
-  return liveOutcome;
+  return liveExit;
 };
 
-const findLiveOriginalOutcome = async (request: {
+const findLiveOriginalExit = async (request: {
   readonly originalPath: string;
-  readonly sourceKind: SessionSourceKind;
+  readonly sourceKind: SessionOriginKind;
   readonly sourceSha256: string;
-}): Promise<RestoreOutcome | 'continue-restore'> => {
+}): Promise<RestoreExit | 'continue-restore'> => {
   const isStub = await isArchivedStubPath(request.originalPath, request.sourceKind);
 
   if (isStub) {
@@ -130,9 +130,9 @@ const findLiveOriginalOutcome = async (request: {
 
   const existingSha256 = await readSha256Path(request.originalPath, request.sourceKind);
 
-  const isSameContent = existingSha256 === request.sourceSha256;
+  const isSameSha256 = existingSha256 === request.sourceSha256;
 
-  if (isSameContent) {
+  if (isSameSha256) {
     return 'already-present';
   }
 
@@ -148,5 +148,5 @@ const createVerificationError = (mismatch: {
     `Archive verification failed for session ${mismatch.sessionId}: source ${mismatch.sourceSha256} does not match restored ${mismatch.restoredSha256}`,
   );
 
-const readManifestSourceKind = (manifest: SessionManifest): SessionSourceKind =>
+const readManifestOriginKind = (manifest: SessionManifest): SessionOriginKind =>
   manifest.sourceKind ?? 'file';

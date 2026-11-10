@@ -3,7 +3,7 @@ import { realpathSync } from 'node:fs';
 /**
  * Resolves a filesystem path, following symlinks.
  */
-export type RealpathResolver = (path: string) => string;
+export type RealpathFunction = (path: string) => string;
 
 /**
  * Checks whether the current module was launched as the CLI entrypoint.
@@ -22,7 +22,7 @@ export type RealpathResolver = (path: string) => string;
 export const isCliEntrypoint = (
   entrypointPath: string | undefined,
   modulePath: string,
-  realpath: RealpathResolver = realpathSync,
+  realpath: RealpathFunction = realpathSync,
 ): boolean => {
   const isEntrypointPathMissing = entrypointPath == null;
   if (isEntrypointPathMissing) {

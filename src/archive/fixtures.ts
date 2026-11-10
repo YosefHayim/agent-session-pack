@@ -7,7 +7,7 @@ import type { ProviderAdapter } from '@/session-model.js';
  * Compression adapter for tests that copies bytes instead of compressing them.
  */
 export const copyCompression: CompressionAdapter = {
-  compress: ({ sourcePath, archivePath }) => copyFile(sourcePath, archivePath),
+  compress: ({ sourcePath: originPath, archivePath }) => copyFile(originPath, archivePath),
   decompress: ({ archivePath, restoredPath }) => copyFile(archivePath, restoredPath),
 };
 
@@ -74,17 +74,17 @@ export const writeColdSession = async ({
   home,
   relativeDir,
   fileName,
-  content,
+  content: sessionJsonl,
   modifiedAt,
 }: WriteColdSessionDetails): Promise<{ readonly path: string; readonly content: string }> => {
   const sessionDir = join(home, relativeDir);
   const sessionPath = join(sessionDir, fileName);
   await mkdir(sessionDir, { recursive: true });
-  await writeFile(sessionPath, content);
+  await writeFile(sessionPath, sessionJsonl);
   await utimes(sessionPath, modifiedAt, modifiedAt);
   return {
     path: sessionPath,
-    content,
+    content: sessionJsonl,
   };
 };
 
@@ -101,10 +101,10 @@ export const writeColdSession = async ({
  * ```
  */
 export const writeSessionDirectory = async (root: string): Promise<string> => {
-  const sourcePath = join(root, 'session-dir');
-  await mkdir(join(sourcePath, 'nested'), { recursive: true });
-  await writeFile(join(sourcePath, 'summary.json'), '{"title":"dir session"}\n');
-  await writeFile(join(sourcePath, 'updates.jsonl'), '{"type":"user","text":"hello"}\n');
-  await writeFile(join(sourcePath, 'nested', 'call.log'), 'log-bytes\n');
-  return sourcePath;
+  const originPath = join(root, 'session-dir');
+  await mkdir(join(originPath, 'nested'), { recursive: true });
+  await writeFile(join(originPath, 'summary.json'), '{"title":"dir session"}\n');
+  await writeFile(join(originPath, 'updates.jsonl'), '{"type":"user","text":"hello"}\n');
+  await writeFile(join(originPath, 'nested', 'call.log'), 'log-bytes\n');
+  return originPath;
 };

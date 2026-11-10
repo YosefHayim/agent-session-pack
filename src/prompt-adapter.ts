@@ -14,8 +14,8 @@ import {
 /**
  * A single selectable option shown by an interactive prompt.
  */
-export type PromptOption<Value extends string> = {
-  readonly value: Value;
+export type PromptOption<Choice extends string> = {
+  readonly value: Choice;
   readonly label: string;
   readonly hint?: string;
   readonly disabled?: boolean;
@@ -42,25 +42,25 @@ export type PromptAdapter = {
   note: (message?: string, title?: string) => void;
   outro: (message?: string) => void;
   cancel: (message?: string) => void;
-  isCancel: (value: unknown) => value is symbol;
-  select: <Value extends string>(options: {
+  isCancel: (answer: unknown) => answer is symbol;
+  select: <Choice extends string>(question: {
     readonly message: string;
-    readonly options: ReadonlyArray<PromptOption<Value>>;
-    readonly initialValue?: Value;
-  }) => Promise<Value | symbol>;
-  multiselect: <Value extends string>(options: {
+    readonly options: ReadonlyArray<PromptOption<Choice>>;
+    readonly initialValue?: Choice;
+  }) => Promise<Choice | symbol>;
+  multiselect: <Choice extends string>(question: {
     readonly message: string;
-    readonly options: ReadonlyArray<PromptOption<Value>>;
-    readonly initialValues?: ReadonlyArray<Value>;
+    readonly options: ReadonlyArray<PromptOption<Choice>>;
+    readonly initialValues?: ReadonlyArray<Choice>;
     readonly required?: boolean;
-  }) => Promise<ReadonlyArray<Value> | symbol>;
-  text: (options: {
+  }) => Promise<ReadonlyArray<Choice> | symbol>;
+  text: (question: {
     readonly message: string;
     readonly initialValue?: string;
     readonly placeholder?: string;
-    readonly validate?: (value: string | undefined) => string | undefined;
+    readonly validate?: (answer: string | undefined) => string | undefined;
   }) => Promise<string | symbol>;
-  confirm: (options: {
+  confirm: (question: {
     readonly message: string;
     readonly active?: string;
     readonly inactive?: string;
@@ -74,24 +74,24 @@ export type PromptAdapter = {
  */
 export const clackPromptAdapter: PromptAdapter = {
   cancel,
-  confirm: (options) => confirm(options),
+  confirm: (question) => confirm(question),
   intro,
   isCancel,
-  multiselect: (options) => {
-    const isInitialValuesMissing = options.initialValues == null;
+  multiselect: (question) => {
+    const isInitialFieldsMissing = question.initialValues == null;
     return multiselect({
-      ...options,
-      options: [...options.options] as never,
-      initialValues: isInitialValuesMissing ? undefined : ([...options.initialValues] as never),
+      ...question,
+      options: [...question.options] as never,
+      initialValues: isInitialFieldsMissing ? undefined : ([...question.initialValues] as never),
     });
   },
   note,
   outro,
-  select: (options) =>
+  select: (question) =>
     select({
-      ...options,
-      options: [...options.options] as never,
+      ...question,
+      options: [...question.options] as never,
     }),
   spinner,
-  text: (options) => text(options),
+  text: (question) => text(question),
 };

@@ -23,10 +23,10 @@ describe('human pack output', () => {
       providers: [{ id: 'codex', label: 'Codex', mode: 'archive' }],
     });
 
-    const output = createHumanPackPlan(plan, { olderThan: '7d' });
+    const printout = createHumanPackPlan(plan, { olderThan: '7d' });
 
-    expect(output).toContain('Re-run with --apply to pack cold sessions.');
-    expect(output).not.toContain('Apply is intentionally blocked');
+    expect(printout).toContain('Re-run with --apply to pack cold sessions.');
+    expect(printout).not.toContain('Apply is intentionally blocked');
   });
 
   it('shows threshold curiosity tips for stricter, broader, and max previews', () => {
@@ -69,11 +69,11 @@ describe('human pack output', () => {
       providers: [{ id: 'codex', label: 'Codex', mode: 'archive' }],
     });
 
-    const output = createHumanPackPlan(plan, { olderThan: '7d' });
+    const printout = createHumanPackPlan(plan, { olderThan: '7d' });
 
-    expect(output).toContain('What if:');
-    expect(output).toContain('safer       --older-than 14d  1 session   100 B source');
-    expect(output).toContain('broader     --older-than 3d   2 sessions  300 B source');
-    expect(output).toContain('max preview --max --dry-run   3 sessions  600 B source');
+    expect(printout).toContain('What if:');
+    expect(printout).toContain('safer       --older-than 14d  1 session   100 B source');
+    expect(printout).toContain('broader     --older-than 3d   2 sessions  300 B source');
+    expect(printout).toContain('max preview --max --dry-run   3 sessions  600 B source');
   });
 });

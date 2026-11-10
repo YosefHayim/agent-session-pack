@@ -1,15 +1,15 @@
 import { defineCommand } from 'citty';
-import type { CommandOutcome } from '@/command-outcome.js';
+import type { CommandExit } from '@/command-outcome.js';
 import { requireHome } from '@/home-env.js';
 import { selectProviders } from '@/providers/flag.js';
 import { runLocalEvidence } from './local-evidence.js';
-import { createHumanEvidenceReport, createJsonEvidenceReport } from './output.js';
+import { createHumanEvidenceReport, createStructuredEvidenceReport } from './output.js';
 import { createEvidenceWorkRoot } from './work-root.js';
 
 /**
  * Arguments for the savings command.
  */
-export interface SavingsArgs {
+export interface SavingsFlags {
   readonly provider?: string;
   readonly json?: boolean;
 }
@@ -17,7 +17,7 @@ export interface SavingsArgs {
 /**
  * Runs copy-only local savings proof against provider sessions and writes the report.
  */
-export const runSavingsCommand = async (args: SavingsArgs): Promise<CommandOutcome> => {
+export const runSavingsCommand = async (flags: SavingsFlags): Promise<CommandExit> => {
   const home = requireHome();
 
   const isHomeMissing = home == null;
@@ -26,7 +26,7 @@ export const runSavingsCommand = async (args: SavingsArgs): Promise<CommandOutco
     return { exitCode: 1 };
   }
 
-  const { providers, isProviderUnknown } = selectProviders(args.provider);
+  const { providers, isProviderUnknown } = selectProviders(flags.provider);
   const providerExitCode = isProviderUnknown ? 2 : 0;
   const report = await runLocalEvidence({
     home,
@@ -34,10 +34,10 @@ export const runSavingsCommand = async (args: SavingsArgs): Promise<CommandOutco
     providers,
   });
 
-  const isJsonRequested = args.json === true;
+  const isStructuredRequested = flags.json === true;
 
-  if (isJsonRequested) {
-    process.stdout.write(createJsonEvidenceReport(report));
+  if (isStructuredRequested) {
+    process.stdout.write(createStructuredEvidenceReport(report));
     return { exitCode: providerExitCode };
   }
 

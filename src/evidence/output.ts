@@ -1,6 +1,6 @@
-import { describeBytes } from '@/byte-format.js';
+import { describeBytes, describeOptionalBytes, describeOptionalPercent } from '@/byte-format.js';
 import { calculateSavedPercent } from '@/byte-savings.js';
-import type { LocalEvidenceEntry, LocalEvidenceReport } from './local-evidence.js';
+import type { LocalEvidenceReport, ProviderEvidence } from './local-evidence.js';
 
 /**
  * Formats local evidence output for terminal users.
@@ -25,21 +25,23 @@ export const createHumanEvidenceReport = (report: LocalEvidenceReport): string =
     ].join('\n');
   }
 
-  const totalSourceBytes = sumEvidenceBytes(report.evidence, 'sourceBytes');
+  const totalOriginBytes = sumEvidenceBytes(report.evidence, 'sourceBytes');
   const totalArchiveBytes = sumEvidenceBytes(report.evidence, 'archiveBytes');
   const totalFoundSessions = report.evidence.reduce(
-    (totalSessions, entry) => totalSessions + entry.foundSessions,
+    (totalSessions, providerEvidence) => totalSessions + providerEvidence.foundSessions,
     0,
   );
-  const totalSampledSources = report.evidence.reduce(
-    (totalSamples, entry) => totalSamples + entry.sampledSources,
+  const totalSampledOrigins = report.evidence.reduce(
+    (totalSamples, providerEvidence) => totalSamples + providerEvidence.sampledSources,
     0,
   );
-  const touchedOriginals = report.evidence.some((entry) => entry.originalTouched);
-  const isNothingSampledInTotal = totalSampledSources === 0;
+  const touchedOriginals = report.evidence.some(
+    (providerEvidence) => providerEvidence.originalTouched,
+  );
+  const isNothingSampledInTotal = totalSampledOrigins === 0;
   const totalSavedPercent = isNothingSampledInTotal
     ? undefined
-    : calculateSavedPercent(totalSourceBytes, totalArchiveBytes);
+    : calculateSavedPercent(totalOriginBytes, totalArchiveBytes);
 
   return [
     'Local evidence',
@@ -49,9 +51,9 @@ export const createHumanEvidenceReport = (report: LocalEvidenceReport): string =
     'Proof bytes are not a whole-store estimate.',
     '',
     'Provider      Discovered  Samples  Mode         Proof before  Proof after  Saved    Exact   Touched',
-    ...report.evidence.map(createEvidenceRow),
+    ...report.evidence.map(createEvidenceLine),
     '------------- -----------  -------- ----------- ------------- ------------ -------- ------- -------',
-    `${'sample total'.padEnd(13)} ${String(totalFoundSessions).padEnd(11)} ${String(totalSampledSources).padEnd(8)} ${''.padEnd(12)} ${describeSampledBytes(totalSourceBytes, totalSampledSources).padEnd(13)} ${describeSampledBytes(totalArchiveBytes, totalSampledSources).padEnd(12)} ${describeOptionalPercent(totalSavedPercent).padEnd(8)} ${''.padEnd(7)} ${touchedOriginals ? 'yes' : 'no'}`,
+    `${'sample total'.padEnd(13)} ${String(totalFoundSessions).padEnd(11)} ${String(totalSampledOrigins).padEnd(8)} ${''.padEnd(12)} ${describeSampledBytes(totalOriginBytes, totalSampledOrigins).padEnd(13)} ${describeSampledBytes(totalArchiveBytes, totalSampledOrigins).padEnd(12)} ${describeOptionalPercent(totalSavedPercent).padEnd(8)} ${''.padEnd(7)} ${touchedOriginals ? 'yes' : 'no'}`,
     '',
     `Original sessions touched: ${touchedOriginals ? 'yes' : 'no'}`,
     `Work root: ${report.workRoot}`,
@@ -70,43 +72,32 @@ export const createHumanEvidenceReport = (report: LocalEvidenceReport): string =
  * createJsonEvidenceReport(report);
  * ```
  */
-export const createJsonEvidenceReport = (report: LocalEvidenceReport): string =>
+export const createStructuredEvidenceReport = (report: LocalEvidenceReport): string =>
   `${JSON.stringify(report, null, 2)}\n`;
 
-const createEvidenceRow = (entry: LocalEvidenceEntry): string => {
-  const provider = entry.provider.padEnd(13);
-  const foundSessions = String(entry.foundSessions).padEnd(11);
-  const sampledSources = String(entry.sampledSources).padEnd(8);
-  const mode = entry.mode.padEnd(12);
-  const before = describeOptionalBytes(entry.sourceBytes).padEnd(13);
-  const after = describeOptionalBytes(entry.archiveBytes).padEnd(12);
-  const saved = describeOptionalPercent(entry.savedPercent).padEnd(8);
-  const exact = describeByteExact(entry.byteExact).padEnd(7);
-  const touched = entry.originalTouched ? 'yes' : 'no';
+const createEvidenceLine = (providerEvidence: ProviderEvidence): string => {
+  const provider = providerEvidence.provider.padEnd(13);
+  const foundSessions = String(providerEvidence.foundSessions).padEnd(11);
+  const sampledOrigins = String(providerEvidence.sampledSources).padEnd(8);
+  const mode = providerEvidence.mode.padEnd(12);
+  const before = describeOptionalBytes(providerEvidence.sourceBytes, '-').padEnd(13);
+  const after = describeOptionalBytes(providerEvidence.archiveBytes, '-').padEnd(12);
+  const saved = describeOptionalPercent(providerEvidence.savedPercent, '-').padEnd(8);
+  const exact = describeByteExact(providerEvidence.byteExact).padEnd(7);
+  const touched = providerEvidence.originalTouched ? 'yes' : 'no';
 
-  return `${provider} ${foundSessions} ${sampledSources} ${mode} ${before} ${after} ${saved} ${exact} ${touched}`;
+  return `${provider} ${foundSessions} ${sampledOrigins} ${mode} ${before} ${after} ${saved} ${exact} ${touched}`;
 };
 
 const sumEvidenceBytes = (
-  evidence: ReadonlyArray<LocalEvidenceEntry>,
+  evidence: ReadonlyArray<ProviderEvidence>,
   key: 'archiveBytes' | 'sourceBytes',
-): number => evidence.reduce((totalBytes, entry) => totalBytes + (entry[key] ?? 0), 0);
+): number =>
+  evidence.reduce((totalBytes, providerEvidence) => totalBytes + (providerEvidence[key] ?? 0), 0);
 
-const describeOptionalBytes = (bytes: number | undefined): string => {
-  const isBytesMissing = bytes == null;
-  return isBytesMissing ? '-' : describeBytes(bytes);
-};
-
-const describeSampledBytes = (bytes: number, sampledSources: number): string => {
-  const isNothingSampled = sampledSources === 0;
+const describeSampledBytes = (bytes: number, sampledOrigins: number): string => {
+  const isNothingSampled = sampledOrigins === 0;
   return isNothingSampled ? '-' : describeBytes(bytes);
-};
-
-const describePercent = (percent: number): string => `${percent.toFixed(1)}%`;
-
-const describeOptionalPercent = (percent: number | undefined): string => {
-  const isPercentMissing = percent == null;
-  return isPercentMissing ? '-' : describePercent(percent);
 };
 
 const describeByteExact = (byteExact: boolean | undefined): string => {

@@ -2,11 +2,11 @@ import { defineCommand } from 'citty';
 import { createDefaultVaultPath } from '@/archive/vault-paths.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
-import type { CommandOutcome } from '@/command-outcome.js';
+import type { CommandExit } from '@/command-outcome.js';
 import { requireHome } from '@/home-env.js';
-import { recordSessionAccess } from '@/lifecycle/session-access.js';
+import { saveSessionAccess } from '@/lifecycle/session-access.js';
 import { parseOptionalProvider } from '@/providers/flag.js';
-import { isRestoreOnLaunchEnabled, readSetupConfig } from '@/setup/config.js';
+import { isRestoreOnLaunchEnabled, readSetupSettings } from '@/setup/config.js';
 import { type EnsureRestoredReport, ensureSessionRestored } from './ensure-restored.js';
 
 /**
@@ -46,7 +46,7 @@ export const openCommand = defineCommand({
 /**
  * Decoded arguments for the open command.
  */
-export type OpenArgs = {
+export type OpenFlags = {
   readonly json: boolean | undefined;
   readonly provider: string | undefined;
   readonly session: string | undefined;
@@ -59,17 +59,17 @@ export type OpenArgs = {
 /**
  * Opens (looks up) a session and restores it when lifecycle is enabled.
  *
- * @param args - Decoded command-line arguments.
+ * @param flags - Decoded command-line arguments.
  */
-export const runOpenCommand = async (args: OpenArgs): Promise<CommandOutcome> => {
-  const home = requireHome(args.home);
+export const runOpenCommand = async (flags: OpenFlags): Promise<CommandExit> => {
+  const home = requireHome(flags.home);
 
   const isHomeMissing = home == null;
   if (isHomeMissing) {
     return { exitCode: 1 };
   }
 
-  const sessionSelector = args.session?.trim() ?? '';
+  const sessionSelector = flags.session?.trim() ?? '';
 
   const isSessionSelectorEmpty = sessionSelector.length === 0;
   if (isSessionSelectorEmpty) {
@@ -79,19 +79,19 @@ export const runOpenCommand = async (args: OpenArgs): Promise<CommandOutcome> =>
     return { exitCode: 2 };
   }
 
-  const provider = parseOptionalProvider(args.provider);
+  const provider = parseOptionalProvider(flags.provider);
 
-  const isUnknownProviderGiven = args.provider != null && provider == null;
+  const isUnknownProviderGiven = flags.provider != null && provider == null;
   if (isUnknownProviderGiven) {
-    process.stderr.write(`Unknown provider: ${args.provider}\n`);
+    process.stderr.write(`Unknown provider: ${flags.provider}\n`);
     return { exitCode: 2 };
   }
 
-  const setupConfig = await readSetupConfig(home);
-  const restoreOnLaunchEnabled = isRestoreOnLaunchEnabled(setupConfig);
-  const vaultPath = args.vaultPath ?? setupConfig?.vaultPath ?? createDefaultVaultPath(home);
-  const compression = args.compression ?? createZstdCompression();
-  const now = args.now ?? new Date();
+  const setupSettings = await readSetupSettings(home);
+  const restoreOnLaunchEnabled = isRestoreOnLaunchEnabled(setupSettings);
+  const vaultPath = flags.vaultPath ?? setupSettings?.vaultPath ?? createDefaultVaultPath(home);
+  const compression = flags.compression ?? createZstdCompression();
+  const now = flags.now ?? new Date();
 
   // When lifecycle is off, open still restores (lookup path) so "look for session"
   // always materializes packed history without needing a separate restore step.
@@ -109,10 +109,10 @@ export const runOpenCommand = async (args: OpenArgs): Promise<CommandOutcome> =>
 
   const isSessionOpenable =
     (report.status === 'restored' || report.status === 'already-present') &&
-    report.provider !== undefined &&
+    report.provider != null &&
     report.sessionId != null;
   if (isSessionOpenable) {
-    await recordSessionAccess({
+    await saveSessionAccess({
       vaultPath,
       provider: report.provider,
       sessionId: report.sessionId,
@@ -120,36 +120,36 @@ export const runOpenCommand = async (args: OpenArgs): Promise<CommandOutcome> =>
     });
   }
 
-  writeOpenOutput(report, restoreOnLaunchEnabled, args.json === true);
+  writeOpenPrintout(report, restoreOnLaunchEnabled, flags.json === true);
   return { exitCode: openExitCode(report) };
 };
 
-const writeOpenOutput = (
+const writeOpenPrintout = (
   report: EnsureRestoredReport,
   restoreOnLaunchEnabled: boolean,
-  json: boolean,
+  isStructuredRequested: boolean,
 ): void => {
-  const payload = {
+  const openReport = {
     ...report,
     command: 'open' as const,
     restoreOnLaunchEnabled,
   };
 
-  if (json) {
-    process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
+  if (isStructuredRequested) {
+    process.stdout.write(`${JSON.stringify(openReport, null, 2)}\n`);
     return;
   }
 
-  const isReportProviderMissing = report.provider === undefined;
+  const isReportProviderMissing = report.provider == null;
   const isReportSessionIdMissing = report.sessionId == null;
   const isReportOriginalPathMissing = report.originalPath == null;
   const isReportReasonMissing = report.reason == null;
   const lines = [
     `open: ${report.status}`,
-    isReportProviderMissing ? undefined : `provider: ${report.provider}`,
-    isReportSessionIdMissing ? undefined : `session: ${report.sessionId}`,
-    isReportOriginalPathMissing ? undefined : `originalPath: ${report.originalPath}`,
-    isReportReasonMissing ? undefined : `reason: ${report.reason}`,
+    isReportProviderMissing ? null : `provider: ${report.provider}`,
+    isReportSessionIdMissing ? null : `session: ${report.sessionId}`,
+    isReportOriginalPathMissing ? null : `originalPath: ${report.originalPath}`,
+    isReportReasonMissing ? null : `reason: ${report.reason}`,
   ].filter((line): line is string => line != null);
 
   process.stdout.write(`${lines.join('\n')}\n`);

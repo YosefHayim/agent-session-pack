@@ -9,7 +9,7 @@ import {
 /**
  * Options for discovering JSONL-backed provider sessions.
  */
-export type JsonlProviderDiscoveryOptions = {
+export type JsonlProviderDiscoverySettings = {
   readonly provider: ProviderId;
   readonly store: SessionStore;
   readonly excludePathParts: ReadonlyArray<string>;
@@ -19,10 +19,10 @@ export type JsonlProviderDiscoveryOptions = {
  * Discovers JSONL-backed provider sessions, reading one title at a time.
  */
 export const discoverJsonlProviderSessions = async (
-  options: JsonlProviderDiscoveryOptions,
+  settings: JsonlProviderDiscoverySettings,
 ): Promise<ReadonlyArray<DiscoveredSession>> => {
-  const files = await collectJsonlSessions(options.store.path, {
-    excludePathParts: options.excludePathParts,
+  const files = await collectJsonlSessions(settings.store.path, {
+    excludePathParts: settings.excludePathParts,
   });
   const sessions: DiscoveredSession[] = [];
 
@@ -30,7 +30,7 @@ export const discoverJsonlProviderSessions = async (
     const title = await readSessionTitle(file.path);
     sessions.push(
       readSessionFromFile({
-        provider: options.provider,
+        provider: settings.provider,
         path: file.path,
         title,
         sizeBytes: file.sizeBytes,

@@ -12,12 +12,12 @@ import {
 } from './writer.js';
 
 const corruptDirectoryCompression: CompressionAdapter = {
-  compress: ({ sourcePath, archivePath }) => copyFile(sourcePath, archivePath),
+  compress: ({ sourcePath: originPath, archivePath }) => copyFile(originPath, archivePath),
   decompress: ({ restoredPath }) => writeFile(restoredPath, 'not-a-tar'),
 };
 
 const corruptCompression: CompressionAdapter = {
-  compress: ({ sourcePath, archivePath }) => copyFile(sourcePath, archivePath),
+  compress: ({ sourcePath: originPath, archivePath }) => copyFile(originPath, archivePath),
   decompress: ({ restoredPath }) => writeFile(restoredPath, 'corrupt'),
 };
 
@@ -47,7 +47,7 @@ describe('archiveWriter', () => {
 
   it('restores a directory archive to the original path after hash verification', async () => {
     const workspace = await createWorkspace();
-    const sourcePath = await writeSessionDirectory(workspace);
+    const originPath = await writeSessionDirectory(workspace);
     const archivePath = join(workspace, 'session-dir.tar.zst');
     const verifyPath = join(workspace, 'verify-session-dir');
     const restoreWorkPath = join(workspace, 'restore-session-dir');
@@ -55,7 +55,7 @@ describe('archiveWriter', () => {
 
     const archive = await writeVerifiedArchive({
       sessionId: 'dir-restore-1',
-      sourcePath,
+      sourcePath: originPath,
       archivePath,
       restoredPath: verifyPath,
       apply: false,
@@ -80,7 +80,7 @@ describe('archiveWriter', () => {
 
   it('throws directory restore when hash does not match', async () => {
     const workspace = await createWorkspace();
-    const sourcePath = await writeSessionDirectory(workspace);
+    const originPath = await writeSessionDirectory(workspace);
     const archivePath = join(workspace, 'session-dir-bad.tar.zst');
     const verifyPath = join(workspace, 'verify-session-dir-bad');
     const restoreWorkPath = join(workspace, 'restore-session-dir-bad');
@@ -88,7 +88,7 @@ describe('archiveWriter', () => {
 
     const archive = await writeVerifiedArchive({
       sessionId: 'dir-restore-2',
-      sourcePath,
+      sourcePath: originPath,
       archivePath,
       restoredPath: verifyPath,
       apply: false,
@@ -128,14 +128,14 @@ describe('archiveWriter', () => {
 
   it('fails directory archive write when decompression produces a non-tar payload', async () => {
     const workspace = await createWorkspace();
-    const sourcePath = await writeSessionDirectory(workspace);
+    const originPath = await writeSessionDirectory(workspace);
     const archivePath = join(workspace, 'corrupt-dir.tar.zst');
     const restoredPath = join(workspace, 'corrupt-dir-restored');
 
     await expect(
       writeVerifiedArchive({
         sessionId: 'corrupt-dir',
-        sourcePath,
+        sourcePath: originPath,
         archivePath,
         restoredPath,
         apply: false,
@@ -143,19 +143,19 @@ describe('archiveWriter', () => {
         sourceKind: 'directory',
       }),
     ).rejects.toThrow();
-    await expect(stat(sourcePath)).resolves.toBeDefined();
+    await expect(stat(originPath)).resolves.toBeDefined();
     await rm(restoredPath, { recursive: true, force: true }).catch(() => undefined);
   });
 
   it('detects directory source kind from the filesystem when sourceKind is omitted', async () => {
     const workspace = await createWorkspace();
-    const sourcePath = await writeSessionDirectory(workspace);
+    const originPath = await writeSessionDirectory(workspace);
     const archivePath = join(workspace, 'auto-dir.tar.zst');
     const restoredPath = join(workspace, 'auto-dir-restored');
 
     const archive = await writeVerifiedArchive({
       sessionId: 'auto-dir',
-      sourcePath,
+      sourcePath: originPath,
       archivePath,
       restoredPath,
       apply: false,
@@ -171,25 +171,26 @@ describe('archiveWriter', () => {
 describe('archive round trip', () => {
   it('writes an archive, verifies exact restore bytes, and keeps the original on dry run', async () => {
     const workspace = await createWorkspace();
-    const sourcePath = join(workspace, 'session.jsonl');
+    const originPath = join(workspace, 'session.jsonl');
     const archivePath = join(workspace, 'session.jsonl.zst');
     const restoredPath = join(workspace, 'restored-session.jsonl');
-    const content = ['{"type":"user","text":"hello"}', '{"type":"assistant","text":"world"}'].join(
-      '\n',
-    );
-    await writeFile(sourcePath, content);
+    const sessionJsonl = [
+      '{"type":"user","text":"hello"}',
+      '{"type":"assistant","text":"world"}',
+    ].join('\n');
+    await writeFile(originPath, sessionJsonl);
 
     const archive = await writeVerifiedArchive({
       sessionId: 'session-1',
-      sourcePath,
+      sourcePath: originPath,
       archivePath,
       restoredPath,
       apply: false,
       compression: copyCompression,
     });
 
-    await expect(readFile(sourcePath, 'utf8')).resolves.toBe(content);
-    await expect(readFile(restoredPath, 'utf8')).resolves.toBe(content);
+    await expect(readFile(originPath, 'utf8')).resolves.toBe(sessionJsonl);
+    await expect(readFile(restoredPath, 'utf8')).resolves.toBe(sessionJsonl);
     expect(archive.removedOriginal).toBe(false);
     expect(archive.sourceSha256).toBe(archive.restoredSha256);
     expect(archive.archiveBytes).toBeGreaterThan(0);
@@ -197,60 +198,60 @@ describe('archive round trip', () => {
 
   it('removes the original only after archive verification passes in apply mode', async () => {
     const workspace = await createWorkspace();
-    const sourcePath = join(workspace, 'session.jsonl');
+    const originPath = join(workspace, 'session.jsonl');
     const archivePath = join(workspace, 'session.jsonl.zst');
     const restoredPath = join(workspace, 'restored-session.jsonl');
-    await writeFile(sourcePath, '{"type":"user","text":"apply"}\n');
+    await writeFile(originPath, '{"type":"user","text":"apply"}\n');
 
     const archive = await writeVerifiedArchive({
       sessionId: 'session-2',
-      sourcePath,
+      sourcePath: originPath,
       archivePath,
       restoredPath,
       apply: true,
       compression: copyCompression,
     });
 
-    await expect(stat(sourcePath)).rejects.toMatchObject({ code: 'ENOENT' });
+    await expect(stat(originPath)).rejects.toMatchObject({ code: 'ENOENT' });
     expect(archive.removedOriginal).toBe(true);
     expect(archive.sourceSha256).toBe(archive.restoredSha256);
   });
 
   it('keeps the original when restored bytes do not match', async () => {
     const workspace = await createWorkspace();
-    const sourcePath = join(workspace, 'session.jsonl');
+    const originPath = join(workspace, 'session.jsonl');
     const archivePath = join(workspace, 'session.jsonl.zst');
     const restoredPath = join(workspace, 'restored-session.jsonl');
-    const content = '{"type":"user","text":"safe"}\n';
-    await writeFile(sourcePath, content);
+    const sessionJsonl = '{"type":"user","text":"safe"}\n';
+    await writeFile(originPath, sessionJsonl);
 
     await expect(
       writeVerifiedArchive({
         sessionId: 'session-3',
-        sourcePath,
+        sourcePath: originPath,
         archivePath,
         restoredPath,
         apply: true,
         compression: corruptCompression,
       }),
     ).rejects.toThrow();
-    await expect(readFile(sourcePath, 'utf8')).resolves.toBe(content);
+    await expect(readFile(originPath, 'utf8')).resolves.toBe(sessionJsonl);
   });
 
   it('archives a multi-file session directory and keeps the original on dry run', async () => {
     const workspace = await createWorkspace();
-    const sourcePath = join(workspace, 'session-dir');
+    const originPath = join(workspace, 'session-dir');
     const archivePath = join(workspace, 'session-dir.tar.zst');
     const restoredPath = join(workspace, 'restored-session-dir');
-    await mkdir(join(sourcePath, 'terminal'), { recursive: true });
-    await writeFile(join(sourcePath, 'summary.json'), '{"title":"dir session"}\n');
-    await writeFile(join(sourcePath, 'updates.jsonl'), '{"type":"user","text":"hello"}\n');
-    await writeFile(join(sourcePath, 'terminal', 'call.log'), 'log-bytes\n');
+    await mkdir(join(originPath, 'terminal'), { recursive: true });
+    await writeFile(join(originPath, 'summary.json'), '{"title":"dir session"}\n');
+    await writeFile(join(originPath, 'updates.jsonl'), '{"type":"user","text":"hello"}\n');
+    await writeFile(join(originPath, 'terminal', 'call.log'), 'log-bytes\n');
 
-    const sourceSha256 = await readSha256Directory(sourcePath);
+    const originSha256 = await readSha256Directory(originPath);
     const archive = await writeVerifiedArchive({
       sessionId: 'session-dir-1',
-      sourcePath,
+      sourcePath: originPath,
       archivePath,
       restoredPath,
       apply: false,
@@ -261,23 +262,23 @@ describe('archive round trip', () => {
     const restoredSha256 = await readSha256Directory(restoredPath);
     expect(archive.sourceKind).toBe('directory');
     expect(archive.removedOriginal).toBe(false);
-    expect(archive.sourceSha256).toBe(sourceSha256);
-    expect(restoredSha256).toBe(sourceSha256);
-    await expect(readFile(join(sourcePath, 'updates.jsonl'), 'utf8')).resolves.toContain('hello');
+    expect(archive.sourceSha256).toBe(originSha256);
+    expect(restoredSha256).toBe(originSha256);
+    await expect(readFile(join(originPath, 'updates.jsonl'), 'utf8')).resolves.toContain('hello');
   });
 
   it('removes a session directory only after directory archive verification passes', async () => {
     const workspace = await createWorkspace();
-    const sourcePath = join(workspace, 'session-dir-apply');
+    const originPath = join(workspace, 'session-dir-apply');
     const archivePath = join(workspace, 'session-dir-apply.tar.zst');
     const restoredPath = join(workspace, 'restored-session-dir-apply');
-    await mkdir(sourcePath, { recursive: true });
-    await writeFile(join(sourcePath, 'summary.json'), '{"title":"apply dir"}\n');
-    await writeFile(join(sourcePath, 'updates.jsonl'), '{"type":"user","text":"apply"}\n');
+    await mkdir(originPath, { recursive: true });
+    await writeFile(join(originPath, 'summary.json'), '{"title":"apply dir"}\n');
+    await writeFile(join(originPath, 'updates.jsonl'), '{"type":"user","text":"apply"}\n');
 
     const archive = await writeVerifiedArchive({
       sessionId: 'session-dir-2',
-      sourcePath,
+      sourcePath: originPath,
       archivePath,
       restoredPath,
       apply: true,
@@ -285,7 +286,7 @@ describe('archive round trip', () => {
       sourceKind: 'directory',
     });
 
-    await expect(stat(sourcePath)).rejects.toMatchObject({ code: 'ENOENT' });
+    await expect(stat(originPath)).rejects.toMatchObject({ code: 'ENOENT' });
     expect(archive.removedOriginal).toBe(true);
     expect(archive.sourceSha256).toBe(archive.restoredSha256);
   });

@@ -14,7 +14,7 @@ type SessionAccessEvent = {
 /**
  * Inputs required to append one session access event.
  */
-export type RecordSessionAccessRequest = {
+export type SaveSessionAccessRequest = {
   readonly vaultPath: string;
   readonly provider: ProviderId;
   readonly sessionId: string;
@@ -101,7 +101,7 @@ export const extractSessionIdsFromArgv = (argv: ReadonlyArray<string>): Readonly
 
     const isPositionalArgument = !arg.startsWith('-');
     if (isPositionalArgument) {
-      addUuidMatches(found, arg);
+      addUuidHits(found, arg);
     }
   }
 
@@ -113,7 +113,7 @@ export const extractSessionIdsFromArgv = (argv: ReadonlyArray<string>): Readonly
  *
  * @param request - Access write fields for vault logging.
  */
-export const recordSessionAccess = async (request: RecordSessionAccessRequest): Promise<void> => {
+export const saveSessionAccess = async (request: SaveSessionAccessRequest): Promise<void> => {
   const path = createAccessLogPath(request.vaultPath);
   const event: SessionAccessEvent = {
     provider: request.provider,
@@ -185,9 +185,9 @@ const tryTakeInlineSessionId = (found: Set<string>, arg: string): boolean => {
   return true;
 };
 
-const addUuidMatches = (found: Set<string>, arg: string): void => {
-  for (const match of arg.matchAll(SESSION_ID_PATTERN)) {
-    const matchedId = match[1];
+const addUuidHits = (found: Set<string>, arg: string): void => {
+  for (const hit of arg.matchAll(SESSION_ID_PATTERN)) {
+    const matchedId = hit[1];
 
     const hasMatchedId = matchedId != null;
     if (hasMatchedId) {

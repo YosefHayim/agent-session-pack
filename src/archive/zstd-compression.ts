@@ -9,7 +9,7 @@ const ZSTD_LONG_WINDOW_FLAG = '--long=27';
 const ZSTD_QUIET_FLAG = '-q';
 const ZSTD_FORCE_FLAG = '-f';
 const ZSTD_DECOMPRESS_FLAG = '-d';
-const ZSTD_OUTPUT_FLAG = '-o';
+const ZSTD_TARGET_FILE_FLAG = '-o';
 
 const execFileAsync = promisify(execFile);
 
@@ -30,27 +30,27 @@ const execFileAsync = promisify(execFile);
 export const createZstdCompression = (): CompressionAdapter => ({
   compress: async ({ sourcePath, archivePath }) => {
     // Compress sourcePath to archivePath: zstd level 9, long window 27, quiet, force overwrite.
-    const compressArgs = [
+    const compressArgumentList = [
       ZSTD_LEVEL_FLAG,
       ZSTD_LONG_WINDOW_FLAG,
       ZSTD_QUIET_FLAG,
       ZSTD_FORCE_FLAG,
       sourcePath,
-      ZSTD_OUTPUT_FLAG,
+      ZSTD_TARGET_FILE_FLAG,
       archivePath,
     ];
-    await execFileAsync(ZSTD_BINARY, compressArgs).catch(throwWrappedError);
+    await execFileAsync(ZSTD_BINARY, compressArgumentList).catch(throwWrappedError);
   },
   decompress: async ({ archivePath, restoredPath }) => {
     // Decompress archivePath to restoredPath: quiet, force overwrite.
-    const decompressArgs = [
+    const decompressArgumentList = [
       ZSTD_DECOMPRESS_FLAG,
       ZSTD_QUIET_FLAG,
       ZSTD_FORCE_FLAG,
       archivePath,
-      ZSTD_OUTPUT_FLAG,
+      ZSTD_TARGET_FILE_FLAG,
       restoredPath,
     ];
-    await execFileAsync(ZSTD_BINARY, decompressArgs).catch(throwWrappedError);
+    await execFileAsync(ZSTD_BINARY, decompressArgumentList).catch(throwWrappedError);
   },
 });

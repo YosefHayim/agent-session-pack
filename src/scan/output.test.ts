@@ -22,12 +22,12 @@ describe('human scan output', () => {
       ],
     };
 
-    const output = createHumanScan(report);
-    const rows = output.split('\n');
+    const printout = createHumanScan(report);
+    const lines = printout.split('\n');
 
-    expect(rows).toHaveLength(4);
-    expect(rows[3]).toContain('generated while running local commands');
-    expect(rows[3]).toContain('...');
-    expect(rows[3]).not.toContain('This title is intentionally long');
+    expect(lines).toHaveLength(4);
+    expect(lines[3]).toContain('generated while running local commands');
+    expect(lines[3]).toContain('...');
+    expect(lines[3]).not.toContain('This title is intentionally long');
   });
 });

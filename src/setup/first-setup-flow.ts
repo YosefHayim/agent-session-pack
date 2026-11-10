@@ -105,7 +105,7 @@ export const runFirstSetup = async (request: FirstSetupRequest = {}): Promise<Fl
     home,
     config: {
       version: 1,
-      providers: selectedProviders,
+      providers: [...selectedProviders],
       vaultPath,
       coldAfter,
       createdAt: timestamp,

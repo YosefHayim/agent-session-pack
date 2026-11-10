@@ -47,9 +47,10 @@ describe('savings command', () => {
     process.env.HOME = originalHome;
     vi.restoreAllMocks();
 
-    const hasWorkCwd = workCwd != null;
+    const createdWorkCwd = workCwd;
+    const hasWorkCwd = createdWorkCwd != null;
     if (hasWorkCwd) {
-      await rm(workCwd, { recursive: true, force: true });
+      await rm(createdWorkCwd, { recursive: true, force: true });
     }
   });
 

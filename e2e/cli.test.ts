@@ -60,3 +60,20 @@ describe('CLI read-only discovery and savings proof', () => {
     expect(await readFile(secondSessionPath, 'utf8')).toBe(secondSessionBytes);
   });
 });
+
+describe('CLI exit codes', () => {
+  it('exits 0 when a subcommand succeeds', async () => {
+    const guideOutput = await execFileAsync(TSX_PATH, [CLI_PATH, 'guide', '--json'], {
+      cwd: REPO_ROOT,
+    });
+    const guideReport = JSON.parse(guideOutput.stdout) as { readonly mode: string };
+
+    expect(guideReport.mode).toBe('agent-guide');
+  });
+
+  it('exits 2 for an unknown command', async () => {
+    await expect(
+      execFileAsync(TSX_PATH, [CLI_PATH, 'no-such-command'], { cwd: REPO_ROOT }),
+    ).rejects.toMatchObject({ code: 2 });
+  });
+});

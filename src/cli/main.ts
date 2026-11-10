@@ -73,7 +73,7 @@ interface UsageTarget {
 }
 
 const pickUsageTarget = (argumentList: string[]): UsageTarget => {
-  const subCommandName = argumentList.find((arg) => Object.hasOwn(subCommands, arg));
+  const subCommandName = argumentList.find((argument) => Object.hasOwn(subCommands, argument));
 
   const isThereNoSubCommandName = subCommandName == null;
 
@@ -81,7 +81,9 @@ const pickUsageTarget = (argumentList: string[]): UsageTarget => {
     return { command: mainCommand, parent: undefined };
   }
 
-  return { command: pickPlainSubCommand(subCommandName), parent: mainCommand };
+  const subCommandDefinition = pickPlainSubCommand(subCommandName);
+
+  return { command: subCommandDefinition, parent: mainCommand };
 };
 
 const isCommandExit = (candidate: unknown): candidate is CommandExit =>
@@ -94,7 +96,7 @@ interface SubCommandInvocation {
 
 // The first word that is not a flag names the command; with none, the default command runs.
 const readSubCommandInvocation = (argumentList: string[]): SubCommandInvocation => {
-  const firstWordIndex = argumentList.findIndex((arg) => !arg.startsWith('-'));
+  const firstWordIndex = argumentList.findIndex((argument) => !argument.startsWith('-'));
   const isThereNoWord = firstWordIndex === -1;
 
   if (isThereNoWord) {
@@ -131,7 +133,8 @@ const runCli = async (argumentList: string[]): Promise<CommandExit> => {
     await runCommand(mainCommand, { rawArgs: argumentList });
   }
 
-  const commandRun = await runCommand(pickPlainSubCommand(subCommandInvocation.name), {
+  const subCommandDefinition = pickPlainSubCommand(subCommandInvocation.name);
+  const commandRun = await runCommand(subCommandDefinition, {
     rawArgs: subCommandInvocation.rawArgs,
   });
   const commandReport = commandRun.result;

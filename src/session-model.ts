@@ -20,7 +20,7 @@ export type SessionOriginKind = z.infer<typeof SessionOriginKindSchema>;
 
 export type ProviderMode = 'archive' | 'backup-only';
 
-export type SessionStatus = 'live' | 'cold' | 'archived' | 'restored' | 'pinned' | 'quarantined';
+type SessionStatus = 'live' | 'cold' | 'archived' | 'restored' | 'pinned' | 'quarantined';
 
 export interface DiscoveredSession {
   readonly id: string;

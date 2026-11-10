@@ -63,17 +63,17 @@ Sin demonio, sin sincronización en la nube, sin resúmenes. Tus sesiones nunca 
 
 ## Agentes compatibles
 
-| Agente | Modo | Almacén de sesiones |
-| --- | --- | --- |
-| Codex | Archivo | `~/.codex/sessions` |
-| Claude Code | Archivo | `~/.claude/projects` |
-| Kiro | Archivo | `~/.kiro/sessions` |
-| Grok | Archivo | `~/.grok/sessions` (carpetas completas de sesión) |
-| Kimi Code | Archivo | `~/.kimi-code/sessions` (carpetas completas de sesión) |
-| OpenCode | Archivo | `~/.local/share/opencode`, `~/.opencode` |
-| Gemini CLI | Archivo | `~/.gemini`, `~/.gemini/tmp` |
-| Cursor | Solo copia de seguridad | `~/Library/Application Support/Cursor` |
-| Devin | Solo copia de seguridad | `~/.local/share/devin/cli` (lee solo los metadatos de `sessions.db`) |
+| Agente      | Modo                    | Almacén de sesiones                                                  |
+| ----------- | ----------------------- | -------------------------------------------------------------------- |
+| Codex       | Archivo                 | `~/.codex/sessions`                                                  |
+| Claude Code | Archivo                 | `~/.claude/projects`                                                 |
+| Kiro        | Archivo                 | `~/.kiro/sessions`                                                   |
+| Grok        | Archivo                 | `~/.grok/sessions` (carpetas completas de sesión)                    |
+| Kimi Code   | Archivo                 | `~/.kimi-code/sessions` (carpetas completas de sesión)               |
+| OpenCode    | Archivo                 | `~/.local/share/opencode`, `~/.opencode`                             |
+| Gemini CLI  | Archivo                 | `~/.gemini`, `~/.gemini/tmp`                                         |
+| Cursor      | Solo copia de seguridad | `~/Library/Application Support/Cursor`                               |
+| Devin       | Solo copia de seguridad | `~/.local/share/devin/cli` (lee solo los metadatos de `sessions.db`) |
 
 **Archivo** significa que las sesiones se pueden empaquetar en el almacén y restaurar. **Solo copia de seguridad** significa que el agente aparece como compatible, pero su almacén nativo nunca se modifica. El descubrimiento de Cursor de momento no devuelve sesiones.
 
@@ -83,26 +83,26 @@ Sin demonio, sin sincronización en la nube, sin resúmenes. Tus sesiones nunca 
   <img src="https://raw.githubusercontent.com/YosefHayim/agent-session-pack/main/assets/benchmarks.svg" alt="Almacenamiento de sesiones antes y después de empaquetar en un equipo: Codex de 2.22 GB a 782 MB, Claude Code de 2.10 GB a 457 MB, Kiro de 1.95 GB a 190 MB, copia de seguridad de Cursor de 7.27 GB a 957 MB" width="820" />
 </p>
 
-| Agente | Antes | Después | Ahorro |
-| --- | ---: | ---: | ---: |
-| Codex | 2.22 GB | 782 MB | **65.6%** |
-| Claude Code | 2.10 GB | 457 MB | **78.7%** |
-| Kiro | 1.95 GB | 190 MB | **90.5%** |
-| Cursor (copia de seguridad) | 7.27 GB | 957 MB | **87.1%** |
-| **Total** | **13.5 GB** | **2.3 GB** | **~83%** |
+| Agente                      |       Antes |    Después |    Ahorro |
+| --------------------------- | ----------: | ---------: | --------: |
+| Codex                       |     2.22 GB |     782 MB | **65.6%** |
+| Claude Code                 |     2.10 GB |     457 MB | **78.7%** |
+| Kiro                        |     1.95 GB |     190 MB | **90.5%** |
+| Cursor (copia de seguridad) |     7.27 GB |     957 MB | **87.1%** |
+| **Total**                   | **13.5 GB** | **2.3 GB** |  **~83%** |
 
 Este es el historial real de sesiones de un solo equipo, no un benchmark universal. Ejecuta `npx --yes agent-session-pack check` para medir el tuyo; solo funciona sobre copias.
 
 ## Agent Session Pack frente a borrar o comprimir
 
-| | **Agent Session Pack** | **Borrar archivos viejos** | **zstd o tar a mano** |
-| --- | --- | --- | --- |
-| Recuperar la sesión | Byte a byte, verificada antes de eliminar | Perdida para siempre | Solo si lo compruebas tú |
-| Encuentra el almacén de cada agente | Integrado para 9 agentes | Tienes que buscar las rutas | Tienes que buscar las rutas |
-| Devuelve los archivos a donde el agente los espera | Manifiesto de restauración por sesión | No aplica | Tú llevas las rutas |
-| Archivos modificados al restaurar | Se omiten, nunca se sobrescriben | No aplica | Se sobrescriben en silencio |
-| Sesiones de varios archivos (Grok, Kimi) | Se empaquetan como carpetas completas | Fácil de borrar a medias | Fácil olvidar archivos |
-| Ver antes | La vista previa es el valor por defecto | No | No |
+|                                                    | **Agent Session Pack**                    | **Borrar archivos viejos**  | **zstd o tar a mano**       |
+| -------------------------------------------------- | ----------------------------------------- | --------------------------- | --------------------------- |
+| Recuperar la sesión                                | Byte a byte, verificada antes de eliminar | Perdida para siempre        | Solo si lo compruebas tú    |
+| Encuentra el almacén de cada agente                | Integrado para 9 agentes                  | Tienes que buscar las rutas | Tienes que buscar las rutas |
+| Devuelve los archivos a donde el agente los espera | Manifiesto de restauración por sesión     | No aplica                   | Tú llevas las rutas         |
+| Archivos modificados al restaurar                  | Se omiten, nunca se sobrescriben          | No aplica                   | Se sobrescriben en silencio |
+| Sesiones de varios archivos (Grok, Kimi)           | Se empaquetan como carpetas completas     | Fácil de borrar a medias    | Fácil olvidar archivos      |
+| Ver antes                                          | La vista previa es el valor por defecto   | No                          | No                          |
 
 ## Configuración con IA en un clic
 
@@ -174,21 +174,21 @@ npx --yes agent-session-pack restore SESSION_ID_OR_NAME       # una sesión
 
 ## Comandos
 
-| Comando | Qué hace | Cambia archivos |
-| --- | --- | --- |
-| `guide [--json]` | Mapa de comandos seguros para agentes y automatización | No |
-| `check [--json]` | Prueba de ahorro sin instalar, sobre copias | No |
-| `savings [--json]` | La misma prueba de antes y después solo sobre copias | No |
-| `scan [--json]` | Lista los almacenes de sesiones, tamaños y candidatas frías | No |
-| `doctor [--json]` | Comprueba que `zstd` y `sqlite3` estén instalados | No |
-| `init` | Muestra la política del almacén; en una terminal abre la configuración guiada que escribe la configuración | Solo configuración |
-| `pack --dry-run` | Previsualiza las sesiones frías que se empaquetarían | No |
-| `pack --apply [--yes]` | Archiva, verifica y luego elimina los originales | Sí |
-| `unpack --apply [--yes]` | Restaura las sesiones archivadas a sus rutas originales | Sí |
-| `restore <selector>` | Restaura una sesión por id, prefijo de id, nombre, slug o palabras de su nombre | Sí |
-| `open <session>` | Busca una sesión del mismo modo y la restaura si está empaquetada | Sí |
-| `lifecycle enable\|disable\|status` | Instala o elimina los envoltorios de restauración automática | Envoltorios y configuración |
-| `maintain --apply [--yes]` | Vuelve a empaquetar las sesiones que se enfriaron otra vez | Sí |
+| Comando                             | Qué hace                                                                                                   | Cambia archivos             |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------- | --------------------------- |
+| `guide [--json]`                    | Mapa de comandos seguros para agentes y automatización                                                     | No                          |
+| `check [--json]`                    | Prueba de ahorro sin instalar, sobre copias                                                                | No                          |
+| `savings [--json]`                  | La misma prueba de antes y después solo sobre copias                                                       | No                          |
+| `scan [--json]`                     | Lista los almacenes de sesiones, tamaños y candidatas frías                                                | No                          |
+| `doctor [--json]`                   | Comprueba que `zstd` y `sqlite3` estén instalados                                                          | No                          |
+| `init`                              | Muestra la política del almacén; en una terminal abre la configuración guiada que escribe la configuración | Solo configuración          |
+| `pack --dry-run`                    | Previsualiza las sesiones frías que se empaquetarían                                                       | No                          |
+| `pack --apply [--yes]`              | Archiva, verifica y luego elimina los originales                                                           | Sí                          |
+| `unpack --apply [--yes]`            | Restaura las sesiones archivadas a sus rutas originales                                                    | Sí                          |
+| `restore <selector>`                | Restaura una sesión por id, prefijo de id, nombre, slug o palabras de su nombre                            | Sí                          |
+| `open <session>`                    | Busca una sesión del mismo modo y la restaura si está empaquetada                                          | Sí                          |
+| `lifecycle enable\|disable\|status` | Instala o elimina los envoltorios de restauración automática                                               | Envoltorios y configuración |
+| `maintain --apply [--yes]`          | Vuelve a empaquetar las sesiones que se enfriaron otra vez                                                 | Sí                          |
 
 `preflight`, `watch` y `ensure-restored` los llaman los envoltorios del ciclo de vida; rara vez los ejecutas tú.
 
@@ -197,12 +197,12 @@ Opciones comunes: `--provider <id>`, `--all-providers`, `--older-than`, `--json`
 <details>
 <summary><strong>Cómo elegir <code>--older-than</code></strong></summary>
 
-| Valor | Úsalo para |
-| --- | --- |
-| `12h` | Una ventana corta de limpieza |
-| `1d` | Dejar fuera más o menos el trabajo activo de hoy |
-| `7d` | La política por defecto de la configuración |
-| `30d` | Una pasada conservadora de archivo |
+| Valor             | Úsalo para                                                                              |
+| ----------------- | --------------------------------------------------------------------------------------- |
+| `12h`             | Una ventana corta de limpieza                                                           |
+| `1d`              | Dejar fuera más o menos el trabajo activo de hoy                                        |
+| `7d`              | La política por defecto de la configuración                                             |
+| `30d`             | Una pasada conservadora de archivo                                                      |
 | `--max --dry-run` | Vista previa por curiosidad de todas las sesiones en modo archivo (nunca con `--apply`) |
 
 </details>
@@ -256,12 +256,12 @@ zstd -d -c examples/hello-world/archives/codex-session.jsonl.zst | shasum -a 256
 
 Agent Session Pack es deliberadamente acotada: archiva archivos de sesión locales fríos y verifica la restauración byte a byte. Combina bien con herramientas de uso, búsqueda y análisis de disco.
 
-| Herramienta | Enfoque principal | Diferencia |
-| --- | --- | --- |
-| [`ccusage`](https://ccusage.com/guide/) | Informes de tokens y costos de agentes de código | Explica el uso; no empaqueta almacenes de sesiones. |
-| [`claude-code-history-viewer`](https://github.com/jhlee0409/claude-code-history-viewer) | Navegación y búsqueda sin conexión del historial de código con IA | Ve el historial; no archiva ni restaura. |
-| [`claude-code-cleaner`](https://github.com/garrickz2/claude-code-cleaner) | Limpieza de disco de Claude Code | Solo Claude; sin un almacén verificado para varios agentes. |
-| `zstd`, `tar`, copias de seguridad, analizadores de disco | Herramientas genéricas de almacenamiento | Comprimen o encuentran bytes; no conocen las sesiones de agentes ni las rutas de restauración. |
+| Herramienta                                                                             | Enfoque principal                                                 | Diferencia                                                                                     |
+| --------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| [`ccusage`](https://ccusage.com/guide/)                                                 | Informes de tokens y costos de agentes de código                  | Explica el uso; no empaqueta almacenes de sesiones.                                            |
+| [`claude-code-history-viewer`](https://github.com/jhlee0409/claude-code-history-viewer) | Navegación y búsqueda sin conexión del historial de código con IA | Ve el historial; no archiva ni restaura.                                                       |
+| [`claude-code-cleaner`](https://github.com/garrickz2/claude-code-cleaner)               | Limpieza de disco de Claude Code                                  | Solo Claude; sin un almacén verificado para varios agentes.                                    |
+| `zstd`, `tar`, copias de seguridad, analizadores de disco                               | Herramientas genéricas de almacenamiento                          | Comprimen o encuentran bytes; no conocen las sesiones de agentes ni las rutas de restauración. |
 
 ## Preguntas frecuentes
 

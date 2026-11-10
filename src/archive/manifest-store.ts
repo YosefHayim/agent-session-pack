@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { ProviderIdSchema, SessionOriginKindSchema } from '@/session-model.js';
 import { readDirectoryDirents } from './file-system.js';
 
-export const SessionManifestSchema = z.object({
+const SessionManifestSchema = z.object({
   sessionId: z.string(),
   provider: ProviderIdSchema,
   title: z.string(),

@@ -18,8 +18,8 @@ export const runDoctorCommand = async (flags: DoctorFlags): Promise<CommandExit>
   const zstd = await checkCommand('zstd', ['--version']);
   const sqlite3 = await checkCommand('sqlite3', ['--version']);
 
-  const isStructuredRequested = flags.json === true;
-  if (isStructuredRequested) {
+  const isMachineOutputRequested = flags.json === true;
+  if (isMachineOutputRequested) {
     process.stdout.write(`${JSON.stringify({ sqlite3, zstd })}\n`);
     return { exitCode: 0 };
   }

@@ -116,7 +116,7 @@ export const runOpenCommand = async (flags: OpenFlags): Promise<CommandExit> => 
 const writeOpenPrintout = (
   report: EnsureRestoredReport,
   restoreOnLaunchEnabled: boolean,
-  isStructuredRequested: boolean,
+  isMachineOutputRequested: boolean,
 ): void => {
   const openReport = {
     ...report,
@@ -124,7 +124,7 @@ const writeOpenPrintout = (
     restoreOnLaunchEnabled,
   };
 
-  if (isStructuredRequested) {
+  if (isMachineOutputRequested) {
     process.stdout.write(`${JSON.stringify(openReport, null, 2)}\n`);
     return;
   }

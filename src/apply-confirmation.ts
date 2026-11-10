@@ -20,8 +20,8 @@ export const askApplyConfirmation = async (
     return true;
   }
 
-  const isStructuredRequested = request.json === true;
-  if (isStructuredRequested) {
+  const isMachineOutputRequested = request.json === true;
+  if (isMachineOutputRequested) {
     return false;
   }
 

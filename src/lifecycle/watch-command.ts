@@ -76,7 +76,7 @@ const runWatchCommand = async (flags: WatchFlags): Promise<CommandExit> => {
   const vaultPath = flags.vaultPath ?? setupSettings?.vaultPath ?? createDefaultVaultPath(home);
   const pollIntervalMs = parsePollMs(flags.pollMs);
   const compression = flags.compression ?? createZstdCompression();
-  const isStructuredRequested = flags.json === true;
+  const isMachineOutputRequested = flags.json === true;
 
   let childExitCode: number | undefined;
   let stop = false;
@@ -109,7 +109,7 @@ const runWatchCommand = async (flags: WatchFlags): Promise<CommandExit> => {
   }
 
   const writeWatchEvent = (event: SessionWatchEvent): void => {
-    if (isStructuredRequested) {
+    if (isMachineOutputRequested) {
       process.stdout.write(`${JSON.stringify({ command: 'watch', ...event })}\n`);
       return;
     }
@@ -117,7 +117,7 @@ const runWatchCommand = async (flags: WatchFlags): Promise<CommandExit> => {
     process.stderr.write(`watch: ${event.provider}/${event.sessionId} → ${event.status}\n`);
   };
 
-  const isHumanWatchWithoutExec = !isStructuredRequested && flags.execArgv.length === 0;
+  const isHumanWatchWithoutExec = !isMachineOutputRequested && flags.execArgv.length === 0;
   if (isHumanWatchWithoutExec) {
     const isProviderMissing = provider == null;
     process.stderr.write(

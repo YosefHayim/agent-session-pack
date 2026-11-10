@@ -28,9 +28,9 @@ export const runSavingsCommand = async (flags: SavingsFlags): Promise<CommandExi
     providers,
   });
 
-  const isStructuredRequested = flags.json === true;
+  const isMachineOutputRequested = flags.json === true;
 
-  if (isStructuredRequested) {
+  if (isMachineOutputRequested) {
     process.stdout.write(createStructuredEvidenceReport(report));
     return { exitCode: providerExitCode };
   }

@@ -30,9 +30,9 @@ export const runScanCommand = async (flags: ScanFlags): Promise<CommandExit> => 
     stores,
   });
 
-  const isStructuredRequested = flags.json === true;
+  const isMachineOutputRequested = flags.json === true;
 
-  if (isStructuredRequested) {
+  if (isMachineOutputRequested) {
     writeStructuredScan(report);
     return { exitCode: providerExitCode };
   }

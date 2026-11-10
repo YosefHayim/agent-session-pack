@@ -66,7 +66,7 @@ export const runLifecycleCommand = async (flags: LifecycleFlags): Promise<Comman
   const vaultPath = existingSettings?.vaultPath ?? createDefaultVaultPath(home);
   const wrappersBin = createWrappersBinPath(vaultPath);
   const cliEntrypoint = flags.cliEntrypoint ?? pickCliEntrypoint();
-  const isStructuredRequested = flags.json === true;
+  const isMachineOutputRequested = flags.json === true;
 
   const isActionStatus = action === 'status';
   if (isActionStatus) {
@@ -82,7 +82,7 @@ export const runLifecycleCommand = async (flags: LifecycleFlags): Promise<Comman
         openCommand: 'agent-session-pack open --provider <id> <session> --json',
         maintainCommand: 'agent-session-pack maintain --dry-run --json',
       },
-      isStructuredRequested,
+      isMachineOutputRequested,
     );
     return { exitCode: 0 };
   }
@@ -122,7 +122,7 @@ export const runLifecycleCommand = async (flags: LifecycleFlags): Promise<Comman
       openCommand: 'agent-session-pack open --provider <id> <session> --json',
       maintainCommand: 'agent-session-pack maintain --apply --yes --json',
     },
-    isStructuredRequested,
+    isMachineOutputRequested,
   );
   return { exitCode: 0 };
 };
@@ -184,9 +184,9 @@ const writeLifecycleStatus = (
     readonly openCommand?: string;
     readonly maintainCommand?: string;
   },
-  isStructuredRequested: boolean,
+  isMachineOutputRequested: boolean,
 ): void => {
-  if (isStructuredRequested) {
+  if (isMachineOutputRequested) {
     process.stdout.write(
       `${JSON.stringify(
         {

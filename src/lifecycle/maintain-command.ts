@@ -109,8 +109,8 @@ const runMaintainCommand = async (flags: MaintainFlags): Promise<CommandExit> =>
     compression: flags.compression ?? createZstdCompression(),
   });
 
-  const isStructuredRequested = flags.json === true;
-  if (isStructuredRequested) {
+  const isMachineOutputRequested = flags.json === true;
+  if (isMachineOutputRequested) {
     process.stdout.write(
       `${JSON.stringify(
         {

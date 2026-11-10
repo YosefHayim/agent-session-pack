@@ -69,7 +69,7 @@ export const runPreflightCommand = async (flags: PreflightFlags): Promise<Comman
   const compression = flags.compression ?? createZstdCompression();
   const now = flags.now ?? new Date();
   const sessionIds = extractSessionIdsFromArgv(flags.passthroughArgv);
-  const isStructuredRequested = flags.json === true;
+  const isMachineOutputRequested = flags.json === true;
 
   const isRestoreOnLaunchDisabled = !restoreOnLaunchEnabled;
   if (isRestoreOnLaunchDisabled) {
@@ -82,7 +82,7 @@ export const runPreflightCommand = async (flags: PreflightFlags): Promise<Comman
         restores: [],
         reason: 'lifecycle disabled; no auto-restore',
       },
-      isStructuredRequested,
+      isMachineOutputRequested,
     );
     return { exitCode: 0 };
   }
@@ -98,7 +98,7 @@ export const runPreflightCommand = async (flags: PreflightFlags): Promise<Comman
         restores: [],
         reason: 'no session ids found in argv',
       },
-      isStructuredRequested,
+      isMachineOutputRequested,
     );
     return { exitCode: 0 };
   }
@@ -141,7 +141,7 @@ export const runPreflightCommand = async (flags: PreflightFlags): Promise<Comman
       restores,
       reason: undefined,
     },
-    isStructuredRequested,
+    isMachineOutputRequested,
   );
   return { exitCode: 0 };
 };
@@ -189,9 +189,9 @@ const writePreflightPrintout = (
     readonly restores: ReadonlyArray<EnsureRestoredReport>;
     readonly reason: string | undefined;
   },
-  isStructuredRequested: boolean,
+  isMachineOutputRequested: boolean,
 ): void => {
-  if (isStructuredRequested) {
+  if (isMachineOutputRequested) {
     process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
     return;
   }

@@ -3,7 +3,7 @@ import { basename, join } from 'node:path';
 import { readSha256Path } from '@/archive/hash.js';
 import { writeVerifiedArchive } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
-import { SAVED_PERCENT_DECIMAL_PLACES, WHOLE_PERCENT } from '@/byte-savings.js';
+import { calculateSavedPercent } from '@/byte-savings.js';
 import { discoverStoreSessions } from '@/scan/stores.js';
 import type {
   DiscoveredSession,
@@ -136,11 +136,7 @@ export const runLocalEvidence = async (
       sourceBytes: verified.sourceBytes,
       archiveBytes: verified.archiveBytes,
       maxEvidenceSourceBytes: maxEvidenceOriginBytes,
-      savedPercent: Number(
-        (WHOLE_PERCENT - (verified.archiveBytes / verified.sourceBytes) * WHOLE_PERCENT).toFixed(
-          SAVED_PERCENT_DECIMAL_PLACES,
-        ),
-      ),
+      savedPercent: calculateSavedPercent(verified.sourceBytes, verified.archiveBytes),
     });
   }
 

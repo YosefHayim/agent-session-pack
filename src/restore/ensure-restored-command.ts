@@ -98,9 +98,9 @@ export const runEnsureRestoredCommand = async (
 
 const writeEnsureRestoredPrintout = (
   report: EnsureRestoredReport,
-  isStructuredRequested: boolean,
+  isMachineOutputRequested: boolean,
 ): void => {
-  if (isStructuredRequested) {
+  if (isMachineOutputRequested) {
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
     return;
   }

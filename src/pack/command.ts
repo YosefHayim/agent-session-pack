@@ -100,7 +100,7 @@ export type PackFlags = {
 };
 
 export const runPackCommand = async (flags: PackFlags): Promise<CommandExit> => {
-  const isStructuredRequested = flags.json === true;
+  const isMachineOutputRequested = flags.json === true;
 
   const isMaxApplyRequested = flags.max === true && flags.apply === true;
 
@@ -144,7 +144,7 @@ export const runPackCommand = async (flags: PackFlags): Promise<CommandExit> => 
       compression: flags.compression ?? createZstdCompression(),
     });
 
-    writeArchiveReport({ report, olderThan, isJsonOutput: isStructuredRequested });
+    writeArchiveReport({ report, olderThan, isMachineOutputRequested });
     return { exitCode: providerExitCode };
   }
 
@@ -167,7 +167,7 @@ export const runPackCommand = async (flags: PackFlags): Promise<CommandExit> => 
     })),
   });
 
-  if (isStructuredRequested) {
+  if (isMachineOutputRequested) {
     process.stdout.write(createStructuredPackPlan(plan));
     return { exitCode: providerExitCode };
   }
@@ -179,12 +179,12 @@ export const runPackCommand = async (flags: PackFlags): Promise<CommandExit> => 
 type ArchiveReportDetails = {
   readonly report: PackSessionsReport;
   readonly olderThan: string;
-  readonly isJsonOutput: boolean;
+  readonly isMachineOutputRequested: boolean;
 };
 
 const writeArchiveReport = (details: ArchiveReportDetails): void => {
-  const isStructuredRequested = details.isJsonOutput;
-  if (isStructuredRequested) {
+  const isMachineOutputRequested = details.isMachineOutputRequested;
+  if (isMachineOutputRequested) {
     process.stdout.write(createStructuredPackReport(details.report));
     return;
   }

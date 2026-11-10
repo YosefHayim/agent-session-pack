@@ -16,10 +16,6 @@ import { readSha256Directory, readSha256File } from './hash.js';
 
 const TAR_BINARY = 'tar';
 
-const TAR_CREATE_FLAG = '-c';
-
-const TAR_EXTRACT_FLAG = '-x';
-
 const TAR_FILE_FLAG = '-f';
 
 const TAR_CHANGE_DIR_FLAG = '-C';
@@ -36,17 +32,11 @@ type DecompressionRequest = {
   readonly restoredPath: string;
 };
 
-/**
- * Pluggable compression backend used by archive read and write workflows.
- */
 export type CompressionAdapter = {
   readonly compress: (request: CompressionRequest) => Promise<void>;
   readonly decompress: (request: DecompressionRequest) => Promise<void>;
 };
 
-/**
- * Full request to archive one session and verify its restore.
- */
 export type ArchiveWriteRequest = {
   readonly sessionId: string;
   readonly sourcePath: string;
@@ -57,9 +47,6 @@ export type ArchiveWriteRequest = {
   readonly sourceKind?: SessionOriginKind;
 };
 
-/**
- * Verified archive metadata recorded after a byte-exact restore check.
- */
 export type VerifiedArchive = {
   readonly sessionId: string;
   readonly archivePath: string;
@@ -71,9 +58,6 @@ export type VerifiedArchive = {
   readonly sourceKind: SessionOriginKind;
 };
 
-/**
- * Writes a compressed archive and verifies byte-exact restore before removal is allowed.
- */
 export const writeVerifiedArchive = async (
   request: ArchiveWriteRequest,
 ): Promise<VerifiedArchive> => {
@@ -88,9 +72,6 @@ export const writeVerifiedArchive = async (
   return writeVerifiedFileArchive(request);
 };
 
-/**
- * Removes an original session file or directory after verification has passed.
- */
 export const removeOriginalSession = async (path: string): Promise<void> => {
   const pathStat = await stat(path).catch(throwWrappedError);
   await rm(path, {
@@ -212,9 +193,6 @@ const writeVerifiedDirectoryArchive = async (
   };
 };
 
-/**
- * Request used to restore a directory-backed session archive.
- */
 export type DirectoryRestoreRequest = {
   readonly sessionId: string;
   readonly archivePath: string;
@@ -224,9 +202,6 @@ export type DirectoryRestoreRequest = {
   readonly compression: CompressionAdapter;
 };
 
-/**
- * Restores a directory archive to an original provider path after hash verification.
- */
 export const restoreDirectoryArchive = async (request: DirectoryRestoreRequest): Promise<void> => {
   await ensureParentDirectory(request.restoredPath);
   await removePath(request.restoredPath);
@@ -286,9 +261,8 @@ const createTarArchive = async (request: {
   readonly tarPath: string;
 }): Promise<void> => {
   await mkdir(dirname(request.tarPath), { recursive: true }).catch(throwWrappedError);
-  // Pack sourcePath into tarPath: create archive from parent so the leaf name is the top entry.
   const createTarArgumentList = [
-    TAR_CREATE_FLAG,
+    '-c',
     TAR_FILE_FLAG,
     request.tarPath,
     TAR_CHANGE_DIR_FLAG,
@@ -311,9 +285,8 @@ const extractTarArchive = async (request: {
   await rm(extractRoot, { recursive: true, force: true }).catch(throwWrappedError);
   await mkdir(extractRoot, { recursive: true }).catch(throwWrappedError);
 
-  // Extract tarPath into extractRoot: unpack archive contents under the staging directory.
   const extractTarArgumentList = [
-    TAR_EXTRACT_FLAG,
+    '-x',
     TAR_FILE_FLAG,
     request.tarPath,
     TAR_CHANGE_DIR_FLAG,

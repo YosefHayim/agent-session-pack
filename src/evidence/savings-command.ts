@@ -6,17 +6,11 @@ import { runLocalEvidence } from './local-evidence.js';
 import { createHumanEvidenceReport, createStructuredEvidenceReport } from './output.js';
 import { createEvidenceWorkRoot } from './work-root.js';
 
-/**
- * Arguments for the savings command.
- */
 export interface SavingsFlags {
   readonly provider?: string;
   readonly json?: boolean;
 }
 
-/**
- * Runs copy-only local savings proof against provider sessions and writes the report.
- */
 export const runSavingsCommand = async (flags: SavingsFlags): Promise<CommandExit> => {
   const home = requireHome();
 
@@ -34,9 +28,9 @@ export const runSavingsCommand = async (flags: SavingsFlags): Promise<CommandExi
     providers,
   });
 
-  const isStructuredRequested = flags.json === true;
+  const isMachineOutputRequested = flags.json === true;
 
-  if (isStructuredRequested) {
+  if (isMachineOutputRequested) {
     process.stdout.write(createStructuredEvidenceReport(report));
     return { exitCode: providerExitCode };
   }
@@ -45,9 +39,6 @@ export const runSavingsCommand = async (flags: SavingsFlags): Promise<CommandExi
   return { exitCode: providerExitCode };
 };
 
-/**
- * Citty command that shows copy-only local before/after compression proof.
- */
 export const savingsCommand = defineCommand({
   meta: {
     name: 'savings',
@@ -73,9 +64,6 @@ export const savingsCommand = defineCommand({
   },
 });
 
-/**
- * Citty command that runs the no-install local savings proof.
- */
 export const checkCommand = defineCommand({
   meta: {
     name: 'check',

@@ -7,11 +7,12 @@ import type { CommandExit } from '@/command-outcome.js';
 import { requireHome } from '@/home-env.js';
 import { parseOptionalProvider } from '@/providers/flag.js';
 import { readSetupSettings } from '@/setup/config.js';
-import { type SessionWatchEvent, watchSessionStubs } from './session-watch.js';
+import {
+  DEFAULT_POLL_INTERVAL_MS,
+  type SessionWatchEvent,
+  watchSessionStubs,
+} from './session-watch.js';
 
-/**
- * Citty command that watches archived stubs and restores sessions when opened.
- */
 export const watchCommand = defineCommand({
   meta: {
     name: 'watch',
@@ -44,9 +45,6 @@ export const watchCommand = defineCommand({
   },
 });
 
-/**
- * Decoded arguments for watch.
- */
 type WatchFlags = {
   readonly provider: string | undefined;
   readonly json: boolean | undefined;
@@ -78,7 +76,7 @@ const runWatchCommand = async (flags: WatchFlags): Promise<CommandExit> => {
   const vaultPath = flags.vaultPath ?? setupSettings?.vaultPath ?? createDefaultVaultPath(home);
   const pollIntervalMs = parsePollMs(flags.pollMs);
   const compression = flags.compression ?? createZstdCompression();
-  const isStructuredRequested = flags.json === true;
+  const isMachineOutputRequested = flags.json === true;
 
   let childExitCode: number | undefined;
   let stop = false;
@@ -111,7 +109,7 @@ const runWatchCommand = async (flags: WatchFlags): Promise<CommandExit> => {
   }
 
   const writeWatchEvent = (event: SessionWatchEvent): void => {
-    if (isStructuredRequested) {
+    if (isMachineOutputRequested) {
       process.stdout.write(`${JSON.stringify({ command: 'watch', ...event })}\n`);
       return;
     }
@@ -119,7 +117,7 @@ const runWatchCommand = async (flags: WatchFlags): Promise<CommandExit> => {
     process.stderr.write(`watch: ${event.provider}/${event.sessionId} → ${event.status}\n`);
   };
 
-  const isHumanWatchWithoutExec = !isStructuredRequested && flags.execArgv.length === 0;
+  const isHumanWatchWithoutExec = !isMachineOutputRequested && flags.execArgv.length === 0;
   if (isHumanWatchWithoutExec) {
     const isProviderMissing = provider == null;
     process.stderr.write(
@@ -153,14 +151,16 @@ const extractExecArgumentList = (argumentList: ReadonlyArray<string>): ReadonlyA
 const parsePollMs = (millisecondsString: string | undefined): number => {
   const isMillisecondsStringMissing = millisecondsString == null;
   if (isMillisecondsStringMissing) {
-    return 750;
+    return DEFAULT_POLL_INTERVAL_MS;
   }
 
   const parsed = Number(millisecondsString);
 
-  const isPollIntervalInvalid = !Number.isFinite(parsed) || parsed < 100;
+  const minimumPollIntervalMilliseconds = 100;
+  const isPollIntervalInvalid =
+    !Number.isFinite(parsed) || parsed < minimumPollIntervalMilliseconds;
   if (isPollIntervalInvalid) {
-    return 750;
+    return DEFAULT_POLL_INTERVAL_MS;
   }
 
   return Math.floor(parsed);

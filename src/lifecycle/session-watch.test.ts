@@ -10,7 +10,7 @@ import { writeArchivedStub } from '@/archive/session-stub.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import { watchSessionStubs } from './session-watch.js';
 
-const STUB_FILE_STRING = `${JSON.stringify({
+const archivedStubDocument = `${JSON.stringify({
   agentSessionPack: 'agent-session-pack-archived-stub',
   version: 1,
   sessionId: 'cold',
@@ -116,7 +116,7 @@ describe('sessionWatch', () => {
     const watchRun = startCodexWatch(session.vaultPath, copyCompression);
 
     await wait(120);
-    await writeFile(session.filePath, STUB_FILE_STRING);
+    await writeFile(session.filePath, archivedStubDocument);
     await wait(350);
     await watchRun.stop();
 

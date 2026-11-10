@@ -1,8 +1,5 @@
 import { z } from 'zod';
 
-/**
- * Schema enumerating the supported provider identifiers.
- */
 export const ProviderIdSchema = z.enum([
   'codex',
   'claude',
@@ -15,34 +12,16 @@ export const ProviderIdSchema = z.enum([
   'gemini',
 ]);
 
-/**
- * Supported provider identifier value.
- */
 export type ProviderId = z.infer<typeof ProviderIdSchema>;
 
-/**
- * Schema enumerating whether a session is stored as one file or a directory tree.
- */
 export const SessionOriginKindSchema = z.enum(['file', 'directory']);
 
-/**
- * Session source storage kind value.
- */
 export type SessionOriginKind = z.infer<typeof SessionOriginKindSchema>;
 
-/**
- * Provider handling mode value.
- */
 export type ProviderMode = 'archive' | 'backup-only';
 
-/**
- * Lifecycle state a session can occupy.
- */
 export type SessionStatus = 'live' | 'cold' | 'archived' | 'restored' | 'pinned' | 'quarantined';
 
-/**
- * A session discovered in a provider store.
- */
 export interface DiscoveredSession {
   readonly id: string;
   readonly provider: ProviderId;
@@ -58,18 +37,11 @@ export interface DiscoveredSession {
   readonly savedPercent?: number;
 }
 
-/**
- * Provider store location targeted by a scan.
- */
 export type SessionStore = {
   readonly provider: ProviderId;
   readonly path: string;
 };
 
-/**
- * Read-only provider adapter used to discover sessions in a store.
- * Discovery throws an Error when the store cannot be read.
- */
 export type ProviderAdapter = {
   readonly id: ProviderId;
   readonly label: string;

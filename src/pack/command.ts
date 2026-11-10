@@ -17,9 +17,6 @@ import {
 import { createPackPlan, DEFAULT_COLD_AFTER, parseDurationMs } from './plan.js';
 import { type PackSessionsReport, packProviderSessions } from './sessions.js';
 
-/**
- * Citty command that packs cold sessions after verified archive restore.
- */
 export const packCommand = defineCommand({
   meta: {
     name: 'pack',
@@ -85,9 +82,6 @@ export const packCommand = defineCommand({
   },
 });
 
-/**
- * Arguments for the pack command, after citty has parsed the flags.
- */
 export type PackFlags = {
   readonly allProviders: boolean | undefined;
   readonly provider: string | undefined;
@@ -105,11 +99,8 @@ export type PackFlags = {
   readonly vaultPath?: string | undefined;
 };
 
-/**
- * Runs the pack command: a dry-run plan, or an archive run when applying.
- */
 export const runPackCommand = async (flags: PackFlags): Promise<CommandExit> => {
-  const isStructuredRequested = flags.json === true;
+  const isMachineOutputRequested = flags.json === true;
 
   const isMaxApplyRequested = flags.max === true && flags.apply === true;
 
@@ -153,7 +144,7 @@ export const runPackCommand = async (flags: PackFlags): Promise<CommandExit> => 
       compression: flags.compression ?? createZstdCompression(),
     });
 
-    writeArchiveReport({ report, olderThan, isJsonOutput: isStructuredRequested });
+    writeArchiveReport({ report, olderThan, isMachineOutputRequested });
     return { exitCode: providerExitCode };
   }
 
@@ -176,7 +167,7 @@ export const runPackCommand = async (flags: PackFlags): Promise<CommandExit> => 
     })),
   });
 
-  if (isStructuredRequested) {
+  if (isMachineOutputRequested) {
     process.stdout.write(createStructuredPackPlan(plan));
     return { exitCode: providerExitCode };
   }
@@ -188,12 +179,12 @@ export const runPackCommand = async (flags: PackFlags): Promise<CommandExit> => 
 type ArchiveReportDetails = {
   readonly report: PackSessionsReport;
   readonly olderThan: string;
-  readonly isJsonOutput: boolean;
+  readonly isMachineOutputRequested: boolean;
 };
 
 const writeArchiveReport = (details: ArchiveReportDetails): void => {
-  const isStructuredRequested = details.isJsonOutput;
-  if (isStructuredRequested) {
+  const isMachineOutputRequested = details.isMachineOutputRequested;
+  if (isMachineOutputRequested) {
     process.stdout.write(createStructuredPackReport(details.report));
     return;
   }

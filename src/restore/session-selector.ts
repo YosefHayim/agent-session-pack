@@ -1,15 +1,8 @@
 import type { SessionManifest } from '@/archive/manifest-store.js';
 import { type ProviderId, ProviderIdSchema } from '@/session-model.js';
 
-/**
- * How far a selector reaches: `exact` matches id, name, or slug only; `fuzzy` also tries
- * id prefixes and then words found in the name or slug.
- */
 export type SelectorMode = 'exact' | 'fuzzy';
 
-/**
- * Selector text paired with the vault manifests it should resolve against.
- */
 export type SessionSelectorRequest = {
   readonly selector: string;
   readonly provider: ProviderId | undefined;
@@ -17,9 +10,6 @@ export type SessionSelectorRequest = {
   readonly match: SelectorMode;
 };
 
-/**
- * Outcome of resolving a selector: one session, no session, or several candidates.
- */
 export type SessionSelection =
   | { readonly status: 'found'; readonly manifest: SessionManifest }
   | { readonly status: 'not-found' }
@@ -30,12 +20,6 @@ type ParsedSelector = {
   readonly query: string;
 };
 
-/**
- * Resolves a human or agent selector to one vault manifest.
- *
- * Exact id, name, or slug matches win. In `fuzzy` mode an id prefix comes next, then
- * sessions whose name or slug contains every word of the selector.
- */
 export const findSessionSelector = (request: SessionSelectorRequest): SessionSelection => {
   const parsed = parseSelector(request.selector);
   const provider = request.provider ?? parsed.provider;

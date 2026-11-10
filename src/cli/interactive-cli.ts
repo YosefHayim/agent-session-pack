@@ -11,21 +11,12 @@ import { runWithSpinner } from '@/spinner-task.js';
 
 type MainMenuAction = 'doctor' | 'exit' | 'pack' | 'restore' | 'review' | 'savings' | 'setup';
 
-/**
- * Inputs used to decide whether the interactive CLI should run.
- */
 export type InteractiveCliDetectionRequest = {
   readonly argv: ReadonlyArray<string>;
   readonly stdinIsTty: boolean;
   readonly stdoutIsTty: boolean;
 };
 
-/**
- * Decides whether the bare binary should open the human interactive flow.
- *
- * @param request - Normalized argv and terminal state.
- * @returns True when no command or flags were provided in a TTY.
- */
 export const canRunInteractiveCli = (request: InteractiveCliDetectionRequest): boolean => {
   const isNotInteractiveTerminal = !request.stdinIsTty || !request.stdoutIsTty;
   if (isNotInteractiveTerminal) {
@@ -35,11 +26,6 @@ export const canRunInteractiveCli = (request: InteractiveCliDetectionRequest): b
   return request.argv.length <= 2;
 };
 
-/**
- * Builds the main interactive menu options with Clack hint copy.
- *
- * @returns Main menu options.
- */
 export const createMainMenuChoices = (): ReadonlyArray<PromptOption<MainMenuAction>> => [
   {
     value: 'setup',
@@ -78,12 +64,6 @@ export const createMainMenuChoices = (): ReadonlyArray<PromptOption<MainMenuActi
   },
 ];
 
-/**
- * Runs the full human interactive menu.
- *
- * @param request - Optional test overrides for prompts, home, providers, and time.
- * @returns Promise that resolves after the selected action completes.
- */
 export const runInteractiveCli = async (
   request: InteractiveCliRequest = {},
 ): Promise<CommandExit> => {

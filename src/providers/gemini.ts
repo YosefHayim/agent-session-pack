@@ -3,9 +3,6 @@ import type { ProviderAdapter } from '@/session-model.js';
 import { discoverDirectoryProviderSessions } from './directory-sessions.js';
 import { discoverJsonlProviderSessions } from './jsonl-sessions.js';
 
-/**
- * Archive provider adapter for Gemini CLI local session stores.
- */
 export const geminiProvider: ProviderAdapter = {
   id: 'gemini',
   label: 'Gemini CLI',

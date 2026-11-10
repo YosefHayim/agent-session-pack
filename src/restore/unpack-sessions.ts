@@ -4,14 +4,8 @@ import type { CompressionAdapter } from '@/archive/writer.js';
 import type { ProviderAdapter, ProviderId } from '@/session-model.js';
 import { restoreManifest } from './manifest.js';
 
-/**
- * Outcome status reported for one provider during an unpack run.
- */
 type UnpackSessionStatus = 'already-present' | 'conflict' | 'dry-run' | 'no-archives' | 'restored';
 
-/**
- * Per-provider unpack result row with restore counts and byte totals.
- */
 type UnpackSessionSummary = {
   readonly provider: ProviderId;
   readonly archivedSessions: number;
@@ -26,9 +20,6 @@ type UnpackSessionSummary = {
   readonly reason: string | undefined;
 };
 
-/**
- * Full unpack report covering all providers.
- */
 export type UnpackSessionsReport = {
   readonly command: 'unpack';
   readonly apply: boolean;
@@ -36,9 +27,6 @@ export type UnpackSessionsReport = {
   readonly rows: ReadonlyArray<UnpackSessionSummary>;
 };
 
-/**
- * Inputs required to restore archived provider sessions from the vault.
- */
 export type UnpackProviderSessionsRequest = {
   readonly vaultPath: string;
   readonly providers: ReadonlyArray<ProviderAdapter>;
@@ -46,9 +34,6 @@ export type UnpackProviderSessionsRequest = {
   readonly compression: CompressionAdapter;
 };
 
-/**
- * Restores archived sessions for the selected providers back to original paths.
- */
 export const unpackProviderSessions = async (
   request: UnpackProviderSessionsRequest,
 ): Promise<UnpackSessionsReport> => {

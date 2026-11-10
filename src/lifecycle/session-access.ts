@@ -2,18 +2,12 @@ import { appendFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { ProviderId } from '@/session-model.js';
 
-/**
- * One recorded session access used to keep recently opened sessions hot.
- */
 type SessionAccessEvent = {
   readonly provider: ProviderId;
   readonly sessionId: string;
   readonly accessedAt: string;
 };
 
-/**
- * Inputs required to append one session access event.
- */
 export type SaveSessionAccessRequest = {
   readonly vaultPath: string;
   readonly provider: ProviderId;
@@ -21,9 +15,6 @@ export type SaveSessionAccessRequest = {
   readonly accessedAt: Date;
 };
 
-/**
- * Inputs required to check whether a session is still hot.
- */
 export type SessionHotCheckRequest = {
   readonly events: ReadonlyArray<SessionAccessEvent>;
   readonly provider: ProviderId;
@@ -31,52 +22,23 @@ export type SessionHotCheckRequest = {
   readonly sinceMs: number;
 };
 
-const SESSION_ID_PATTERN =
+const sessionIdPattern =
   /\b([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{26,})\b/gi;
 
-const FLAG_NAMES = new Set(['--session', '--session-id', '--resume', 'resume', '-s', '--id']);
+const knownSessionFlagNames = new Set([
+  '--session',
+  '--session-id',
+  '--resume',
+  'resume',
+  '-s',
+  '--id',
+]);
 
-/**
- * Resolves the vault bin directory that holds provider launch wrappers.
- *
- * @param vaultPath - Vault root path.
- * @returns Absolute wrappers bin path.
- * @example
- * ```ts
- * import { createWrappersBinPath } from './session-access.js';
- *
- * createWrappersBinPath('/Users/me/.agent-session-pack');
- * ```
- */
 export const createWrappersBinPath = (vaultPath: string): string => join(vaultPath, 'bin');
 
-/**
- * Resolves the session access log path under the vault.
- *
- * @param vaultPath - Vault root path.
- * @returns Absolute access log path.
- * @example
- * ```ts
- * import { createAccessLogPath } from './session-access.js';
- *
- * createAccessLogPath('/Users/me/.agent-session-pack');
- * ```
- */
 export const createAccessLogPath = (vaultPath: string): string =>
   join(vaultPath, 'access-log.jsonl');
 
-/**
- * Extracts likely session ids from provider CLI arguments for preflight restore.
- *
- * @param argv - Provider CLI argv (without binary name).
- * @returns Deduplicated session id candidates.
- * @example
- * ```ts
- * import { extractSessionIdsFromArgv } from './session-access.js';
- *
- * extractSessionIdsFromArgv(['resume', '019fe213-8c3a-74a1-96bc-e1a9a02a4047']);
- * ```
- */
 export const extractSessionIdsFromArgv = (argv: ReadonlyArray<string>): ReadonlyArray<string> => {
   const found = new Set<string>();
 
@@ -108,11 +70,6 @@ export const extractSessionIdsFromArgv = (argv: ReadonlyArray<string>): Readonly
   return [...found];
 };
 
-/**
- * Appends a session access event so maintain can keep hot sessions live.
- *
- * @param request - Access write fields for vault logging.
- */
 export const saveSessionAccess = async (request: SaveSessionAccessRequest): Promise<void> => {
   const path = createAccessLogPath(request.vaultPath);
   const event: SessionAccessEvent = {
@@ -129,23 +86,6 @@ export const saveSessionAccess = async (request: SaveSessionAccessRequest): Prom
   }
 };
 
-/**
- * Returns true when a session was accessed within the cache window.
- *
- * @param request - Hot-cache check fields.
- * @returns True when the session is still hot.
- * @example
- * ```ts
- * import { isSessionAccessedSince } from './session-access.js';
- *
- * isSessionAccessedSince({
- *   events,
- *   provider: 'codex',
- *   sessionId: 'cold',
- *   sinceMs: Date.now() - 7 * 24 * 60 * 60 * 1000,
- * });
- * ```
- */
 export const isSessionAccessedSince = (request: SessionHotCheckRequest): boolean =>
   request.events.some(
     (event) =>
@@ -159,7 +99,7 @@ const tryTakeFlagSessionId = (
   arg: string,
   next: string | undefined,
 ): boolean => {
-  const isUnknownFlag = !FLAG_NAMES.has(arg);
+  const isUnknownFlag = !knownSessionFlagNames.has(arg);
   if (isUnknownFlag) {
     return false;
   }
@@ -186,7 +126,7 @@ const tryTakeInlineSessionId = (found: Set<string>, arg: string): boolean => {
 };
 
 const addUuidHits = (found: Set<string>, arg: string): void => {
-  for (const hit of arg.matchAll(SESSION_ID_PATTERN)) {
+  for (const hit of arg.matchAll(sessionIdPattern)) {
     const matchedId = hit[1];
 
     const hasMatchedId = matchedId != null;

@@ -1,12 +1,4 @@
-/**
- * Shared user-facing guidance when the HOME environment variable is missing.
- *
- * Agent Session Pack resolves vault, config, and provider session roots under
- * HOME. These strings stay in one place so command stderr and interactive
- * cancel paths stay consistent.
- */
-
-const HOME_NOT_SET_STDERR_MESSAGE = [
+const homeNotSetStderrMessage = [
   'HOME is not set.',
   '',
   'Agent Session Pack needs HOME to resolve vault and config paths under your home directory',
@@ -15,30 +7,15 @@ const HOME_NOT_SET_STDERR_MESSAGE = [
   '',
 ].join('\n');
 
-/**
- * Interactive cancel guidance when HOME is unset.
- */
 export const HOME_NOT_SET_CANCEL_MESSAGE =
   'HOME is not set. Agent Session Pack needs HOME to resolve vault and config paths (default ~/.agent-session-pack). Set HOME in your shell, or see .env.example. No files changed.';
 
-/**
- * Resolves the home directory for a command, or reports the missing HOME on stderr.
- *
- * @param homeOverride - Optional `--home` value that wins over `process.env.HOME`.
- * @returns The home directory, or undefined after the guidance was written to stderr.
- * @example
- * ```ts
- * import { requireHome } from './home-env.js';
- *
- * const home = requireHome(args.home);
- * ```
- */
 export const requireHome = (homeOverride?: string): string | null => {
   const home = homeOverride ?? process.env.HOME;
 
   const isHomeMissing = home == null;
   if (isHomeMissing) {
-    process.stderr.write(HOME_NOT_SET_STDERR_MESSAGE);
+    process.stderr.write(homeNotSetStderrMessage);
   }
 
   return home;

@@ -1,4 +1,4 @@
-const COMMAND_FLAG_ALIASES: Readonly<Record<string, string>> = {
+const commandFlagAliases: Readonly<Record<string, string>> = {
   '--check': 'check',
   '--doctor': 'doctor',
   '--guide': 'guide',
@@ -16,18 +16,6 @@ const COMMAND_FLAG_ALIASES: Readonly<Record<string, string>> = {
   '--unpack': 'unpack',
 };
 
-/**
- * Rewrites pnpm-friendly command flag aliases into citty subcommands.
- *
- * @param argv - Raw process argv.
- * @returns Argv with supported command aliases rewritten as subcommands.
- * @example
- * ```ts
- * import { rewriteCommandFlagAliases } from './main-args.js';
- *
- * const argv = rewriteCommandFlagAliases(['node', 'cli.js', '--scan']);
- * ```
- */
 export const rewriteCommandFlagAliases = (argv: ReadonlyArray<string>): ReadonlyArray<string> => {
   const [runtimePath, entrypointPath, firstArg, ...remainingArgumentList] = argv;
 
@@ -41,7 +29,7 @@ export const rewriteCommandFlagAliases = (argv: ReadonlyArray<string>): Readonly
     return [runtimePath, entrypointPath, ...remainingArgumentList];
   }
 
-  const aliasedCommand = COMMAND_FLAG_ALIASES[firstArg];
+  const aliasedCommand = commandFlagAliases[firstArg];
 
   const isAliasedCommandMissing = aliasedCommand == null;
   if (isAliasedCommandMissing) {

@@ -7,14 +7,8 @@ import type {
   ProviderMode,
 } from '@/session-model.js';
 
-/**
- * Readiness status reported for a provider store during inventory.
- */
 type ProviderInventoryStatus = 'backup-only' | 'missing' | 'ready';
 
-/**
- * Read-only inventory row summarizing one provider's sessions and bytes.
- */
 type ProviderInventorySummary = {
   readonly provider: ProviderId;
   readonly label: string;
@@ -28,16 +22,10 @@ type ProviderInventorySummary = {
   readonly status: ProviderInventoryStatus;
 };
 
-/**
- * Aggregated inventory report across all inspected providers.
- */
 export type ProviderInventoryReport = {
   readonly rows: ReadonlyArray<ProviderInventorySummary>;
 };
 
-/**
- * Inputs required to inspect provider stores for inventory.
- */
 export type ProviderInventoryRequest = {
   readonly home: string;
   readonly providers: ReadonlyArray<ProviderAdapter>;
@@ -45,9 +33,6 @@ export type ProviderInventoryRequest = {
   readonly now: Date;
 };
 
-/**
- * Inspects provider stores for human-facing setup and pack decisions.
- */
 export const inspectProviderInventory = async (
   request: ProviderInventoryRequest,
 ): Promise<ProviderInventoryReport> => {

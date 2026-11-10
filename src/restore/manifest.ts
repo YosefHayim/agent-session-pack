@@ -11,23 +11,14 @@ import { restorePathForManifest } from '@/archive/vault-paths.js';
 import { type CompressionAdapter, restoreDirectoryArchive } from '@/archive/writer.js';
 import type { SessionOriginKind } from '@/session-model.js';
 
-/**
- * Result of restoring one archived session to its original path.
- */
 export type RestoreExit = 'already-present' | 'conflict' | 'restored';
 
-/**
- * Inputs for restoring one archived session.
- */
 export type RestoreManifestRequest = {
   readonly compression: CompressionAdapter;
   readonly manifest: SessionManifest;
   readonly vaultPath: string;
 };
 
-/**
- * Restores one archived session to its original path unless a changed live copy is there.
- */
 export const restoreManifest = async (request: RestoreManifestRequest): Promise<RestoreExit> => {
   const originKind = readManifestOriginKind(request.manifest);
 

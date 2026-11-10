@@ -3,9 +3,6 @@ import { dirname, join } from 'node:path';
 import { throwWrappedError } from '@/rethrow-as-error.js';
 import type { ProviderId, SessionOriginKind } from '@/session-model.js';
 
-/**
- * Magic marker written into packed-session stubs so GUI list/open can find them.
- */
 export const ARCHIVED_STUB_KIND = 'agent-session-pack-archived-stub' as const;
 
 const STUB_MARKER_FILE = '.agent-session-pack-archived.json';
@@ -18,9 +15,6 @@ type ArchivedStub = {
   readonly sourceKind: SessionOriginKind;
 };
 
-/**
- * Inputs for writing an archived-session stub.
- */
 export type WriteArchivedStubRequest = {
   readonly originalPath: string;
   readonly sessionId: string;
@@ -28,9 +22,6 @@ export type WriteArchivedStubRequest = {
   readonly sourceKind: SessionOriginKind;
 };
 
-/**
- * Writes a tiny listable stub at the original session path after pack removes the full session.
- */
 export const writeArchivedStub = async (request: WriteArchivedStubRequest): Promise<void> => {
   const stub: ArchivedStub = {
     agentSessionPack: ARCHIVED_STUB_KIND,
@@ -55,9 +46,6 @@ export const writeArchivedStub = async (request: WriteArchivedStubRequest): Prom
   await writeFile(request.originalPath, stubString, 'utf8').catch(throwWrappedError);
 };
 
-/**
- * Returns true when the path is an archived stub (not a full live session).
- */
 export const isArchivedStubPath = async (
   path: string,
   originKind: SessionOriginKind,
@@ -78,9 +66,6 @@ export const isArchivedStubPath = async (
   }
 };
 
-/**
- * Returns true when a directory stub has been touched beyond the marker (provider open signal).
- */
 export const isDirectoryStubOpened = async (path: string): Promise<boolean> => {
   try {
     const names = await readdir(path);

@@ -2,18 +2,6 @@ import { describeBytes, describeOptionalBytes, describeOptionalPercent } from '@
 import { calculateSavedPercent } from '@/byte-savings.js';
 import type { LocalEvidenceReport, ProviderEvidence } from './local-evidence.js';
 
-/**
- * Formats local evidence output for terminal users.
- *
- * @param report - Copy-only local evidence report.
- * @returns Human-readable before and after table.
- * @example
- * ```ts
- * import { createHumanEvidenceReport } from './output.js';
- *
- * createHumanEvidenceReport(report);
- * ```
- */
 export const createHumanEvidenceReport = (report: LocalEvidenceReport): string => {
   const isReportEvidenceEmpty = report.evidence.length === 0;
   if (isReportEvidenceEmpty) {
@@ -60,18 +48,6 @@ export const createHumanEvidenceReport = (report: LocalEvidenceReport): string =
   ].join('\n');
 };
 
-/**
- * Formats local evidence output for scripts and agents.
- *
- * @param report - Copy-only local evidence report.
- * @returns Stable JSON output.
- * @example
- * ```ts
- * import { createJsonEvidenceReport } from './output.js';
- *
- * createJsonEvidenceReport(report);
- * ```
- */
 export const createStructuredEvidenceReport = (report: LocalEvidenceReport): string =>
   `${JSON.stringify(report, null, 2)}\n`;
 

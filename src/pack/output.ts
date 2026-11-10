@@ -4,26 +4,10 @@ import { describeStatus, describeTouched } from '@/report-cells.js';
 import type { PackPlan } from './plan.js';
 import type { PackSessionsReport } from './sessions.js';
 
-/**
- * Render options for pack plan and report output.
- */
 export type PackPlanPrintoutSettings = {
   readonly olderThan: string;
 };
 
-/**
- * Formats a non-destructive pack plan for terminal users.
- *
- * @param plan - Dry-run pack plan.
- * @param settings - Render options.
- * @returns Human-readable dry-run table.
- * @example
- * ```ts
- * import { createHumanPackPlan } from './output.js';
- *
- * createHumanPackPlan(plan, { olderThan: '7d' });
- * ```
- */
 export const createHumanPackPlan = (plan: PackPlan, settings: PackPlanPrintoutSettings): string => {
   const totalBeforeBytes = plan.rows.reduce(
     (totalBytes, packPlanSummary) => totalBytes + packPlanSummary.beforeBytes,
@@ -48,34 +32,9 @@ export const createHumanPackPlan = (plan: PackPlan, settings: PackPlanPrintoutSe
   ].join('\n');
 };
 
-/**
- * Formats a non-destructive pack plan for scripts and agents.
- *
- * @param plan - Dry-run pack plan.
- * @returns Stable JSON output.
- * @example
- * ```ts
- * import { createJsonPackPlan } from './output.js';
- *
- * createJsonPackPlan(plan);
- * ```
- */
 export const createStructuredPackPlan = (plan: PackPlan): string =>
   `${JSON.stringify(plan, null, 2)}\n`;
 
-/**
- * Formats a pack report for terminal users.
- *
- * @param report - Pack workflow report.
- * @param settings - Render options.
- * @returns Human-readable pack table.
- * @example
- * ```ts
- * import { createHumanPackReport } from './output.js';
- *
- * createHumanPackReport(report, { olderThan: '7d' });
- * ```
- */
 export const createHumanPackReport = (
   report: PackSessionsReport,
   settings: PackPlanPrintoutSettings,
@@ -101,18 +60,6 @@ export const createHumanPackReport = (
   ].join('\n');
 };
 
-/**
- * Formats a pack report for scripts and agents.
- *
- * @param report - Stable pack report.
- * @returns JSON output.
- * @example
- * ```ts
- * import { createJsonPackReport } from './output.js';
- *
- * createJsonPackReport(report);
- * ```
- */
 export const createStructuredPackReport = (report: PackSessionsReport): string =>
   `${JSON.stringify(report, null, 2)}\n`;
 

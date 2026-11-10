@@ -2,20 +2,14 @@ import { defineCommand } from 'citty';
 import type { CommandExit } from '@/command-outcome.js';
 import { createHumanAgentGuide, createStructuredAgentGuide } from './agent-guide-output.js';
 
-/**
- * Arguments for the guide command.
- */
 export interface GuideFlags {
   readonly json?: boolean;
 }
 
-/**
- * Writes the agent guide, as JSON when requested.
- */
 export const runGuideCommand = async (flags: GuideFlags): Promise<CommandExit> => {
-  const isStructuredRequested = flags.json === true;
+  const isMachineOutputRequested = flags.json === true;
 
-  if (isStructuredRequested) {
+  if (isMachineOutputRequested) {
     process.stdout.write(createStructuredAgentGuide());
     return { exitCode: 0 };
   }
@@ -24,9 +18,6 @@ export const runGuideCommand = async (flags: GuideFlags): Promise<CommandExit> =
   return { exitCode: 0 };
 };
 
-/**
- * Citty command that shows safe commands for agents and automation.
- */
 export const guideCommand = defineCommand({
   meta: {
     name: 'guide',

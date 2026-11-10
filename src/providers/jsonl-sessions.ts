@@ -6,18 +6,12 @@ import {
   slugifyTitle,
 } from './session-discovery.js';
 
-/**
- * Options for discovering JSONL-backed provider sessions.
- */
 export type JsonlProviderDiscoverySettings = {
   readonly provider: ProviderId;
   readonly store: SessionStore;
   readonly excludePathParts: ReadonlyArray<string>;
 };
 
-/**
- * Discovers JSONL-backed provider sessions, reading one title at a time.
- */
 export const discoverJsonlProviderSessions = async (
   settings: JsonlProviderDiscoverySettings,
 ): Promise<ReadonlyArray<DiscoveredSession>> => {

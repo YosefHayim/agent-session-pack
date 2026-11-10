@@ -5,9 +5,6 @@ import { z } from 'zod';
 import { throwWrappedError } from '@/rethrow-as-error.js';
 import { ProviderIdSchema } from '@/session-model.js';
 
-/**
- * Schema describing persisted setup configuration.
- */
 const SetupSettingsSchema = z.object({
   version: z.literal(1),
   providers: z.array(ProviderIdSchema),
@@ -15,50 +12,30 @@ const SetupSettingsSchema = z.object({
   coldAfter: z.string(),
   createdAt: z.string(),
   updatedAt: z.string(),
-  /** When true, `ensure-restored` may write native session files on launch helpers. */
   restoreOnLaunch: z.boolean().optional(),
-  /** Optional cache window (e.g. `7d`) for how long restored sessions stay live. */
   restoreCacheAfter: z.string().optional(),
 });
 
-/**
- * Decoded setup configuration record.
- */
 export type SetupSettings = z.infer<typeof SetupSettingsSchema>;
 
-/**
- * Reports whether restore-on-launch lifecycle helpers are enabled in setup config.
- */
 export const isRestoreOnLaunchEnabled = (settings: SetupSettings | null): boolean =>
   settings?.restoreOnLaunch === true;
 
-/**
- * Vault path that has passed setup validation.
- */
 export type ValidatedVaultPath = {
   readonly path: string;
 };
 
-/**
- * Inputs required to validate a proposed vault path.
- */
 export type VaultPathValidationRequest = {
   readonly home: string;
   readonly inputPath: string;
   readonly providerRoots: ReadonlyArray<string>;
 };
 
-/**
- * Inputs required to persist setup configuration.
- */
 export type WriteSetupSettingsRequest = {
   readonly home: string;
   readonly config: SetupSettings;
 };
 
-/**
- * Expands a user-entered path against the current home directory.
- */
 export const expandHomePath = (path: string, home: string): string => {
   const isPathEmpty = path === '~';
   if (isPathEmpty) {
@@ -73,15 +50,9 @@ export const expandHomePath = (path: string, home: string): string => {
   return resolve(path);
 };
 
-/**
- * Resolves the setup config pointer stored below the default Agent Session Pack directory.
- */
 export const createSettingsPath = (home: string): string =>
   join(home, '.agent-session-pack', 'config.json');
 
-/**
- * Validates a proposed archive vault path before setup writes config, throwing when it is rejected.
- */
 export const validateVaultPath = async (
   request: VaultPathValidationRequest,
 ): Promise<ValidatedVaultPath> => {
@@ -119,9 +90,6 @@ export const validateVaultPath = async (
   return { path };
 };
 
-/**
- * Reads saved setup config when it exists, or undefined when setup has not run.
- */
 export const readSetupSettings = async (home: string): Promise<SetupSettings | null> => {
   const settingsPath = createSettingsPath(home);
   const settingsString = await readSettingsString(settingsPath).catch(throwWrappedError);
@@ -135,9 +103,6 @@ export const readSetupSettings = async (home: string): Promise<SetupSettings | n
   return SetupSettingsSchema.parse(JSON.parse(settingsString));
 };
 
-/**
- * Writes setup config and creates the selected vault directory.
- */
 export const writeSetupSettings = async (request: WriteSetupSettingsRequest): Promise<void> => {
   const settingsPath = createSettingsPath(request.home);
   await mkdir(dirname(settingsPath), { recursive: true }).catch(throwWrappedError);

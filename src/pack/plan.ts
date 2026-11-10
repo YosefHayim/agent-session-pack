@@ -1,28 +1,20 @@
 import { sumSessionBytes } from '@/byte-savings.js';
 import type { DiscoveredSession, ProviderId, ProviderMode } from '@/session-model.js';
 
-/**
- * Default cold threshold: sessions untouched this long are pack candidates.
- */
+const MILLISECONDS_PER_HOUR = 60 * 60 * 1000;
+const MILLISECONDS_PER_DAY = 24 * MILLISECONDS_PER_HOUR;
+const MILLISECONDS_PER_WEEK = 7 * MILLISECONDS_PER_DAY;
+
 export const DEFAULT_COLD_AFTER = '7d';
 
-/**
- * Default cold threshold in milliseconds (7 days).
- */
-export const DEFAULT_COLD_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
+export const DEFAULT_COLD_AFTER_MS = MILLISECONDS_PER_WEEK;
 
-/**
- * Provider identity and mode considered when building a pack plan.
- */
 type PackPlanProvider = {
   readonly id: ProviderId;
   readonly label: string;
   readonly mode: ProviderMode;
 };
 
-/**
- * Inputs describing sessions, providers, and the cold threshold for a plan.
- */
 export type PackPlanRequest = {
   readonly now: Date;
   readonly olderThan: string;
@@ -31,9 +23,6 @@ export type PackPlanRequest = {
   readonly providers: ReadonlyArray<PackPlanProvider>;
 };
 
-/**
- * Per-provider row summarizing scanned, candidate, and byte totals.
- */
 type PackPlanSummary = {
   readonly provider: ProviderId;
   readonly mode: ProviderMode;
@@ -45,22 +34,13 @@ type PackPlanSummary = {
   readonly applySupport: 'backup-only' | 'ready';
 };
 
-/**
- * Complete dry-run pack plan with provider rows and threshold previews.
- */
 export type PackPlan = {
   readonly rows: ReadonlyArray<PackPlanSummary>;
   readonly thresholdPreviews: ReadonlyArray<PackThresholdPreview>;
 };
 
-/**
- * Kind of alternative threshold preview shown as a curiosity tip.
- */
 type PackThresholdPreviewKind = 'broader' | 'max' | 'safer';
 
-/**
- * Aggregate candidate count and byte total for one alternative threshold.
- */
 export type PackThresholdPreview = {
   readonly kind: PackThresholdPreviewKind;
   readonly olderThan: string;
@@ -68,9 +48,6 @@ export type PackThresholdPreview = {
   readonly beforeBytes: number;
 };
 
-/**
- * Sessions and current threshold context used to build curiosity previews.
- */
 export type PackThresholdPreviewRequest = {
   readonly now: Date;
   readonly olderThan: string;
@@ -78,24 +55,6 @@ export type PackThresholdPreviewRequest = {
   readonly sessions: ReadonlyArray<DiscoveredSession>;
 };
 
-/**
- * Creates a non-destructive pack plan for cold sessions.
- *
- * @param request - Providers, sessions, and cold threshold.
- * @returns Dry-run pack plan grouped by provider.
- * @example
- * ```ts
- * import { createPackPlan } from './plan.js';
- *
- * const plan = createPackPlan({
- *   now: new Date(),
- *   olderThan: '168h',
- *   olderThanMs: 168 * 60 * 60 * 1000,
- *   sessions,
- *   providers,
- * });
- * ```
- */
 export const createPackPlan = (request: PackPlanRequest): PackPlan => {
   const cutoffTime = request.now.getTime() - request.olderThanMs;
   const packableProviderIds = request.providers
@@ -150,23 +109,6 @@ export const createPackPlan = (request: PackPlanRequest): PackPlan => {
   };
 };
 
-/**
- * Creates aggregate threshold previews for human curiosity tips.
- *
- * @param request - Sessions and current threshold context.
- * @returns Safer, broader, and max preview summaries.
- * @example
- * ```ts
- * import { createPackThresholdPreviews } from './plan.js';
- *
- * const previews = createPackThresholdPreviews({
- *   now: new Date(),
- *   olderThan: '168h',
- *   olderThanMs: 168 * 60 * 60 * 1000,
- *   sessions,
- * });
- * ```
- */
 export const createPackThresholdPreviews = (
   request: PackThresholdPreviewRequest,
 ): ReadonlyArray<PackThresholdPreview> => {
@@ -220,18 +162,6 @@ type Duration = {
   readonly unit: DurationUnit;
 };
 
-/**
- * Parses a cold threshold like `12h`, `7d`, or `2w` into milliseconds.
- *
- * @param duration - Threshold text: a whole number followed by h, d, or w.
- * @returns Milliseconds, or 7 days when the text does not match.
- * @example
- * ```ts
- * import { parseDurationMs } from './plan.js';
- *
- * parseDurationMs('12h');
- * ```
- */
 export const parseDurationMs = (duration: string): number => {
   const parsed = parseDuration(duration);
 
@@ -293,16 +223,18 @@ const halveDuration = (duration: Duration): Duration => {
 
   const isDurationAtMostOneDay = duration.unit === 'd' && duration.value <= 1;
   if (isDurationAtMostOneDay) {
+    const halfDayPreviewHours = 12;
     return {
-      value: 12,
+      value: halfDayPreviewHours,
       unit: 'h',
     };
   }
 
   const isDurationAtMostOneWeek = duration.unit === 'w' && duration.value <= 1;
   if (isDurationAtMostOneWeek) {
+    const weekPreviewDays = 3;
     return {
-      value: 3,
+      value: weekPreviewDays,
       unit: 'd',
     };
   }
@@ -316,15 +248,15 @@ const halveDuration = (duration: Duration): Duration => {
 const convertDurationToMilliseconds = (duration: Duration): number => {
   const isDurationInHours = duration.unit === 'h';
   if (isDurationInHours) {
-    return duration.value * 60 * 60 * 1000;
+    return duration.value * MILLISECONDS_PER_HOUR;
   }
 
   const isDurationUnitW = duration.unit === 'w';
   if (isDurationUnitW) {
-    return duration.value * 7 * 24 * 60 * 60 * 1000;
+    return duration.value * MILLISECONDS_PER_WEEK;
   }
 
-  return duration.value * 24 * 60 * 60 * 1000;
+  return duration.value * MILLISECONDS_PER_DAY;
 };
 
 const describeDuration = (duration: Duration): string => `${duration.value}${duration.unit}`;

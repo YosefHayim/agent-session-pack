@@ -4,9 +4,6 @@ import type { ProviderId } from '@/session-model.js';
 import { type RestoreExit, restoreManifest } from './manifest.js';
 import { findSessionSelector, type SelectorMode } from './session-selector.js';
 
-/**
- * Machine-readable status for a single-session ensure-restored or restore attempt.
- */
 type EnsureRestoredStatus =
   | 'already-present'
   | 'ambiguous-selector'
@@ -16,18 +13,12 @@ type EnsureRestoredStatus =
   | 'missing-archive'
   | 'restored';
 
-/**
- * One session an ambiguous selector could mean.
- */
 type SelectorCandidate = {
   readonly provider: ProviderId;
   readonly sessionId: string;
   readonly title: string;
 };
 
-/**
- * Stable report for agent JSON output when ensuring one archived session is live.
- */
 export type EnsureRestoredReport = {
   readonly command: 'ensure-restored' | 'restore';
   readonly status: EnsureRestoredStatus;
@@ -40,9 +31,6 @@ export type EnsureRestoredReport = {
   readonly candidates?: ReadonlyArray<SelectorCandidate>;
 };
 
-/**
- * Inputs for restoring one archived session from the vault.
- */
 export type EnsureSessionRestoredRequest = {
   readonly command: 'ensure-restored' | 'restore';
   readonly vaultPath: string;
@@ -51,16 +39,10 @@ export type EnsureSessionRestoredRequest = {
   readonly provider: ProviderId | undefined;
   readonly compression: CompressionAdapter;
   readonly restoreOnLaunchEnabled: boolean;
-  /** When true, refuse to restore unless restore-on-launch is enabled in setup config. */
   readonly requireLifecycleEnabled: boolean;
   readonly backupOnlyProviders?: ReadonlyArray<ProviderId>;
 };
 
-/**
- * Restores one archived session when missing, or reports already-present / conflict.
- *
- * Manual `restore` always applies. `ensure-restored` only applies when lifecycle is enabled.
- */
 export const ensureSessionRestored = async (
   request: EnsureSessionRestoredRequest,
 ): Promise<EnsureRestoredReport> => {

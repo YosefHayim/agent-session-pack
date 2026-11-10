@@ -12,20 +12,11 @@ const WRAPPER_PROVIDERS: ReadonlyArray<string> = [
   'kiro',
 ];
 
-/**
- * Inputs required to install lifecycle provider wrappers.
- */
 export type InstallLifecycleWrappersRequest = {
   readonly vaultPath: string;
   readonly cliEntrypoint: string;
 };
 
-/**
- * Installs thin provider wrappers that preflight-restore packed sessions before exec.
- *
- * @param request - Install fields for vault path and CLI entrypoint.
- * @returns The wrappers bin directory path.
- */
 export const installLifecycleWrappers = async (
   request: InstallLifecycleWrappersRequest,
 ): Promise<string> => {
@@ -53,11 +44,6 @@ const writeProviderWrappers = async (binPath: string, cliEntrypoint: string): Pr
   }
 };
 
-/**
- * Removes installed provider launch wrappers from the vault bin directory.
- *
- * @param vaultPath - Vault root path.
- */
 export const uninstallLifecycleWrappers = async (vaultPath: string): Promise<void> => {
   const binPath = createWrappersBinPath(vaultPath);
 

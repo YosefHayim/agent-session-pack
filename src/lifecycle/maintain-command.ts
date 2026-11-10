@@ -11,9 +11,6 @@ import { packProviderSessions } from '@/pack/sessions.js';
 import { allProviders } from '@/providers/all-providers.js';
 import { isRestoreOnLaunchEnabled, readSetupSettings } from '@/setup/config.js';
 
-/**
- * Citty command that re-packs cold sessions so storage stays low over time.
- */
 export const maintainCommand = defineCommand({
   meta: {
     name: 'maintain',
@@ -56,9 +53,6 @@ export const maintainCommand = defineCommand({
   },
 });
 
-/**
- * Decoded arguments for maintain.
- */
 type MaintainFlags = {
   readonly apply: boolean | undefined;
   readonly confirmed?: boolean | undefined;
@@ -115,8 +109,8 @@ const runMaintainCommand = async (flags: MaintainFlags): Promise<CommandExit> =>
     compression: flags.compression ?? createZstdCompression(),
   });
 
-  const isStructuredRequested = flags.json === true;
-  if (isStructuredRequested) {
+  const isMachineOutputRequested = flags.json === true;
+  if (isMachineOutputRequested) {
     process.stdout.write(
       `${JSON.stringify(
         {

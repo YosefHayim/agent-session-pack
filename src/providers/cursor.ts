@@ -1,9 +1,6 @@
 import { join } from 'node:path';
 import type { ProviderAdapter } from '@/session-model.js';
 
-/**
- * Backup-only provider adapter for Cursor sessions.
- */
 export const cursorProvider: ProviderAdapter = {
   id: 'cursor',
   label: 'Cursor',

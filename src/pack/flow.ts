@@ -10,19 +10,6 @@ import type { ProviderInventoryReport } from '@/scan/provider-inventory.js';
 import { runPackCommand } from './command.js';
 import { DEFAULT_COLD_AFTER, DEFAULT_COLD_AFTER_MS } from './plan.js';
 
-/**
- * Runs the interactive pack flow: inventory, dry-run preview, then confirmed apply.
- *
- * @param request - Interactive request plus resolved prompt adapter.
- * @returns Promise that resolves after pack preview or apply completes.
- * @example
- * ```ts
- * import { runPackFlow } from './flow.js';
- * import { clackPromptAdapter } from '@/prompt-adapter.js';
- *
- * await runPackFlow({ prompts: clackPromptAdapter });
- * ```
- */
 export const runPackFlow = async (
   request: InteractiveCliRequest & { readonly prompts: PromptAdapter },
 ): Promise<CommandExit> => {

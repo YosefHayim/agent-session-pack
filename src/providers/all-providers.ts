@@ -9,9 +9,6 @@ import { kimiProvider } from './kimi.js';
 import { kiroProvider } from './kiro.js';
 import { opencodeProvider } from './opencode.js';
 
-/**
- * All registered provider adapters in discovery order.
- */
 export const allProviders: ReadonlyArray<ProviderAdapter> = [
   codexProvider,
   claudeCodeProvider,

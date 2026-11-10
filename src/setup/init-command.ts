@@ -2,9 +2,6 @@ import { intro, outro } from '@clack/prompts';
 import { defineCommand } from 'citty';
 import { runFirstSetup } from './first-setup-flow.js';
 
-/**
- * Citty command that shows default vault policy and dry-run setup.
- */
 export const initCommand = defineCommand({
   meta: {
     name: 'init',
@@ -21,8 +18,8 @@ export const initCommand = defineCommand({
     },
   },
   run: async ({ args }) => {
-    const isStructuredRequested = args.json === true;
-    if (isStructuredRequested) {
+    const isMachineOutputRequested = args.json === true;
+    if (isMachineOutputRequested) {
       process.stdout.write(
         `${JSON.stringify({
           vaultPath: '~/.agent-session-pack',

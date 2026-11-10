@@ -77,7 +77,7 @@ const RECOMMENDED_FLOW: ReadonlyArray<AgentGuideStep> = [
   },
 ];
 
-const AGENT_GUIDE: AgentGuide = {
+const agentGuide: AgentGuide = {
   name: 'agent-session-pack',
   mode: 'agent-guide',
   summary: 'Agent-safe command map for local AI coding-agent session cold storage.',
@@ -116,17 +116,6 @@ const AGENT_GUIDE: AgentGuide = {
   ],
 };
 
-/**
- * Formats a compact terminal guide for coding agents and script authors.
- *
- * @returns Human-readable agent command guide.
- * @example
- * ```ts
- * import { createHumanAgentGuide } from './agent-guide-output.js';
- *
- * createHumanAgentGuide();
- * ```
- */
 export const createHumanAgentGuide = (): string =>
   [
     'Agent-first quickstart',
@@ -159,15 +148,4 @@ export const createHumanAgentGuide = (): string =>
     'agent-session-pack guide --json',
   ].join('\n');
 
-/**
- * Formats the agent guide as stable JSON.
- *
- * @returns Machine-readable agent command guide.
- * @example
- * ```ts
- * import { createJsonAgentGuide } from './agent-guide-output.js';
- *
- * createJsonAgentGuide();
- * ```
- */
-export const createStructuredAgentGuide = (): string => `${JSON.stringify(AGENT_GUIDE, null, 2)}\n`;
+export const createStructuredAgentGuide = (): string => `${JSON.stringify(agentGuide, null, 2)}\n`;

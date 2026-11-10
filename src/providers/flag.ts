@@ -1,9 +1,6 @@
 import { type ProviderAdapter, type ProviderId, ProviderIdSchema } from '@/session-model.js';
 import { allProviders } from './all-providers.js';
 
-/**
- * Parses an optional `--provider` value into a provider id, or undefined when missing or unknown.
- */
 export const parseOptionalProvider = (provider: string | undefined): ProviderId | undefined => {
   const isProviderMissing = provider == null;
   if (isProviderMissing) {
@@ -21,10 +18,6 @@ export interface ProviderSelection {
   readonly isProviderUnknown: boolean;
 }
 
-/**
- * Resolves the `--provider` flag to provider adapters. An unknown id is written to stderr and flagged;
- * a provider list the caller already has wins over the flag.
- */
 export const selectProviders = (
   provider: string | undefined,
   providersOverride?: ReadonlyArray<ProviderAdapter>,

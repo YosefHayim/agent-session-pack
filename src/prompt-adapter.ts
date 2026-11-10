@@ -11,9 +11,6 @@ import {
   text,
 } from '@clack/prompts';
 
-/**
- * A single selectable option shown by an interactive prompt.
- */
 export type PromptOption<Choice extends string> = {
   readonly value: Choice;
   readonly label: string;
@@ -21,9 +18,6 @@ export type PromptOption<Choice extends string> = {
   readonly disabled?: boolean;
 };
 
-/**
- * Spinner interface used to report long-running interactive work.
- */
 type PromptSpinner = {
   readonly isCancelled: boolean;
   start: (message?: string) => void;
@@ -34,9 +28,6 @@ type PromptSpinner = {
   clear: () => void;
 };
 
-/**
- * Prompt surface that abstracts Clack for testable interactive flows.
- */
 export type PromptAdapter = {
   intro: (title?: string) => void;
   note: (message?: string, title?: string) => void;
@@ -69,9 +60,6 @@ export type PromptAdapter = {
   spinner: () => PromptSpinner;
 };
 
-/**
- * Prompt adapter backed by the Clack prompt library.
- */
 export const clackPromptAdapter: PromptAdapter = {
   cancel,
   confirm: (question) => confirm(question),

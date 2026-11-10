@@ -4,9 +4,6 @@ import { z } from 'zod';
 import { ProviderIdSchema, SessionOriginKindSchema } from '@/session-model.js';
 import { readDirectoryDirents } from './file-system.js';
 
-/**
- * Schema describing the restore manifest recorded for an archived session.
- */
 export const SessionManifestSchema = z.object({
   sessionId: z.string(),
   provider: ProviderIdSchema,
@@ -21,14 +18,8 @@ export const SessionManifestSchema = z.object({
   sourceKind: SessionOriginKindSchema.optional(),
 });
 
-/**
- * Decoded session manifest record used to drive restores.
- */
 export type SessionManifest = z.infer<typeof SessionManifestSchema>;
 
-/**
- * Writes a session manifest as formatted JSON.
- */
 export const writeSessionManifest = async (
   path: string,
   manifest: SessionManifest,
@@ -41,9 +32,6 @@ export const writeSessionManifest = async (
   }
 };
 
-/**
- * Reads and decodes a session manifest.
- */
 export const readSessionManifest = async (path: string): Promise<SessionManifest> => {
   try {
     const manifestString = await readFile(path, 'utf8');
@@ -54,15 +42,9 @@ export const readSessionManifest = async (path: string): Promise<SessionManifest
   }
 };
 
-/**
- * Lists all manifest JSON files below a vault manifest root.
- */
 export const listSessionManifestPaths = (root: string): Promise<ReadonlyArray<string>> =>
   collectManifestPaths(root);
 
-/**
- * Lists every session manifest stored under a vault.
- */
 export const listVaultSessionManifests = async (
   vaultPath: string,
 ): Promise<ReadonlyArray<SessionManifest>> => {

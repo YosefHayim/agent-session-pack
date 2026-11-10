@@ -18,5 +18,6 @@ export const listCommand = defineCommand({
   },
   run: () => {
     process.stdout.write('No indexed sessions yet. Run agent-session-pack scan first.\n');
+    return { exitCode: 0 };
   },
 });

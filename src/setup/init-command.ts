@@ -30,13 +30,13 @@ export const initCommand = defineCommand({
           apply: args.apply === true,
         })}\n`,
       );
-      return;
+      return { exitCode: 0 };
     }
 
     const isInteractiveTerminal = process.stdin.isTTY === true && process.stdout.isTTY === true;
     if (isInteractiveTerminal) {
       await runFirstSetup();
-      return;
+      return { exitCode: 0 };
     }
 
     intro('Agent Session Pack init');
@@ -51,5 +51,6 @@ export const initCommand = defineCommand({
     );
     process.stdout.write('Dry run only. Re-run with --apply to write config.\n');
     outro('No files changed.');
+    return { exitCode: 0 };
   },
 });

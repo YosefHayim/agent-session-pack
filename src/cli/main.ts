@@ -40,6 +40,8 @@ const subCommands: SubCommandsDef = {
   doctor: doctorCommand,
 };
 
+const DEFAULT_SUB_COMMAND_NAME = 'scan';
+
 export const mainCommand = defineCommand({
   meta: {
     name: 'agent-session-pack',
@@ -48,8 +50,22 @@ export const mainCommand = defineCommand({
       'Pack cold local AI coding-agent sessions with byte-exact restore. Run guide for agent-safe commands.',
   },
   subCommands,
-  default: 'scan',
+  default: DEFAULT_SUB_COMMAND_NAME,
 });
+
+// citty 0.2.2 drops a subcommand's run result, so the named subcommand is run here.
+const pickPlainSubCommand = (subCommandName: string): CommandDef => {
+  const subCommandReply = subCommands[subCommandName];
+
+  const isNotPlainCommand =
+    typeof subCommandReply !== 'object' || subCommandReply instanceof Promise;
+
+  if (isNotPlainCommand) {
+    throw new Error(`Subcommand ${subCommandName} is not a command object.`);
+  }
+
+  return subCommandReply;
+};
 
 interface UsageTarget {
   readonly command: CommandDef;
@@ -65,20 +81,31 @@ const pickUsageTarget = (argumentList: string[]): UsageTarget => {
     return { command: mainCommand, parent: undefined };
   }
 
-  const subCommandReply = subCommands[subCommandName];
-
-  const isNotPlainCommand =
-    typeof subCommandReply !== 'object' || subCommandReply instanceof Promise;
-
-  if (isNotPlainCommand) {
-    throw new Error(`Subcommand ${subCommandName} is not a command object.`);
-  }
-
-  return { command: subCommandReply, parent: mainCommand };
+  return { command: pickPlainSubCommand(subCommandName), parent: mainCommand };
 };
 
 const isCommandExit = (candidate: unknown): candidate is CommandExit =>
   typeof candidate === 'object' && candidate !== null && 'exitCode' in candidate;
+
+interface SubCommandInvocation {
+  readonly name: string;
+  readonly rawArgs: string[];
+}
+
+// The first word that is not a flag names the command; with none, the default command runs.
+const readSubCommandInvocation = (argumentList: string[]): SubCommandInvocation => {
+  const firstWordIndex = argumentList.findIndex((arg) => !arg.startsWith('-'));
+  const isThereNoWord = firstWordIndex === -1;
+
+  if (isThereNoWord) {
+    return { name: DEFAULT_SUB_COMMAND_NAME, rawArgs: argumentList };
+  }
+
+  return {
+    name: argumentList[firstWordIndex],
+    rawArgs: argumentList.slice(firstWordIndex + 1),
+  };
+};
 
 const runCli = async (argumentList: string[]): Promise<CommandExit> => {
   const isHelpRequest = argumentList.includes('--help') || argumentList.includes('-h');
@@ -96,7 +123,17 @@ const runCli = async (argumentList: string[]): Promise<CommandExit> => {
     return { exitCode: 0 };
   }
 
-  const commandRun = await runCommand(mainCommand, { rawArgs: argumentList });
+  const subCommandInvocation = readSubCommandInvocation(argumentList);
+  const isUnknownCommand = !Object.hasOwn(subCommands, subCommandInvocation.name);
+
+  if (isUnknownCommand) {
+    // citty raises the usage error (exit 2) for a command name it does not know.
+    await runCommand(mainCommand, { rawArgs: argumentList });
+  }
+
+  const commandRun = await runCommand(pickPlainSubCommand(subCommandInvocation.name), {
+    rawArgs: subCommandInvocation.rawArgs,
+  });
   const commandReport = commandRun.result;
 
   const isNotExitReply = !isCommandExit(commandReport);

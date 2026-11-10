@@ -194,16 +194,18 @@ const createThresholdPreview = (request: {
 };
 
 const parseDuration = (duration: string): Duration | null => {
-  const hit = duration.match(/^(\d+)(h|d|w)$/);
+  const durationParts = duration.match(/^(\d+)(h|d|w)$/);
+  const knownUnits: ReadonlyArray<DurationUnit> = ['h', 'd', 'w'];
+  const unit = knownUnits.find((knownUnit) => knownUnit === durationParts?.[2]);
 
-  const isHitMissing = hit == null;
-  if (isHitMissing) {
+  const isDurationUnreadable = durationParts == null || unit == null;
+  if (isDurationUnreadable) {
     return null;
   }
 
   return {
-    value: Number(hit[1]),
-    unit: hit[2] as DurationUnit,
+    value: Number(durationParts[1]),
+    unit,
   };
 };
 

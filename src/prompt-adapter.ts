@@ -66,11 +66,11 @@ export const clackPromptAdapter: PromptAdapter = {
   intro,
   isCancel,
   multiselect: (question) => {
-    const isInitialFieldsMissing = question.initialValues == null;
+    const hasNoInitialChoices = question.initialValues == null;
     return multiselect({
       ...question,
       options: [...question.options] as never,
-      initialValues: isInitialFieldsMissing ? undefined : ([...question.initialValues] as never),
+      initialValues: hasNoInitialChoices ? undefined : ([...question.initialValues] as never),
     });
   },
   note,

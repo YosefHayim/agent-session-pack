@@ -20,5 +20,7 @@ jobs:
         uses: ./.github/actions/setup
         with:
           registry-url: https://registry.npmjs.org
+      # Node 22 bundles npm 10, which cannot publish with trusted publishing (needs npm 11.5.1+).
+      - run: npm install --global npm@11.21.2
       - run: pnpm build
       - run: npm publish --provenance --access public

@@ -62,12 +62,12 @@ export const uninstallLifecycleWrappers = async (vaultPath: string): Promise<voi
   const binPath = createWrappersBinPath(vaultPath);
 
   try {
-    const entries = await listWrapperEntries(binPath);
+    const names = await listWrapperNames(binPath);
 
-    for (const entry of entries) {
-      const isWrapperEntry = WRAPPER_PROVIDERS.includes(entry);
-      if (isWrapperEntry) {
-        await rm(join(binPath, entry), { force: true });
+    for (const name of names) {
+      const isWrapperName = WRAPPER_PROVIDERS.includes(name);
+      if (isWrapperName) {
+        await rm(join(binPath, name), { force: true });
       }
     }
   } catch (cause) {
@@ -75,7 +75,7 @@ export const uninstallLifecycleWrappers = async (vaultPath: string): Promise<voi
   }
 };
 
-const listWrapperEntries = async (binPath: string): Promise<string[]> => {
+const listWrapperNames = async (binPath: string): Promise<string[]> => {
   try {
     return await readdir(binPath);
   } catch (cause) {

@@ -10,17 +10,20 @@ const createWorkspace = (): Promise<string> =>
 describe('zstdCompression createZstdCompression', () => {
   it('compresses and decompresses a file with the system zstd binary', async () => {
     const workspace = await createWorkspace();
-    const sourcePath = join(workspace, 'session.jsonl');
+    const originPath = join(workspace, 'session.jsonl');
     const archivePath = join(workspace, 'session.jsonl.zst');
     const restoredPath = join(workspace, 'session.restored.jsonl');
-    const content = ['{"type":"user","text":"zstd roundtrip"}', '{"type":"assistant","text":"ok"}']
+    const sessionJsonl = [
+      '{"type":"user","text":"zstd roundtrip"}',
+      '{"type":"assistant","text":"ok"}',
+    ]
       .join('\n')
       .concat('\n');
-    await writeFile(sourcePath, content);
+    await writeFile(originPath, sessionJsonl);
 
     const compression = createZstdCompression();
     await compression.compress({
-      sourcePath,
+      sourcePath: originPath,
       archivePath,
     });
     await compression.decompress({
@@ -28,10 +31,10 @@ describe('zstdCompression createZstdCompression', () => {
       restoredPath,
     });
 
-    await expect(readFile(restoredPath, 'utf8')).resolves.toBe(content);
+    await expect(readFile(restoredPath, 'utf8')).resolves.toBe(sessionJsonl);
     const archiveBytes = Buffer.byteLength(await readFile(archivePath));
     expect(archiveBytes).toBeGreaterThan(0);
-    expect(archiveBytes).toBeLessThan(Buffer.byteLength(content, 'utf8') + 128);
+    expect(archiveBytes).toBeLessThan(Buffer.byteLength(sessionJsonl, 'utf8') + 128);
   });
 
   it('throws when compressing a missing source', async () => {

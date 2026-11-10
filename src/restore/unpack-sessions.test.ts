@@ -22,10 +22,10 @@ describe('unpackProviderSessions', () => {
     const originalPath = join(home, '.codex', 'sessions', 'cold.jsonl');
     const archivePath = join(vaultPath, 'archives', 'codex', 'cold.jsonl.zst');
     const manifestPath = join(vaultPath, 'manifests', 'codex', 'cold.json');
-    const content = '{"type":"user","text":"archived"}\n';
+    const sessionJsonl = '{"type":"user","text":"archived"}\n';
 
     await mkdir(join(vaultPath, 'archives', 'codex'), { recursive: true });
-    await writeFile(archivePath, content);
+    await writeFile(archivePath, sessionJsonl);
     await writeSessionManifest(manifestPath, {
       sessionId: 'cold',
       provider: 'codex',
@@ -34,8 +34,8 @@ describe('unpackProviderSessions', () => {
       originalPath,
       archivePath,
       sourceSha256: 'deadbeef',
-      sourceBytes: Buffer.byteLength(content, 'utf8'),
-      archiveBytes: Buffer.byteLength(content, 'utf8'),
+      sourceBytes: Buffer.byteLength(sessionJsonl, 'utf8'),
+      archiveBytes: Buffer.byteLength(sessionJsonl, 'utf8'),
       archivedAt: '2026-07-01T00:00:00.000Z',
       sourceKind: 'file',
     });
@@ -71,8 +71,8 @@ describe('unpackProviderSessions', () => {
           status: 'dry-run',
           archivedSessions: 1,
           restoredSessions: 0,
-          beforeBytes: Buffer.byteLength(content, 'utf8'),
-          archiveBytes: Buffer.byteLength(content, 'utf8'),
+          beforeBytes: Buffer.byteLength(sessionJsonl, 'utf8'),
+          archiveBytes: Buffer.byteLength(sessionJsonl, 'utf8'),
           touchedOriginals: false,
           reason: '--apply required to restore originals',
         }),
@@ -97,12 +97,12 @@ describe('unpackProviderSessions', () => {
     const vaultPath = join(home, '.agent-session-pack-test');
     const now = new Date('2026-07-06T12:00:00.000Z');
     const coldModifiedAt = new Date('2026-06-01T12:00:00.000Z');
-    const content = '{"type":"user","text":"apply pack unpack"}\n';
+    const sessionJsonl = '{"type":"user","text":"apply pack unpack"}\n';
     const session = await writeColdSession({
       home,
       relativeDir: join('.codex', 'sessions', '2026', '06', '01'),
       fileName: 'apply-session.jsonl',
-      content,
+      content: sessionJsonl,
       modifiedAt: coldModifiedAt,
     });
 
@@ -113,7 +113,7 @@ describe('unpackProviderSessions', () => {
       slug: 'apply-pack-unpack',
       originalPath: session.path,
       modifiedAt: coldModifiedAt,
-      sizeBytes: Buffer.byteLength(content, 'utf8'),
+      sizeBytes: Buffer.byteLength(sessionJsonl, 'utf8'),
       sourceKind: 'file',
     };
 
@@ -166,7 +166,7 @@ describe('unpackProviderSessions', () => {
         touchedOriginals: true,
       }),
     ]);
-    await expect(readFile(session.path, 'utf8')).resolves.toBe(content);
+    await expect(readFile(session.path, 'utf8')).resolves.toBe(sessionJsonl);
 
     const alreadyPresent = await unpackProviderSessions({
       vaultPath,

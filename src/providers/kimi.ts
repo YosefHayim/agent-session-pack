@@ -1,6 +1,6 @@
 import { basename, join } from 'node:path';
 import type { ProviderAdapter } from '@/session-model.js';
-import { discoverDirectoryProviderSessions, readJsonFile } from './directory-sessions.js';
+import { discoverDirectoryProviderSessions, readDocumentFile } from './directory-sessions.js';
 
 /**
  * Archive provider adapter for Kimi Code multi-file sessions.
@@ -26,17 +26,18 @@ export const kimiProvider: ProviderAdapter = {
 };
 
 const readKimiSessionTitle = async (directory: string): Promise<string> => {
-  const state = await readJsonFile(join(directory, 'state.json'));
+  const kimiStateDocument = await readDocumentFile(join(directory, 'state.json'));
 
-  const isStateMissing = typeof state !== 'object' || state === null;
-  if (isStateMissing) {
+  const isKimiStateDocumentMissing =
+    typeof kimiStateDocument !== 'object' || kimiStateDocument === null;
+  if (isKimiStateDocumentMissing) {
     return basename(directory);
   }
 
-  const title = (state as { readonly title?: unknown }).title;
+  const title = (kimiStateDocument as { readonly title?: unknown }).title;
 
-  const hasTitleText = typeof title === 'string' && title.trim().length > 0;
-  if (hasTitleText) {
+  const hasTitleString = typeof title === 'string' && title.trim().length > 0;
+  if (hasTitleString) {
     return title.trim();
   }
 

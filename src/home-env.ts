@@ -33,7 +33,7 @@ export const HOME_NOT_SET_CANCEL_MESSAGE =
  * const home = requireHome(args.home);
  * ```
  */
-export const requireHome = (homeOverride?: string): string | undefined => {
+export const requireHome = (homeOverride?: string): string | null => {
   const home = homeOverride ?? process.env.HOME;
 
   const isHomeMissing = home == null;

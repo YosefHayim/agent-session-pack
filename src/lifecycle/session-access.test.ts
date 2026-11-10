@@ -6,7 +6,7 @@ import {
   createAccessLogPath,
   extractSessionIdsFromArgv,
   isSessionAccessedSince,
-  recordSessionAccess,
+  saveSessionAccess,
 } from './session-access.js';
 
 describe('sessionAccess', () => {
@@ -24,7 +24,7 @@ describe('sessionAccess', () => {
     const vaultPath = await mkdtemp(join(tmpdir(), 'asp-access-'));
     const now = new Date('2026-07-07T12:00:00.000Z');
 
-    await recordSessionAccess({
+    await saveSessionAccess({
       vaultPath,
       provider: 'codex',
       sessionId: 'cold',

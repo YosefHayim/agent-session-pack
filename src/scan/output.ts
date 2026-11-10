@@ -21,13 +21,13 @@ export const createHumanScan = (report: ScanReport): string => {
     return 'No sessions found.';
   }
 
-  const sessionRows = report.sessions.map(createSessionRow);
+  const sessionLines = report.sessions.map(createSessionLine);
 
   return [
     'Found sessions',
     '',
     'Provider   Date         Size       Status   Name   Path',
-    ...sessionRows,
+    ...sessionLines,
   ].join('\n');
 };
 
@@ -40,7 +40,7 @@ export const writeHumanScan = (report: ScanReport): void => {
   console.log(createHumanScan(report));
 };
 
-const createSessionRow = (session: DiscoveredSession): string => {
+const createSessionLine = (session: DiscoveredSession): string => {
   const provider = session.provider.padEnd(10);
   const date = session.modifiedAt.toISOString().slice(0, 10);
   const size = `${session.sizeBytes} B`.padEnd(10);
@@ -70,13 +70,13 @@ const createTitlePreview = (title: string): string => {
   return `${singleLineTitle.slice(0, MAX_TITLE_PREVIEW_LENGTH - 3)}...`;
 };
 
-const createJsonScan = (report: ScanReport): string => `${JSON.stringify(report, null, 2)}\n`;
+const createStructuredScan = (report: ScanReport): string => `${JSON.stringify(report, null, 2)}\n`;
 
 /**
  * Writes scan output for agents.
  *
  * @param report - Scan report to render.
  */
-export const writeJsonScan = (report: ScanReport): void => {
-  process.stdout.write(createJsonScan(report));
+export const writeStructuredScan = (report: ScanReport): void => {
+  process.stdout.write(createStructuredScan(report));
 };

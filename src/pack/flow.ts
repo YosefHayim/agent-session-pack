@@ -1,6 +1,6 @@
 import { createDefaultVaultPath } from '@/archive/vault-paths.js';
 import { describeBytes } from '@/byte-format.js';
-import type { CommandOutcome } from '@/command-outcome.js';
+import type { CommandExit } from '@/command-outcome.js';
 import { HOME_NOT_SET_CANCEL_MESSAGE } from '@/home-env.js';
 import type { InteractiveCliRequest } from '@/interactive-cli-request.js';
 import type { PromptAdapter } from '@/prompt-adapter.js';
@@ -25,7 +25,7 @@ import { DEFAULT_COLD_AFTER, DEFAULT_COLD_AFTER_MS } from './plan.js';
  */
 export const runPackFlow = async (
   request: InteractiveCliRequest & { readonly prompts: PromptAdapter },
-): Promise<CommandOutcome> => {
+): Promise<CommandExit> => {
   const home = request.home ?? process.env.HOME;
 
   const isHomeMissing = home == null;
@@ -57,7 +57,7 @@ export const runPackFlow = async (
     return { exitCode: 0 };
   }
 
-  const previewOutcome = await runPackCommand({
+  const previewExit = await runPackCommand({
     allProviders: true,
     apply: false,
     dryRun: true,
@@ -76,10 +76,10 @@ export const runPackFlow = async (
   const isApplyStopped = request.prompts.isCancel(shouldApply) || shouldApply !== true;
   if (isApplyStopped) {
     request.prompts.outro('No files changed.');
-    return previewOutcome;
+    return previewExit;
   }
 
-  const applyOutcome = await runPackCommand({
+  const applyExit = await runPackCommand({
     allProviders: true,
     apply: true,
     dryRun: false,
@@ -89,21 +89,21 @@ export const runPackFlow = async (
     yes: true,
     confirmed: true,
   });
-  return applyOutcome;
+  return applyExit;
 };
 
 const createPackApplyQuestion = (inventory: ProviderInventoryReport, home: string): string => {
   const candidateSessions = inventory.rows.reduce(
-    (totalSessions, inventoryRow) => totalSessions + inventoryRow.coldSessions,
+    (totalSessions, inventorySummary) => totalSessions + inventorySummary.coldSessions,
     0,
   );
   const candidateBytes = inventory.rows.reduce(
-    (totalBytes, inventoryRow) => totalBytes + inventoryRow.candidateBytes,
+    (totalBytes, inventorySummary) => totalBytes + inventorySummary.candidateBytes,
     0,
   );
   const providerNames = inventory.rows
-    .filter((inventoryRow) => inventoryRow.coldSessions > 0)
-    .map((inventoryRow) => inventoryRow.provider)
+    .filter((inventorySummary) => inventorySummary.coldSessions > 0)
+    .map((inventorySummary) => inventorySummary.provider)
     .join(', ');
 
   return [

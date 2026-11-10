@@ -29,7 +29,7 @@ const COMMAND_FLAG_ALIASES: Readonly<Record<string, string>> = {
  * ```
  */
 export const rewriteCommandFlagAliases = (argv: ReadonlyArray<string>): ReadonlyArray<string> => {
-  const [runtimePath, entrypointPath, firstArg, ...remainingArgs] = argv;
+  const [runtimePath, entrypointPath, firstArg, ...remainingArgumentList] = argv;
 
   const isInvocationIncomplete = runtimePath == null || entrypointPath == null || firstArg == null;
   if (isInvocationIncomplete) {
@@ -38,7 +38,7 @@ export const rewriteCommandFlagAliases = (argv: ReadonlyArray<string>): Readonly
 
   const isFirstArgEmpty = firstArg === '--';
   if (isFirstArgEmpty) {
-    return [runtimePath, entrypointPath, ...remainingArgs];
+    return [runtimePath, entrypointPath, ...remainingArgumentList];
   }
 
   const aliasedCommand = COMMAND_FLAG_ALIASES[firstArg];
@@ -48,5 +48,5 @@ export const rewriteCommandFlagAliases = (argv: ReadonlyArray<string>): Readonly
     return argv;
   }
 
-  return [runtimePath, entrypointPath, aliasedCommand, ...remainingArgs];
+  return [runtimePath, entrypointPath, aliasedCommand, ...remainingArgumentList];
 };

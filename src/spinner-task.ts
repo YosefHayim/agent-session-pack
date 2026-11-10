@@ -3,11 +3,11 @@ import type { PromptAdapter } from './prompt-adapter.js';
 /**
  * Inputs for running an async task under a TTY spinner.
  */
-export type SpinnerTaskRequest<Value> = {
+export type SpinnerTaskRequest<Produced> = {
   readonly prompts: PromptAdapter;
   readonly startMessage: string;
   readonly stopMessage: string;
-  readonly task: () => Promise<Value>;
+  readonly task: () => Promise<Produced>;
 };
 
 /**
@@ -28,14 +28,16 @@ export type SpinnerTaskRequest<Value> = {
  * });
  * ```
  */
-export const runWithSpinner = async <Value>(request: SpinnerTaskRequest<Value>): Promise<Value> => {
+export const runWithSpinner = async <Produced>(
+  request: SpinnerTaskRequest<Produced>,
+): Promise<Produced> => {
   const scanSpinner = request.prompts.spinner();
   scanSpinner.start(request.startMessage);
 
   try {
-    const value = await request.task();
+    const produced = await request.task();
     scanSpinner.stop(request.stopMessage);
-    return value;
+    return produced;
   } catch (cause) {
     scanSpinner.error('Operation failed.');
     throw cause;

@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { copyCompression } from '@/archive/fixtures.js';
 import { writeSessionManifest } from '@/archive/manifest-store.js';
-import { writeSetupConfig } from '@/setup/config.js';
+import { writeSetupSettings } from '@/setup/config.js';
 import { runPreflightCommand } from './preflight-command.js';
 
 describe('preflight command', () => {
@@ -29,11 +29,11 @@ describe('preflight command', () => {
     const vaultPath = join(home, '.agent-session-pack');
     const originalPath = join(home, '.codex', 'sessions', 'cold.jsonl');
     const archivePath = join(vaultPath, 'archives', 'codex', 'cold.jsonl.zst');
-    const content = '{"type":"user","text":"preflight"}\n';
-    const sourceSha256 = createHash('sha256').update(content).digest('hex');
+    const sessionJsonl = '{"type":"user","text":"preflight"}\n';
+    const originSha256 = createHash('sha256').update(sessionJsonl).digest('hex');
 
     await mkdir(join(vaultPath, 'archives', 'codex'), { recursive: true });
-    await writeFile(archivePath, content);
+    await writeFile(archivePath, sessionJsonl);
     await writeSessionManifest(join(vaultPath, 'manifests', 'codex', 'cold.json'), {
       sessionId: 'cold',
       provider: 'codex',
@@ -41,13 +41,13 @@ describe('preflight command', () => {
       slug: 'preflight',
       originalPath,
       archivePath,
-      sourceSha256,
-      sourceBytes: Buffer.byteLength(content, 'utf8'),
-      archiveBytes: Buffer.byteLength(content, 'utf8'),
+      sourceSha256: originSha256,
+      sourceBytes: Buffer.byteLength(sessionJsonl, 'utf8'),
+      archiveBytes: Buffer.byteLength(sessionJsonl, 'utf8'),
       archivedAt: '2026-07-01T00:00:00.000Z',
       sourceKind: 'file',
     });
-    await writeSetupConfig({
+    await writeSetupSettings({
       home,
       config: {
         version: 1,
@@ -75,7 +75,7 @@ describe('preflight command', () => {
       restoreOnLaunchEnabled: true,
       sessionIds: ['cold'],
     });
-    await expect(readFile(originalPath, 'utf8')).resolves.toBe(content);
+    await expect(readFile(originalPath, 'utf8')).resolves.toBe(sessionJsonl);
     await rm(home, { recursive: true, force: true });
   });
 });

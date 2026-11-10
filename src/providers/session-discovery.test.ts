@@ -74,27 +74,27 @@ describe('sessionDiscovery', () => {
     await writeFile(join(sessionPath, 'summary.json'), '{"title":"dir"}\n');
     await writeFile(join(sessionPath, 'nested', 'updates.jsonl'), '{"type":"user","text":"hi"}\n');
 
-    const entry = await measureDirectorySession(sessionPath);
+    const measuredSession = await measureDirectorySession(sessionPath);
 
-    expect(entry.path).toBe(sessionPath);
-    expect(entry.sizeBytes).toBeGreaterThan(0);
-    expect(entry.modifiedAt).toBeInstanceOf(Date);
+    expect(measuredSession.path).toBe(sessionPath);
+    expect(measuredSession.sizeBytes).toBeGreaterThan(0);
+    expect(measuredSession.modifiedAt).toBeInstanceOf(Date);
   });
 
   it('reads titles from user text, message content, and falls back to basename', async () => {
     const workspace = await createWorkspace();
-    const textPath = join(workspace, 'text-title.jsonl');
+    const titleJsonlPath = join(workspace, 'text-title.jsonl');
     const messagePath = join(workspace, 'message-title.jsonl');
     const fallbackPath = join(workspace, 'fallback-title.jsonl');
 
     await writeFile(
-      textPath,
+      titleJsonlPath,
       '{"type":"assistant","text":"no"}\n{"type":"user","text":"Plain text title"}\n',
     );
     await writeFile(messagePath, '{"type":"user","message":{"content":"Message content title"}}\n');
     await writeFile(fallbackPath, '{"type":"assistant","text":"only assistant"}\n');
 
-    await expect(readSessionTitle(textPath)).resolves.toBe('Plain text title');
+    await expect(readSessionTitle(titleJsonlPath)).resolves.toBe('Plain text title');
     await expect(readSessionTitle(messagePath)).resolves.toBe('Message content title');
     await expect(readSessionTitle(fallbackPath)).resolves.toBe('fallback-title');
   });

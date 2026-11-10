@@ -9,18 +9,18 @@ import type {
   ProviderAdapter,
   ProviderId,
   ProviderMode,
-  SessionSourceKind,
+  SessionOriginKind,
 } from '@/session-model.js';
 import { selectNewestSessionWithinSize } from './sample.js';
 
-const MAX_ARCHIVE_EVIDENCE_SOURCE_BYTES = 25 * 1024 * 1024;
-const MAX_BACKUP_EVIDENCE_SOURCE_BYTES = 128 * 1024 * 1024;
+const MAX_ARCHIVE_EVIDENCE_ORIGIN_BYTES = 25 * 1024 * 1024;
+const MAX_BACKUP_EVIDENCE_ORIGIN_BYTES = 128 * 1024 * 1024;
 const MAX_TITLE_PREVIEW_LENGTH = 96;
 
 /**
  * Describes discovered sessions and copied proof samples for one provider.
  */
-export interface LocalEvidenceEntry {
+export interface ProviderEvidence {
   readonly provider: ProviderId;
   /** Sessions discovered in the provider store before proof sampling. */
   readonly foundSessions: number;
@@ -41,7 +41,7 @@ export interface LocalEvidenceEntry {
   readonly fixtureSha256?: string;
   readonly restoredSha256?: string;
   readonly maxEvidenceSourceBytes?: number;
-  readonly sourceKind?: SessionSourceKind;
+  readonly sourceKind?: SessionOriginKind;
 }
 
 /**
@@ -51,7 +51,7 @@ export interface LocalEvidenceReport {
   /** Declares that byte measurements describe copied samples rather than whole stores. */
   readonly scope: 'sampled-copy-proof';
   readonly workRoot: string;
-  readonly evidence: ReadonlyArray<LocalEvidenceEntry>;
+  readonly evidence: ReadonlyArray<ProviderEvidence>;
 }
 
 /**
@@ -70,43 +70,43 @@ export const runLocalEvidence = async (
   request: LocalEvidenceRequest,
 ): Promise<LocalEvidenceReport> => {
   const compression = createZstdCompression();
-  const evidence: LocalEvidenceEntry[] = [];
+  const evidence: ProviderEvidence[] = [];
 
   for (const provider of request.providers) {
     const roots = provider.defaultRoots(request.home);
     const sessions = await discoverProviderSessions(provider, roots);
     const isProviderModeBackupOnly = provider.mode === 'backup-only';
-    const maxEvidenceSourceBytes = isProviderModeBackupOnly
-      ? MAX_BACKUP_EVIDENCE_SOURCE_BYTES
-      : MAX_ARCHIVE_EVIDENCE_SOURCE_BYTES;
-    const selected = selectNewestSessionWithinSize(sessions, maxEvidenceSourceBytes);
+    const maxEvidenceOriginBytes = isProviderModeBackupOnly
+      ? MAX_BACKUP_EVIDENCE_ORIGIN_BYTES
+      : MAX_ARCHIVE_EVIDENCE_ORIGIN_BYTES;
+    const selected = selectNewestSessionWithinSize(sessions, maxEvidenceOriginBytes);
 
     const isSelectedMissing = selected == null;
     if (isSelectedMissing) {
       continue;
     }
 
-    const isSourceTooLarge = selected.sizeBytes > maxEvidenceSourceBytes;
-    if (isSourceTooLarge) {
+    const isOriginTooLarge = selected.sizeBytes > maxEvidenceOriginBytes;
+    if (isOriginTooLarge) {
       evidence.push({
         provider: provider.id,
         foundSessions: sessions.length,
         sampledSources: 0,
         mode: provider.mode,
         originalTouched: false,
-        maxEvidenceSourceBytes,
+        maxEvidenceSourceBytes: maxEvidenceOriginBytes,
       });
       continue;
     }
 
-    const sourceKind = selected.sourceKind ?? 'file';
+    const originKind = selected.sourceKind ?? 'file';
     const fileName = basename(selected.originalPath);
     const fixtureDir = join(request.workRoot, provider.id);
     const fixturePath = join(fixtureDir, fileName);
-    const isSourceDirectory = sourceKind === 'directory';
+    const isOriginDirectory = originKind === 'directory';
     const archivePath = join(
       fixtureDir,
-      isSourceDirectory ? `${fileName}.tar.zst` : `${fileName}.zst`,
+      isOriginDirectory ? `${fileName}.tar.zst` : `${fileName}.zst`,
     );
     const restoredPath = join(fixtureDir, `restored-${fileName}`);
 
@@ -115,7 +115,7 @@ export const runLocalEvidence = async (
     await rm(archivePath, { force: true, recursive: true });
     await rm(restoredPath, { force: true, recursive: true });
     await cp(selected.originalPath, fixturePath, {
-      recursive: sourceKind === 'directory',
+      recursive: originKind === 'directory',
     });
 
     const verified = await writeVerifiedArchive({
@@ -125,16 +125,16 @@ export const runLocalEvidence = async (
       restoredPath,
       apply: false,
       compression,
-      sourceKind,
+      sourceKind: originKind,
     });
-    const originalSha256 = await readSha256Path(selected.originalPath, sourceKind);
+    const originalSha256 = await readSha256Path(selected.originalPath, originKind);
 
     evidence.push({
       provider: provider.id,
       foundSessions: sessions.length,
       sampledSources: 1,
       mode: provider.mode,
-      sourceKind,
+      sourceKind: originKind,
       titlePreview: createTitlePreview(selected.title),
       originalPath: selected.originalPath,
       fixturePath,
@@ -149,7 +149,7 @@ export const runLocalEvidence = async (
       originalTouched: false,
       sourceBytes: verified.sourceBytes,
       archiveBytes: verified.archiveBytes,
-      maxEvidenceSourceBytes,
+      maxEvidenceSourceBytes: maxEvidenceOriginBytes,
       savedPercent: Number((100 - (verified.archiveBytes / verified.sourceBytes) * 100).toFixed(1)),
     });
   }

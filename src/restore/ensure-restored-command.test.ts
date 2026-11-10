@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { copyCompression } from '@/archive/fixtures.js';
 import { writeSessionManifest } from '@/archive/manifest-store.js';
-import { writeSetupConfig } from '@/setup/config.js';
+import { writeSetupSettings } from '@/setup/config.js';
 import { runEnsureRestoredCommand } from './ensure-restored-command.js';
 
 describe('ensure-restored command', () => {
@@ -33,7 +33,7 @@ describe('ensure-restored command', () => {
     const home = await mkdtemp(join(tmpdir(), 'asp-ensure-disabled-'));
     const vaultPath = join(home, '.agent-session-pack');
 
-    await writeSetupConfig({
+    await writeSetupSettings({
       home,
       config: {
         version: 1,
@@ -46,7 +46,7 @@ describe('ensure-restored command', () => {
       },
     });
 
-    const commandOutcome = await runEnsureRestoredCommand({
+    const commandExit = await runEnsureRestoredCommand({
       home,
       vaultPath,
       provider: 'codex',
@@ -55,7 +55,7 @@ describe('ensure-restored command', () => {
       compression: copyCompression,
     });
 
-    expect(commandOutcome.exitCode).toBe(1);
+    expect(commandExit.exitCode).toBe(1);
     expect(JSON.parse(stdoutWrites.join(''))).toMatchObject({
       command: 'ensure-restored',
       status: 'lifecycle-disabled',
@@ -69,11 +69,11 @@ describe('ensure-restored command', () => {
     const vaultPath = join(home, '.agent-session-pack');
     const originalPath = join(home, '.codex', 'sessions', 'cold.jsonl');
     const archivePath = join(vaultPath, 'archives', 'codex', 'cold.jsonl.zst');
-    const content = '{"type":"user","text":"ensure"}\n';
-    const sourceSha256 = createHash('sha256').update(content).digest('hex');
+    const sessionJsonl = '{"type":"user","text":"ensure"}\n';
+    const originSha256 = createHash('sha256').update(sessionJsonl).digest('hex');
 
     await mkdir(join(vaultPath, 'archives', 'codex'), { recursive: true });
-    await writeFile(archivePath, content);
+    await writeFile(archivePath, sessionJsonl);
     await writeSessionManifest(join(vaultPath, 'manifests', 'codex', 'cold.json'), {
       sessionId: 'cold',
       provider: 'codex',
@@ -81,13 +81,13 @@ describe('ensure-restored command', () => {
       slug: 'ensure',
       originalPath,
       archivePath,
-      sourceSha256,
-      sourceBytes: Buffer.byteLength(content, 'utf8'),
-      archiveBytes: Buffer.byteLength(content, 'utf8'),
+      sourceSha256: originSha256,
+      sourceBytes: Buffer.byteLength(sessionJsonl, 'utf8'),
+      archiveBytes: Buffer.byteLength(sessionJsonl, 'utf8'),
       archivedAt: '2026-07-01T00:00:00.000Z',
       sourceKind: 'file',
     });
-    await writeSetupConfig({
+    await writeSetupSettings({
       home,
       config: {
         version: 1,
@@ -100,7 +100,7 @@ describe('ensure-restored command', () => {
       },
     });
 
-    const commandOutcome = await runEnsureRestoredCommand({
+    const commandExit = await runEnsureRestoredCommand({
       home,
       vaultPath,
       provider: 'codex',
@@ -109,7 +109,7 @@ describe('ensure-restored command', () => {
       compression: copyCompression,
     });
 
-    expect(commandOutcome.exitCode).toBe(0);
+    expect(commandExit.exitCode).toBe(0);
     expect(JSON.parse(stdoutWrites.join(''))).toMatchObject({
       command: 'ensure-restored',
       status: 'restored',
@@ -117,7 +117,7 @@ describe('ensure-restored command', () => {
       sessionId: 'cold',
       originalPath,
     });
-    await expect(readFile(originalPath, 'utf8')).resolves.toBe(content);
+    await expect(readFile(originalPath, 'utf8')).resolves.toBe(sessionJsonl);
     await rm(home, { recursive: true, force: true });
   });
 });

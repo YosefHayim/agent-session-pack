@@ -1,8 +1,8 @@
 import { listVaultSessionManifests } from '@/archive/manifest-store.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import type { ProviderId } from '@/session-model.js';
-import { type RestoreOutcome, restoreManifest } from './manifest.js';
-import { findSessionSelector, type SelectorMatch } from './session-selector.js';
+import { type RestoreExit, restoreManifest } from './manifest.js';
+import { findSessionSelector, type SelectorMode } from './session-selector.js';
 
 /**
  * Machine-readable status for a single-session ensure-restored or restore attempt.
@@ -47,7 +47,7 @@ export type EnsureSessionRestoredRequest = {
   readonly command: 'ensure-restored' | 'restore';
   readonly vaultPath: string;
   readonly selector: string;
-  readonly selectorMatch: SelectorMatch;
+  readonly selectorMatch: SelectorMode;
   readonly provider: ProviderId | undefined;
   readonly compression: CompressionAdapter;
   readonly restoreOnLaunchEnabled: boolean;
@@ -143,7 +143,7 @@ export const ensureSessionRestored = async (
     };
   }
 
-  const outcome = await restoreManifest({
+  const exit = await restoreManifest({
     compression: request.compression,
     manifest,
     vaultPath: request.vaultPath,
@@ -151,17 +151,17 @@ export const ensureSessionRestored = async (
 
   return {
     command: request.command,
-    status: outcome,
+    status: exit,
     restoreOnLaunchEnabled: request.restoreOnLaunchEnabled,
     provider: manifest.provider,
     sessionId: manifest.sessionId,
     originalPath: manifest.originalPath,
     archivePath: manifest.archivePath,
-    reason: ensureRestoredReason(outcome),
+    reason: ensureRestoredReason(exit),
   };
 };
 
-const ensureRestoredReason = (status: RestoreOutcome): string | undefined => {
+const ensureRestoredReason = (status: RestoreExit): string | undefined => {
   const isStatusConflict = status === 'conflict';
   if (isStatusConflict) {
     return 'live file differs from manifest hash; not overwritten';

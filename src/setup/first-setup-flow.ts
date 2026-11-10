@@ -7,11 +7,11 @@ import { allProviders } from '@/providers/all-providers.js';
 import { createProviderInventoryTable, loadInventoryWithSpinner } from '@/scan/inventory-prompt.js';
 import type { ProviderInventoryReport } from '@/scan/provider-inventory.js';
 import type { ProviderAdapter, ProviderId } from '@/session-model.js';
-import { validateVaultPath, writeSetupConfig } from './config.js';
+import { validateVaultPath, writeSetupSettings } from './config.js';
 
 type ColdThresholdChoice = '14d' | '30d' | '7d' | 'custom';
 type VaultPathChoice = 'custom' | 'default';
-type FlowResult = 'cancelled' | 'saved';
+type FlowReport = 'cancelled' | 'saved';
 
 /**
  * Interactive request options extended with first-setup wizard controls.
@@ -32,7 +32,7 @@ export type FirstSetupRequest = InteractiveCliRequest & {
  * const setupStatus = await runFirstSetup();
  * ```
  */
-export const runFirstSetup = async (request: FirstSetupRequest = {}): Promise<FlowResult> => {
+export const runFirstSetup = async (request: FirstSetupRequest = {}): Promise<FlowReport> => {
   const prompts = request.prompts ?? clackPromptAdapter;
   const home = request.home ?? process.env.HOME;
 
@@ -116,7 +116,7 @@ export const runFirstSetup = async (request: FirstSetupRequest = {}): Promise<Fl
   }
 
   const timestamp = now.toISOString();
-  await writeSetupConfig({
+  await writeSetupSettings({
     home,
     config: {
       version: 1,
@@ -136,12 +136,12 @@ const askProviderSelection = async (request: {
   readonly inventory: ProviderInventoryReport;
   readonly prompts: PromptAdapter;
 }): Promise<ReadonlyArray<ProviderId> | undefined> => {
-  const options = request.inventory.rows.map(createProviderPromptOption);
+  const choices = request.inventory.rows.map(createProviderPromptOption);
 
   while (true) {
     const selectedProviders = await request.prompts.multiselect<ProviderId>({
       message: 'Which providers should Agent Session Pack manage?',
-      options,
+      options: choices,
       required: false,
     });
 
@@ -184,7 +184,7 @@ const askColdThreshold = async (prompts: PromptAdapter): Promise<string | undefi
   const custom = await prompts.text({
     message: 'Enter cold threshold',
     placeholder: DEFAULT_COLD_AFTER,
-    validate: validateDurationText,
+    validate: validateDurationString,
   });
 
   const isCustomCancel = prompts.isCancel(custom);
@@ -224,7 +224,7 @@ const askVaultPath = async (request: {
 
   const isChoiceDefault = choice === 'default';
   if (isChoiceDefault) {
-    return validateVaultPathInput({
+    return validateVaultPathDetails({
       home: request.home,
       inputPath: '~/.agent-session-pack',
       prompts: request.prompts,
@@ -241,19 +241,19 @@ const askCustomVaultPath = async (request: {
   readonly providers: ReadonlyArray<ProviderAdapter>;
 }): Promise<string | undefined> => {
   while (true) {
-    const inputPath = await request.prompts.text({
+    const typedPath = await request.prompts.text({
       message: 'Enter vault path',
       initialValue: '~/.agent-session-pack',
     });
 
-    const isPathCancel = request.prompts.isCancel(inputPath);
+    const isPathCancel = request.prompts.isCancel(typedPath);
     if (isPathCancel) {
       return undefined;
     }
 
-    const validatedPath = await validateVaultPathInput({
+    const validatedPath = await validateVaultPathDetails({
       home: request.home,
-      inputPath,
+      inputPath: typedPath,
       prompts: request.prompts,
       providers: request.providers,
     });
@@ -265,7 +265,7 @@ const askCustomVaultPath = async (request: {
   }
 };
 
-const validateVaultPathInput = async (request: {
+const validateVaultPathDetails = async (request: {
   readonly home: string;
   readonly inputPath: string;
   readonly prompts: PromptAdapter;
@@ -290,74 +290,74 @@ const validateVaultPathInput = async (request: {
 };
 
 const createProviderPromptOption = (
-  inventoryRow: ProviderInventoryReport['rows'][number],
+  inventorySummary: ProviderInventoryReport['rows'][number],
 ): PromptOption<ProviderId> => {
-  const isCodexRow = inventoryRow.provider === 'codex';
-  if (isCodexRow) {
+  const isCodexProvider = inventorySummary.provider === 'codex';
+  if (isCodexProvider) {
     return {
-      value: inventoryRow.provider,
-      label: inventoryRow.provider,
+      value: inventorySummary.provider,
+      label: inventorySummary.provider,
       hint: 'archive old JSONL sessions; restore byte-exact when needed',
     };
   }
 
-  const isClaudeRow = inventoryRow.provider === 'claude';
-  if (isClaudeRow) {
+  const isClaudeProvider = inventorySummary.provider === 'claude';
+  if (isClaudeProvider) {
     return {
-      value: inventoryRow.provider,
-      label: inventoryRow.provider,
+      value: inventorySummary.provider,
+      label: inventorySummary.provider,
       hint: 'archive old Claude Code project sessions',
     };
   }
 
-  const isInventoryProviderKiro = inventoryRow.provider === 'kiro';
+  const isInventoryProviderKiro = inventorySummary.provider === 'kiro';
   if (isInventoryProviderKiro) {
     return {
-      value: inventoryRow.provider,
-      label: inventoryRow.provider,
+      value: inventorySummary.provider,
+      label: inventorySummary.provider,
       hint: 'archive old Kiro CLI sessions',
     };
   }
 
-  const isInventoryProviderGrok = inventoryRow.provider === 'grok';
+  const isInventoryProviderGrok = inventorySummary.provider === 'grok';
   if (isInventoryProviderGrok) {
     return {
-      value: inventoryRow.provider,
-      label: inventoryRow.provider,
+      value: inventorySummary.provider,
+      label: inventorySummary.provider,
       hint: 'archive old Grok multi-file session directories',
     };
   }
 
-  const isInventoryProviderKimi = inventoryRow.provider === 'kimi';
+  const isInventoryProviderKimi = inventorySummary.provider === 'kimi';
   if (isInventoryProviderKimi) {
     return {
-      value: inventoryRow.provider,
-      label: inventoryRow.provider,
+      value: inventorySummary.provider,
+      label: inventorySummary.provider,
       hint: 'archive old Kimi Code multi-file sessions',
     };
   }
 
-  const isOpencodeRow = inventoryRow.provider === 'opencode';
-  if (isOpencodeRow) {
+  const isOpencodeProvider = inventorySummary.provider === 'opencode';
+  if (isOpencodeProvider) {
     return {
-      value: inventoryRow.provider,
-      label: inventoryRow.provider,
+      value: inventorySummary.provider,
+      label: inventorySummary.provider,
       hint: 'archive old OpenCode local sessions when present',
     };
   }
 
-  const isGeminiRow = inventoryRow.provider === 'gemini';
-  if (isGeminiRow) {
+  const isGeminiProvider = inventorySummary.provider === 'gemini';
+  if (isGeminiProvider) {
     return {
-      value: inventoryRow.provider,
-      label: inventoryRow.provider,
+      value: inventorySummary.provider,
+      label: inventorySummary.provider,
       hint: 'archive old Gemini CLI sessions when present',
     };
   }
 
   return {
-    value: inventoryRow.provider,
-    label: inventoryRow.provider,
+    value: inventorySummary.provider,
+    label: inventorySummary.provider,
     hint: 'backup-only proof; native mutation disabled for safety',
   };
 };
@@ -401,7 +401,7 @@ const readFirstSetupCopy = (): string =>
     'It does not pack, delete, or restore session files.',
   ].join('\n');
 
-const validateDurationText = (duration: string | undefined): string | undefined => {
+const validateDurationString = (duration: string | undefined): string | undefined => {
   const isDurationMissing = duration == null;
   if (isDurationMissing) {
     return 'Use a duration such as 12h, 7d, 2w, or 30d.';

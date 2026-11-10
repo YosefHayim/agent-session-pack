@@ -1,5 +1,4 @@
-import { stat } from 'node:fs/promises';
-import { throwWrappedError } from '@/rethrow-as-error.js';
+import { isPathPresent } from '@/archive/file-system.js';
 import type { DiscoveredSession, ProviderAdapter, SessionStore } from '@/session-model.js';
 
 /**
@@ -39,31 +38,14 @@ export const scanStores = async (request: ScanRequest): Promise<ScanReport> => {
   return { sessions };
 };
 
-/**
- * Reports whether a path exists, treating only a missing path as absent.
- */
-export const isPathPresent = async (path: string): Promise<boolean> => {
-  const pathStat = await stat(path).catch((cause: unknown) => {
-    const isPathMissing = readFileSystemErrorCode(cause) === 'ENOENT';
-
-    if (isPathMissing) {
-      return undefined;
-    }
-
-    return throwWrappedError(cause);
-  });
-
-  return pathStat != null;
-};
-
 export const discoverStoreSessions = async (
   provider: ProviderAdapter,
   store: SessionStore,
 ): Promise<ReadonlyArray<DiscoveredSession>> => {
   const isStorePresent = await isPathPresent(store.path);
-  const isStoreMissing = !isStorePresent;
+  const isStoreAbsent = !isStorePresent;
 
-  if (isStoreMissing) {
+  if (isStoreAbsent) {
     return [];
   }
 
@@ -71,21 +53,12 @@ export const discoverStoreSessions = async (
     return await provider.discover(store);
   } catch (discoveryError) {
     const isStorePresentAfterFailure = await isPathPresent(store.path);
-    const isStoreMissingAfterFailure = !isStorePresentAfterFailure;
+    const isStoreAbsentAfterFailure = !isStorePresentAfterFailure;
 
-    if (isStoreMissingAfterFailure) {
+    if (isStoreAbsentAfterFailure) {
       return [];
     }
 
     throw discoveryError;
   }
-};
-
-const readFileSystemErrorCode = (cause: unknown): string | undefined => {
-  const hasNoErrorCode = typeof cause !== 'object' || cause === null || !('code' in cause);
-  if (hasNoErrorCode) {
-    return undefined;
-  }
-
-  return String(cause.code);
 };

@@ -28,11 +28,11 @@ describe('open command', () => {
     const vaultPath = join(home, '.agent-session-pack');
     const originalPath = join(home, '.codex', 'sessions', 'cold.jsonl');
     const archivePath = join(vaultPath, 'archives', 'codex', 'cold.jsonl.zst');
-    const content = '{"type":"user","text":"open me"}\n';
-    const sourceSha256 = createHash('sha256').update(content).digest('hex');
+    const sessionJsonl = '{"type":"user","text":"open me"}\n';
+    const originSha256 = createHash('sha256').update(sessionJsonl).digest('hex');
 
     await mkdir(join(vaultPath, 'archives', 'codex'), { recursive: true });
-    await writeFile(archivePath, content);
+    await writeFile(archivePath, sessionJsonl);
     await writeSessionManifest(join(vaultPath, 'manifests', 'codex', 'cold.json'), {
       sessionId: 'cold',
       provider: 'codex',
@@ -40,14 +40,14 @@ describe('open command', () => {
       slug: 'open-me',
       originalPath,
       archivePath,
-      sourceSha256,
-      sourceBytes: Buffer.byteLength(content, 'utf8'),
-      archiveBytes: Buffer.byteLength(content, 'utf8'),
+      sourceSha256: originSha256,
+      sourceBytes: Buffer.byteLength(sessionJsonl, 'utf8'),
+      archiveBytes: Buffer.byteLength(sessionJsonl, 'utf8'),
       archivedAt: '2026-07-01T00:00:00.000Z',
       sourceKind: 'file',
     });
 
-    const commandOutcome = await runOpenCommand({
+    const commandExit = await runOpenCommand({
       home,
       vaultPath,
       provider: 'codex',
@@ -57,14 +57,14 @@ describe('open command', () => {
       now: new Date('2026-07-07T00:00:00.000Z'),
     });
 
-    expect(commandOutcome.exitCode).toBe(0);
+    expect(commandExit.exitCode).toBe(0);
     expect(JSON.parse(stdoutWrites.join(''))).toMatchObject({
       command: 'open',
       status: 'restored',
       sessionId: 'cold',
       originalPath,
     });
-    await expect(readFile(originalPath, 'utf8')).resolves.toBe(content);
+    await expect(readFile(originalPath, 'utf8')).resolves.toBe(sessionJsonl);
     await rm(home, { recursive: true, force: true });
   });
 });

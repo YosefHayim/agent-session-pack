@@ -2,20 +2,20 @@ import { mkdtemp, readFile, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { expandHomePath, validateVaultPath, writeSetupConfig } from './config.js';
+import { expandHomePath, validateVaultPath, writeSetupSettings } from './config.js';
 
 const createWorkspace = (): Promise<string> => mkdtemp(join(tmpdir(), 'agent-session-pack-setup-'));
 
 describe('setup config vault paths', () => {
   it('expands home paths and accepts a new vault below a writable parent', async () => {
     const home = await createWorkspace();
-    const resolved = await validateVaultPath({
+    const validatedPath = await validateVaultPath({
       home,
       inputPath: '~/.agent-session-pack',
       providerRoots: [join(home, '.codex', 'sessions')],
     });
 
-    expect(resolved.path).toBe(join(home, '.agent-session-pack'));
+    expect(validatedPath.path).toBe(join(home, '.agent-session-pack'));
     expect(expandHomePath('~/vault', home)).toBe(join(home, 'vault'));
   });
 
@@ -50,7 +50,7 @@ describe('setup config vault paths', () => {
     const home = await createWorkspace();
     const vaultPath = join(home, '.agent-session-pack');
 
-    await writeSetupConfig({
+    await writeSetupSettings({
       home,
       config: {
         version: 1,
@@ -62,7 +62,7 @@ describe('setup config vault paths', () => {
       },
     });
 
-    await expect(stat(vaultPath)).resolves.toSatisfy((entry) => entry.isDirectory());
+    await expect(stat(vaultPath)).resolves.toSatisfy((vaultStats) => vaultStats.isDirectory());
     await expect(readFile(join(vaultPath, 'config.json'), 'utf8')).resolves.toContain(
       '"providers": [',
     );

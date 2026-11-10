@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import { type CommandDef, defineCommand, runCommand, type SubCommandsDef, showUsage } from 'citty';
-import type { CommandOutcome } from '@/command-outcome.js';
+import type { CommandExit } from '@/command-outcome.js';
 import { doctorCommand } from '@/doctor/command.js';
 import { checkCommand, savingsCommand } from '@/evidence/savings-command.js';
 import { guideCommand } from '@/guide/command.js';
@@ -65,8 +65,8 @@ interface UsageTarget {
   readonly parent: CommandDef | undefined;
 }
 
-const pickUsageTarget = (rawArgs: string[]): UsageTarget => {
-  const subCommandName = rawArgs.find((arg) => Object.hasOwn(subCommands, arg));
+const pickUsageTarget = (argumentList: string[]): UsageTarget => {
+  const subCommandName = argumentList.find((arg) => Object.hasOwn(subCommands, arg));
 
   const isThereNoSubCommandName = subCommandName == null;
 
@@ -86,16 +86,16 @@ const pickUsageTarget = (rawArgs: string[]): UsageTarget => {
   return { command: subCommandReply, parent: mainCommand };
 };
 
-const isCommandOutcome = (value: unknown): value is CommandOutcome =>
-  typeof value === 'object' && value !== null && 'exitCode' in value;
+const isCommandExit = (candidate: unknown): candidate is CommandExit =>
+  typeof candidate === 'object' && candidate !== null && 'exitCode' in candidate;
 
-const runCli = async (rawArgs: string[]): Promise<CommandOutcome> => {
-  const isHelpRequest = rawArgs.includes('--help') || rawArgs.includes('-h');
+const runCli = async (argumentList: string[]): Promise<CommandExit> => {
+  const isHelpRequest = argumentList.includes('--help') || argumentList.includes('-h');
   const isVersionRequest =
-    rawArgs.length === 1 && (rawArgs[0] === '--version' || rawArgs[0] === '-v');
+    argumentList.length === 1 && (argumentList[0] === '--version' || argumentList[0] === '-v');
 
   if (isHelpRequest) {
-    const usageTarget = pickUsageTarget(rawArgs);
+    const usageTarget = pickUsageTarget(argumentList);
     await showUsage(usageTarget.command, usageTarget.parent);
     return { exitCode: 0 };
   }
@@ -105,19 +105,19 @@ const runCli = async (rawArgs: string[]): Promise<CommandOutcome> => {
     return { exitCode: 0 };
   }
 
-  const commandRun = await runCommand(mainCommand, { rawArgs });
-  const commandResult = commandRun.result;
+  const commandRun = await runCommand(mainCommand, { rawArgs: argumentList });
+  const commandReport = commandRun.result;
 
-  const isNotOutcomeReply = !isCommandOutcome(commandResult);
+  const isNotExitReply = !isCommandExit(commandReport);
 
-  if (isNotOutcomeReply) {
+  if (isNotExitReply) {
     throw new Error('Command finished without an exit code.');
   }
 
-  return commandResult;
+  return commandReport;
 };
 
-const runEntrypoint = async (rawArgs: string[]): Promise<CommandOutcome> => {
+const runEntrypoint = async (argumentList: string[]): Promise<CommandExit> => {
   const isInteractiveRun = canRunInteractiveCli({
     argv: process.argv,
     stdinIsTty: process.stdin.isTTY === true,
@@ -128,14 +128,14 @@ const runEntrypoint = async (rawArgs: string[]): Promise<CommandOutcome> => {
     return runInteractiveCli();
   }
 
-  return runCli(rawArgs);
+  return runCli(argumentList);
 };
 
-const reportCliError = async (error: unknown, rawArgs: string[]): Promise<CommandOutcome> => {
+const reportCliError = async (error: unknown, argumentList: string[]): Promise<CommandExit> => {
   const isUsageError = error instanceof Error && error.name === 'CLIError';
 
   if (isUsageError) {
-    const usageTarget = pickUsageTarget(rawArgs);
+    const usageTarget = pickUsageTarget(argumentList);
     await showUsage(usageTarget.command, usageTarget.parent);
     console.error(error.message);
     return { exitCode: 2 };
@@ -145,11 +145,11 @@ const reportCliError = async (error: unknown, rawArgs: string[]): Promise<Comman
   return { exitCode: 1 };
 };
 
-const runEntrypointReportingErrors = async (rawArgs: string[]): Promise<CommandOutcome> => {
+const runEntrypointReportingErrors = async (argumentList: string[]): Promise<CommandExit> => {
   try {
-    return await runEntrypoint(rawArgs);
+    return await runEntrypoint(argumentList);
   } catch (error) {
-    return reportCliError(error, rawArgs);
+    return reportCliError(error, argumentList);
   }
 };
 
@@ -160,6 +160,6 @@ const modulePath = fileURLToPath(import.meta.url);
 if (isCliEntrypoint(entrypointPath, modulePath)) {
   process.argv.splice(0, process.argv.length, ...rewriteCommandFlagAliases(process.argv));
 
-  const commandOutcome = await runEntrypointReportingErrors(process.argv.slice(2));
-  process.exitCode = commandOutcome.exitCode;
+  const commandExit = await runEntrypointReportingErrors(process.argv.slice(2));
+  process.exitCode = commandExit.exitCode;
 }

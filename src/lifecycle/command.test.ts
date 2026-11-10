@@ -2,7 +2,7 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createConfigPath } from '@/setup/config.js';
+import { createSettingsPath } from '@/setup/config.js';
 import { runLifecycleCommand } from './command.js';
 
 describe('lifecycle command', () => {
@@ -30,14 +30,14 @@ describe('lifecycle command', () => {
     const home = await mkdtemp(join(tmpdir(), 'asp-lifecycle-'));
     const now = new Date('2026-07-07T00:00:00.000Z');
 
-    const commandOutcome = await runLifecycleCommand({
+    const commandExit = await runLifecycleCommand({
       action: 'enable',
       json: true,
       home,
       now,
     });
 
-    expect(commandOutcome.exitCode).toBe(0);
+    expect(commandExit.exitCode).toBe(0);
     expect(JSON.parse(stdoutWrites.join(''))).toMatchObject({
       command: 'lifecycle',
       action: 'enable',
@@ -52,11 +52,11 @@ describe('lifecycle command', () => {
     expect(enabled.wrappersBin).toContain('.agent-session-pack');
     expect(enabled.pathHint).toContain('PATH=');
 
-    const configPath = createConfigPath(home);
-    const config = JSON.parse(await readFile(configPath, 'utf8')) as {
+    const settingsPath = createSettingsPath(home);
+    const settings = JSON.parse(await readFile(settingsPath, 'utf8')) as {
       restoreOnLaunch: boolean;
     };
-    expect(config.restoreOnLaunch).toBe(true);
+    expect(settings.restoreOnLaunch).toBe(true);
 
     stdoutWrites.length = 0;
     await runLifecycleCommand({
@@ -109,13 +109,13 @@ describe('lifecycle command', () => {
   it('rejects unknown lifecycle actions', async () => {
     const home = await mkdtemp(join(tmpdir(), 'asp-lifecycle-bad-'));
 
-    const commandOutcome = await runLifecycleCommand({
+    const commandExit = await runLifecycleCommand({
       action: 'explode',
       json: true,
       home,
     });
 
-    expect(commandOutcome.exitCode).toBe(2);
+    expect(commandExit.exitCode).toBe(2);
     expect(stderrWrites.join('')).toContain('Unknown lifecycle action');
     await rm(home, { recursive: true, force: true });
   });

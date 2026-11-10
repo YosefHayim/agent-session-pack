@@ -80,7 +80,7 @@ describe('unpackCommand', () => {
   it('unpack exits with code 1 when HOME is unset', async () => {
     delete process.env.HOME;
 
-    const commandOutcome = await runUnpackCommand({
+    const commandExit = await runUnpackCommand({
       allProviders: true,
       apply: undefined,
       compression: copyCompression,
@@ -90,7 +90,7 @@ describe('unpackCommand', () => {
       yes: undefined,
     });
 
-    expect(commandOutcome.exitCode).toBe(1);
+    expect(commandExit.exitCode).toBe(1);
     const stderr = writes.join('');
     expect(stderr).toContain('HOME is not set.');
     expect(stderr).toContain('.env.example');
@@ -101,7 +101,7 @@ describe('unpackCommand', () => {
     const home = await createWorkspace();
     process.env.HOME = home;
 
-    const commandOutcome = await runUnpackCommand({
+    const commandExit = await runUnpackCommand({
       allProviders: true,
       apply: true,
       compression: copyCompression,
@@ -113,7 +113,7 @@ describe('unpackCommand', () => {
       yes: undefined,
     });
 
-    expect(commandOutcome.exitCode).toBe(2);
+    expect(commandExit.exitCode).toBe(2);
     expect(writes.join('')).toContain('Cancelled. Re-run with --apply and confirm with y');
   });
 
@@ -121,7 +121,7 @@ describe('unpackCommand', () => {
     const home = await createWorkspace();
     process.env.HOME = home;
 
-    const commandOutcome = await runUnpackCommand({
+    const commandExit = await runUnpackCommand({
       allProviders: true,
       apply: false,
       compression: copyCompression,
@@ -133,10 +133,10 @@ describe('unpackCommand', () => {
       yes: undefined,
     });
 
-    const payload = JSON.parse(writes.join('')) as {
+    const printedDocument = JSON.parse(writes.join('')) as {
       readonly rows: ReadonlyArray<unknown>;
     };
-    expect(Array.isArray(payload.rows)).toBe(true);
-    expect(commandOutcome.exitCode).toBe(0);
+    expect(Array.isArray(printedDocument.rows)).toBe(true);
+    expect(commandExit.exitCode).toBe(0);
   });
 });

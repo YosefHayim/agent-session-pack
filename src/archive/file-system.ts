@@ -2,7 +2,7 @@ import type { Dirent } from 'node:fs';
 import { copyFile, mkdir, readdir, rm, stat } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { throwWrappedError } from '@/rethrow-as-error.js';
-import type { SessionSourceKind } from '@/session-model.js';
+import type { SessionOriginKind } from '@/session-model.js';
 
 const isMissingPathError = (cause: unknown): boolean =>
   cause instanceof Error && 'code' in cause && cause.code === 'ENOENT';
@@ -10,7 +10,7 @@ const isMissingPathError = (cause: unknown): boolean =>
 /**
  * Lists a directory's entries, or an empty list when the directory does not exist.
  */
-export const readDirectoryEntries = async (directory: string): Promise<Dirent[]> => {
+export const readDirectoryDirents = async (directory: string): Promise<Dirent[]> => {
   try {
     return await readdir(directory, { withFileTypes: true });
   } catch (cause) {
@@ -27,15 +27,15 @@ export const readDirectoryEntries = async (directory: string): Promise<Dirent[]>
 /**
  * Measures total file bytes for a file or directory session path.
  */
-export const measureSourceBytes = async (
+export const measureOriginBytes = async (
   path: string,
-  sourceKind?: SessionSourceKind,
+  originKind?: SessionOriginKind,
 ): Promise<number> => {
-  const kind = await findSourceKind(path, sourceKind);
+  const kind = await findOriginKind(path, originKind);
 
-  const isFileSource = kind === 'file';
+  const isFileOrigin = kind === 'file';
 
-  if (isFileSource) {
+  if (isFileOrigin) {
     const fileStat = await readStatPath(path);
     return fileStat.size;
   }
@@ -46,14 +46,14 @@ export const measureSourceBytes = async (
 /**
  * Resolves whether a session path is a file or a directory, trusting a known kind.
  */
-export const findSourceKind = async (
+export const findOriginKind = async (
   path: string,
-  sourceKind: SessionSourceKind | undefined,
-): Promise<SessionSourceKind> => {
-  const isSourceKindKnown = sourceKind !== undefined;
+  originKind: SessionOriginKind | undefined,
+): Promise<SessionOriginKind> => {
+  const isOriginKindKnown = originKind != null;
 
-  if (isSourceKindKnown) {
-    return sourceKind;
+  if (isOriginKindKnown) {
+    return originKind;
   }
 
   const pathStat = await stat(path).catch(throwWrappedError);
@@ -68,23 +68,23 @@ export const readDirectorySizeBytes = async (path: string): Promise<number> => {
   let sizeBytes = 0;
 
   const walk = async (directory: string): Promise<void> => {
-    const entries = await readdir(directory, { withFileTypes: true });
+    const dirents = await readdir(directory, { withFileTypes: true });
 
-    for (const entry of entries) {
-      const entryPath = join(directory, entry.name);
+    for (const dirent of dirents) {
+      const childPath = join(directory, dirent.name);
 
-      const isDirectoryEntry = entry.isDirectory();
-      if (isDirectoryEntry) {
-        await walk(entryPath);
+      const isChildDirectory = dirent.isDirectory();
+      if (isChildDirectory) {
+        await walk(childPath);
         continue;
       }
 
-      const isNotFile = !entry.isFile();
+      const isNotFile = !dirent.isFile();
       if (isNotFile) {
         continue;
       }
 
-      const fileStat = await stat(entryPath);
+      const fileStat = await stat(childPath);
       sizeBytes += fileStat.size;
     }
   };
@@ -120,21 +120,35 @@ export const removePath = async (path: string): Promise<void> => {
 export const readStatPath = (path: string): Promise<{ readonly size: number }> =>
   stat(path).catch(throwWrappedError);
 
-/**
- * Checks whether a path exists.
- */
-export const isPathOnDisk = async (path: string): Promise<boolean> => {
-  try {
-    await stat(path);
-    return true;
-  } catch {
-    return false;
+const readFileSystemErrorCode = (cause: unknown): string | null => {
+  const hasNoErrorCode = typeof cause !== 'object' || cause === null || !('code' in cause);
+  if (hasNoErrorCode) {
+    return null;
   }
+
+  return String(cause.code);
+};
+
+/**
+ * Reports whether a path exists, treating only a missing path as absent.
+ */
+export const isPathPresent = async (path: string): Promise<boolean> => {
+  const pathStat = await stat(path).catch((cause: unknown) => {
+    const isPathMissing = readFileSystemErrorCode(cause) === 'ENOENT';
+
+    if (isPathMissing) {
+      return null;
+    }
+
+    return throwWrappedError(cause);
+  });
+
+  return pathStat != null;
 };
 
 /**
  * Copies one file to a destination path.
  */
-export const copyPath = async (sourcePath: string, destinationPath: string): Promise<void> => {
-  await copyFile(sourcePath, destinationPath).catch(throwWrappedError);
+export const copyPath = async (originPath: string, destinationPath: string): Promise<void> => {
+  await copyFile(originPath, destinationPath).catch(throwWrappedError);
 };

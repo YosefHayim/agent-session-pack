@@ -19,10 +19,10 @@ const writeArchivedSession = async (
   const vaultPath = join(request.home, '.agent-session-pack');
   const originalPath = join(request.home, '.codex', 'sessions', `${request.sessionId}.jsonl`);
   const archivePath = join(vaultPath, 'archives', 'codex', `${request.sessionId}.jsonl.zst`);
-  const content = `{"type":"user","text":"${request.title}"}\n`;
+  const sessionJsonl = `{"type":"user","text":"${request.title}"}\n`;
 
   await mkdir(join(vaultPath, 'archives', 'codex'), { recursive: true });
-  await writeFile(archivePath, content);
+  await writeFile(archivePath, sessionJsonl);
   await writeSessionManifest(join(vaultPath, 'manifests', 'codex', `${request.sessionId}.json`), {
     sessionId: request.sessionId,
     provider: 'codex',
@@ -30,14 +30,14 @@ const writeArchivedSession = async (
     slug: request.title.toLowerCase().replaceAll(' ', '-'),
     originalPath,
     archivePath,
-    sourceSha256: createHash('sha256').update(content).digest('hex'),
-    sourceBytes: Buffer.byteLength(content, 'utf8'),
-    archiveBytes: Buffer.byteLength(content, 'utf8'),
+    sourceSha256: createHash('sha256').update(sessionJsonl).digest('hex'),
+    sourceBytes: Buffer.byteLength(sessionJsonl, 'utf8'),
+    archiveBytes: Buffer.byteLength(sessionJsonl, 'utf8'),
     archivedAt: '2026-07-01T00:00:00.000Z',
     sourceKind: 'file',
   });
 
-  return { originalPath, content };
+  return { originalPath, content: sessionJsonl };
 };
 
 describe('restore command', () => {
@@ -62,7 +62,7 @@ describe('restore command', () => {
   });
 
   it('exits with code 2 when selector is missing', async () => {
-    const commandOutcome = await runRestoreCommand({
+    const commandExit = await runRestoreCommand({
       selector: undefined,
       provider: undefined,
       to: undefined,
@@ -73,7 +73,7 @@ describe('restore command', () => {
     expect(stderrWrites.join('')).toContain(
       'Missing selector. Use agent-session-pack restore <selector>.',
     );
-    expect(commandOutcome.exitCode).toBe(2);
+    expect(commandExit.exitCode).toBe(2);
   });
 
   it('restores an archived session without requiring lifecycle enable', async () => {
@@ -85,7 +85,7 @@ describe('restore command', () => {
       title: 'manual restore',
     });
 
-    const commandOutcome = await runRestoreCommand({
+    const commandExit = await runRestoreCommand({
       home,
       vaultPath,
       selector: 'codex:cold',
@@ -95,7 +95,7 @@ describe('restore command', () => {
       compression: copyCompression,
     });
 
-    expect(commandOutcome.exitCode).toBe(0);
+    expect(commandExit.exitCode).toBe(0);
     expect(JSON.parse(stdoutWrites.join(''))).toMatchObject({
       command: 'restore',
       status: 'restored',
@@ -115,7 +115,7 @@ describe('restore command', () => {
     });
     await writeArchivedSession({ home, sessionId: 'cold-b2', title: 'Fix login api' });
 
-    const commandOutcome = await runRestoreCommand({
+    const commandExit = await runRestoreCommand({
       home,
       selector: 'cold-a',
       provider: undefined,
@@ -124,7 +124,7 @@ describe('restore command', () => {
       compression: copyCompression,
     });
 
-    expect(commandOutcome.exitCode).toBe(0);
+    expect(commandExit.exitCode).toBe(0);
     expect(JSON.parse(stdoutWrites.join(''))).toMatchObject({
       status: 'restored',
       sessionId: 'cold-a1',
@@ -142,7 +142,7 @@ describe('restore command', () => {
     });
     await writeArchivedSession({ home, sessionId: 'cold-b2', title: 'Fix login api' });
 
-    const commandOutcome = await runRestoreCommand({
+    const commandExit = await runRestoreCommand({
       home,
       selector: 'fix login',
       provider: undefined,
@@ -151,7 +151,7 @@ describe('restore command', () => {
       compression: copyCompression,
     });
 
-    expect(commandOutcome.exitCode).toBe(2);
+    expect(commandExit.exitCode).toBe(2);
     expect(JSON.parse(stdoutWrites.join(''))).toMatchObject({
       status: 'ambiguous-selector',
       candidates: [

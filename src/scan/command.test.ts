@@ -12,14 +12,14 @@ const writeCodexSession = async (
 ): Promise<{ readonly path: string; readonly content: string }> => {
   const sessionDir = join(home, '.codex', 'sessions', '2026', '06', '01');
   const sessionPath = join(sessionDir, 'session-old.jsonl');
-  const content = '{"type":"user","text":"scan command fixture"}\n';
+  const sessionJsonl = '{"type":"user","text":"scan command fixture"}\n';
   const modifiedAt = new Date('2026-06-01T12:00:00.000Z');
 
   await mkdir(sessionDir, { recursive: true });
-  await writeFile(sessionPath, content);
+  await writeFile(sessionPath, sessionJsonl);
   await utimes(sessionPath, modifiedAt, modifiedAt);
 
-  return { path: sessionPath, content };
+  return { path: sessionPath, content: sessionJsonl };
 };
 
 describe('scan command', () => {
@@ -39,8 +39,8 @@ describe('scan command', () => {
       stderrWrites.push(String(chunk));
       return true;
     });
-    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => {
-      stdoutWrites.push(args.map(String).join(' '));
+    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation((...messages: unknown[]) => {
+      stdoutWrites.push(messages.map(String).join(' '));
     });
   });
 
@@ -53,9 +53,9 @@ describe('scan command', () => {
   it('exits with code 1 when HOME is unset', async () => {
     delete process.env.HOME;
 
-    const commandOutcome = await runScanCommand({ json: true });
+    const commandExit = await runScanCommand({ json: true });
 
-    expect(commandOutcome.exitCode).toBe(1);
+    expect(commandExit.exitCode).toBe(1);
     const stderr = stderrWrites.join('');
     expect(stderr).toContain('HOME is not set.');
     expect(stderr).toContain('.env.example');
@@ -66,9 +66,9 @@ describe('scan command', () => {
     const home = await createWorkspace();
     process.env.HOME = home;
 
-    const commandOutcome = await runScanCommand({ provider: 'not-a-provider', json: true });
+    const commandExit = await runScanCommand({ provider: 'not-a-provider', json: true });
 
-    expect(commandOutcome.exitCode).toBe(2);
+    expect(commandExit.exitCode).toBe(2);
     expect(stderrWrites.join('')).toContain('Unknown provider: not-a-provider');
   });
 
@@ -77,27 +77,27 @@ describe('scan command', () => {
     await mkdir(join(home, '.codex', 'sessions'), { recursive: true });
     process.env.HOME = home;
 
-    const commandOutcome = await runScanCommand({ provider: 'codex', json: true });
+    const commandExit = await runScanCommand({ provider: 'codex', json: true });
 
-    const payload = JSON.parse(stdoutWrites.join('')) as {
+    const printedDocument = JSON.parse(stdoutWrites.join('')) as {
       readonly sessions: ReadonlyArray<unknown>;
     };
-    expect(payload.sessions).toEqual([]);
-    expect(commandOutcome.exitCode).toBe(0);
+    expect(printedDocument.sessions).toEqual([]);
+    expect(commandExit.exitCode).toBe(0);
   });
 
   it('treats absent provider roots as providers without installed stores', async () => {
     const home = await createWorkspace();
     process.env.HOME = home;
 
-    const commandOutcome = await runScanCommand({ json: true });
+    const commandExit = await runScanCommand({ json: true });
 
-    const payload = JSON.parse(stdoutWrites.join('')) as {
+    const printedDocument = JSON.parse(stdoutWrites.join('')) as {
       readonly sessions: ReadonlyArray<unknown>;
     };
-    expect(payload.sessions).toEqual([]);
+    expect(printedDocument.sessions).toEqual([]);
     expect(stderrWrites).toEqual([]);
-    expect(commandOutcome.exitCode).toBe(0);
+    expect(commandExit.exitCode).toBe(0);
   });
 
   it('discovers synthetic codex sessions in JSON mode', async () => {
@@ -107,15 +107,15 @@ describe('scan command', () => {
 
     await runScanCommand({ provider: 'codex', json: true });
 
-    const payload = JSON.parse(stdoutWrites.join('')) as {
+    const printedDocument = JSON.parse(stdoutWrites.join('')) as {
       readonly sessions: ReadonlyArray<{
         readonly provider: string;
         readonly originalPath: string;
       }>;
     };
-    expect(payload.sessions).toHaveLength(1);
-    expect(payload.sessions[0]?.provider).toBe('codex');
-    expect(payload.sessions[0]?.originalPath).toBe(session.path);
+    expect(printedDocument.sessions).toHaveLength(1);
+    expect(printedDocument.sessions[0]?.provider).toBe('codex');
+    expect(printedDocument.sessions[0]?.originalPath).toBe(session.path);
   });
 
   it('writes human empty-state output without ANSI prompts', async () => {

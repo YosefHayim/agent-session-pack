@@ -3,7 +3,7 @@ import { createHumanEvidenceReport } from './output.js';
 
 describe('human evidence output', () => {
   it('renders local proof as a compact before and after table', () => {
-    const output = createHumanEvidenceReport({
+    const printout = createHumanEvidenceReport({
       scope: 'sampled-copy-proof',
       workRoot: '/tmp/agent-session-pack/evidence',
       evidence: [
@@ -39,24 +39,24 @@ describe('human evidence output', () => {
       ],
     });
 
-    expect(output).toContain('Local evidence');
-    expect(output).toContain('One eligible source per provider is copied and measured.');
-    expect(output).toContain('Proof bytes are not a whole-store estimate.');
-    expect(output).toContain('Discovered  Samples');
-    expect(output).toContain('Proof before');
-    expect(output).toContain('Proof after');
-    expect(output).toContain('Saved');
-    expect(output).toContain('codex');
-    expect(output).toContain('42');
-    expect(output).toContain('75.0%');
-    expect(output).toContain('devin');
-    expect(output).toContain('8');
-    expect(output).toContain('86.2%');
-    expect(output).toContain('sample total');
-    expect(output).toContain('51');
-    expect(output).toContain('2');
-    expect(output).toMatch(/claude\s+1\s+0\s+archive\s+-\s+-\s+-\s+-\s+no/);
-    expect(output).toContain('Original sessions touched: no');
-    expect(output).toContain('/tmp/agent-session-pack/evidence');
+    expect(printout).toContain('Local evidence');
+    expect(printout).toContain('One eligible source per provider is copied and measured.');
+    expect(printout).toContain('Proof bytes are not a whole-store estimate.');
+    expect(printout).toContain('Discovered  Samples');
+    expect(printout).toContain('Proof before');
+    expect(printout).toContain('Proof after');
+    expect(printout).toContain('Saved');
+    expect(printout).toContain('codex');
+    expect(printout).toContain('42');
+    expect(printout).toContain('75.0%');
+    expect(printout).toContain('devin');
+    expect(printout).toContain('8');
+    expect(printout).toContain('86.2%');
+    expect(printout).toContain('sample total');
+    expect(printout).toContain('51');
+    expect(printout).toContain('2');
+    expect(printout).toMatch(/claude\s+1\s+0\s+archive\s+-\s+-\s+-\s+-\s+no/);
+    expect(printout).toContain('Original sessions touched: no');
+    expect(printout).toContain('/tmp/agent-session-pack/evidence');
   });
 });

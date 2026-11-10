@@ -2,10 +2,10 @@ import { defineCommand } from 'citty';
 import { createDefaultVaultPath } from '@/archive/vault-paths.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
-import type { CommandOutcome } from '@/command-outcome.js';
+import type { CommandExit } from '@/command-outcome.js';
 import { requireHome } from '@/home-env.js';
 import { parseOptionalProvider } from '@/providers/flag.js';
-import { readSetupConfig } from '@/setup/config.js';
+import { readSetupSettings } from '@/setup/config.js';
 import { type EnsureRestoredReport, ensureSessionRestored } from './ensure-restored.js';
 
 /**
@@ -50,7 +50,7 @@ export const restoreCommand = defineCommand({
 /**
  * Decoded arguments for the restore command.
  */
-export type RestoreArgs = {
+export type RestoreFlags = {
   readonly json: boolean | undefined;
   readonly provider: string | undefined;
   readonly selector: string | undefined;
@@ -63,17 +63,17 @@ export type RestoreArgs = {
 /**
  * Runs the restore command for human and agent callers.
  *
- * @param args - Decoded command-line arguments.
+ * @param flags - Decoded command-line arguments.
  */
-export const runRestoreCommand = async (args: RestoreArgs): Promise<CommandOutcome> => {
-  const home = requireHome(args.home);
+export const runRestoreCommand = async (flags: RestoreFlags): Promise<CommandExit> => {
+  const home = requireHome(flags.home);
 
   const isHomeMissing = home == null;
   if (isHomeMissing) {
     return { exitCode: 1 };
   }
 
-  const selector = args.selector?.trim() ?? '';
+  const selector = flags.selector?.trim() ?? '';
 
   const isSelectorEmpty = selector.length === 0;
   if (isSelectorEmpty) {
@@ -81,7 +81,7 @@ export const runRestoreCommand = async (args: RestoreArgs): Promise<CommandOutco
     return { exitCode: 2 };
   }
 
-  const hasCustomRestoreTarget = args.to != null && args.to !== 'original';
+  const hasCustomRestoreTarget = flags.to != null && flags.to !== 'original';
   if (hasCustomRestoreTarget) {
     process.stderr.write(
       'Only --to original is supported. Custom restore destinations are not available yet.\n',
@@ -89,17 +89,17 @@ export const runRestoreCommand = async (args: RestoreArgs): Promise<CommandOutco
     return { exitCode: 2 };
   }
 
-  const provider = parseOptionalProvider(args.provider);
+  const provider = parseOptionalProvider(flags.provider);
 
-  const isUnknownProviderGiven = args.provider != null && provider == null;
+  const isUnknownProviderGiven = flags.provider != null && provider == null;
   if (isUnknownProviderGiven) {
-    process.stderr.write(`Unknown provider: ${args.provider}\n`);
+    process.stderr.write(`Unknown provider: ${flags.provider}\n`);
     return { exitCode: 2 };
   }
 
-  const setupConfig = await readSetupConfig(home);
-  const vaultPath = args.vaultPath ?? setupConfig?.vaultPath ?? createDefaultVaultPath(home);
-  const compression = args.compression ?? createZstdCompression();
+  const setupSettings = await readSetupSettings(home);
+  const vaultPath = flags.vaultPath ?? setupSettings?.vaultPath ?? createDefaultVaultPath(home);
+  const compression = flags.compression ?? createZstdCompression();
 
   const report = await ensureSessionRestored({
     command: 'restore',
@@ -108,30 +108,33 @@ export const runRestoreCommand = async (args: RestoreArgs): Promise<CommandOutco
     selectorMatch: 'fuzzy',
     provider,
     compression,
-    restoreOnLaunchEnabled: setupConfig?.restoreOnLaunch === true,
+    restoreOnLaunchEnabled: setupSettings?.restoreOnLaunch === true,
     requireLifecycleEnabled: false,
   });
 
-  writeRestoreOutput(report, args.json === true);
+  writeRestorePrintout(report, flags.json === true);
   return { exitCode: restoreExitCode(report) };
 };
 
-const writeRestoreOutput = (report: EnsureRestoredReport, json: boolean): void => {
-  if (json) {
+const writeRestorePrintout = (
+  report: EnsureRestoredReport,
+  isStructuredRequested: boolean,
+): void => {
+  if (isStructuredRequested) {
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
     return;
   }
 
-  const isReportProviderMissing = report.provider === undefined;
+  const isReportProviderMissing = report.provider == null;
   const isReportSessionIdMissing = report.sessionId == null;
   const isReportOriginalPathMissing = report.originalPath == null;
   const isReportReasonMissing = report.reason == null;
   const lines = [
     `restore: ${report.status}`,
-    isReportProviderMissing ? undefined : `provider: ${report.provider}`,
-    isReportSessionIdMissing ? undefined : `session: ${report.sessionId}`,
-    isReportOriginalPathMissing ? undefined : `originalPath: ${report.originalPath}`,
-    isReportReasonMissing ? undefined : `reason: ${report.reason}`,
+    isReportProviderMissing ? null : `provider: ${report.provider}`,
+    isReportSessionIdMissing ? null : `session: ${report.sessionId}`,
+    isReportOriginalPathMissing ? null : `originalPath: ${report.originalPath}`,
+    isReportReasonMissing ? null : `reason: ${report.reason}`,
   ].filter((line): line is string => line != null);
 
   process.stdout.write(`${lines.join('\n')}\n`);

@@ -1,4 +1,4 @@
-import type { CommandOutcome } from '@/command-outcome.js';
+import type { CommandExit } from '@/command-outcome.js';
 import type { InteractiveCliRequest } from '@/interactive-cli-request.js';
 import type { PromptAdapter } from '@/prompt-adapter.js';
 import { runWithSpinner } from '@/spinner-task.js';
@@ -12,7 +12,7 @@ import { runUnpackCommand } from './unpack-command.js';
  */
 export const runRestoreFlow = async (
   request: InteractiveCliRequest & { readonly prompts: PromptAdapter },
-): Promise<CommandOutcome> => {
+): Promise<CommandExit> => {
   const shouldPreview = await request.prompts.confirm({
     message: 'Preview archived sessions before restore?',
     initialValue: true,
@@ -24,7 +24,7 @@ export const runRestoreFlow = async (
     return { exitCode: 0 };
   }
 
-  const previewOutcome = await runWithSpinner({
+  const previewExit = await runWithSpinner({
     prompts: request.prompts,
     startMessage: 'Scanning vault manifests...',
     stopMessage: 'Scanned vault manifests.',
@@ -47,10 +47,10 @@ export const runRestoreFlow = async (
   const isApplyStopped = request.prompts.isCancel(shouldApply) || shouldApply !== true;
   if (isApplyStopped) {
     request.prompts.outro('No files changed.');
-    return previewOutcome;
+    return previewExit;
   }
 
-  const applyOutcome = await runUnpackCommand({
+  const applyExit = await runUnpackCommand({
     allProviders: true,
     apply: true,
     json: false,
@@ -58,5 +58,5 @@ export const runRestoreFlow = async (
     yes: true,
     confirmed: true,
   });
-  return applyOutcome;
+  return applyExit;
 };

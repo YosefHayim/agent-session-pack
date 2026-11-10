@@ -2,12 +2,12 @@ import { defineCommand } from 'citty';
 import { createDefaultVaultPath } from '@/archive/vault-paths.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
-import type { CommandOutcome } from '@/command-outcome.js';
+import type { CommandExit } from '@/command-outcome.js';
 import { requireHome } from '@/home-env.js';
 import { type EnsureRestoredReport, ensureSessionRestored } from '@/restore/ensure-restored.js';
 import { type ProviderId, ProviderIdSchema } from '@/session-model.js';
-import { isRestoreOnLaunchEnabled, readSetupConfig } from '@/setup/config.js';
-import { extractSessionIdsFromArgv, recordSessionAccess } from './session-access.js';
+import { isRestoreOnLaunchEnabled, readSetupSettings } from '@/setup/config.js';
+import { extractSessionIdsFromArgv, saveSessionAccess } from './session-access.js';
 
 /**
  * Citty command used by provider wrappers to auto-restore sessions before launch.
@@ -43,7 +43,7 @@ export const preflightCommand = defineCommand({
 /**
  * Decoded arguments for preflight.
  */
-export type PreflightArgs = {
+export type PreflightFlags = {
   readonly json: boolean | undefined;
   readonly provider: string | undefined;
   readonly passthroughArgv: ReadonlyArray<string>;
@@ -58,35 +58,35 @@ export type PreflightArgs = {
  *
  * Writes preflight JSON or human output. Always exits 0 on soft failures.
  *
- * @param args - Provider, passthrough argv, and output flags.
+ * @param flags - Provider, passthrough argv, and output flags.
  */
-export const runPreflightCommand = async (args: PreflightArgs): Promise<CommandOutcome> => {
-  const home = requireHome(args.home);
+export const runPreflightCommand = async (flags: PreflightFlags): Promise<CommandExit> => {
+  const home = requireHome(flags.home);
 
   const isHomeMissing = home == null;
   if (isHomeMissing) {
     return { exitCode: 1 };
   }
 
-  const provider = parseProvider(args.provider);
+  const provider = parseProvider(flags.provider);
 
-  const isProviderMissing = provider === undefined;
+  const isProviderMissing = provider == null;
   if (isProviderMissing) {
-    process.stderr.write(`Unknown or missing provider: ${args.provider ?? ''}\n`);
+    process.stderr.write(`Unknown or missing provider: ${flags.provider ?? ''}\n`);
     return { exitCode: 2 };
   }
 
-  const setupConfig = await readSetupConfig(home);
-  const restoreOnLaunchEnabled = isRestoreOnLaunchEnabled(setupConfig);
-  const vaultPath = args.vaultPath ?? setupConfig?.vaultPath ?? createDefaultVaultPath(home);
-  const compression = args.compression ?? createZstdCompression();
-  const now = args.now ?? new Date();
-  const sessionIds = extractSessionIdsFromArgv(args.passthroughArgv);
-  const isJsonOutput = args.json === true;
+  const setupSettings = await readSetupSettings(home);
+  const restoreOnLaunchEnabled = isRestoreOnLaunchEnabled(setupSettings);
+  const vaultPath = flags.vaultPath ?? setupSettings?.vaultPath ?? createDefaultVaultPath(home);
+  const compression = flags.compression ?? createZstdCompression();
+  const now = flags.now ?? new Date();
+  const sessionIds = extractSessionIdsFromArgv(flags.passthroughArgv);
+  const isStructuredRequested = flags.json === true;
 
   const isRestoreOnLaunchDisabled = !restoreOnLaunchEnabled;
   if (isRestoreOnLaunchDisabled) {
-    writePreflightOutput(
+    writePreflightPrintout(
       {
         command: 'preflight',
         provider,
@@ -95,14 +95,14 @@ export const runPreflightCommand = async (args: PreflightArgs): Promise<CommandO
         restores: [],
         reason: 'lifecycle disabled; no auto-restore',
       },
-      isJsonOutput,
+      isStructuredRequested,
     );
     return { exitCode: 0 };
   }
 
   const isSessionIdsEmpty = sessionIds.length === 0;
   if (isSessionIdsEmpty) {
-    writePreflightOutput(
+    writePreflightPrintout(
       {
         command: 'preflight',
         provider,
@@ -111,7 +111,7 @@ export const runPreflightCommand = async (args: PreflightArgs): Promise<CommandO
         restores: [],
         reason: 'no session ids found in argv',
       },
-      isJsonOutput,
+      isStructuredRequested,
     );
     return { exitCode: 0 };
   }
@@ -136,7 +136,7 @@ export const runPreflightCommand = async (args: PreflightArgs): Promise<CommandO
 
     const isSessionReportUsable = isReportUsable && hasReportSessionId;
     if (isSessionReportUsable) {
-      await recordSessionAccess({
+      await saveSessionAccess({
         vaultPath,
         provider,
         sessionId: report.sessionId,
@@ -145,7 +145,7 @@ export const runPreflightCommand = async (args: PreflightArgs): Promise<CommandO
     }
   }
 
-  writePreflightOutput(
+  writePreflightPrintout(
     {
       command: 'preflight',
       provider,
@@ -154,18 +154,18 @@ export const runPreflightCommand = async (args: PreflightArgs): Promise<CommandO
       restores,
       reason: undefined,
     },
-    isJsonOutput,
+    isStructuredRequested,
   );
   return { exitCode: 0 };
 };
 
-const extractPassthroughArgv = (rawArgs: ReadonlyArray<string>): ReadonlyArray<string> => {
-  const separatorIndex = rawArgs.indexOf('--');
+const extractPassthroughArgv = (argumentList: ReadonlyArray<string>): ReadonlyArray<string> => {
+  const separatorIndex = argumentList.indexOf('--');
 
   const isSeparatorNotFound = separatorIndex === -1;
   if (isSeparatorNotFound) {
     // Everything after subcommand name flags; drop known flags.
-    return rawArgs.filter(
+    return argumentList.filter(
       (arg, index, all) =>
         arg !== 'preflight' &&
         arg !== '--json' &&
@@ -175,7 +175,7 @@ const extractPassthroughArgv = (rawArgs: ReadonlyArray<string>): ReadonlyArray<s
     );
   }
 
-  return rawArgs.slice(separatorIndex + 1);
+  return argumentList.slice(separatorIndex + 1);
 };
 
 const parseProvider = (provider: string | undefined): ProviderId | undefined => {
@@ -194,7 +194,7 @@ const parseProvider = (provider: string | undefined): ProviderId | undefined => 
   return providerReply.data;
 };
 
-const writePreflightOutput = (
+const writePreflightPrintout = (
   payload: {
     readonly command: 'preflight';
     readonly provider: ProviderId;
@@ -203,9 +203,9 @@ const writePreflightOutput = (
     readonly restores: ReadonlyArray<EnsureRestoredReport>;
     readonly reason: string | undefined;
   },
-  json: boolean,
+  isStructuredRequested: boolean,
 ): void => {
-  if (json) {
+  if (isStructuredRequested) {
     process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
     return;
   }
@@ -215,7 +215,7 @@ const writePreflightOutput = (
     `preflight: ${payload.provider}`,
     `restoreOnLaunchEnabled: ${String(payload.restoreOnLaunchEnabled)}`,
     `sessionIds: ${payload.sessionIds.join(', ') || '(none)'}`,
-    isReasonMissing ? undefined : `reason: ${payload.reason}`,
+    isReasonMissing ? null : `reason: ${payload.reason}`,
     ...payload.restores.map((report) => {
       const isReportReasonMissing = report.reason == null;
       return `- ${report.sessionId ?? '?'}: ${report.status}${isReportReasonMissing ? '' : ` (${report.reason})`}`;

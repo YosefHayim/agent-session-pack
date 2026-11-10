@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { defineCommand } from 'citty';
-import type { CommandOutcome } from '@/command-outcome.js';
+import type { CommandExit } from '@/command-outcome.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -13,14 +13,14 @@ type CommandCheck = {
 /**
  * Arguments for the doctor prerequisite command.
  */
-export type DoctorArgs = {
+export type DoctorFlags = {
   readonly json?: boolean | undefined;
 };
 
 /**
  * Runs local prerequisite checks.
  *
- * @param args - Output mode.
+ * @param flags - Output mode.
  * @returns Promise that resolves after output is written.
  * @example
  * ```ts
@@ -29,12 +29,12 @@ export type DoctorArgs = {
  * await runDoctorCommand({ json: true });
  * ```
  */
-export const runDoctorCommand = async (args: DoctorArgs): Promise<CommandOutcome> => {
+export const runDoctorCommand = async (flags: DoctorFlags): Promise<CommandExit> => {
   const zstd = await checkCommand('zstd', ['--version']);
   const sqlite3 = await checkCommand('sqlite3', ['--version']);
 
-  const isJsonOutput = args.json === true;
-  if (isJsonOutput) {
+  const isStructuredRequested = flags.json === true;
+  if (isStructuredRequested) {
     process.stdout.write(`${JSON.stringify({ sqlite3, zstd })}\n`);
     return { exitCode: 0 };
   }
@@ -67,14 +67,14 @@ export const doctorCommand = defineCommand({
 
 const checkCommand = async (
   command: string,
-  versionArgs: ReadonlyArray<string>,
+  versionArgumentList: ReadonlyArray<string>,
 ): Promise<CommandCheck> => {
   try {
-    const output = await execFileAsync(command, [...versionArgs]);
+    const printout = await execFileAsync(command, [...versionArgumentList]);
 
     return {
       available: true,
-      version: output.stdout.trim(),
+      version: printout.stdout.trim(),
     };
   } catch {
     return {

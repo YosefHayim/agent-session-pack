@@ -34,7 +34,7 @@ export type PackPlanRequest = {
 /**
  * Per-provider row summarizing scanned, candidate, and byte totals.
  */
-type PackPlanRow = {
+type PackPlanSummary = {
   readonly provider: ProviderId;
   readonly mode: ProviderMode;
   readonly scannedSessions: number;
@@ -49,7 +49,7 @@ type PackPlanRow = {
  * Complete dry-run pack plan with provider rows and threshold previews.
  */
 export type PackPlan = {
-  readonly rows: ReadonlyArray<PackPlanRow>;
+  readonly rows: ReadonlyArray<PackPlanSummary>;
   readonly thresholdPreviews: ReadonlyArray<PackThresholdPreview>;
 };
 
@@ -263,17 +263,17 @@ const createThresholdPreview = (request: {
   };
 };
 
-const parseDuration = (duration: string): Duration | undefined => {
-  const match = duration.match(/^(\d+)(h|d|w)$/);
+const parseDuration = (duration: string): Duration | null => {
+  const hit = duration.match(/^(\d+)(h|d|w)$/);
 
-  const isMatchMissing = match == null;
-  if (isMatchMissing) {
-    return undefined;
+  const isHitMissing = hit == null;
+  if (isHitMissing) {
+    return null;
   }
 
   return {
-    value: Number(match[1]),
-    unit: match[2] as DurationUnit,
+    value: Number(hit[1]),
+    unit: hit[2] as DurationUnit,
   };
 };
 

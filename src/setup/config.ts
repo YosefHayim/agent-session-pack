@@ -8,7 +8,7 @@ import { ProviderIdSchema } from '@/session-model.js';
 /**
  * Schema describing persisted setup configuration.
  */
-const SetupConfigSchema = z.object({
+const SetupSettingsSchema = z.object({
   version: z.literal(1),
   providers: z.array(ProviderIdSchema),
   vaultPath: z.string(),
@@ -24,13 +24,13 @@ const SetupConfigSchema = z.object({
 /**
  * Decoded setup configuration record.
  */
-export type SetupConfig = z.infer<typeof SetupConfigSchema>;
+export type SetupSettings = z.infer<typeof SetupSettingsSchema>;
 
 /**
  * Reports whether restore-on-launch lifecycle helpers are enabled in setup config.
  */
-export const isRestoreOnLaunchEnabled = (config: SetupConfig | undefined): boolean =>
-  config?.restoreOnLaunch === true;
+export const isRestoreOnLaunchEnabled = (settings: SetupSettings | null): boolean =>
+  settings?.restoreOnLaunch === true;
 
 /**
  * Vault path that has passed setup validation.
@@ -51,9 +51,9 @@ export type VaultPathValidationRequest = {
 /**
  * Inputs required to persist setup configuration.
  */
-export type WriteSetupConfigRequest = {
+export type WriteSetupSettingsRequest = {
   readonly home: string;
-  readonly config: SetupConfig;
+  readonly config: SetupSettings;
 };
 
 /**
@@ -76,7 +76,7 @@ export const expandHomePath = (path: string, home: string): string => {
 /**
  * Resolves the setup config pointer stored below the default Agent Session Pack directory.
  */
-export const createConfigPath = (home: string): string =>
+export const createSettingsPath = (home: string): string =>
   join(home, '.agent-session-pack', 'config.json');
 
 /**
@@ -122,38 +122,38 @@ export const validateVaultPath = async (
 /**
  * Reads saved setup config when it exists, or undefined when setup has not run.
  */
-export const readSetupConfig = async (home: string): Promise<SetupConfig | undefined> => {
-  const configPath = createConfigPath(home);
-  const configText = await readConfigText(configPath).catch(throwWrappedError);
+export const readSetupSettings = async (home: string): Promise<SetupSettings | null> => {
+  const settingsPath = createSettingsPath(home);
+  const settingsString = await readSettingsString(settingsPath).catch(throwWrappedError);
 
-  const isConfigMissing = configText == null;
+  const isSettingsMissing = settingsString == null;
 
-  if (isConfigMissing) {
-    return undefined;
+  if (isSettingsMissing) {
+    return null;
   }
 
-  return SetupConfigSchema.parse(JSON.parse(configText));
+  return SetupSettingsSchema.parse(JSON.parse(settingsString));
 };
 
 /**
  * Writes setup config and creates the selected vault directory.
  */
-export const writeSetupConfig = async (request: WriteSetupConfigRequest): Promise<void> => {
-  const configPath = createConfigPath(request.home);
-  await mkdir(dirname(configPath), { recursive: true }).catch(throwWrappedError);
+export const writeSetupSettings = async (request: WriteSetupSettingsRequest): Promise<void> => {
+  const settingsPath = createSettingsPath(request.home);
+  await mkdir(dirname(settingsPath), { recursive: true }).catch(throwWrappedError);
   await mkdir(request.config.vaultPath, { recursive: true }).catch(throwWrappedError);
-  await writeFile(configPath, `${JSON.stringify(request.config, null, 2)}\n`).catch(
+  await writeFile(settingsPath, `${JSON.stringify(request.config, null, 2)}\n`).catch(
     throwWrappedError,
   );
 };
 
-const readConfigText = async (configPath: string): Promise<string | null> => {
+const readSettingsString = async (settingsPath: string): Promise<string | null> => {
   try {
-    return await readFile(configPath, 'utf8');
+    return await readFile(settingsPath, 'utf8');
   } catch (cause) {
-    const isConfigMissing = readErrorCode(cause) === 'ENOENT';
+    const isSettingsMissing = readErrorCode(cause) === 'ENOENT';
 
-    if (isConfigMissing) {
+    if (isSettingsMissing) {
       return null;
     }
 
@@ -193,14 +193,14 @@ const assertNewVaultParent = async (path: string): Promise<void> => {
   await assertWritable(parentPath);
 };
 
-const readStatOptional = async (path: string): Promise<Stats | undefined> => {
+const readStatOptional = async (path: string): Promise<Stats | null> => {
   try {
     return await stat(path);
   } catch (cause) {
     const isPathMissing = readErrorCode(cause) === 'ENOENT';
 
     if (isPathMissing) {
-      return undefined;
+      return null;
     }
 
     throw new Error(String(cause), { cause });
@@ -229,15 +229,15 @@ const isPathInsideOrSame = (path: string, parentPath: string): boolean => {
   return !isAbsolute(relativePath);
 };
 
-const readErrorCode = (cause: unknown): string | undefined => {
+const readErrorCode = (cause: unknown): string | null => {
   const isCauseNotObject = typeof cause !== 'object' || cause === null;
   if (isCauseNotObject) {
-    return undefined;
+    return null;
   }
 
   const hasNoErrorCode = !('code' in cause);
   if (hasNoErrorCode) {
-    return undefined;
+    return null;
   }
 
   return String(cause.code);

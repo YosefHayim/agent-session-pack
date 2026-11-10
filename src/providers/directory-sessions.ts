@@ -12,7 +12,7 @@ type DirectorySessionMarkers = ReadonlyArray<string>;
 /**
  * Options for discovering directory-backed provider sessions.
  */
-export type DirectoryProviderDiscoveryOptions = {
+export type DirectoryProviderDiscoverySettings = {
   readonly provider: ProviderId;
   readonly store: SessionStore;
   readonly markers: DirectorySessionMarkers;
@@ -27,20 +27,20 @@ export type DirectoryProviderDiscoveryOptions = {
  * Discovers directory-backed provider sessions under a store root.
  */
 export const discoverDirectoryProviderSessions = async (
-  options: DirectoryProviderDiscoveryOptions,
+  settings: DirectoryProviderDiscoverySettings,
 ): Promise<ReadonlyArray<DiscoveredSession>> => {
-  const directories = await collectSessionDirectories(options.store.path, {
-    markers: options.markers,
-    maxDepth: options.maxDepth,
-    excludedNames: options.excludedNames ?? [],
+  const directories = await collectSessionDirectories(settings.store.path, {
+    markers: settings.markers,
+    maxDepth: settings.maxDepth,
+    excludedNames: settings.excludedNames ?? [],
   });
   const sessions: DiscoveredSession[] = [];
 
   for (const directory of directories) {
     const sessionId =
-      options.sessionIdFromDirectory?.(directory) ?? readDefaultSessionIdFromDirectory(directory);
+      settings.sessionIdFromDirectory?.(directory) ?? readDefaultSessionIdFromDirectory(directory);
 
-    const isSessionActive = options.activeSessionIds?.has(sessionId) === true;
+    const isSessionActive = settings.activeSessionIds?.has(sessionId) === true;
 
     if (isSessionActive) {
       continue;
@@ -50,12 +50,12 @@ export const discoverDirectoryProviderSessions = async (
     const title = await readDirectoryTitle({
       directory,
       sessionId,
-      titleFromDirectory: options.titleFromDirectory,
+      titleFromDirectory: settings.titleFromDirectory,
     });
 
     sessions.push({
       id: sessionId,
-      provider: options.provider,
+      provider: settings.provider,
       title,
       slug: slugifyTitle(title),
       originalPath: directory,
@@ -72,12 +72,12 @@ export const discoverDirectoryProviderSessions = async (
 /**
  * Reads JSON text from a file when present.
  */
-export const readJsonFile = async (path: string): Promise<unknown | undefined> => {
+export const readDocumentFile = async (path: string): Promise<unknown | null> => {
   try {
-    const content = await readFile(path, 'utf8');
-    return JSON.parse(content) as unknown;
+    const fileString = await readFile(path, 'utf8');
+    return JSON.parse(fileString) as unknown;
   } catch {
-    return undefined;
+    return null;
   }
 };
 
@@ -103,11 +103,11 @@ const readDirectoryTitle = async (request: {
 
 const readDefaultSessionIdFromDirectory = (path: string): string => {
   const name = basename(path);
-  const uuidMatch = name.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+  const uuidHit = name.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
 
-  const isUuidFound = uuidMatch != null;
+  const isUuidFound = uuidHit != null;
   if (isUuidFound) {
-    return uuidMatch[0];
+    return uuidHit[0];
   }
 
   return name;
@@ -115,7 +115,7 @@ const readDefaultSessionIdFromDirectory = (path: string): string => {
 
 const collectSessionDirectories = async (
   root: string,
-  options: {
+  settings: {
     readonly markers: DirectorySessionMarkers;
     readonly maxDepth: number;
     readonly excludedNames: ReadonlyArray<string>;
@@ -131,41 +131,41 @@ const collectSessionDirectories = async (
   const found: string[] = [];
 
   const walk = async (directory: string, depth: number): Promise<void> => {
-    const isDepthAboveMaxDepth = depth > options.maxDepth;
+    const isDepthAboveMaxDepth = depth > settings.maxDepth;
     if (isDepthAboveMaxDepth) {
       return;
     }
 
-    const hasSessionMarkers = await hasDirectoryMarkers(directory, options.markers);
+    const hasSessionMarkers = await hasDirectoryMarkers(directory, settings.markers);
     if (hasSessionMarkers) {
       found.push(directory);
       return;
     }
 
-    const isAtMaxDepth = depth === options.maxDepth;
+    const isAtMaxDepth = depth === settings.maxDepth;
     if (isAtMaxDepth) {
       return;
     }
 
-    const entries = await readChildEntries(directory);
+    const dirents = await readChildDirents(directory);
 
-    for (const entry of entries) {
-      const isNotDirectory = !entry.isDirectory();
+    for (const dirent of dirents) {
+      const isNotDirectory = !dirent.isDirectory();
       if (isNotDirectory) {
         continue;
       }
 
-      const isNameInExcludedNames = options.excludedNames.includes(entry.name);
+      const isNameInExcludedNames = settings.excludedNames.includes(dirent.name);
       if (isNameInExcludedNames) {
         continue;
       }
 
-      const isHiddenEntry = entry.name.startsWith('.');
-      if (isHiddenEntry) {
+      const isHiddenName = dirent.name.startsWith('.');
+      if (isHiddenName) {
         continue;
       }
 
-      await walk(join(directory, entry.name), depth + 1);
+      await walk(join(directory, dirent.name), depth + 1);
     }
   };
 
@@ -173,7 +173,7 @@ const collectSessionDirectories = async (
   return found;
 };
 
-const readChildEntries = async (directory: string): Promise<ReadonlyArray<Dirent>> => {
+const readChildDirents = async (directory: string): Promise<ReadonlyArray<Dirent>> => {
   try {
     return await readdir(directory, { withFileTypes: true });
   } catch {

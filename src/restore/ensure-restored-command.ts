@@ -2,10 +2,10 @@ import { defineCommand } from 'citty';
 import { createDefaultVaultPath } from '@/archive/vault-paths.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
-import type { CommandOutcome } from '@/command-outcome.js';
+import type { CommandExit } from '@/command-outcome.js';
 import { requireHome } from '@/home-env.js';
 import { parseOptionalProvider } from '@/providers/flag.js';
-import { isRestoreOnLaunchEnabled, readSetupConfig } from '@/setup/config.js';
+import { isRestoreOnLaunchEnabled, readSetupSettings } from '@/setup/config.js';
 import { type EnsureRestoredReport, ensureSessionRestored } from './ensure-restored.js';
 
 /**
@@ -45,7 +45,7 @@ export const ensureRestoredCommand = defineCommand({
 /**
  * Decoded arguments for ensure-restored.
  */
-export type EnsureRestoredArgs = {
+export type EnsureRestoredFlags = {
   readonly json: boolean | undefined;
   readonly provider: string | undefined;
   readonly session: string | undefined;
@@ -57,19 +57,19 @@ export type EnsureRestoredArgs = {
 /**
  * Runs ensure-restored for human and agent callers.
  *
- * @param args - Decoded command-line arguments.
+ * @param flags - Decoded command-line arguments.
  */
 export const runEnsureRestoredCommand = async (
-  args: EnsureRestoredArgs,
-): Promise<CommandOutcome> => {
-  const home = requireHome(args.home);
+  flags: EnsureRestoredFlags,
+): Promise<CommandExit> => {
+  const home = requireHome(flags.home);
 
   const isHomeMissing = home == null;
   if (isHomeMissing) {
     return { exitCode: 1 };
   }
 
-  const sessionSelector = args.session?.trim() ?? '';
+  const sessionSelector = flags.session?.trim() ?? '';
 
   const isSessionSelectorEmpty = sessionSelector.length === 0;
   if (isSessionSelectorEmpty) {
@@ -79,18 +79,18 @@ export const runEnsureRestoredCommand = async (
     return { exitCode: 2 };
   }
 
-  const provider = parseOptionalProvider(args.provider);
+  const provider = parseOptionalProvider(flags.provider);
 
-  const isUnknownProviderGiven = args.provider != null && provider == null;
+  const isUnknownProviderGiven = flags.provider != null && provider == null;
   if (isUnknownProviderGiven) {
-    process.stderr.write(`Unknown provider: ${args.provider}\n`);
+    process.stderr.write(`Unknown provider: ${flags.provider}\n`);
     return { exitCode: 2 };
   }
 
-  const setupConfig = await readSetupConfig(home);
-  const vaultPath = args.vaultPath ?? setupConfig?.vaultPath ?? createDefaultVaultPath(home);
-  const restoreOnLaunchEnabled = isRestoreOnLaunchEnabled(setupConfig);
-  const compression = args.compression ?? createZstdCompression();
+  const setupSettings = await readSetupSettings(home);
+  const vaultPath = flags.vaultPath ?? setupSettings?.vaultPath ?? createDefaultVaultPath(home);
+  const restoreOnLaunchEnabled = isRestoreOnLaunchEnabled(setupSettings);
+  const compression = flags.compression ?? createZstdCompression();
 
   const report = await ensureSessionRestored({
     command: 'ensure-restored',
@@ -103,26 +103,29 @@ export const runEnsureRestoredCommand = async (
     requireLifecycleEnabled: true,
   });
 
-  writeEnsureRestoredOutput(report, args.json === true);
+  writeEnsureRestoredPrintout(report, flags.json === true);
   return { exitCode: ensureRestoredExitCode(report) };
 };
 
-const writeEnsureRestoredOutput = (report: EnsureRestoredReport, json: boolean): void => {
-  if (json) {
+const writeEnsureRestoredPrintout = (
+  report: EnsureRestoredReport,
+  isStructuredRequested: boolean,
+): void => {
+  if (isStructuredRequested) {
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
     return;
   }
 
-  const isReportProviderMissing = report.provider === undefined;
+  const isReportProviderMissing = report.provider == null;
   const isReportSessionIdMissing = report.sessionId == null;
   const isReportOriginalPathMissing = report.originalPath == null;
   const isReportReasonMissing = report.reason == null;
   const lines = [
     `ensure-restored: ${report.status}`,
-    isReportProviderMissing ? undefined : `provider: ${report.provider}`,
-    isReportSessionIdMissing ? undefined : `session: ${report.sessionId}`,
-    isReportOriginalPathMissing ? undefined : `originalPath: ${report.originalPath}`,
-    isReportReasonMissing ? undefined : `reason: ${report.reason}`,
+    isReportProviderMissing ? null : `provider: ${report.provider}`,
+    isReportSessionIdMissing ? null : `session: ${report.sessionId}`,
+    isReportOriginalPathMissing ? null : `originalPath: ${report.originalPath}`,
+    isReportReasonMissing ? null : `reason: ${report.reason}`,
     `restoreOnLaunchEnabled: ${String(report.restoreOnLaunchEnabled)}`,
   ].filter((line): line is string => line != null);
 

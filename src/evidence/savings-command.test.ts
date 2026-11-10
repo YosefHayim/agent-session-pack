@@ -10,11 +10,11 @@ const createWorkspace = (): Promise<string> =>
 const writeCodexSession = async (home: string): Promise<string> => {
   const sessionDir = join(home, '.codex', 'sessions', '2026', '06', '01');
   const sessionPath = join(sessionDir, 'session-old.jsonl');
-  const content = `${'{"type":"user","text":"savings proof fixture"}\n'.repeat(40)}`;
+  const sessionJsonl = `${'{"type":"user","text":"savings proof fixture"}\n'.repeat(40)}`;
   const modifiedAt = new Date('2026-06-01T12:00:00.000Z');
 
   await mkdir(sessionDir, { recursive: true });
-  await writeFile(sessionPath, content);
+  await writeFile(sessionPath, sessionJsonl);
   await utimes(sessionPath, modifiedAt, modifiedAt);
 
   return sessionPath;
@@ -56,9 +56,9 @@ describe('savings command', () => {
   it('exits with code 1 when HOME is unset', async () => {
     delete process.env.HOME;
 
-    const commandOutcome = await runSavingsCommand({ json: true });
+    const commandExit = await runSavingsCommand({ json: true });
 
-    expect(commandOutcome.exitCode).toBe(1);
+    expect(commandExit.exitCode).toBe(1);
     const stderr = stderrWrites.join('');
     expect(stderr).toContain('HOME is not set.');
     expect(stderr).toContain('.env.example');
@@ -69,9 +69,9 @@ describe('savings command', () => {
     const home = await createWorkspace();
     process.env.HOME = home;
 
-    const commandOutcome = await runSavingsCommand({ provider: 'nope', json: true });
+    const commandExit = await runSavingsCommand({ provider: 'nope', json: true });
 
-    expect(commandOutcome.exitCode).toBe(2);
+    expect(commandExit.exitCode).toBe(2);
     expect(stderrWrites.join('')).toContain('Unknown provider: nope');
   });
 
@@ -79,15 +79,17 @@ describe('savings command', () => {
     const home = await createWorkspace();
     process.env.HOME = home;
 
-    const commandOutcome = await runSavingsCommand({ provider: 'codex', json: true });
+    const commandExit = await runSavingsCommand({ provider: 'codex', json: true });
 
-    const payload = JSON.parse(stdoutWrites.join('')) as {
+    const printedDocument = JSON.parse(stdoutWrites.join('')) as {
       readonly workRoot: string;
       readonly evidence: ReadonlyArray<unknown>;
     };
-    expect(payload.evidence).toEqual([]);
-    expect(payload.workRoot).toContain(join('.vault-test', 'evidence-local', String(process.pid)));
-    expect(commandOutcome.exitCode).toBe(0);
+    expect(printedDocument.evidence).toEqual([]);
+    expect(printedDocument.workRoot).toContain(
+      join('.vault-test', 'evidence-local', String(process.pid)),
+    );
+    expect(commandExit.exitCode).toBe(0);
   });
 
   it('writes human empty-state evidence without prompting', async () => {
@@ -107,7 +109,7 @@ describe('savings command', () => {
 
     await runSavingsCommand({ provider: 'codex', json: true });
 
-    const payload = JSON.parse(stdoutWrites.join('')) as {
+    const printedDocument = JSON.parse(stdoutWrites.join('')) as {
       readonly scope: string;
       readonly evidence: ReadonlyArray<{
         readonly provider: string;
@@ -119,9 +121,9 @@ describe('savings command', () => {
       }>;
     };
 
-    expect(payload.scope).toBe('sampled-copy-proof');
-    expect(payload.evidence).toHaveLength(1);
-    expect(payload.evidence[0]).toMatchObject({
+    expect(printedDocument.scope).toBe('sampled-copy-proof');
+    expect(printedDocument.evidence).toHaveLength(1);
+    expect(printedDocument.evidence[0]).toMatchObject({
       provider: 'codex',
       originalTouched: false,
       byteExact: true,

@@ -4,6 +4,8 @@ import { describeStatus, describeTouched } from '@/report-cells.js';
 import type { PackPlan } from './plan.js';
 import type { PackSessionsReport } from './sessions.js';
 
+const PENDING_LABEL = 'pending';
+
 export type PackPlanPrintoutSettings = {
   readonly olderThan: string;
 };
@@ -54,7 +56,7 @@ export const createHumanPackReport = (
     'Provider   Sessions  Mode         Candidates  Packed  Before     Archive    Saved      Saved %  Touch  Status',
     ...report.rows.map(createPackReportSummary),
     '--------   --------  ----         ----------  ------  ------     -------    -----      -------  -----  ------',
-    `${'total'.padEnd(10)} ${String(totals.foundSessions).padEnd(9)} ${''.padEnd(12)} ${String(totals.candidateSessions).padStart(10)}  ${String(totals.packedSessions).padStart(6)}  ${describeBytes(totals.beforeBytes).padEnd(10)} ${describeOptionalBytes(totals.archiveBytes).padEnd(10)} ${describeOptionalBytes(totals.savedBytes).padEnd(10)} ${describeOptionalPercent(totals.savedPercent).padEnd(8)} ${describeTouched(totals.touchedOriginals).padEnd(6)} ${report.apply ? 'applied' : 'dry-run'}`,
+    `${'total'.padEnd(10)} ${String(totals.foundSessions).padEnd(9)} ${''.padEnd(12)} ${String(totals.candidateSessions).padStart(10)}  ${String(totals.packedSessions).padStart(6)}  ${describeBytes(totals.beforeBytes).padEnd(10)} ${describeOptionalBytes(totals.archiveBytes, PENDING_LABEL).padEnd(10)} ${describeOptionalBytes(totals.savedBytes, PENDING_LABEL).padEnd(10)} ${describeOptionalPercent(totals.savedPercent, PENDING_LABEL).padEnd(8)} ${describeTouched(totals.touchedOriginals).padEnd(6)} ${report.apply ? 'applied' : 'dry-run'}`,
     '',
     ...createThresholdPreviewBlock(report.thresholdPreviews),
   ].join('\n');
@@ -139,11 +141,12 @@ const createPackReportSummary = (
   const candidates = String(packSessionSummary.candidateSessions).padStart(10);
   const packed = String(packSessionSummary.packedSessions).padStart(6);
   const before = describeBytes(packSessionSummary.beforeBytes).padEnd(10);
-  const archive = describeOptionalBytes(packSessionSummary.archiveBytes, 'pending').padEnd(10);
-  const saved = describeOptionalBytes(packSessionSummary.savedBytes, 'pending').padEnd(10);
-  const savedPercent = describeOptionalPercent(packSessionSummary.savedPercent, 'pending').padEnd(
-    8,
-  );
+  const archive = describeOptionalBytes(packSessionSummary.archiveBytes, PENDING_LABEL).padEnd(10);
+  const saved = describeOptionalBytes(packSessionSummary.savedBytes, PENDING_LABEL).padEnd(10);
+  const savedPercent = describeOptionalPercent(
+    packSessionSummary.savedPercent,
+    PENDING_LABEL,
+  ).padEnd(8);
   const touched = describeTouched(packSessionSummary.touchedOriginals).padEnd(6);
 
   return `${provider} ${sessions} ${mode} ${candidates}  ${packed}  ${before} ${archive} ${saved} ${savedPercent} ${touched} ${describeStatus(packSessionSummary.status, packSessionSummary.reason)}`;

@@ -6,10 +6,22 @@ import { grokProvider } from './grok.js';
 import { discoverJsonlProviderSessions } from './jsonl-sessions.js';
 import { kimiProvider } from './kimi.js';
 
+const ARCHIVE_MODE = 'archive';
+const SESSIONS_FOLDER_NAME = 'sessions';
+const SESSION_FILE_NAME = 'session.json';
+const BIN_FOLDER_NAME = 'bin';
+const NODE_MODULES_FOLDER_NAME = 'node_modules';
+const EXTENSIONS_FOLDER_NAME = 'extensions';
+const LOG_FOLDER_NAME = 'log';
+const LOGS_FOLDER_NAME = 'logs';
+const GEMINI_FOLDER_NAME = '.gemini';
+const geminiMaxDepth = 5;
+const opencodeMaxDepth = 6;
+
 export const claudeCodeProvider: ProviderAdapter = {
   id: 'claude',
   label: 'Claude Code',
-  mode: 'archive',
+  mode: ARCHIVE_MODE,
   defaultRoots: (home: string): ReadonlyArray<string> => [join(home, '.claude', 'projects')],
   discover: (store) =>
     discoverJsonlProviderSessions({
@@ -22,8 +34,10 @@ export const claudeCodeProvider: ProviderAdapter = {
 export const codexProvider: ProviderAdapter = {
   id: 'codex',
   label: 'Codex',
-  mode: 'archive',
-  defaultRoots: (home: string): ReadonlyArray<string> => [join(home, '.codex', 'sessions')],
+  mode: ARCHIVE_MODE,
+  defaultRoots: (home: string): ReadonlyArray<string> => [
+    join(home, '.codex', SESSIONS_FOLDER_NAME),
+  ],
   discover: (store) =>
     discoverJsonlProviderSessions({
       provider: 'codex',
@@ -45,8 +59,10 @@ const cursorProvider: ProviderAdapter = {
 const kiroProvider: ProviderAdapter = {
   id: 'kiro',
   label: 'Kiro',
-  mode: 'archive',
-  defaultRoots: (home: string): ReadonlyArray<string> => [join(home, '.kiro', 'sessions')],
+  mode: ARCHIVE_MODE,
+  defaultRoots: (home: string): ReadonlyArray<string> => [
+    join(home, '.kiro', SESSIONS_FOLDER_NAME),
+  ],
   discover: (store) =>
     discoverJsonlProviderSessions({
       provider: 'kiro',
@@ -58,18 +74,18 @@ const kiroProvider: ProviderAdapter = {
 const geminiProvider: ProviderAdapter = {
   id: 'gemini',
   label: 'Gemini CLI',
-  mode: 'archive',
+  mode: ARCHIVE_MODE,
   defaultRoots: (home: string): ReadonlyArray<string> => [
-    join(home, '.gemini'),
-    join(home, '.gemini', 'tmp'),
+    join(home, GEMINI_FOLDER_NAME),
+    join(home, GEMINI_FOLDER_NAME, 'tmp'),
   ],
   discover: async (store) => {
     const directorySessions = await discoverDirectoryProviderSessions({
       provider: 'gemini',
       store,
-      markers: ['checkpoint.json', 'chat.json', 'session.json', 'history.json'],
-      maxDepth: 5,
-      excludedNames: ['bin', 'node_modules', 'extensions'],
+      markers: ['checkpoint.json', 'chat.json', SESSION_FILE_NAME, 'history.json'],
+      maxDepth: geminiMaxDepth,
+      excludedNames: [BIN_FOLDER_NAME, NODE_MODULES_FOLDER_NAME, EXTENSIONS_FOLDER_NAME],
     });
 
     const isDirectorySessionFound = directorySessions.length > 0;
@@ -81,7 +97,7 @@ const geminiProvider: ProviderAdapter = {
     return discoverJsonlProviderSessions({
       provider: 'gemini',
       store,
-      excludePathParts: ['bin', 'node_modules', 'extensions'],
+      excludePathParts: [BIN_FOLDER_NAME, NODE_MODULES_FOLDER_NAME, EXTENSIONS_FOLDER_NAME],
     });
   },
 };
@@ -89,7 +105,7 @@ const geminiProvider: ProviderAdapter = {
 const opencodeProvider: ProviderAdapter = {
   id: 'opencode',
   label: 'OpenCode',
-  mode: 'archive',
+  mode: ARCHIVE_MODE,
   defaultRoots: (home: string): ReadonlyArray<string> => [
     join(home, '.local', 'share', 'opencode'),
     join(home, '.opencode'),
@@ -98,9 +114,9 @@ const opencodeProvider: ProviderAdapter = {
     const directorySessions = await discoverDirectoryProviderSessions({
       provider: 'opencode',
       store,
-      markers: ['session.json', 'info.json', 'meta.json'],
-      maxDepth: 6,
-      excludedNames: ['log', 'logs', 'bin', 'node_modules'],
+      markers: [SESSION_FILE_NAME, 'info.json', 'meta.json'],
+      maxDepth: opencodeMaxDepth,
+      excludedNames: [LOG_FOLDER_NAME, LOGS_FOLDER_NAME, BIN_FOLDER_NAME, NODE_MODULES_FOLDER_NAME],
     });
 
     const isDirectorySessionFound = directorySessions.length > 0;
@@ -112,7 +128,7 @@ const opencodeProvider: ProviderAdapter = {
     return discoverJsonlProviderSessions({
       provider: 'opencode',
       store,
-      excludePathParts: ['log', 'logs', 'node_modules'],
+      excludePathParts: [LOG_FOLDER_NAME, LOGS_FOLDER_NAME, NODE_MODULES_FOLDER_NAME],
     });
   },
 };

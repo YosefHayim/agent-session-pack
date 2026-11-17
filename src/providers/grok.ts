@@ -2,9 +2,14 @@ import { readFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import type { ProviderAdapter } from '@/session-model.js';
 import { discoverDirectoryProviderSessions, readDocumentFile } from './directory-sessions.js';
+import { isJsonObject } from './session-discovery.js';
+
+const GROK_PROVIDER_ID = 'grok';
+const SUMMARY_FILE_NAME = 'summary.json';
+const grokMaxDepth = 3;
 
 export const grokProvider: ProviderAdapter = {
-  id: 'grok',
+  id: GROK_PROVIDER_ID,
   label: 'Grok',
   mode: 'archive',
   defaultRoots: (home: string): ReadonlyArray<string> => [join(home, '.grok', 'sessions')],
@@ -14,39 +19,44 @@ export const grokProvider: ProviderAdapter = {
     );
 
     return discoverDirectoryProviderSessions({
-      provider: 'grok',
+      provider: GROK_PROVIDER_ID,
       store,
-      markers: ['summary.json', 'updates.jsonl', 'events.jsonl'],
-      maxDepth: 3,
+      markers: [SUMMARY_FILE_NAME, 'updates.jsonl', 'events.jsonl'],
+      maxDepth: grokMaxDepth,
       activeSessionIds,
       titleFromDirectory: readGrokSessionTitle,
-      sessionIdFromDirectory: (path) => basename(path),
+      sessionIdFromDirectory: basename,
     });
   },
 };
 
+function readSessionIdOrNull(summaryPart: unknown): string | null {
+  const isSummaryPartNotObject = !isJsonObject(summaryPart);
+  if (isSummaryPartNotObject) {
+    return null;
+  }
+
+  const sessionId = summaryPart.session_id;
+  const isSessionIdString = typeof sessionId === 'string';
+
+  return isSessionIdString ? sessionId : null;
+}
+
+function isSessionIdFound(sessionId: string | null): sessionId is string {
+  return sessionId !== null;
+}
+
 async function readActiveGrokSessionIds(path: string): Promise<ReadonlySet<string>> {
   try {
     const fileString = await readFile(path, 'utf8');
-    const parsed = JSON.parse(fileString) as unknown;
+    const parsedFile = JSON.parse(fileString) as unknown;
 
-    const isNotParsedArray = !Array.isArray(parsed);
+    const isNotParsedArray = !Array.isArray(parsedFile);
     if (isNotParsedArray) {
       return new Set();
     }
 
-    const ids = parsed
-      .map((summaryPart) => {
-        const isSummaryPartNotObject = typeof summaryPart !== 'object' || summaryPart === null;
-        if (isSummaryPartNotObject) {
-          return null;
-        }
-
-        const sessionId = (summaryPart as { readonly session_id?: unknown }).session_id;
-        const isSessionIdTypeString = typeof sessionId === 'string';
-        return isSessionIdTypeString ? sessionId : undefined;
-      })
-      .filter((sessionId): sessionId is string => sessionId != null);
+    const ids = parsedFile.map(readSessionIdOrNull).filter(isSessionIdFound);
 
     return new Set(ids);
   } catch {
@@ -54,39 +64,48 @@ async function readActiveGrokSessionIds(path: string): Promise<ReadonlySet<strin
   }
 }
 
-async function readGrokSessionTitle(directory: string): Promise<string> {
-  const summary = await readDocumentFile(join(directory, 'summary.json'));
+function readNonBlankString(candidate: unknown): string | null {
+  const isCandidateNotString = typeof candidate !== 'string';
+  if (isCandidateNotString) {
+    return null;
+  }
 
-  const isSummaryMissing = typeof summary !== 'object' || summary === null;
-  if (isSummaryMissing) {
+  const isCandidateBlank = candidate.trim().length === 0;
+  if (isCandidateBlank) {
+    return null;
+  }
+
+  return candidate;
+}
+
+async function readGrokSessionTitle(directory: string): Promise<string> {
+  const summary = await readDocumentFile(join(directory, SUMMARY_FILE_NAME));
+
+  const isSummaryNotObject = !isJsonObject(summary);
+  if (isSummaryNotObject) {
     return basename(directory);
   }
 
-  const summaryFields = summary as {
-    readonly session_summary?: unknown;
-    readonly info?: { readonly cwd?: unknown; readonly id?: unknown };
-    readonly agent_name?: unknown;
-  };
-
-  const hasSessionSummary =
-    typeof summaryFields.session_summary === 'string' &&
-    summaryFields.session_summary.trim().length > 0;
+  const sessionSummary = readNonBlankString(summary.session_summary);
+  const hasSessionSummary = sessionSummary !== null;
   if (hasSessionSummary) {
-    return summaryFields.session_summary.trim();
+    return sessionSummary.trim();
   }
 
-  const hasAgentName =
-    typeof summaryFields.agent_name === 'string' && summaryFields.agent_name.trim().length > 0;
+  const info = summary.info;
+  const infoCwd = isJsonObject(info) ? info.cwd : null;
+  const agentName = readNonBlankString(summary.agent_name);
+  const hasAgentName = agentName !== null;
   if (hasAgentName) {
-    const isCwdString = typeof summaryFields.info?.cwd === 'string';
-    const cwd = isCwdString ? basename(summaryFields.info.cwd) : basename(directory);
-    return `${summaryFields.agent_name} @ ${cwd}`;
+    const isCwdString = typeof infoCwd === 'string';
+    const cwdName = isCwdString ? basename(infoCwd) : basename(directory);
+    return `${agentName} @ ${cwdName}`;
   }
 
-  const hasCwd =
-    typeof summaryFields.info?.cwd === 'string' && summaryFields.info.cwd.trim().length > 0;
+  const nonBlankCwd = readNonBlankString(infoCwd);
+  const hasCwd = nonBlankCwd !== null;
   if (hasCwd) {
-    return basename(summaryFields.info.cwd);
+    return basename(nonBlankCwd);
   }
 
   return basename(directory);

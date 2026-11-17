@@ -12,8 +12,6 @@ import {
   text,
 } from '@clack/prompts';
 
-export { confirm, isCancel };
-
 export type PromptOption<Choice extends string> = {
   readonly value: Choice;
   readonly label: string;

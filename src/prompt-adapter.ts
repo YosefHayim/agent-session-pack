@@ -6,26 +6,19 @@ import {
   multiselect,
   note,
   outro,
+  type SpinnerResult,
   select,
   spinner,
   text,
 } from '@clack/prompts';
+
+export { confirm, isCancel };
 
 export type PromptOption<Choice extends string> = {
   readonly value: Choice;
   readonly label: string;
   readonly hint?: string;
   readonly disabled?: boolean;
-};
-
-type PromptSpinner = {
-  readonly isCancelled: boolean;
-  start: (message?: string) => void;
-  stop: (message?: string) => void;
-  cancel: (message?: string) => void;
-  error: (message?: string) => void;
-  message: (message?: string) => void;
-  clear: () => void;
 };
 
 export type PromptAdapter = {
@@ -57,7 +50,7 @@ export type PromptAdapter = {
     readonly inactive?: string;
     readonly initialValue?: boolean;
   }) => Promise<boolean | symbol>;
-  spinner: () => PromptSpinner;
+  spinner: () => SpinnerResult;
 };
 
 export const clackPromptAdapter: PromptAdapter = {
@@ -66,11 +59,10 @@ export const clackPromptAdapter: PromptAdapter = {
   intro,
   isCancel,
   multiselect: (question) => {
-    const hasNoInitialChoices = question.initialValues == null;
     return multiselect({
       ...question,
       options: [...question.options] as never,
-      initialValues: hasNoInitialChoices ? undefined : ([...question.initialValues] as never),
+      initialValues: question.initialValues as never,
     });
   },
   note,

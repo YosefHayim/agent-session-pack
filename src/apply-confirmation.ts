@@ -1,4 +1,4 @@
-import { confirm, isCancel } from '@clack/prompts';
+import { confirm, isCancel } from '@/prompt-adapter.js';
 
 export type ApplyConfirmationRequest = {
   readonly action: string;

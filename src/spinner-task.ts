@@ -17,8 +17,8 @@ export async function runWithSpinner<Produced>(
     const produced = await request.task();
     scanSpinner.stop(request.stopMessage);
     return produced;
-  } catch (cause) {
+  } catch (error) {
     scanSpinner.error('Operation failed.');
-    throw cause;
+    throw error;
   }
 }

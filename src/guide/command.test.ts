@@ -99,7 +99,11 @@ describe('agent guide output', () => {
         machineOutput: '--json',
       },
     });
-    expect(guide.recommendedFlow.map((step: { command: string }) => step.command)).toEqual([
+    function readStepCommand(step: { command: string }): string {
+      return step.command;
+    }
+
+    expect(guide.recommendedFlow.map(readStepCommand)).toEqual([
       'npx --yes agent-session-pack check --json',
       'npx --yes agent-session-pack pack --all-providers --older-than 7d --dry-run --json',
       'npx --yes agent-session-pack pack --all-providers --older-than 7d --apply --yes --json',

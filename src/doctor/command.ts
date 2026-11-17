@@ -4,6 +4,7 @@ import { defineCommand } from 'citty';
 import type { CommandExit } from '@/command-outcome.js';
 
 const execFileAsync = promisify(execFile);
+const VERSION_ARGUMENT_LIST: ReadonlyArray<string> = ['--version'];
 
 interface CommandCheck {
   readonly available: boolean;
@@ -15,8 +16,8 @@ export interface DoctorFlags {
 }
 
 export async function runDoctorCommand(flags: DoctorFlags): Promise<CommandExit> {
-  const zstd = await checkCommand('zstd', ['--version']);
-  const sqlite3 = await checkCommand('sqlite3', ['--version']);
+  const zstd = await checkCommand('zstd', VERSION_ARGUMENT_LIST);
+  const sqlite3 = await checkCommand('sqlite3', VERSION_ARGUMENT_LIST);
 
   const isMachineOutputRequested = flags.json === true;
   if (isMachineOutputRequested) {
@@ -24,8 +25,8 @@ export async function runDoctorCommand(flags: DoctorFlags): Promise<CommandExit>
     return { exitCode: 0 };
   }
 
-  process.stdout.write(`zstd: ${zstd.available ? zstd.version : 'missing'}\n`);
-  process.stdout.write(`sqlite3: ${sqlite3.available ? sqlite3.version : 'missing'}\n`);
+  process.stdout.write(`zstd: ${describeCommandVersion(zstd)}\n`);
+  process.stdout.write(`sqlite3: ${describeCommandVersion(sqlite3)}\n`);
   return { exitCode: 0 };
 }
 
@@ -46,6 +47,15 @@ export const doctorCommand = defineCommand({
     });
   },
 });
+
+function describeCommandVersion(commandCheck: CommandCheck): string | undefined {
+  const isCommandMissing = !commandCheck.available;
+  if (isCommandMissing) {
+    return 'missing';
+  }
+
+  return commandCheck.version;
+}
 
 async function checkCommand(
   command: string,

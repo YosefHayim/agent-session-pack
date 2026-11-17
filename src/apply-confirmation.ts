@@ -25,9 +25,13 @@ export async function askApplyConfirmation(
     return false;
   }
 
-  const isInteractiveTerminalMissing =
-    process.stdin.isTTY !== true || process.stdout.isTTY !== true;
-  if (isInteractiveTerminalMissing) {
+  const isInputNotTerminal = process.stdin.isTTY !== true;
+  if (isInputNotTerminal) {
+    return false;
+  }
+
+  const isOutputNotTerminal = process.stdout.isTTY !== true;
+  if (isOutputNotTerminal) {
     return false;
   }
 

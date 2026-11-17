@@ -153,6 +153,10 @@ const agentGuide: AgentGuide = {
   ],
 };
 
+function describeFlowStep(step: AgentGuideStep, index: number): string {
+  return [`${index + 1}. ${step.purpose}`, `   ${step.command}`].join('\n');
+}
+
 export function createHumanAgentGuide(): string {
   return [
     'Agent-first quickstart',
@@ -164,9 +168,7 @@ export function createHumanAgentGuide(): string {
     '- Use --dry-run before --apply, then use --yes only for non-interactive execution.',
     '',
     'Safe flow',
-    ...RECOMMENDED_FLOW.map((step, index) =>
-      [`${index + 1}. ${step.purpose}`, `   ${step.command}`].join('\n'),
-    ),
+    ...RECOMMENDED_FLOW.map(describeFlowStep),
     '',
     'Curiosity preview',
     `${ONE_OFF_PREFIX} pack --max --dry-run --json`,
@@ -187,5 +189,7 @@ export function createHumanAgentGuide(): string {
 }
 
 export function createStructuredAgentGuide(): string {
-  return `${JSON.stringify(agentGuide, null, 2)}\n`;
+  const jsonIndentSpaces = 2;
+
+  return `${JSON.stringify(agentGuide, null, jsonIndentSpaces)}\n`;
 }

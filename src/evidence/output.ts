@@ -3,6 +3,16 @@ import { calculateSavedPercent } from '@/byte-savings.js';
 import type { LocalEvidenceReport, ProviderEvidence } from './local-evidence.js';
 
 const MISSING_LABEL = '-';
+const YES_LABEL = 'yes';
+const NO_LABEL = 'no';
+const PROVIDER_COLUMN_WIDTH = 13;
+const DISCOVERED_COLUMN_WIDTH = 11;
+const SAMPLES_COLUMN_WIDTH = 8;
+const MODE_COLUMN_WIDTH = 12;
+const BEFORE_COLUMN_WIDTH = 13;
+const AFTER_COLUMN_WIDTH = 12;
+const SAVED_COLUMN_WIDTH = 8;
+const EXACT_COLUMN_WIDTH = 7;
 
 export function createHumanEvidenceReport(report: LocalEvidenceReport): string {
   const isReportEvidenceEmpty = report.evidence.length === 0;
@@ -17,21 +27,17 @@ export function createHumanEvidenceReport(report: LocalEvidenceReport): string {
 
   const totalOriginBytes = sumEvidenceBytes(report.evidence, 'sourceBytes');
   const totalArchiveBytes = sumEvidenceBytes(report.evidence, 'archiveBytes');
-  const totalFoundSessions = report.evidence.reduce(
-    (totalSessions, providerEvidence) => totalSessions + providerEvidence.foundSessions,
-    0,
+  const totalFoundSessions = report.evidence.reduce(addFoundSessions, 0);
+  const totalSampledOrigins = report.evidence.reduce(addSampledSources, 0);
+  const touchedOriginals = report.evidence.some(isOriginalTouched);
+  const touchedLabel = touchedOriginals ? YES_LABEL : NO_LABEL;
+  const totalSavedPercent = describeSampledPercent(
+    totalOriginBytes,
+    totalArchiveBytes,
+    totalSampledOrigins,
   );
-  const totalSampledOrigins = report.evidence.reduce(
-    (totalSamples, providerEvidence) => totalSamples + providerEvidence.sampledSources,
-    0,
-  );
-  const touchedOriginals = report.evidence.some(
-    (providerEvidence) => providerEvidence.originalTouched,
-  );
-  const isNothingSampledInTotal = totalSampledOrigins === 0;
-  const totalSavedPercent = isNothingSampledInTotal
-    ? undefined
-    : calculateSavedPercent(totalOriginBytes, totalArchiveBytes);
+  const totalBefore = describeSampledBytes(totalOriginBytes, totalSampledOrigins);
+  const totalAfter = describeSampledBytes(totalArchiveBytes, totalSampledOrigins);
 
   return [
     'Local evidence',
@@ -43,9 +49,9 @@ export function createHumanEvidenceReport(report: LocalEvidenceReport): string {
     'Provider      Discovered  Samples  Mode         Proof before  Proof after  Saved    Exact   Touched',
     ...report.evidence.map(createEvidenceLine),
     '------------- -----------  -------- ----------- ------------- ------------ -------- ------- -------',
-    `${'sample total'.padEnd(13)} ${String(totalFoundSessions).padEnd(11)} ${String(totalSampledOrigins).padEnd(8)} ${''.padEnd(12)} ${describeSampledBytes(totalOriginBytes, totalSampledOrigins).padEnd(13)} ${describeSampledBytes(totalArchiveBytes, totalSampledOrigins).padEnd(12)} ${describeOptionalPercent(totalSavedPercent, MISSING_LABEL).padEnd(8)} ${''.padEnd(7)} ${touchedOriginals ? 'yes' : 'no'}`,
+    `${'sample total'.padEnd(PROVIDER_COLUMN_WIDTH)} ${String(totalFoundSessions).padEnd(DISCOVERED_COLUMN_WIDTH)} ${String(totalSampledOrigins).padEnd(SAMPLES_COLUMN_WIDTH)} ${''.padEnd(MODE_COLUMN_WIDTH)} ${totalBefore.padEnd(BEFORE_COLUMN_WIDTH)} ${totalAfter.padEnd(AFTER_COLUMN_WIDTH)} ${totalSavedPercent.padEnd(SAVED_COLUMN_WIDTH)} ${''.padEnd(EXACT_COLUMN_WIDTH)} ${touchedLabel}`,
     '',
-    `Original sessions touched: ${touchedOriginals ? 'yes' : 'no'}`,
+    `Original sessions touched: ${touchedLabel}`,
     `Work root: ${report.workRoot}`,
   ].join('\n');
 }
@@ -54,16 +60,34 @@ export function createStructuredEvidenceReport(report: LocalEvidenceReport): str
   return `${JSON.stringify(report, null, 2)}\n`;
 }
 
+function addFoundSessions(totalSessions: number, providerEvidence: ProviderEvidence): number {
+  return totalSessions + providerEvidence.foundSessions;
+}
+
+function addSampledSources(totalSamples: number, providerEvidence: ProviderEvidence): number {
+  return totalSamples + providerEvidence.sampledSources;
+}
+
+function isOriginalTouched(providerEvidence: ProviderEvidence): boolean {
+  return providerEvidence.originalTouched;
+}
+
 function createEvidenceLine(providerEvidence: ProviderEvidence): string {
-  const provider = providerEvidence.provider.padEnd(13);
-  const foundSessions = String(providerEvidence.foundSessions).padEnd(11);
-  const sampledOrigins = String(providerEvidence.sampledSources).padEnd(8);
-  const mode = providerEvidence.mode.padEnd(12);
-  const before = describeOptionalBytes(providerEvidence.sourceBytes, MISSING_LABEL).padEnd(13);
-  const after = describeOptionalBytes(providerEvidence.archiveBytes, MISSING_LABEL).padEnd(12);
-  const saved = describeOptionalPercent(providerEvidence.savedPercent, MISSING_LABEL).padEnd(8);
-  const exact = describeByteExact(providerEvidence.byteExact).padEnd(7);
-  const touched = providerEvidence.originalTouched ? 'yes' : 'no';
+  const provider = providerEvidence.provider.padEnd(PROVIDER_COLUMN_WIDTH);
+  const foundSessions = String(providerEvidence.foundSessions).padEnd(DISCOVERED_COLUMN_WIDTH);
+  const sampledOrigins = String(providerEvidence.sampledSources).padEnd(SAMPLES_COLUMN_WIDTH);
+  const mode = providerEvidence.mode.padEnd(MODE_COLUMN_WIDTH);
+  const before = describeOptionalBytes(providerEvidence.sourceBytes, MISSING_LABEL).padEnd(
+    BEFORE_COLUMN_WIDTH,
+  );
+  const after = describeOptionalBytes(providerEvidence.archiveBytes, MISSING_LABEL).padEnd(
+    AFTER_COLUMN_WIDTH,
+  );
+  const saved = describeOptionalPercent(providerEvidence.savedPercent, MISSING_LABEL).padEnd(
+    SAVED_COLUMN_WIDTH,
+  );
+  const exact = describeByteExact(providerEvidence.byteExact).padEnd(EXACT_COLUMN_WIDTH);
+  const touched = providerEvidence.originalTouched ? YES_LABEL : NO_LABEL;
 
   return `${provider} ${foundSessions} ${sampledOrigins} ${mode} ${before} ${after} ${saved} ${exact} ${touched}`;
 }
@@ -72,15 +96,29 @@ function sumEvidenceBytes(
   evidence: ReadonlyArray<ProviderEvidence>,
   key: 'archiveBytes' | 'sourceBytes',
 ): number {
-  return evidence.reduce(
-    (totalBytes, providerEvidence) => totalBytes + (providerEvidence[key] ?? 0),
-    0,
-  );
+  function addEvidenceBytes(totalBytes: number, providerEvidence: ProviderEvidence): number {
+    return totalBytes + (providerEvidence[key] ?? 0);
+  }
+
+  return evidence.reduce(addEvidenceBytes, 0);
 }
 
 function describeSampledBytes(bytes: number, sampledOrigins: number): string {
   const isNothingSampled = sampledOrigins === 0;
   return isNothingSampled ? MISSING_LABEL : describeBytes(bytes);
+}
+
+function describeSampledPercent(
+  originBytes: number,
+  archiveBytes: number,
+  sampledOrigins: number,
+): string {
+  const isNothingSampled = sampledOrigins === 0;
+  if (isNothingSampled) {
+    return describeOptionalPercent(undefined, MISSING_LABEL);
+  }
+
+  return describeOptionalPercent(calculateSavedPercent(originBytes, archiveBytes), MISSING_LABEL);
 }
 
 function describeByteExact(byteExact: boolean | undefined): string {
@@ -89,5 +127,5 @@ function describeByteExact(byteExact: boolean | undefined): string {
     return MISSING_LABEL;
   }
 
-  return byteExact ? 'yes' : 'no';
+  return byteExact ? YES_LABEL : NO_LABEL;
 }

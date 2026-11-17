@@ -17,6 +17,7 @@ import { selectNewestSessionWithinSize } from './sample.js';
 const maxArchiveEvidenceOriginBytes = 25 * 1024 * 1024;
 const maxBackupEvidenceOriginBytes = 128 * 1024 * 1024;
 const MAX_TITLE_PREVIEW_LENGTH = 96;
+const TITLE_ELLIPSIS = '...';
 
 export interface ProviderEvidence {
   readonly provider: ProviderId;
@@ -101,7 +102,7 @@ export async function runLocalEvidence(
     await rm(archivePath, { force: true, recursive: true });
     await rm(restoredPath, { force: true, recursive: true });
     await cp(selected.originalPath, fixturePath, {
-      recursive: originKind === 'directory',
+      recursive: isOriginDirectory,
     });
 
     const verified = await writeVerifiedArchive({
@@ -165,6 +166,7 @@ async function discoverProviderSessions(
 }
 
 function createTitlePreview(title: string): string {
+  // Catches any run of whitespace so the title fits on one line.
   const singleLineTitle = title.replace(/\s+/g, ' ').trim();
 
   const isTitleShortEnough = singleLineTitle.length <= MAX_TITLE_PREVIEW_LENGTH;
@@ -172,5 +174,5 @@ function createTitlePreview(title: string): string {
     return singleLineTitle;
   }
 
-  return `${singleLineTitle.slice(0, MAX_TITLE_PREVIEW_LENGTH - 3)}...`;
+  return `${singleLineTitle.slice(0, MAX_TITLE_PREVIEW_LENGTH - TITLE_ELLIPSIS.length)}${TITLE_ELLIPSIS}`;
 }

@@ -6,6 +6,11 @@ import { selectProviders } from '@/providers/flag.js';
 import { runLocalEvidence } from './local-evidence.js';
 import { createHumanEvidenceReport, createStructuredEvidenceReport } from './output.js';
 
+const UNKNOWN_PROVIDER_EXIT_CODE = 2;
+const PROVIDER_FLAG_DESCRIPTION =
+  'Provider id: codex, claude, kiro, grok, kimi, opencode, gemini, cursor, or devin.';
+const JSON_FLAG_DESCRIPTION = 'Write stable JSON output.';
+
 export interface SavingsFlags {
   readonly provider?: string;
   readonly json?: boolean;
@@ -15,13 +20,12 @@ export async function runSavingsCommand(flags: SavingsFlags): Promise<CommandExi
   const home = requireHome();
 
   const isHomeMissing = home == null;
-
   if (isHomeMissing) {
     return { exitCode: 1 };
   }
 
   const { providers, isProviderUnknown } = selectProviders(flags.provider);
-  const providerExitCode = isProviderUnknown ? 2 : 0;
+  const providerExitCode = isProviderUnknown ? UNKNOWN_PROVIDER_EXIT_CODE : 0;
   const report = await runLocalEvidence({
     home,
     workRoot: createEvidenceWorkRoot(process.cwd(), String(process.pid)),
@@ -29,7 +33,6 @@ export async function runSavingsCommand(flags: SavingsFlags): Promise<CommandExi
   });
 
   const isMachineOutputRequested = flags.json === true;
-
   if (isMachineOutputRequested) {
     process.stdout.write(createStructuredEvidenceReport(report));
     return { exitCode: providerExitCode };
@@ -37,6 +40,13 @@ export async function runSavingsCommand(flags: SavingsFlags): Promise<CommandExi
 
   process.stdout.write(`${createHumanEvidenceReport(report)}\n`);
   return { exitCode: providerExitCode };
+}
+
+async function runSavingsFromArgs({ args }: { readonly args: SavingsFlags }): Promise<CommandExit> {
+  return runSavingsCommand({
+    provider: args.provider,
+    json: args.json,
+  });
 }
 
 export const savingsCommand = defineCommand({
@@ -47,21 +57,15 @@ export const savingsCommand = defineCommand({
   args: {
     provider: {
       type: 'string',
-      description:
-        'Provider id: codex, claude, kiro, grok, kimi, opencode, gemini, cursor, or devin.',
+      description: PROVIDER_FLAG_DESCRIPTION,
       valueHint: 'provider',
     },
     json: {
       type: 'boolean',
-      description: 'Write stable JSON output.',
+      description: JSON_FLAG_DESCRIPTION,
     },
   },
-  run: async ({ args }) => {
-    return runSavingsCommand({
-      provider: args.provider,
-      json: args.json,
-    });
-  },
+  run: runSavingsFromArgs,
 });
 
 export const checkCommand = defineCommand({
@@ -72,21 +76,15 @@ export const checkCommand = defineCommand({
   args: {
     provider: {
       type: 'string',
-      description:
-        'Provider id: codex, claude, kiro, grok, kimi, opencode, gemini, cursor, or devin.',
+      description: PROVIDER_FLAG_DESCRIPTION,
       valueHint: 'provider',
     },
     json: {
       type: 'boolean',
-      description: 'Write stable JSON output.',
+      description: JSON_FLAG_DESCRIPTION,
     },
   },
-  run: async ({ args }) => {
-    return runSavingsCommand({
-      provider: args.provider,
-      json: args.json,
-    });
-  },
+  run: runSavingsFromArgs,
 });
 
 export function createEvidenceWorkRoot(cwd: string, runId: string): string {

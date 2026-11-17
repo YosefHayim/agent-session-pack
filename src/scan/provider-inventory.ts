@@ -99,6 +99,7 @@ const discoverProviderRoot = async (request: {
   readonly root: string;
 }): Promise<RootDiscovery | null> => {
   const isRootPresent = await isPathPresent(request.root);
+
   const isRootAbsent = !isRootPresent;
 
   if (isRootAbsent) {

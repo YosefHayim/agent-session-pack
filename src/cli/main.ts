@@ -96,6 +96,7 @@ interface SubCommandInvocation {
 // The first word that is not a flag names the command; with none, the default command runs.
 const readSubCommandInvocation = (argumentList: string[]): SubCommandInvocation => {
   const firstWordIndex = argumentList.findIndex((argument) => !argument.startsWith('-'));
+
   const isThereNoWord = firstWordIndex === -1;
 
   if (isThereNoWord) {
@@ -125,6 +126,7 @@ const runCli = async (argumentList: string[]): Promise<CommandExit> => {
   }
 
   const subCommandInvocation = readSubCommandInvocation(argumentList);
+
   const isUnknownCommand = !Object.hasOwn(subCommands, subCommandInvocation.name);
 
   if (isUnknownCommand) {

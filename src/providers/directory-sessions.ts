@@ -109,6 +109,7 @@ const collectSessionDirectories = async (
   },
 ): Promise<ReadonlyArray<string>> => {
   const isRootDirectory = await isDirectoryPath(root);
+
   const isNotRootDirectory = !isRootDirectory;
 
   if (isNotRootDirectory) {

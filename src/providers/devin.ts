@@ -135,6 +135,7 @@ const readSessionFromDatabaseSnapshot = (
 
 const readDateFromDevinTimestamp = (timestamp: number): Date => {
   const largestUnixSecondsTimestamp = 9_999_999_999;
+
   const isMillisecondTimestamp = timestamp > largestUnixSecondsTimestamp;
 
   if (isMillisecondTimestamp) {

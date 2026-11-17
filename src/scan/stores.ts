@@ -34,6 +34,7 @@ export const discoverStoreSessions = async (
   store: SessionStore,
 ): Promise<ReadonlyArray<DiscoveredSession>> => {
   const isStorePresent = await isPathPresent(store.path);
+
   const isStoreAbsent = !isStorePresent;
 
   if (isStoreAbsent) {
@@ -44,6 +45,7 @@ export const discoverStoreSessions = async (
     return await provider.discover(store);
   } catch (discoveryError) {
     const isStorePresentAfterFailure = await isPathPresent(store.path);
+
     const isStoreAbsentAfterFailure = !isStorePresentAfterFailure;
 
     if (isStoreAbsentAfterFailure) {

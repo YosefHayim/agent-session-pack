@@ -140,6 +140,7 @@ const discoverExistingProviderSessions = async (request: {
 
   for (const root of roots) {
     const doesRootExist = await isPathPresent(root);
+
     const isRootAbsent = !doesRootExist;
 
     if (isRootAbsent) {

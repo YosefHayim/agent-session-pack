@@ -84,6 +84,7 @@ const runWatchCommand = async (flags: WatchFlags): Promise<CommandExit> => {
   // Watch runs even when restore on launch is off; wrappers enable lifecycle first.
   const hasExecCommand = flags.execArgv.length > 0;
   const [command, ...commandArgumentList] = flags.execArgv;
+
   const isExecCommandMissing = hasExecCommand && command == null;
   if (isExecCommandMissing) {
     process.stderr.write('Missing command after -- for watch --exec.\n');
@@ -157,6 +158,7 @@ const parsePollMs = (millisecondsString: string | undefined): number => {
   const parsed = Number(millisecondsString);
 
   const minimumPollIntervalMilliseconds = 100;
+
   const isPollIntervalInvalid =
     !Number.isFinite(parsed) || parsed < minimumPollIntervalMilliseconds;
   if (isPollIntervalInvalid) {

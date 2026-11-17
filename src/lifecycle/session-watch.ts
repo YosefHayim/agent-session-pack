@@ -74,6 +74,7 @@ export const watchSessionStubs = async (request: WatchSessionStubsRequest): Prom
     const originKind = manifest.sourceKind ?? 'file';
 
     const isPathArchivedStub = await isArchivedStubPath(manifest.originalPath, originKind);
+
     const isNotStub = !isPathArchivedStub;
 
     if (isNotStub) {
@@ -83,6 +84,7 @@ export const watchSessionStubs = async (request: WatchSessionStubsRequest): Prom
     const isDirectoryStubCheckNeeded = !forceFromFsEvent && originKind === 'directory';
     const isStubOpenedWhenChecked =
       isDirectoryStubCheckNeeded && (await isDirectoryStubOpened(manifest.originalPath));
+
     const isDirectoryStubClosed = isDirectoryStubCheckNeeded && !isStubOpenedWhenChecked;
 
     if (isDirectoryStubClosed) {

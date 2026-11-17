@@ -9,6 +9,9 @@ import { slugifyTitle } from './session-discovery.js';
 
 const execFileAsync = promisify(execFile);
 
+const DEVIN_PROVIDER_ID = 'devin';
+const LIVE_SESSION_STATUS = 'live';
+
 const devinSessionsQuery = `
 SELECT
   s.id AS id,
@@ -40,7 +43,7 @@ const DevinSessionSummariesSchema = z.array(DevinSessionSummarySchema);
 type DevinSessionSummary = z.infer<typeof DevinSessionSummarySchema>;
 
 export const devinProvider: ProviderAdapter = {
-  id: 'devin',
+  id: DEVIN_PROVIDER_ID,
   label: 'Devin',
   mode: 'backup-only',
   defaultRoots: (home: string): ReadonlyArray<string> => [
@@ -60,15 +63,18 @@ async function discoverDevinSessions(root: string): Promise<ReadonlyArray<Discov
 
   const devinSessionSummaries = await readDevinSessions(dbPath);
 
+  const databaseBytes = dbStat.size;
   const isSessionListEmpty = devinSessionSummaries.length === 0;
 
   if (isSessionListEmpty) {
-    return [readSessionFromDatabaseSnapshot(dbPath, dbStat.size, dbStat.mtime)];
+    return [readSessionFromDatabaseSnapshot(dbPath, databaseBytes, dbStat.mtime)];
   }
 
-  return devinSessionSummaries.map((devinSessionSummary) =>
-    readSessionFromDevin(devinSessionSummary, dbPath, dbStat.size),
-  );
+  function readSessionFromSummary(devinSessionSummary: DevinSessionSummary): DiscoveredSession {
+    return readSessionFromDevin(devinSessionSummary, dbPath, databaseBytes);
+  }
+
+  return devinSessionSummaries.map(readSessionFromSummary);
 }
 
 async function readStatOrNull(path: string): Promise<Stats | null> {
@@ -82,8 +88,8 @@ async function readStatOrNull(path: string): Promise<Stats | null> {
 async function readDevinSessions(dbPath: string): Promise<ReadonlyArray<DevinSessionSummary>> {
   try {
     const printout = await execFileAsync('sqlite3', ['-json', dbPath, devinSessionsQuery]);
-    const parsed = JSON.parse(printout.stdout) as unknown;
-    const decodedReply = DevinSessionSummariesSchema.safeParse(parsed);
+    const parsedPrintout = JSON.parse(printout.stdout) as unknown;
+    const decodedReply = DevinSessionSummariesSchema.safeParse(parsedPrintout);
 
     const isDecodeFailed = !decodedReply.success;
 
@@ -107,14 +113,14 @@ function readSessionFromDevin(
 
   return {
     id: devinSessionSummary.id,
-    provider: 'devin',
+    provider: DEVIN_PROVIDER_ID,
     title: devinSessionSummary.title,
     slug: slugifyTitle(devinSessionSummary.title),
     originalPath: dbPath,
     createdAt: readDateFromDevinTimestamp(devinSessionSummary.createdAt),
     modifiedAt: readDateFromDevinTimestamp(devinSessionSummary.modifiedAt),
     sizeBytes,
-    status: 'live',
+    status: LIVE_SESSION_STATUS,
   };
 }
 
@@ -125,13 +131,13 @@ function readSessionFromDatabaseSnapshot(
 ): DiscoveredSession {
   return {
     id: 'sessions-db',
-    provider: 'devin',
+    provider: DEVIN_PROVIDER_ID,
     title: 'Devin sessions database',
     slug: 'devin-sessions-database',
     originalPath: dbPath,
     modifiedAt,
     sizeBytes: dbBytes,
-    status: 'live',
+    status: LIVE_SESSION_STATUS,
   };
 }
 

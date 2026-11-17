@@ -10,6 +10,10 @@ import type { ProviderInventoryReport } from '@/scan/provider-inventory.js';
 import { runPackCommand } from './command.js';
 import { DEFAULT_COLD_AFTER, DEFAULT_COLD_AFTER_MS } from './plan.js';
 
+const NO_FILES_CHANGED_MESSAGE = 'No files changed.';
+
+type InventoryRow = ProviderInventoryReport['rows'][number];
+
 export async function runPackFlow(
   request: InteractiveCliRequest & { readonly prompts: PromptAdapter },
 ): Promise<CommandExit> {
@@ -38,9 +42,15 @@ export async function runPackFlow(
     initialValue: true,
   });
 
-  const isPreviewStopped = request.prompts.isCancel(shouldPreview) || shouldPreview !== true;
-  if (isPreviewStopped) {
-    request.prompts.cancel('No files changed.');
+  const isPreviewCancelled = request.prompts.isCancel(shouldPreview);
+  if (isPreviewCancelled) {
+    request.prompts.cancel(NO_FILES_CHANGED_MESSAGE);
+    return { exitCode: 0 };
+  }
+
+  const isPreviewDeclined = shouldPreview !== true;
+  if (isPreviewDeclined) {
+    request.prompts.cancel(NO_FILES_CHANGED_MESSAGE);
     return { exitCode: 0 };
   }
 
@@ -60,9 +70,15 @@ export async function runPackFlow(
     initialValue: false,
   });
 
-  const isApplyStopped = request.prompts.isCancel(shouldApply) || shouldApply !== true;
-  if (isApplyStopped) {
-    request.prompts.outro('No files changed.');
+  const isApplyCancelled = request.prompts.isCancel(shouldApply);
+  if (isApplyCancelled) {
+    request.prompts.outro(NO_FILES_CHANGED_MESSAGE);
+    return previewExit;
+  }
+
+  const isApplyDeclined = shouldApply !== true;
+  if (isApplyDeclined) {
+    request.prompts.outro(NO_FILES_CHANGED_MESSAGE);
     return previewExit;
   }
 
@@ -80,18 +96,25 @@ export async function runPackFlow(
 }
 
 function createPackApplyQuestion(inventory: ProviderInventoryReport, home: string): string {
-  const candidateSessions = inventory.rows.reduce(
-    (totalSessions, inventorySummary) => totalSessions + inventorySummary.coldSessions,
-    0,
-  );
-  const candidateBytes = inventory.rows.reduce(
-    (totalBytes, inventorySummary) => totalBytes + inventorySummary.candidateBytes,
-    0,
-  );
-  const providerNames = inventory.rows
-    .filter((inventorySummary) => inventorySummary.coldSessions > 0)
-    .map((inventorySummary) => inventorySummary.provider)
-    .join(', ');
+  function addColdSessions(totalSessions: number, inventorySummary: InventoryRow): number {
+    return totalSessions + inventorySummary.coldSessions;
+  }
+
+  function addCandidateBytes(totalBytes: number, inventorySummary: InventoryRow): number {
+    return totalBytes + inventorySummary.candidateBytes;
+  }
+
+  function hasColdSessions(inventorySummary: InventoryRow): boolean {
+    return inventorySummary.coldSessions > 0;
+  }
+
+  function readProviderId(inventorySummary: InventoryRow): string {
+    return inventorySummary.provider;
+  }
+
+  const candidateSessions = inventory.rows.reduce(addColdSessions, 0);
+  const candidateBytes = inventory.rows.reduce(addCandidateBytes, 0);
+  const providerNames = inventory.rows.filter(hasColdSessions).map(readProviderId).join(', ');
 
   return [
     'Apply pack now?',

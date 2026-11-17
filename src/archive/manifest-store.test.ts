@@ -67,7 +67,7 @@ describe('manifestStore', () => {
 
     expect(paths).toHaveLength(2);
     expect(paths).toEqual(expect.arrayContaining([codexPath, claudePath]));
-    expect(paths.some((path) => path.endsWith('notes.txt'))).toBe(false);
+    expect(paths).not.toContain(ignored);
   });
 
   it('returns an empty list when the manifest root is missing', async () => {

@@ -1,24 +1,33 @@
 import type { Dirent } from 'node:fs';
 import { copyFile, mkdir, readdir, rm, stat } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import { throwWrappedError } from '@/rethrow-as-error.js';
 import type { SessionOriginKind } from '@/session-model.js';
 
-function isMissingPathError(cause: unknown): boolean {
-  return cause instanceof Error && 'code' in cause && cause.code === 'ENOENT';
+function isMissingPathError(error: unknown): boolean {
+  const isNotError = !(error instanceof Error);
+  if (isNotError) {
+    return false;
+  }
+
+  const hasNoErrorCode = !('code' in error);
+  if (hasNoErrorCode) {
+    return false;
+  }
+
+  return error.code === 'ENOENT';
 }
 
 export async function readDirectoryDirents(directory: string): Promise<Dirent[]> {
   try {
     return await readdir(directory, { withFileTypes: true });
-  } catch (cause) {
-    const isDirectoryMissing = isMissingPathError(cause);
+  } catch (error) {
+    const isDirectoryMissing = isMissingPathError(error);
 
     if (isDirectoryMissing) {
       return [];
     }
 
-    return throwWrappedError(cause);
+    throw new Error(String(error), { cause: error });
   }
 }
 
@@ -48,9 +57,13 @@ export async function findOriginKind(
     return originKind;
   }
 
-  const pathStat = await stat(path).catch(throwWrappedError);
-  const isPathDirectory = pathStat.isDirectory();
-  return isPathDirectory ? 'directory' : 'file';
+  try {
+    const pathStat = await stat(path);
+    const isPathDirectory = pathStat.isDirectory();
+    return isPathDirectory ? 'directory' : 'file';
+  } catch (error) {
+    throw new Error(String(error), { cause: error });
+  }
 }
 
 export async function readDirectorySizeBytes(path: string): Promise<number> {
@@ -78,49 +91,81 @@ export async function readDirectorySizeBytes(path: string): Promise<number> {
     }
   }
 
-  await walk(path).catch(throwWrappedError);
+  try {
+    await walk(path);
+  } catch (error) {
+    throw new Error(String(error), { cause: error });
+  }
+
   return sizeBytes;
 }
 
 export async function ensureParentDirectory(path: string): Promise<void> {
-  await mkdir(dirname(path), { recursive: true }).catch(throwWrappedError);
+  await ensureDirectory(dirname(path));
 }
 
 export async function ensureDirectory(path: string): Promise<void> {
-  await mkdir(path, { recursive: true }).catch(throwWrappedError);
+  try {
+    await mkdir(path, { recursive: true });
+  } catch (error) {
+    throw new Error(String(error), { cause: error });
+  }
 }
 
 export async function removePath(path: string): Promise<void> {
-  await rm(path, { force: true, recursive: true }).catch(throwWrappedError);
+  try {
+    await rm(path, { force: true, recursive: true });
+  } catch (error) {
+    throw new Error(String(error), { cause: error });
+  }
 }
 
-export function readStatPath(path: string): Promise<{ readonly size: number }> {
-  return stat(path).catch(throwWrappedError);
+export async function readStatPath(path: string): Promise<{ readonly size: number }> {
+  try {
+    return await stat(path);
+  } catch (error) {
+    throw new Error(String(error), { cause: error });
+  }
 }
 
-function readFileSystemErrorCode(cause: unknown): string | null {
-  const hasNoErrorCode = typeof cause !== 'object' || cause === null || !('code' in cause);
+function readFileSystemErrorCode(error: unknown): string | null {
+  const isNotObject = typeof error !== 'object';
+  if (isNotObject) {
+    return null;
+  }
+
+  const isNull = error === null;
+  if (isNull) {
+    return null;
+  }
+
+  const hasNoErrorCode = !('code' in error);
   if (hasNoErrorCode) {
     return null;
   }
 
-  return String(cause.code);
+  return String(error.code);
 }
 
 export async function isPathPresent(path: string): Promise<boolean> {
-  const pathStat = await stat(path).catch((cause: unknown) => {
-    const isPathMissing = readFileSystemErrorCode(cause) === 'ENOENT';
+  try {
+    await stat(path);
+    return true;
+  } catch (error) {
+    const isPathMissing = readFileSystemErrorCode(error) === 'ENOENT';
 
     if (isPathMissing) {
-      return null;
+      return false;
     }
 
-    return throwWrappedError(cause);
-  });
-
-  return pathStat != null;
+    throw new Error(String(error), { cause: error });
+  }
 }
 
 export async function copyPath(originPath: string, destinationPath: string): Promise<void> {
-  await copyFile(originPath, destinationPath).catch(throwWrappedError);
+  try {
+    await copyFile(originPath, destinationPath);
+  } catch (error) {
+    throw new Error(String(error), { cause: error });
+  }
 }

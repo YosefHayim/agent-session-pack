@@ -12,6 +12,8 @@ const WRAPPER_PROVIDERS: ReadonlyArray<string> = [
   'kiro',
 ];
 
+const EXECUTABLE_FILE_MODE = 0o755;
+
 export interface InstallLifecycleWrappersRequest {
   readonly vaultPath: string;
   readonly cliEntrypoint: string;
@@ -26,8 +28,8 @@ export async function installLifecycleWrappers(
     await mkdir(binPath, { recursive: true });
     await writeProviderWrappers(binPath, request.cliEntrypoint);
     return binPath;
-  } catch (cause) {
-    throw new Error(String(cause), { cause });
+  } catch (error) {
+    throw new Error(String(error), { cause: error });
   }
 }
 
@@ -40,7 +42,7 @@ async function writeProviderWrappers(binPath: string, cliEntrypoint: string): Pr
       binPath,
     });
     await writeFile(wrapperPath, script, { encoding: 'utf8' });
-    await chmod(wrapperPath, 0o755);
+    await chmod(wrapperPath, EXECUTABLE_FILE_MODE);
   }
 }
 
@@ -51,26 +53,28 @@ export async function uninstallLifecycleWrappers(vaultPath: string): Promise<voi
     const names = await listWrapperNames(binPath);
 
     for (const name of names) {
-      const isWrapperName = WRAPPER_PROVIDERS.includes(name);
-      if (isWrapperName) {
-        await rm(join(binPath, name), { force: true });
+      const isNotWrapperName = !WRAPPER_PROVIDERS.includes(name);
+      if (isNotWrapperName) {
+        continue;
       }
+
+      await rm(join(binPath, name), { force: true });
     }
-  } catch (cause) {
-    throw new Error(String(cause), { cause });
+  } catch (error) {
+    throw new Error(String(error), { cause: error });
   }
 }
 
 async function listWrapperNames(binPath: string): Promise<string[]> {
   try {
     return await readdir(binPath);
-  } catch (cause) {
-    const isThereNoBinDirectory = isEnoent(cause);
+  } catch (error) {
+    const isThereNoBinDirectory = isEnoent(error);
     if (isThereNoBinDirectory) {
       return [];
     }
 
-    throw cause;
+    throw error;
   }
 }
 
@@ -122,11 +126,16 @@ exec "$REAL_BIN" "$@"
 `;
 }
 
-function isEnoent(cause: unknown): boolean {
-  return (
-    typeof cause === 'object' &&
-    cause !== null &&
-    'code' in cause &&
-    (cause as { code?: string }).code === 'ENOENT'
-  );
+function isEnoent(error: unknown): boolean {
+  const isNotError = !(error instanceof Error);
+  if (isNotError) {
+    return false;
+  }
+
+  const hasErrorCode = 'code' in error;
+  if (!hasErrorCode) {
+    return false;
+  }
+
+  return error.code === 'ENOENT';
 }

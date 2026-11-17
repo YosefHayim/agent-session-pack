@@ -11,6 +11,9 @@ import { restorePathForManifest } from '@/archive/vault-paths.js';
 import { type CompressionAdapter, restoreDirectoryArchive } from '@/archive/writer.js';
 import type { SessionOriginKind } from '@/session-model.js';
 
+const RESTORED_EXIT = 'restored';
+const CONTINUE_RESTORE_EXIT = 'continue-restore';
+
 export type RestoreExit = 'already-present' | 'conflict' | 'restored';
 
 export interface RestoreManifestRequest {
@@ -41,7 +44,7 @@ export async function restoreManifest(request: RestoreManifestRequest): Promise<
       expectedSha256: request.manifest.sourceSha256,
       compression: request.compression,
     });
-    return 'restored';
+    return RESTORED_EXIT;
   }
 
   await ensureParentDirectory(restoredPath);
@@ -53,7 +56,6 @@ export async function restoreManifest(request: RestoreManifestRequest): Promise<
   const restoredSha256 = await readSha256File(restoredPath);
 
   const isRestoredMismatched = restoredSha256 !== request.manifest.sourceSha256;
-
   if (isRestoredMismatched) {
     throw createVerificationError({
       sessionId: request.manifest.sessionId,
@@ -68,7 +70,6 @@ export async function restoreManifest(request: RestoreManifestRequest): Promise<
   const originalSha256 = await readSha256File(request.manifest.originalPath);
 
   const isOriginalMismatched = originalSha256 !== request.manifest.sourceSha256;
-
   if (isOriginalMismatched) {
     throw createVerificationError({
       sessionId: request.manifest.sessionId,
@@ -79,7 +80,7 @@ export async function restoreManifest(request: RestoreManifestRequest): Promise<
 
   await removePath(restoredPath);
 
-  return 'restored';
+  return RESTORED_EXIT;
 }
 
 async function findLiveExitWhenPresent(
@@ -99,7 +100,7 @@ async function findLiveExitWhenPresent(
     sourceSha256: manifest.sourceSha256,
   });
 
-  const isRestoreStillNeeded = liveExit === 'continue-restore';
+  const isRestoreStillNeeded = liveExit === CONTINUE_RESTORE_EXIT;
   if (isRestoreStillNeeded) {
     return null;
   }
@@ -111,18 +112,16 @@ async function findLiveOriginalExit(request: {
   readonly originalPath: string;
   readonly sourceKind: SessionOriginKind;
   readonly sourceSha256: string;
-}): Promise<RestoreExit | 'continue-restore'> {
+}): Promise<RestoreExit | typeof CONTINUE_RESTORE_EXIT> {
   const isStub = await isArchivedStubPath(request.originalPath, request.sourceKind);
-
   if (isStub) {
     await removePath(request.originalPath);
-    return 'continue-restore';
+    return CONTINUE_RESTORE_EXIT;
   }
 
   const existingSha256 = await readSha256Path(request.originalPath, request.sourceKind);
 
   const isSameSha256 = existingSha256 === request.sourceSha256;
-
   if (isSameSha256) {
     return 'already-present';
   }

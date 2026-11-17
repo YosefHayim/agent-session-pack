@@ -4,7 +4,11 @@ const WHOLE_PERCENT = 100;
 const SAVED_PERCENT_DECIMAL_PLACES = 1;
 
 export function sumSessionBytes(sessions: ReadonlyArray<DiscoveredSession>): number {
-  return sessions.reduce((totalBytes, session) => totalBytes + session.sizeBytes, 0);
+  function addSessionBytes(totalBytes: number, session: DiscoveredSession): number {
+    return totalBytes + session.sizeBytes;
+  }
+
+  return sessions.reduce(addSessionBytes, 0);
 }
 
 export function calculateSavedPercent(originBytes: number, archiveBytes: number): number {

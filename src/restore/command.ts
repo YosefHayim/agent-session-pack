@@ -8,9 +8,23 @@ import { parseOptionalProvider } from '@/providers/flag.js';
 import { readSetupSettings } from '@/setup/config.js';
 import { type EnsureRestoredReport, ensureSessionRestored } from './ensure-restored.js';
 
+const COMMAND_NAME = 'restore';
+const USAGE_EXIT_CODE = 2;
+const JSON_INDENT_SPACES = 2;
+const SUCCESS_STATUSES: ReadonlySet<EnsureRestoredReport['status']> = new Set([
+  'restored',
+  'already-present',
+]);
+const BLOCKED_STATUSES: ReadonlySet<EnsureRestoredReport['status']> = new Set([
+  'conflict',
+  'missing-archive',
+  'ambiguous-selector',
+  'backup-only',
+]);
+
 export const restoreCommand = defineCommand({
   meta: {
-    name: 'restore',
+    name: COMMAND_NAME,
     description:
       'Restore a packed session by id, id prefix, name, slug, fuzzy words, or provider-prefixed selector.',
   },
@@ -67,23 +81,27 @@ export async function runRestoreCommand(flags: RestoreFlags): Promise<CommandExi
   const isSelectorEmpty = selector.length === 0;
   if (isSelectorEmpty) {
     process.stderr.write('Missing selector. Use agent-session-pack restore <selector>.\n');
-    return { exitCode: 2 };
+    return { exitCode: USAGE_EXIT_CODE };
   }
 
-  const hasCustomRestoreTarget = flags.to != null && flags.to !== 'original';
+  const isRestoreTargetGiven = flags.to != null;
+  const isRestoreTargetCustom = flags.to !== 'original';
+  const hasCustomRestoreTarget = isRestoreTargetGiven && isRestoreTargetCustom;
   if (hasCustomRestoreTarget) {
     process.stderr.write(
       'Only --to original is supported. Custom restore destinations are not available yet.\n',
     );
-    return { exitCode: 2 };
+    return { exitCode: USAGE_EXIT_CODE };
   }
 
   const provider = parseOptionalProvider(flags.provider);
 
-  const isUnknownProviderGiven = flags.provider != null && provider == null;
+  const isProviderFlagGiven = flags.provider != null;
+  const isProviderUnparsed = provider == null;
+  const isUnknownProviderGiven = isProviderFlagGiven && isProviderUnparsed;
   if (isUnknownProviderGiven) {
     process.stderr.write(`Unknown provider: ${flags.provider}\n`);
-    return { exitCode: 2 };
+    return { exitCode: USAGE_EXIT_CODE };
   }
 
   const setupSettings = await readSetupSettings(home);
@@ -91,7 +109,7 @@ export async function runRestoreCommand(flags: RestoreFlags): Promise<CommandExi
   const compression = flags.compression ?? createZstdCompression();
 
   const report = await ensureSessionRestored({
-    command: 'restore',
+    command: COMMAND_NAME,
     vaultPath,
     selector,
     selectorMatch: 'fuzzy',
@@ -105,12 +123,16 @@ export async function runRestoreCommand(flags: RestoreFlags): Promise<CommandExi
   return { exitCode: restoreExitCode(report) };
 }
 
+function isPresentLine(line: string | null): line is string {
+  return line != null;
+}
+
 function writeRestorePrintout(
   report: EnsureRestoredReport,
   isMachineOutputRequested: boolean,
 ): void {
   if (isMachineOutputRequested) {
-    process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+    process.stdout.write(`${JSON.stringify(report, null, JSON_INDENT_SPACES)}\n`);
     return;
   }
 
@@ -119,29 +141,25 @@ function writeRestorePrintout(
   const isReportOriginalPathMissing = report.originalPath == null;
   const isReportReasonMissing = report.reason == null;
   const lines = [
-    `restore: ${report.status}`,
+    `${COMMAND_NAME}: ${report.status}`,
     isReportProviderMissing ? null : `provider: ${report.provider}`,
     isReportSessionIdMissing ? null : `session: ${report.sessionId}`,
     isReportOriginalPathMissing ? null : `originalPath: ${report.originalPath}`,
     isReportReasonMissing ? null : `reason: ${report.reason}`,
-  ].filter((line): line is string => line != null);
+  ].filter(isPresentLine);
 
   process.stdout.write(`${lines.join('\n')}\n`);
 }
 
 function restoreExitCode(report: EnsureRestoredReport): number {
-  const isRestoreSuccessful = report.status === 'restored' || report.status === 'already-present';
+  const isRestoreSuccessful = SUCCESS_STATUSES.has(report.status);
   if (isRestoreSuccessful) {
     return 0;
   }
 
-  const isRestoreBlocked =
-    report.status === 'conflict' ||
-    report.status === 'missing-archive' ||
-    report.status === 'ambiguous-selector' ||
-    report.status === 'backup-only';
+  const isRestoreBlocked = BLOCKED_STATUSES.has(report.status);
   if (isRestoreBlocked) {
-    return 2;
+    return USAGE_EXIT_CODE;
   }
 
   return 1;

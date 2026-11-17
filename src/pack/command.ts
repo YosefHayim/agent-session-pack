@@ -5,17 +5,26 @@ import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
 import type { CommandExit } from '@/command-outcome.js';
 import { requireHome } from '@/environment.js';
+import { listDefaultSessionStores } from '@/providers/all-providers.js';
 import { selectProviders } from '@/providers/flag.js';
 import { scanStores } from '@/scan/stores.js';
-import type { ProviderAdapter, SessionStore } from '@/session-model.js';
+import type { ProviderAdapter } from '@/session-model.js';
 import {
   createHumanPackPlan,
   createHumanPackReport,
   createStructuredPackPlan,
   createStructuredPackReport,
 } from './output.js';
-import { createPackPlan, DEFAULT_COLD_AFTER, parseDurationMs } from './plan.js';
+import {
+  createPackPlan,
+  DEFAULT_COLD_AFTER,
+  type PackPlanRequest,
+  parseDurationMs,
+} from './plan.js';
 import { type PackSessionsReport, packProviderSessions } from './sessions.js';
+
+const LINE_BREAK = '\n';
+const USAGE_EXIT_CODE = 2;
 
 export const packCommand = defineCommand({
   meta: {
@@ -59,6 +68,7 @@ export const packCommand = defineCommand({
   },
   run: async ({ args }) => {
     const isMaxApplyRequested = args.max === true && args.apply === true;
+
     const confirmed = isMaxApplyRequested
       ? false
       : await askApplyConfirmation({
@@ -106,8 +116,8 @@ export async function runPackCommand(flags: PackFlags): Promise<CommandExit> {
 
   if (isMaxApplyRequested) {
     process.stderr.write('Refusing --max with --apply. Use --max as a dry-run preview only.\n');
-    process.stderr.write('\n');
-    return { exitCode: 2 };
+    process.stderr.write(LINE_BREAK);
+    return { exitCode: USAGE_EXIT_CODE };
   }
 
   const home = requireHome(flags.home);
@@ -122,17 +132,19 @@ export async function runPackCommand(flags: PackFlags): Promise<CommandExit> {
 
   if (isApplyUnconfirmed) {
     process.stderr.write('Cancelled. Re-run with --apply and confirm with y to pack sessions.\n');
-    process.stderr.write('\n');
-    return { exitCode: 2 };
+    process.stderr.write(LINE_BREAK);
+    return { exitCode: USAGE_EXIT_CODE };
   }
 
   const isMaxRequested = flags.max === true;
   const olderThan = isMaxRequested ? '0h' : (flags.olderThan ?? DEFAULT_COLD_AFTER);
   const olderThanMs = parseDurationMs(olderThan);
   const { providers, isProviderUnknown } = selectProviders(flags.provider, flags.providers);
-  const providerExitCode = isProviderUnknown ? 2 : 0;
+  const providerExitCode = isProviderUnknown ? USAGE_EXIT_CODE : 0;
 
-  if (canUseArchiveWorkflow(flags)) {
+  const isArchiveWorkflowUsable = canUseArchiveWorkflow(flags);
+
+  if (isArchiveWorkflowUsable) {
     const report = await packProviderSessions({
       home,
       vaultPath: flags.vaultPath ?? createDefaultVaultPath(home),
@@ -148,9 +160,7 @@ export async function runPackCommand(flags: PackFlags): Promise<CommandExit> {
     return { exitCode: providerExitCode };
   }
 
-  const stores = providers.flatMap((provider) =>
-    provider.defaultRoots(home).map((path): SessionStore => ({ provider: provider.id, path })),
-  );
+  const stores = listDefaultSessionStores(providers, home);
   const report = await scanStores({
     providers,
     stores,
@@ -160,11 +170,7 @@ export async function runPackCommand(flags: PackFlags): Promise<CommandExit> {
     olderThan,
     olderThanMs,
     sessions: report.sessions,
-    providers: providers.map((provider) => ({
-      id: provider.id,
-      label: provider.label,
-      mode: provider.mode,
-    })),
+    providers: providers.map(describePlanProvider),
   });
 
   if (isMachineOutputRequested) {
@@ -174,6 +180,14 @@ export async function runPackCommand(flags: PackFlags): Promise<CommandExit> {
 
   process.stdout.write(`${createHumanPackPlan(plan, { olderThan })}\n`);
   return { exitCode: providerExitCode };
+}
+
+function describePlanProvider(provider: ProviderAdapter): PackPlanRequest['providers'][number] {
+  return {
+    id: provider.id,
+    label: provider.label,
+    mode: provider.mode,
+  };
 }
 
 interface ArchiveReportDetails {

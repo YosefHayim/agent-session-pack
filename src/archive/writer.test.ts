@@ -11,14 +11,26 @@ import {
   writeVerifiedArchive,
 } from './writer.js';
 
+function copyOriginToArchive(request: { sourcePath: string; archivePath: string }): Promise<void> {
+  return copyFile(request.sourcePath, request.archivePath);
+}
+
+function writeNotTarPayload(request: { restoredPath: string }): Promise<void> {
+  return writeFile(request.restoredPath, 'not-a-tar');
+}
+
+function writeCorruptPayload(request: { restoredPath: string }): Promise<void> {
+  return writeFile(request.restoredPath, 'corrupt');
+}
+
 const corruptDirectoryCompression: CompressionAdapter = {
-  compress: ({ sourcePath: originPath, archivePath }) => copyFile(originPath, archivePath),
-  decompress: ({ restoredPath }) => writeFile(restoredPath, 'not-a-tar'),
+  compress: copyOriginToArchive,
+  decompress: writeNotTarPayload,
 };
 
 const corruptCompression: CompressionAdapter = {
-  compress: ({ sourcePath: originPath, archivePath }) => copyFile(originPath, archivePath),
-  decompress: ({ restoredPath }) => writeFile(restoredPath, 'corrupt'),
+  compress: copyOriginToArchive,
+  decompress: writeCorruptPayload,
 };
 
 function createWorkspace(): Promise<string> {
@@ -145,7 +157,7 @@ describe('archiveWriter', () => {
       }),
     ).rejects.toThrow();
     await expect(stat(originPath)).resolves.toBeDefined();
-    await rm(restoredPath, { recursive: true, force: true }).catch(() => undefined);
+    await rm(restoredPath, { recursive: true, force: true });
   });
 
   it('detects directory source kind from the filesystem when sourceKind is omitted', async () => {

@@ -42,6 +42,11 @@ export function selectProviders(
     return { providers: [], isProviderUnknown };
   }
 
-  const providersForId = allProviders.filter((adapter) => adapter.id === providerId);
+  function isAdapterForId(adapter: ProviderAdapter): boolean {
+    return adapter.id === providerId;
+  }
+
+  const providersForId = allProviders.filter(isAdapterForId);
+
   return { providers: providersForId, isProviderUnknown };
 }

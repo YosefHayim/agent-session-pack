@@ -18,12 +18,19 @@ export interface InteractiveCliDetectionRequest {
 }
 
 export function canRunInteractiveCli(request: InteractiveCliDetectionRequest): boolean {
-  const isNotInteractiveTerminal = !request.stdinIsTty || !request.stdoutIsTty;
-  if (isNotInteractiveTerminal) {
+  const isInputNotTerminal = !request.stdinIsTty;
+  if (isInputNotTerminal) {
     return false;
   }
 
-  return request.argv.length <= 2;
+  const isOutputNotTerminal = !request.stdoutIsTty;
+  if (isOutputNotTerminal) {
+    return false;
+  }
+
+  const maxArgvLength = 2;
+
+  return request.argv.length <= maxArgvLength;
 }
 
 export function createMainMenuChoices(): ReadonlyArray<PromptOption<MainMenuAction>> {
@@ -76,8 +83,14 @@ export async function runInteractiveCli(request: InteractiveCliRequest = {}): Pr
     options: createMainMenuChoices(),
   });
 
-  const isActionCancelOrExit = prompts.isCancel(action) || action === 'exit';
-  if (isActionCancelOrExit) {
+  const isActionCancelled = prompts.isCancel(action);
+  if (isActionCancelled) {
+    prompts.outro('No files changed.');
+    return { exitCode: 0 };
+  }
+
+  const isExitChosen = action === 'exit';
+  if (isExitChosen) {
     prompts.outro('No files changed.');
     return { exitCode: 0 };
   }
@@ -106,11 +119,15 @@ async function runInteractiveAction(
 
   const isSavingsRequested = request.action === 'savings';
   if (isSavingsRequested) {
+    function checkSavings(): Promise<CommandExit> {
+      return runSavingsCommand({});
+    }
+
     const savingsExit = await runWithSpinner({
       prompts: request.prompts,
       startMessage: 'Checking savings...',
       stopMessage: 'Savings check complete.',
-      task: () => runSavingsCommand({}),
+      task: checkSavings,
     });
     request.prompts.outro('Original sessions touched: no');
     return savingsExit;

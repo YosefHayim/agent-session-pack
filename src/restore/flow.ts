@@ -4,6 +4,8 @@ import type { PromptAdapter } from '@/prompt-adapter.js';
 import { runWithSpinner } from '@/spinner-task.js';
 import { runUnpackCommand } from './unpack-command.js';
 
+const NO_FILES_CHANGED_MESSAGE = 'No files changed.';
+
 export async function runRestoreFlow(
   request: InteractiveCliRequest & { readonly prompts: PromptAdapter },
 ): Promise<CommandExit> {
@@ -12,25 +14,30 @@ export async function runRestoreFlow(
     initialValue: true,
   });
 
-  const isPreviewStopped = request.prompts.isCancel(shouldPreview) || shouldPreview !== true;
+  const isPreviewCancelled = request.prompts.isCancel(shouldPreview);
+  const isPreviewDeclined = shouldPreview !== true;
+  const isPreviewStopped = isPreviewCancelled || isPreviewDeclined;
   if (isPreviewStopped) {
-    request.prompts.cancel('No files changed.');
+    request.prompts.cancel(NO_FILES_CHANGED_MESSAGE);
     return { exitCode: 0 };
+  }
+
+  function previewUnpack(): Promise<CommandExit> {
+    return runUnpackCommand({
+      allProviders: true,
+      apply: false,
+      json: false,
+      provider: undefined,
+      yes: false,
+      confirmed: undefined,
+    });
   }
 
   const previewExit = await runWithSpinner({
     prompts: request.prompts,
     startMessage: 'Scanning vault manifests...',
     stopMessage: 'Scanned vault manifests.',
-    task: () =>
-      runUnpackCommand({
-        allProviders: true,
-        apply: false,
-        json: false,
-        provider: undefined,
-        yes: false,
-        confirmed: undefined,
-      }),
+    task: previewUnpack,
   });
 
   const shouldApply = await request.prompts.confirm({
@@ -38,9 +45,11 @@ export async function runRestoreFlow(
     initialValue: false,
   });
 
-  const isApplyStopped = request.prompts.isCancel(shouldApply) || shouldApply !== true;
+  const isApplyCancelled = request.prompts.isCancel(shouldApply);
+  const isApplyDeclined = shouldApply !== true;
+  const isApplyStopped = isApplyCancelled || isApplyDeclined;
   if (isApplyStopped) {
-    request.prompts.outro('No files changed.');
+    request.prompts.outro(NO_FILES_CHANGED_MESSAGE);
     return previewExit;
   }
 

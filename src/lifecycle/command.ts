@@ -12,6 +12,13 @@ import {
 import { createWrappersBinPath } from './session-access.js';
 import { installLifecycleWrappers, uninstallLifecycleWrappers } from './wrappers.js';
 
+const USAGE_ERROR_EXIT_CODE = 2;
+const JSON_INDENT_SPACES = 2;
+const ENABLE_ACTION = 'enable';
+const DEFAULT_RESTORE_CACHE_AFTER = '7d';
+const OPEN_COMMAND_HINT = 'agent-session-pack open --provider <id> <session> --json';
+const SETTINGS_VERSION = 1;
+
 export const lifecycleCommand = defineCommand({
   meta: {
     name: 'lifecycle',
@@ -55,10 +62,12 @@ export async function runLifecycleCommand(flags: LifecycleFlags): Promise<Comman
 
   const action = flags.action?.trim().toLowerCase();
 
-  const isActionUnknown = action !== 'enable' && action !== 'disable' && action !== 'status';
+  const isActionKnown = action === ENABLE_ACTION || action === 'disable' || action === 'status';
+
+  const isActionUnknown = !isActionKnown;
   if (isActionUnknown) {
     process.stderr.write('Unknown lifecycle action. Use enable, disable, or status.\n');
-    return { exitCode: 2 };
+    return { exitCode: USAGE_ERROR_EXIT_CODE };
   }
 
   const existingSettings = await readSetupSettings(home);
@@ -79,7 +88,7 @@ export async function runLifecycleCommand(flags: LifecycleFlags): Promise<Comman
         wrappersBin,
         pathHint: `export PATH="${wrappersBin}:$PATH"`,
         configPresent: existingSettings != null,
-        openCommand: 'agent-session-pack open --provider <id> <session> --json',
+        openCommand: OPEN_COMMAND_HINT,
         maintainCommand: 'agent-session-pack maintain --dry-run --json',
       },
       isMachineOutputRequested,
@@ -91,7 +100,7 @@ export async function runLifecycleCommand(flags: LifecycleFlags): Promise<Comman
     existingConfig: existingSettings,
     home,
     now,
-    restoreOnLaunch: action === 'enable',
+    restoreOnLaunch: action === ENABLE_ACTION,
   });
 
   await writeSetupSettings({
@@ -99,7 +108,7 @@ export async function runLifecycleCommand(flags: LifecycleFlags): Promise<Comman
     config: nextSettings,
   });
 
-  const isActionEnable = action === 'enable';
+  const isActionEnable = action === ENABLE_ACTION;
   if (isActionEnable) {
     await installLifecycleWrappers({
       vaultPath: nextSettings.vaultPath,
@@ -119,7 +128,7 @@ export async function runLifecycleCommand(flags: LifecycleFlags): Promise<Comman
       pathHint: `export PATH="${createWrappersBinPath(nextSettings.vaultPath)}:$PATH"`,
       configPresent: true,
       action,
-      openCommand: 'agent-session-pack open --provider <id> <session> --json',
+      openCommand: OPEN_COMMAND_HINT,
       maintainCommand: 'agent-session-pack maintain --apply --yes --json',
     },
     isMachineOutputRequested,
@@ -139,14 +148,14 @@ function createLifecycleSettings(request: {
   const isExistingSettingsMissing = request.existingConfig == null;
   if (isExistingSettingsMissing) {
     return {
-      version: 1,
+      version: SETTINGS_VERSION,
       providers: ['codex', 'claude', 'grok', 'gemini'],
       vaultPath,
       coldAfter: DEFAULT_COLD_AFTER,
       createdAt: timestamp,
       updatedAt: timestamp,
       restoreOnLaunch: request.restoreOnLaunch,
-      restoreCacheAfter: '7d',
+      restoreCacheAfter: DEFAULT_RESTORE_CACHE_AFTER,
     };
   }
 
@@ -154,7 +163,7 @@ function createLifecycleSettings(request: {
     ...request.existingConfig,
     updatedAt: timestamp,
     restoreOnLaunch: request.restoreOnLaunch,
-    restoreCacheAfter: request.existingConfig.restoreCacheAfter ?? '7d',
+    restoreCacheAfter: request.existingConfig.restoreCacheAfter ?? DEFAULT_RESTORE_CACHE_AFTER,
   };
 }
 
@@ -169,6 +178,10 @@ function pickCliEntrypoint(): string {
   }
 
   return runningScriptPath;
+}
+
+function isPresentLine(line: string | null): line is string {
+  return line != null;
 }
 
 function writeLifecycleStatus(
@@ -194,7 +207,7 @@ function writeLifecycleStatus(
           ...status,
         },
         null,
-        2,
+        JSON_INDENT_SPACES,
       )}\n`,
     );
     return;
@@ -216,7 +229,7 @@ function writeLifecycleStatus(
     isStatusOpenCommandMissing ? null : `open: ${status.openCommand}`,
     isStatusMaintainCommandMissing ? null : `maintain: ${status.maintainCommand}`,
     `configPresent: ${String(status.configPresent)}`,
-  ].filter((line): line is string => line != null);
+  ].filter(isPresentLine);
 
   process.stdout.write(`${lines.join('\n')}\n`);
 }

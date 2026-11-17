@@ -1,41 +1,54 @@
 import { basename, join } from 'node:path';
 import type { ProviderAdapter } from '@/session-model.js';
 import { discoverDirectoryProviderSessions, readDocumentFile } from './directory-sessions.js';
+import { isJsonObject } from './session-discovery.js';
+
+const KIMI_PROVIDER_ID = 'kimi';
+const STATE_FILE_NAME = 'state.json';
+const SESSION_DIRECTORY_PREFIX = 'session_';
+const kimiMaxDepth = 3;
 
 export const kimiProvider: ProviderAdapter = {
-  id: 'kimi',
+  id: KIMI_PROVIDER_ID,
   label: 'Kimi Code',
   mode: 'archive',
   defaultRoots: (home: string): ReadonlyArray<string> => [join(home, '.kimi-code', 'sessions')],
   discover: (store) =>
     discoverDirectoryProviderSessions({
-      provider: 'kimi',
+      provider: KIMI_PROVIDER_ID,
       store,
-      markers: ['state.json'],
-      maxDepth: 3,
+      markers: [STATE_FILE_NAME],
+      maxDepth: kimiMaxDepth,
       titleFromDirectory: readKimiSessionTitle,
-      sessionIdFromDirectory: (path) => {
-        const name = basename(path);
-        const isNameStartsWithSession = name.startsWith('session_');
-        return isNameStartsWithSession ? name.slice('session_'.length) : name;
-      },
+      sessionIdFromDirectory: readKimiSessionId,
     }),
 };
 
-async function readKimiSessionTitle(directory: string): Promise<string> {
-  const kimiSessionDocument = await readDocumentFile(join(directory, 'state.json'));
+function readKimiSessionId(path: string): string {
+  const name = basename(path);
+  const isNameStartsWithSession = name.startsWith(SESSION_DIRECTORY_PREFIX);
 
-  const isKimiSessionDocumentMissing =
-    typeof kimiSessionDocument !== 'object' || kimiSessionDocument === null;
+  return isNameStartsWithSession ? name.slice(SESSION_DIRECTORY_PREFIX.length) : name;
+}
+
+async function readKimiSessionTitle(directory: string): Promise<string> {
+  const kimiSessionDocument = await readDocumentFile(join(directory, STATE_FILE_NAME));
+
+  const isKimiSessionDocumentMissing = !isJsonObject(kimiSessionDocument);
   if (isKimiSessionDocumentMissing) {
     return basename(directory);
   }
 
-  const title = (kimiSessionDocument as { readonly title?: unknown }).title;
+  const title = kimiSessionDocument.title;
+  const isTitleNotString = typeof title !== 'string';
+  if (isTitleNotString) {
+    return basename(directory);
+  }
 
-  const hasTitleString = typeof title === 'string' && title.trim().length > 0;
-  if (hasTitleString) {
-    return title.trim();
+  const trimmedTitle = title.trim();
+  const hasTitleText = trimmedTitle.length > 0;
+  if (hasTitleText) {
+    return trimmedTitle;
   }
 
   return basename(directory);

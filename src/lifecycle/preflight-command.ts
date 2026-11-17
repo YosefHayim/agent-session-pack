@@ -9,6 +9,11 @@ import { type ProviderId, ProviderIdSchema } from '@/session-model.js';
 import { isRestoreOnLaunchEnabled, readSetupSettings } from '@/setup/config.js';
 import { extractSessionIdsFromArgv, saveSessionAccess } from './session-access.js';
 
+const USAGE_ERROR_EXIT_CODE = 2;
+const JSON_INDENT_SPACES = 2;
+const PROVIDER_FLAG = '--provider';
+const NO_SESSION_IDS_LABEL = '(none)';
+
 export const preflightCommand = defineCommand({
   meta: {
     name: 'preflight',
@@ -60,7 +65,7 @@ export async function runPreflightCommand(flags: PreflightFlags): Promise<Comman
   const isProviderMissing = provider == null;
   if (isProviderMissing) {
     process.stderr.write(`Unknown or missing provider: ${flags.provider ?? ''}\n`);
-    return { exitCode: 2 };
+    return { exitCode: USAGE_ERROR_EXIT_CODE };
   }
 
   const setupSettings = await readSetupSettings(home);
@@ -118,18 +123,28 @@ export async function runPreflightCommand(flags: PreflightFlags): Promise<Comman
     });
     restores.push(report);
 
-    const isReportUsable = report.status === 'restored' || report.status === 'already-present';
-    const hasReportSessionId = report.sessionId != null;
+    const reportSessionId = report.sessionId;
 
-    const isSessionReportUsable = isReportUsable && hasReportSessionId;
-    if (isSessionReportUsable) {
-      await saveSessionAccess({
-        vaultPath,
-        provider,
-        sessionId: report.sessionId,
-        accessedAt: now,
-      });
+    const isReportRestored = report.status === 'restored';
+    const isReportAlreadyPresent = report.status === 'already-present';
+    const isReportUsable = isReportRestored || isReportAlreadyPresent;
+
+    const isReportUnusable = !isReportUsable;
+    if (isReportUnusable) {
+      continue;
     }
+
+    const isReportSessionIdMissing = reportSessionId == null;
+    if (isReportSessionIdMissing) {
+      continue;
+    }
+
+    await saveSessionAccess({
+      vaultPath,
+      provider,
+      sessionId: reportSessionId,
+      accessedAt: now,
+    });
   }
 
   writePreflightPrintout(
@@ -146,38 +161,54 @@ export async function runPreflightCommand(flags: PreflightFlags): Promise<Comman
   return { exitCode: 0 };
 }
 
+function isPassthroughArgument(
+  argument: string,
+  index: number,
+  argumentList: ReadonlyArray<string>,
+): boolean {
+  const isOwnFlag = argument === 'preflight' || argument === '--json' || argument === PROVIDER_FLAG;
+  const isProviderFlagValue = argumentList[index - 1] === PROVIDER_FLAG;
+  const isProviderAssignment = argument.startsWith(`${PROVIDER_FLAG}=`);
+
+  return !isOwnFlag && !isProviderFlagValue && !isProviderAssignment;
+}
+
 function extractPassthroughArgv(argumentList: ReadonlyArray<string>): ReadonlyArray<string> {
   const separatorIndex = argumentList.indexOf('--');
 
   const isSeparatorNotFound = separatorIndex === -1;
   if (isSeparatorNotFound) {
-    return argumentList.filter(
-      (arg, index, all) =>
-        arg !== 'preflight' &&
-        arg !== '--json' &&
-        arg !== '--provider' &&
-        all[index - 1] !== '--provider' &&
-        !arg.startsWith('--provider='),
-    );
+    return argumentList.filter(isPassthroughArgument);
   }
 
   return argumentList.slice(separatorIndex + 1);
 }
 
-function parseProvider(provider: string | undefined): ProviderId | undefined {
+function parseProvider(provider: string | undefined): ProviderId | null {
   const isProviderMissing = provider == null;
   if (isProviderMissing) {
-    return undefined;
+    return null;
   }
 
   const providerReply = ProviderIdSchema.safeParse(provider);
 
   const isProviderReplyFailed = !providerReply.success;
   if (isProviderReplyFailed) {
-    return undefined;
+    return null;
   }
 
   return providerReply.data;
+}
+
+function describeRestore(report: EnsureRestoredReport): string {
+  const isReportReasonMissing = report.reason == null;
+  const reasonSuffix = isReportReasonMissing ? '' : ` (${report.reason})`;
+
+  return `- ${report.sessionId ?? '?'}: ${report.status}${reasonSuffix}`;
+}
+
+function isPresentLine(line: string | null): line is string {
+  return line != null;
 }
 
 function writePreflightPrintout(
@@ -192,7 +223,7 @@ function writePreflightPrintout(
   isMachineOutputRequested: boolean,
 ): void {
   if (isMachineOutputRequested) {
-    process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
+    process.stdout.write(`${JSON.stringify(payload, null, JSON_INDENT_SPACES)}\n`);
     return;
   }
 
@@ -200,13 +231,10 @@ function writePreflightPrintout(
   const lines = [
     `preflight: ${payload.provider}`,
     `restoreOnLaunchEnabled: ${String(payload.restoreOnLaunchEnabled)}`,
-    `sessionIds: ${payload.sessionIds.join(', ') || '(none)'}`,
+    `sessionIds: ${payload.sessionIds.join(', ') || NO_SESSION_IDS_LABEL}`,
     isReasonMissing ? null : `reason: ${payload.reason}`,
-    ...payload.restores.map((report) => {
-      const isReportReasonMissing = report.reason == null;
-      return `- ${report.sessionId ?? '?'}: ${report.status}${isReportReasonMissing ? '' : ` (${report.reason})`}`;
-    }),
-  ].filter((line): line is string => line != null);
+    ...payload.restores.map(describeRestore),
+  ].filter(isPresentLine);
 
   process.stdout.write(`${lines.join('\n')}\n`);
 }

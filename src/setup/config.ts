@@ -2,8 +2,10 @@ import { constants, type Stats } from 'node:fs';
 import { access, mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { z } from 'zod';
-import { throwWrappedError } from '@/rethrow-as-error.js';
 import { ProviderIdSchema } from '@/session-model.js';
+
+const HOME_PREFIX = '~/';
+const MISSING_PATH_CODE = 'ENOENT';
 
 const SetupSettingsSchema = z.object({
   version: z.literal(1),
@@ -38,14 +40,14 @@ export interface WriteSetupSettingsRequest {
 }
 
 export function expandHomePath(path: string, home: string): string {
-  const isPathEmpty = path === '~';
-  if (isPathEmpty) {
+  const isHomeOnlyPath = path === '~';
+  if (isHomeOnlyPath) {
     return home;
   }
 
-  const isHomeRelativePath = path.startsWith('~/');
+  const isHomeRelativePath = path.startsWith(HOME_PREFIX);
   if (isHomeRelativePath) {
-    return join(home, path.slice(2));
+    return join(home, path.slice(HOME_PREFIX.length));
   }
 
   return resolve(path);
@@ -61,20 +63,23 @@ export async function validateVaultPath(
   const trimmedPath = request.inputPath.trim();
 
   const isPathEmpty = trimmedPath.length === 0;
-
   if (isPathEmpty) {
     throw new Error('Vault path cannot be empty.');
   }
 
   const path = expandHomePath(trimmedPath, request.home);
-  const providerRoots = request.providerRoots.map((providerRoot) =>
-    expandHomePath(providerRoot, request.home),
-  );
 
-  const isInsideProviderStore = providerRoots.some((providerRoot) =>
-    isPathInsideOrSame(path, providerRoot),
-  );
+  function expandProviderRoot(providerRoot: string): string {
+    return expandHomePath(providerRoot, request.home);
+  }
 
+  function isPathInsideProviderRoot(providerRoot: string): boolean {
+    return isPathInsideOrSame(path, providerRoot);
+  }
+
+  const providerRoots = request.providerRoots.map(expandProviderRoot);
+
+  const isInsideProviderStore = providerRoots.some(isPathInsideProviderRoot);
   if (isInsideProviderStore) {
     throw new Error('Vault path cannot be inside a provider session store.');
   }
@@ -82,7 +87,6 @@ export async function validateVaultPath(
   const targetStat = await readStatOptional(path);
 
   const isTargetFound = targetStat != null;
-
   if (isTargetFound) {
     await assertExistingVaultDirectory({ path, targetStat });
     return { path };
@@ -94,37 +98,46 @@ export async function validateVaultPath(
 
 export async function readSetupSettings(home: string): Promise<SetupSettings | null> {
   const settingsPath = createSettingsPath(home);
-  const settingsString = await readSettingsString(settingsPath).catch(throwWrappedError);
 
-  const isSettingsMissing = settingsString == null;
+  var settingsString: string | null;
+  try {
+    settingsString = await readSettingsString(settingsPath);
+  } catch (error) {
+    throw new Error(String(error), { cause: error });
+  }
 
+  const settingsFileContents = settingsString;
+
+  const isSettingsMissing = settingsFileContents == null;
   if (isSettingsMissing) {
     return null;
   }
 
-  return SetupSettingsSchema.parse(JSON.parse(settingsString));
+  return SetupSettingsSchema.parse(JSON.parse(settingsFileContents));
 }
 
 export async function writeSetupSettings(request: WriteSetupSettingsRequest): Promise<void> {
   const settingsPath = createSettingsPath(request.home);
-  await mkdir(dirname(settingsPath), { recursive: true }).catch(throwWrappedError);
-  await mkdir(request.config.vaultPath, { recursive: true }).catch(throwWrappedError);
-  await writeFile(settingsPath, `${JSON.stringify(request.config, null, 2)}\n`).catch(
-    throwWrappedError,
-  );
+
+  try {
+    await mkdir(dirname(settingsPath), { recursive: true });
+    await mkdir(request.config.vaultPath, { recursive: true });
+    await writeFile(settingsPath, `${JSON.stringify(request.config, null, 2)}\n`);
+  } catch (error) {
+    throw new Error(String(error), { cause: error });
+  }
 }
 
 async function readSettingsString(settingsPath: string): Promise<string | null> {
   try {
     return await readFile(settingsPath, 'utf8');
-  } catch (cause) {
-    const isSettingsMissing = readErrorCode(cause) === 'ENOENT';
-
+  } catch (error) {
+    const isSettingsMissing = readErrorCode(error) === MISSING_PATH_CODE;
     if (isSettingsMissing) {
       return null;
     }
 
-    return throwWrappedError(cause);
+    throw new Error(String(error), { cause: error });
   }
 }
 
@@ -133,7 +146,6 @@ async function assertExistingVaultDirectory(request: {
   readonly targetStat: Stats;
 }): Promise<void> {
   const isNotTargetDirectory = !request.targetStat.isDirectory();
-
   if (isNotTargetDirectory) {
     throw new Error('Vault path exists but is not a directory.');
   }
@@ -146,13 +158,11 @@ async function assertNewVaultParent(path: string): Promise<void> {
   const parentStat = await readStatOptional(parentPath);
 
   const isParentMissing = parentStat == null;
-
   if (isParentMissing) {
     throw new Error('Vault parent directory does not exist.');
   }
 
   const isNotParentDirectory = !parentStat.isDirectory();
-
   if (isNotParentDirectory) {
     throw new Error('Vault parent path exists but is not a directory.');
   }
@@ -163,21 +173,22 @@ async function assertNewVaultParent(path: string): Promise<void> {
 async function readStatOptional(path: string): Promise<Stats | null> {
   try {
     return await stat(path);
-  } catch (cause) {
-    const isPathMissing = readErrorCode(cause) === 'ENOENT';
-
+  } catch (error) {
+    const isPathMissing = readErrorCode(error) === MISSING_PATH_CODE;
     if (isPathMissing) {
       return null;
     }
 
-    throw new Error(String(cause), { cause });
+    throw new Error(String(error), { cause: error });
   }
 }
 
 async function assertWritable(path: string): Promise<void> {
-  await access(path, constants.W_OK).catch(() => {
+  try {
+    await access(path, constants.W_OK);
+  } catch {
     throw new Error('Vault path is not writable.');
-  });
+  }
 }
 
 function isPathInsideOrSame(path: string, parentPath: string): boolean {
@@ -196,16 +207,21 @@ function isPathInsideOrSame(path: string, parentPath: string): boolean {
   return !isAbsolute(relativePath);
 }
 
-function readErrorCode(cause: unknown): string | null {
-  const isCauseNotObject = typeof cause !== 'object' || cause === null;
-  if (isCauseNotObject) {
+function readErrorCode(error: unknown): string | null {
+  const isErrorNotObject = typeof error !== 'object';
+  if (isErrorNotObject) {
     return null;
   }
 
-  const hasNoErrorCode = !('code' in cause);
+  const isErrorNull = error === null;
+  if (isErrorNull) {
+    return null;
+  }
+
+  const hasNoErrorCode = !('code' in error);
   if (hasNoErrorCode) {
     return null;
   }
 
-  return String(cause.code);
+  return String(error.code);
 }

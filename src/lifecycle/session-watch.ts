@@ -31,12 +31,18 @@ export async function watchSessionStubs(request: WatchSessionStubsRequest): Prom
   const watchers = new Map<string, ReturnType<typeof watch>>();
   const restoringPaths = new Set<string>();
 
+  function isManifestInScope(manifest: SessionManifest): boolean {
+    const isAnyProviderWanted = request.provider == null;
+    const isWantedProvider = manifest.provider === request.provider;
+
+    return isAnyProviderWanted || isWantedProvider;
+  }
+
   function refreshWatchers(manifests: ReadonlyArray<SessionManifest>): void {
     const activePaths = new Set<string>();
 
     for (const manifest of manifests) {
-      const isProviderMismatched =
-        request.provider != null && manifest.provider !== request.provider;
+      const isProviderMismatched = !isManifestInScope(manifest);
       if (isProviderMismatched) {
         continue;
       }
@@ -48,10 +54,12 @@ export async function watchSessionStubs(request: WatchSessionStubsRequest): Prom
         continue;
       }
 
+      function materializeOnFileEvent(): void {
+        void materializeIfNeeded(manifest, true);
+      }
+
       try {
-        const watcher = watch(manifest.originalPath, { persistent: true }, () => {
-          void materializeIfNeeded(manifest, true);
-        });
+        const watcher = watch(manifest.originalPath, { persistent: true }, materializeOnFileEvent);
         watchers.set(manifest.originalPath, watcher);
       } catch {
         // Path may not exist yet; poll path will create watchers later.
@@ -76,17 +84,16 @@ export async function watchSessionStubs(request: WatchSessionStubsRequest): Prom
     const isPathArchivedStub = await isArchivedStubPath(manifest.originalPath, originKind);
 
     const isNotStub = !isPathArchivedStub;
-
     if (isNotStub) {
       return;
     }
 
     const isDirectoryStubCheckNeeded = !forceFromFsEvent && originKind === 'directory';
-    const isStubOpenedWhenChecked =
-      isDirectoryStubCheckNeeded && (await isDirectoryStubOpened(manifest.originalPath));
+    const isStubOpenedWhenChecked = isDirectoryStubCheckNeeded
+      ? await isDirectoryStubOpened(manifest.originalPath)
+      : false;
 
     const isDirectoryStubClosed = isDirectoryStubCheckNeeded && !isStubOpenedWhenChecked;
-
     if (isDirectoryStubClosed) {
       return;
     }
@@ -129,9 +136,7 @@ export async function watchSessionStubs(request: WatchSessionStubsRequest): Prom
 
   while (!request.shouldStop()) {
     const manifests = await listVaultSessionManifests(request.vaultPath);
-    const scoped = manifests.filter(
-      (manifest) => request.provider == null || manifest.provider === request.provider,
-    );
+    const scoped = manifests.filter(isManifestInScope);
 
     refreshWatchers(scoped);
 
@@ -139,9 +144,11 @@ export async function watchSessionStubs(request: WatchSessionStubsRequest): Prom
       await materializeIfNeeded(manifest, false);
     }
 
-    await new Promise<void>((wakeUp) => {
+    function schedulePollWakeUp(wakeUp: () => void): void {
       setTimeout(wakeUp, pollIntervalMs);
-    });
+    }
+
+    await new Promise<void>(schedulePollWakeUp);
   }
 
   for (const watcher of watchers.values()) {

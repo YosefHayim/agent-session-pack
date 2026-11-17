@@ -40,6 +40,9 @@ const subCommands: SubCommandsDef = {
 };
 
 const DEFAULT_SUB_COMMAND_NAME = 'scan';
+const VERSION_FLAGS: ReadonlyArray<string> = ['--version', '-v'];
+const USAGE_ERROR_EXIT_CODE = 2;
+const NODE_AND_ENTRYPOINT_ARGUMENT_COUNT = 2;
 
 export const mainCommand = defineCommand({
   meta: {
@@ -56,10 +59,13 @@ export const mainCommand = defineCommand({
 function pickPlainSubCommand(subCommandName: string): CommandDef {
   const subCommandReply = subCommands[subCommandName];
 
-  const isNotPlainCommand =
-    typeof subCommandReply !== 'object' || subCommandReply instanceof Promise;
+  const isNotObject = typeof subCommandReply !== 'object';
+  if (isNotObject) {
+    throw new Error(`Subcommand ${subCommandName} is not a command object.`);
+  }
 
-  if (isNotPlainCommand) {
+  const isPromise = subCommandReply instanceof Promise;
+  if (isPromise) {
     throw new Error(`Subcommand ${subCommandName} is not a command object.`);
   }
 
@@ -71,8 +77,12 @@ interface UsageTarget {
   readonly parent: CommandDef | undefined;
 }
 
+function isSubCommandName(argument: string): boolean {
+  return Object.hasOwn(subCommands, argument);
+}
+
 function pickUsageTarget(argumentList: string[]): UsageTarget {
-  const subCommandName = argumentList.find((argument) => Object.hasOwn(subCommands, argument));
+  const subCommandName = argumentList.find(isSubCommandName);
 
   const isThereNoSubCommandName = subCommandName == null;
 
@@ -86,7 +96,17 @@ function pickUsageTarget(argumentList: string[]): UsageTarget {
 }
 
 function isCommandExit(candidate: unknown): candidate is CommandExit {
-  return typeof candidate === 'object' && candidate !== null && 'exitCode' in candidate;
+  const isNotObject = typeof candidate !== 'object';
+  if (isNotObject) {
+    return false;
+  }
+
+  const isNull = candidate === null;
+  if (isNull) {
+    return false;
+  }
+
+  return 'exitCode' in candidate;
 }
 
 interface SubCommandInvocation {
@@ -94,9 +114,13 @@ interface SubCommandInvocation {
   readonly rawArgs: string[];
 }
 
+function isNotFlag(argument: string): boolean {
+  return !argument.startsWith('-');
+}
+
 // The first word that is not a flag names the command; with none, the default command runs.
 function readSubCommandInvocation(argumentList: string[]): SubCommandInvocation {
-  const firstWordIndex = argumentList.findIndex((argument) => !argument.startsWith('-'));
+  const firstWordIndex = argumentList.findIndex(isNotFlag);
 
   const isThereNoWord = firstWordIndex === -1;
 
@@ -110,17 +134,33 @@ function readSubCommandInvocation(argumentList: string[]): SubCommandInvocation 
   };
 }
 
-async function runCli(argumentList: string[]): Promise<CommandExit> {
-  const isHelpRequest = argumentList.includes('--help') || argumentList.includes('-h');
-  const isVersionRequest =
-    argumentList.length === 1 && (argumentList[0] === '--version' || argumentList[0] === '-v');
+async function showUsageForArguments(argumentList: string[]): Promise<CommandExit> {
+  const usageTarget = pickUsageTarget(argumentList);
+  await showUsage(usageTarget.command, usageTarget.parent);
+  return { exitCode: 0 };
+}
 
-  if (isHelpRequest) {
-    const usageTarget = pickUsageTarget(argumentList);
-    await showUsage(usageTarget.command, usageTarget.parent);
-    return { exitCode: 0 };
+function isVersionArguments(argumentList: string[]): boolean {
+  const isNotSingleArgument = argumentList.length !== 1;
+  if (isNotSingleArgument) {
+    return false;
   }
 
+  return VERSION_FLAGS.includes(argumentList[0]);
+}
+
+async function runCli(argumentList: string[]): Promise<CommandExit> {
+  const isLongHelpRequest = argumentList.includes('--help');
+  if (isLongHelpRequest) {
+    return showUsageForArguments(argumentList);
+  }
+
+  const isShortHelpRequest = argumentList.includes('-h');
+  if (isShortHelpRequest) {
+    return showUsageForArguments(argumentList);
+  }
+
+  const isVersionRequest = isVersionArguments(argumentList);
   if (isVersionRequest) {
     console.log(packageJson.version);
     return { exitCode: 0 };
@@ -164,18 +204,26 @@ async function runEntrypoint(argumentList: string[]): Promise<CommandExit> {
   return runCli(argumentList);
 }
 
-async function reportCliError(error: unknown, argumentList: string[]): Promise<CommandExit> {
-  const isUsageError = error instanceof Error && error.name === 'CLIError';
-
-  if (isUsageError) {
-    const usageTarget = pickUsageTarget(argumentList);
-    await showUsage(usageTarget.command, usageTarget.parent);
-    console.error(error.message);
-    return { exitCode: 2 };
-  }
-
+function reportUnexpectedError(error: unknown): CommandExit {
   console.error(error, '\n');
   return { exitCode: 1 };
+}
+
+async function reportCliError(error: unknown, argumentList: string[]): Promise<CommandExit> {
+  const isNotErrorObject = !(error instanceof Error);
+  if (isNotErrorObject) {
+    return reportUnexpectedError(error);
+  }
+
+  const isNotUsageError = error.name !== 'CLIError';
+  if (isNotUsageError) {
+    return reportUnexpectedError(error);
+  }
+
+  const usageTarget = pickUsageTarget(argumentList);
+  await showUsage(usageTarget.command, usageTarget.parent);
+  console.error(error.message);
+  return { exitCode: USAGE_ERROR_EXIT_CODE };
 }
 
 async function runEntrypointReportingErrors(argumentList: string[]): Promise<CommandExit> {
@@ -193,7 +241,9 @@ const modulePath = fileURLToPath(import.meta.url);
 if (isCliEntrypoint(entrypointPath, modulePath)) {
   process.argv.splice(0, process.argv.length, ...rewriteCommandFlagAliases(process.argv));
 
-  const commandExit = await runEntrypointReportingErrors(process.argv.slice(2));
+  const commandExit = await runEntrypointReportingErrors(
+    process.argv.slice(NODE_AND_ENTRYPOINT_ARGUMENT_COUNT),
+  );
   process.exitCode = commandExit.exitCode;
 }
 

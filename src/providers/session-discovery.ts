@@ -3,8 +3,12 @@ import { createReadStream } from 'node:fs';
 import { readdir, stat } from 'node:fs/promises';
 import { basename, extname, join } from 'node:path';
 
-const titleSearchLimitBytes = 1024 * 1024;
-const titleReadHighWaterMarkBytes = 64 * 1024;
+const BYTES_PER_KIBIBYTE = 1024;
+const TITLE_SEARCH_LIMIT_BYTES = BYTES_PER_KIBIBYTE * BYTES_PER_KIBIBYTE;
+const TITLE_READ_HIGH_WATER_MARK_BYTES = 64 * BYTES_PER_KIBIBYTE;
+
+// Catches a UUID such as 123e4567-e89b-12d3-a456-426614174000 inside a name.
+export const SESSION_UUID_PATTERN = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
 
 export interface JsonlSessionFile {
   readonly path: string;
@@ -106,10 +110,11 @@ export async function measureDirectorySession(path: string): Promise<DirectorySe
 }
 
 export function slugifyTitle(title: string): string {
-  const slug = title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+  // Catches each run of characters that are not letters or digits.
+  const nonAlphanumericRuns = /[^a-z0-9]+/g;
+  // Catches dashes at the start or the end of the slug.
+  const edgeDashes = /^-+|-+$/g;
+  const slug = title.toLowerCase().replace(nonAlphanumericRuns, '-').replace(edgeDashes, '');
 
   const isSlugEmpty = slug.length === 0;
   if (isSlugEmpty) {
@@ -121,7 +126,7 @@ export function slugifyTitle(title: string): string {
 
 export function readSessionIdFromPath(path: string): string {
   const fileName = basename(path, extname(path));
-  const idHit = fileName.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+  const idHit = fileName.match(SESSION_UUID_PATTERN);
 
   const isIdFound = idHit != null;
   if (isIdFound) {
@@ -140,24 +145,24 @@ async function readSessionTitleFromFile(path: string): Promise<string> {
   let bytesRead = 0;
   const stream = createReadStream(path, {
     encoding: 'utf8',
-    highWaterMark: titleReadHighWaterMarkBytes,
+    highWaterMark: TITLE_READ_HIGH_WATER_MARK_BYTES,
   });
 
   for await (const chunk of stream) {
     const chunkString = streamChunkToString(chunk);
     bytesRead += Buffer.byteLength(chunkString, 'utf8');
 
-    const scan = readTitleFromDelimitedLines(`${carry}${chunkString}`);
+    const titleScan = readTitleFromDelimitedLines(`${carry}${chunkString}`);
 
-    const hasScanTitle = scan.title.length > 0;
-    if (hasScanTitle) {
+    const hasTitleInScan = titleScan.title.length > 0;
+    if (hasTitleInScan) {
       stream.destroy();
-      return scan.title;
+      return titleScan.title;
     }
 
-    carry = scan.rest;
+    carry = titleScan.rest;
 
-    const isSearchLimitReached = bytesRead >= titleSearchLimitBytes;
+    const isSearchLimitReached = bytesRead >= TITLE_SEARCH_LIMIT_BYTES;
     if (isSearchLimitReached) {
       stream.destroy();
       return basename(path, extname(path));
@@ -187,7 +192,9 @@ function readTitleFromDelimitedLines(fileString: string): {
   readonly title: string;
   readonly rest: string;
 } {
-  const lines = fileString.split(/\r?\n/);
+  // Catches a line break in Unix or Windows form.
+  const lineBreak = /\r?\n/;
+  const lines = fileString.split(lineBreak);
   const rest = lines.pop();
 
   const isRestMissing = rest == null;
@@ -218,37 +225,45 @@ function readTitleFromDelimitedLines(fileString: string): {
 
 function readTitleFromJsonlLine(line: string): string {
   try {
-    const event = JSON.parse(line) as {
-      readonly type?: unknown;
-      readonly text?: unknown;
-      readonly message?: unknown;
-    };
+    const event: unknown = JSON.parse(line);
+
+    const isEventNotObject = !isJsonObject(event);
+    if (isEventNotObject) {
+      return '';
+    }
 
     const isEventTypeNotUser = event.type !== 'user';
     if (isEventTypeNotUser) {
       return '';
     }
 
-    const isEventTypeString = typeof event.text === 'string';
-    if (isEventTypeString) {
-      return event.text;
+    const eventText = event.text;
+    const isEventTextString = typeof eventText === 'string';
+    if (isEventTextString) {
+      return eventText;
     }
 
-    const isEventMessageTypeNotObjectOrMissing =
-      typeof event.message !== 'object' || event.message === null;
-    if (isEventMessageTypeNotObjectOrMissing) {
+    const eventMessage = event.message;
+    const isEventMessageNotObject = !isJsonObject(eventMessage);
+    if (isEventMessageNotObject) {
       return '';
     }
 
-    const message = event.message as { readonly content?: unknown };
-
-    const isMessageTypeString = typeof message.content === 'string';
-    if (isMessageTypeString) {
-      return message.content;
+    const messageContent = eventMessage.content;
+    const isMessageContentString = typeof messageContent === 'string';
+    if (isMessageContentString) {
+      return messageContent;
     }
 
     return '';
   } catch {
     return '';
   }
+}
+
+export function isJsonObject(candidate: unknown): candidate is Readonly<Record<string, unknown>> {
+  const isObjectType = typeof candidate === 'object';
+  const isNotNull = candidate !== null;
+
+  return isObjectType && isNotNull;
 }

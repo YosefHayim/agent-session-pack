@@ -2,7 +2,11 @@ import type { Dirent } from 'node:fs';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import type { DiscoveredSession, ProviderId, SessionStore } from '@/session-model.js';
-import { measureDirectorySession, slugifyTitle } from './session-discovery.js';
+import {
+  measureDirectorySession,
+  SESSION_UUID_PATTERN,
+  slugifyTitle,
+} from './session-discovery.js';
 
 type DirectorySessionMarkers = ReadonlyArray<string>;
 
@@ -37,7 +41,7 @@ export async function discoverDirectoryProviderSessions(
       continue;
     }
 
-    const measured = await measureDirectorySession(directory);
+    const measuredSession = await measureDirectorySession(directory);
     const title = await readDirectoryTitle({
       directory,
       sessionId,
@@ -50,8 +54,8 @@ export async function discoverDirectoryProviderSessions(
       title,
       slug: slugifyTitle(title),
       originalPath: directory,
-      modifiedAt: measured.modifiedAt,
-      sizeBytes: measured.sizeBytes,
+      modifiedAt: measuredSession.modifiedAt,
+      sizeBytes: measuredSession.sizeBytes,
       sourceKind: 'directory',
       status: 'live',
     });
@@ -74,13 +78,15 @@ async function readDirectoryTitle(request: {
   readonly sessionId: string;
   readonly titleFromDirectory?: (path: string) => Promise<string>;
 }): Promise<string> {
-  const isTitleFromDirectoryMissing = request.titleFromDirectory == null;
+  const titleFromDirectory = request.titleFromDirectory;
+  const isTitleFromDirectoryMissing = titleFromDirectory == null;
   if (isTitleFromDirectoryMissing) {
     return request.sessionId;
   }
 
   try {
-    const titleFound = await request.titleFromDirectory(request.directory);
+    const titleFound = await titleFromDirectory(request.directory);
+
     const isTitleFound = titleFound.length > 0;
     return isTitleFound ? titleFound : request.sessionId;
   } catch {
@@ -90,7 +96,7 @@ async function readDirectoryTitle(request: {
 
 function readDefaultSessionIdFromDirectory(path: string): string {
   const name = basename(path);
-  const uuidHit = name.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+  const uuidHit = name.match(SESSION_UUID_PATTERN);
 
   const isUuidFound = uuidHit != null;
   if (isUuidFound) {
@@ -109,7 +115,6 @@ async function collectSessionDirectories(
   },
 ): Promise<ReadonlyArray<string>> {
   const isRootDirectory = await isDirectoryPath(root);
-
   const isNotRootDirectory = !isRootDirectory;
 
   if (isNotRootDirectory) {
@@ -135,9 +140,9 @@ async function collectSessionDirectories(
       return;
     }
 
-    const dirents = await readChildDirents(directory);
+    const childDirents = await readChildDirents(directory);
 
-    for (const dirent of dirents) {
+    for (const dirent of childDirents) {
       const isNotDirectory = !dirent.isDirectory();
       if (isNotDirectory) {
         continue;

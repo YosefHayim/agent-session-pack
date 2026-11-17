@@ -46,7 +46,11 @@ describe('CLI read-only discovery and savings proof', () => {
     };
 
     expect(scanReport.sessions).toHaveLength(2);
-    expect(scanReport.sessions.every((session) => session.provider === 'codex')).toBe(true);
+    function isCodexSession(session: { readonly provider: string }): boolean {
+      return session.provider === 'codex';
+    }
+
+    expect(scanReport.sessions.every(isCodexSession)).toBe(true);
 
     const savingsOutput = await execFileAsync(TSX_PATH, [CLI_PATH, 'check'], {
       cwd: commandCwd,

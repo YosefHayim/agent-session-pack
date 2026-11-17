@@ -18,12 +18,14 @@ const SessionManifestSchema = z.object({
   sourceKind: SessionOriginKindSchema.optional(),
 });
 
+const JSON_INDENT_SPACES = 2;
+
 export type SessionManifest = z.infer<typeof SessionManifestSchema>;
 
 export async function writeSessionManifest(path: string, manifest: SessionManifest): Promise<void> {
   try {
     await mkdir(dirname(path), { recursive: true });
-    await writeFile(path, `${JSON.stringify(manifest, null, 2)}\n`);
+    await writeFile(path, `${JSON.stringify(manifest, null, JSON_INDENT_SPACES)}\n`);
   } catch (error) {
     throw new Error(`Could not write session manifest ${path}`, { cause: error });
   }
@@ -75,8 +77,9 @@ async function collectManifestPaths(root: string): Promise<ReadonlyArray<string>
       continue;
     }
 
-    const isNotNameEndsWith = !dirent.name.endsWith('.json');
-    if (isNotNameEndsWith) {
+    // Manifests are the only .json files in the vault manifests folder.
+    const isNotManifestFile = !dirent.name.endsWith('.json');
+    if (isNotManifestFile) {
       continue;
     }
 

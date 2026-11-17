@@ -9,6 +9,10 @@ import type { ProviderInventoryReport } from '@/scan/provider-inventory.js';
 import type { ProviderAdapter, ProviderId } from '@/session-model.js';
 import { validateVaultPath, writeSetupSettings } from './config.js';
 
+const DEFAULT_VAULT_PATH = '~/.agent-session-pack';
+const SETUP_CANCELLED_MESSAGE = 'No files changed.';
+const DURATION_HINT_MESSAGE = 'Use a duration such as 12h, 7d, 2w, or 30d.';
+
 type ColdThresholdChoice = '14d' | '30d' | '7d' | 'custom';
 type VaultPathChoice = 'custom' | 'default';
 type FlowReport = 'cancelled' | 'saved';
@@ -56,7 +60,7 @@ export async function runFirstSetup(request: FirstSetupRequest = {}): Promise<Fl
 
   const isSelectedProvidersMissing = selectedProviders == null;
   if (isSelectedProvidersMissing) {
-    prompts.cancel('No files changed.');
+    prompts.cancel(SETUP_CANCELLED_MESSAGE);
     return 'cancelled';
   }
 
@@ -64,7 +68,7 @@ export async function runFirstSetup(request: FirstSetupRequest = {}): Promise<Fl
 
   const isColdAfterMissing = coldAfter == null;
   if (isColdAfterMissing) {
-    prompts.cancel('No files changed.');
+    prompts.cancel(SETUP_CANCELLED_MESSAGE);
     return 'cancelled';
   }
 
@@ -76,7 +80,7 @@ export async function runFirstSetup(request: FirstSetupRequest = {}): Promise<Fl
 
   const isVaultPathMissing = vaultPath == null;
   if (isVaultPathMissing) {
-    prompts.cancel('No files changed.');
+    prompts.cancel(SETUP_CANCELLED_MESSAGE);
     return 'cancelled';
   }
 
@@ -94,9 +98,15 @@ export async function runFirstSetup(request: FirstSetupRequest = {}): Promise<Fl
     initialValue: true,
   });
 
-  const isSaveStopped = prompts.isCancel(shouldSave) || shouldSave !== true;
-  if (isSaveStopped) {
-    prompts.cancel('No files changed.');
+  const isSaveCancelled = prompts.isCancel(shouldSave);
+  if (isSaveCancelled) {
+    prompts.cancel(SETUP_CANCELLED_MESSAGE);
+    return 'cancelled';
+  }
+
+  const isSaveDeclined = shouldSave !== true;
+  if (isSaveDeclined) {
+    prompts.cancel(SETUP_CANCELLED_MESSAGE);
     return 'cancelled';
   }
 
@@ -120,7 +130,7 @@ export async function runFirstSetup(request: FirstSetupRequest = {}): Promise<Fl
 async function askProviderSelection(request: {
   readonly inventory: ProviderInventoryReport;
   readonly prompts: PromptAdapter;
-}): Promise<ReadonlyArray<ProviderId> | undefined> {
+}): Promise<ReadonlyArray<ProviderId> | null> {
   const choices = request.inventory.rows.map(createProviderPromptOption);
 
   while (true) {
@@ -132,7 +142,7 @@ async function askProviderSelection(request: {
 
     const isSelectionCancelled = request.prompts.isCancel(selectedProviders);
     if (isSelectionCancelled) {
-      return undefined;
+      return null;
     }
 
     const hasSelectedProviders = selectedProviders.length > 0;
@@ -144,21 +154,25 @@ async function askProviderSelection(request: {
   }
 }
 
-async function askColdThreshold(prompts: PromptAdapter): Promise<string | undefined> {
+async function askColdThreshold(prompts: PromptAdapter): Promise<string | null> {
   const choice = await prompts.select<ColdThresholdChoice>({
     message: 'When is a session considered cold?',
     options: [
-      { value: '7d', label: '7 days', hint: 'recommended; protects normal active work' },
+      {
+        value: DEFAULT_COLD_AFTER,
+        label: '7 days',
+        hint: 'recommended; protects normal active work',
+      },
       { value: '14d', label: '14 days', hint: 'safer for long-running sessions' },
       { value: '30d', label: '30 days', hint: 'conservative cleanup' },
       { value: 'custom', label: 'Custom', hint: 'enter 12h, 7d, 2w, or 30d' },
     ],
-    initialValue: '7d',
+    initialValue: DEFAULT_COLD_AFTER,
   });
 
   const isChoiceCancel = prompts.isCancel(choice);
   if (isChoiceCancel) {
-    return undefined;
+    return null;
   }
 
   const isChoiceNotCustom = choice !== 'custom';
@@ -174,7 +188,7 @@ async function askColdThreshold(prompts: PromptAdapter): Promise<string | undefi
 
   const isCustomCancel = prompts.isCancel(custom);
   if (isCustomCancel) {
-    return undefined;
+    return null;
   }
 
   return custom;
@@ -184,13 +198,13 @@ async function askVaultPath(request: {
   readonly home: string;
   readonly prompts: PromptAdapter;
   readonly providers: ReadonlyArray<ProviderAdapter>;
-}): Promise<string | undefined> {
+}): Promise<string | null> {
   const choice = await request.prompts.select<VaultPathChoice>({
     message: 'Where should archives be stored?',
     options: [
       {
         value: 'default',
-        label: '~/.agent-session-pack',
+        label: DEFAULT_VAULT_PATH,
         hint: 'default local vault; manifests and compressed archives live here',
       },
       {
@@ -204,14 +218,14 @@ async function askVaultPath(request: {
 
   const isChoiceCancel = request.prompts.isCancel(choice);
   if (isChoiceCancel) {
-    return undefined;
+    return null;
   }
 
   const isChoiceDefault = choice === 'default';
   if (isChoiceDefault) {
     return validateVaultPathDetails({
       home: request.home,
-      inputPath: '~/.agent-session-pack',
+      inputPath: DEFAULT_VAULT_PATH,
       prompts: request.prompts,
       providers: request.providers,
     });
@@ -224,16 +238,16 @@ async function askCustomVaultPath(request: {
   readonly home: string;
   readonly prompts: PromptAdapter;
   readonly providers: ReadonlyArray<ProviderAdapter>;
-}): Promise<string | undefined> {
+}): Promise<string | null> {
   while (true) {
     const typedPath = await request.prompts.text({
       message: 'Enter vault path',
-      initialValue: '~/.agent-session-pack',
+      initialValue: DEFAULT_VAULT_PATH,
     });
 
     const isPathCancel = request.prompts.isCancel(typedPath);
     if (isPathCancel) {
-      return undefined;
+      return null;
     }
 
     const validatedPath = await validateVaultPathDetails({
@@ -255,10 +269,13 @@ async function validateVaultPathDetails(request: {
   readonly inputPath: string;
   readonly prompts: PromptAdapter;
   readonly providers: ReadonlyArray<ProviderAdapter>;
-}): Promise<string | undefined> {
-  const providerRoots = request.providers.flatMap((provider) =>
-    provider.defaultRoots(request.home),
-  );
+}): Promise<string | null> {
+  function listDefaultRoots(provider: ProviderAdapter): ReadonlyArray<string> {
+    return provider.defaultRoots(request.home);
+  }
+
+  const providerRoots = request.providers.flatMap(listDefaultRoots);
+
   try {
     const validatedPath = await validateVaultPath({
       home: request.home,
@@ -270,7 +287,7 @@ async function validateVaultPathDetails(request: {
     const isErrorObject = validationError instanceof Error;
     const validationMessage = isErrorObject ? validationError.message : String(validationError);
     request.prompts.note(validationMessage, 'Invalid vault path');
-    return undefined;
+    return null;
   }
 }
 
@@ -387,13 +404,14 @@ function readFirstSetupCopy(): string {
 function validateDurationString(duration: string | undefined): string | undefined {
   const isDurationMissing = duration == null;
   if (isDurationMissing) {
-    return 'Use a duration such as 12h, 7d, 2w, or 30d.';
+    return DURATION_HINT_MESSAGE;
   }
 
+  // Catches a whole number followed by h, d, or w, such as 12h or 7d.
   const isDurationFormat = /^\d+(h|d|w)$/.test(duration);
   if (isDurationFormat) {
     return undefined;
   }
 
-  return 'Use a duration such as 12h, 7d, 2w, or 30d.';
+  return DURATION_HINT_MESSAGE;
 }

@@ -10,6 +10,9 @@ import type { ProviderAdapter } from '@/session-model.js';
 import { createHumanUnpackReport } from './unpack-output.js';
 import { unpackProviderSessions } from './unpack-sessions.js';
 
+const USAGE_EXIT_CODE = 2;
+const JSON_INDENT_SPACES = 2;
+
 export const unpackCommand = defineCommand({
   meta: {
     name: 'unpack',
@@ -78,15 +81,18 @@ export async function runUnpackCommand(flags: UnpackFlags): Promise<CommandExit>
     return { exitCode: 1 };
   }
 
-  const isApplyUnconfirmed = flags.apply === true && flags.confirmed !== true;
+  const isApplyRequested = flags.apply === true;
+  const isApplyNotConfirmed = flags.confirmed !== true;
+  const isApplyUnconfirmed = isApplyRequested && isApplyNotConfirmed;
   if (isApplyUnconfirmed) {
     process.stderr.write('Cancelled. Re-run with --apply and confirm with y to unpack sessions.\n');
     process.stderr.write('\n');
-    return { exitCode: 2 };
+    return { exitCode: USAGE_EXIT_CODE };
   }
 
   const { providers, isProviderUnknown } = selectProviders(flags.provider, flags.providers);
-  const providerExitCode = isProviderUnknown ? 2 : 0;
+  const providerExitCode = isProviderUnknown ? USAGE_EXIT_CODE : 0;
+
   const report = await unpackProviderSessions({
     vaultPath: flags.vaultPath ?? createDefaultVaultPath(home),
     providers,
@@ -96,7 +102,7 @@ export async function runUnpackCommand(flags: UnpackFlags): Promise<CommandExit>
 
   const isMachineOutputRequested = flags.json === true;
   if (isMachineOutputRequested) {
-    process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+    process.stdout.write(`${JSON.stringify(report, null, JSON_INDENT_SPACES)}\n`);
     return { exitCode: providerExitCode };
   }
 

@@ -4,8 +4,9 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { createZstdCompression } from './zstd-compression.js';
 
-const createWorkspace = (): Promise<string> =>
-  mkdtemp(join(tmpdir(), 'agent-session-pack-archive-reader-'));
+function createWorkspace(): Promise<string> {
+  return mkdtemp(join(tmpdir(), 'agent-session-pack-archive-reader-'));
+}
 
 describe('zstdCompression createZstdCompression', () => {
   it('compresses and decompresses a file with the system zstd binary', async () => {

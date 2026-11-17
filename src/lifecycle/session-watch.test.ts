@@ -37,9 +37,9 @@ type WatchRun = {
   readonly stop: () => Promise<void>;
 };
 
-const writeArchivedCodexStub = async (
+async function writeArchivedCodexStub(
   home: string,
-): Promise<{ readonly vaultPath: string; readonly filePath: string; readonly content: string }> => {
+): Promise<{ readonly vaultPath: string; readonly filePath: string; readonly content: string }> {
   const vaultPath = join(home, '.agent-session-pack');
   const filePath = join(home, '.codex', 'sessions', 'cold.jsonl');
   const archivePath = join(vaultPath, 'archives', 'codex', 'cold.jsonl.zst');
@@ -69,9 +69,9 @@ const writeArchivedCodexStub = async (
   });
 
   return { vaultPath, filePath, content: sessionJsonl };
-};
+}
 
-const startCodexWatch = (vaultPath: string, compression: CompressionAdapter): WatchRun => {
+function startCodexWatch(vaultPath: string, compression: CompressionAdapter): WatchRun {
   const control = { stopped: false };
   const events: string[] = [];
   const watchPromise = watchSessionStubs({
@@ -92,15 +92,16 @@ const startCodexWatch = (vaultPath: string, compression: CompressionAdapter): Wa
       return watchPromise;
     },
   };
-};
+}
 
 describe('sessionWatch', () => {
   const timers: NodeJS.Timeout[] = [];
 
-  const wait = (ms: number): Promise<void> =>
-    new Promise((done) => {
+  function wait(ms: number): Promise<void> {
+    return new Promise((done) => {
       timers.push(setTimeout(done, ms));
     });
+  }
 
   afterEach(() => {
     for (const timer of timers) {

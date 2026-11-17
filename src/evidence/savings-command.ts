@@ -11,7 +11,7 @@ export interface SavingsFlags {
   readonly json?: boolean;
 }
 
-export const runSavingsCommand = async (flags: SavingsFlags): Promise<CommandExit> => {
+export async function runSavingsCommand(flags: SavingsFlags): Promise<CommandExit> {
   const home = requireHome();
 
   const isHomeMissing = home == null;
@@ -37,7 +37,7 @@ export const runSavingsCommand = async (flags: SavingsFlags): Promise<CommandExi
 
   process.stdout.write(`${createHumanEvidenceReport(report)}\n`);
   return { exitCode: providerExitCode };
-};
+}
 
 export const savingsCommand = defineCommand({
   meta: {
@@ -89,5 +89,6 @@ export const checkCommand = defineCommand({
   },
 });
 
-export const createEvidenceWorkRoot = (cwd: string, runId: string): string =>
-  join(cwd, '.vault-test', 'evidence-local', runId);
+export function createEvidenceWorkRoot(cwd: string, runId: string): string {
+  return join(cwd, '.vault-test', 'evidence-local', runId);
+}

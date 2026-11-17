@@ -1,7 +1,7 @@
 const BYTES_PER_UNIT = 1024;
 const BYTE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB'] as const;
 
-export const describeBytes = (bytes: number): string => {
+export function describeBytes(bytes: number): string {
   const isBelowUnit = bytes < BYTES_PER_UNIT;
   if (isBelowUnit) {
     return `${bytes} B`;
@@ -23,25 +23,22 @@ export const describeBytes = (bytes: number): string => {
   }
 
   return `${remainingBytes.toFixed(1)} ${BYTE_UNITS[unitIndex]}`;
-};
+}
 
-export const describeOptionalBytes = (bytes: number | undefined, missingLabel: string): string => {
+export function describeOptionalBytes(bytes: number | undefined, missingLabel: string): string {
   const isBytesMissing = bytes == null;
   if (isBytesMissing) {
     return missingLabel;
   }
 
   return describeBytes(bytes);
-};
+}
 
-export const describeOptionalPercent = (
-  percent: number | undefined,
-  missingLabel: string,
-): string => {
+export function describeOptionalPercent(percent: number | undefined, missingLabel: string): string {
   const isPercentMissing = percent == null;
   if (isPercentMissing) {
     return missingLabel;
   }
 
   return `${percent.toFixed(1)}%`;
-};
+}

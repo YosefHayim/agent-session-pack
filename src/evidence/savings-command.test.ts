@@ -5,10 +5,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createEvidenceWorkRoot } from '@/evidence/savings-command.js';
 import { checkCommand, runSavingsCommand, savingsCommand } from './savings-command.js';
 
-const createWorkspace = (): Promise<string> =>
-  mkdtemp(join(tmpdir(), 'agent-session-pack-savings-cmd-'));
+function createWorkspace(): Promise<string> {
+  return mkdtemp(join(tmpdir(), 'agent-session-pack-savings-cmd-'));
+}
 
-const writeCodexSession = async (home: string): Promise<string> => {
+async function writeCodexSession(home: string): Promise<string> {
   const sessionDir = join(home, '.codex', 'sessions', '2026', '06', '01');
   const sessionPath = join(sessionDir, 'session-old.jsonl');
   const sessionJsonl = `${'{"type":"user","text":"savings proof fixture"}\n'.repeat(40)}`;
@@ -19,7 +20,7 @@ const writeCodexSession = async (home: string): Promise<string> => {
   await utimes(sessionPath, modifiedAt, modifiedAt);
 
   return sessionPath;
-};
+}
 
 describe('savings command', () => {
   const originalHome = process.env.HOME;

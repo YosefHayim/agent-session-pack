@@ -4,20 +4,22 @@ import { createPackPlan } from './plan.js';
 
 const now = new Date('2026-07-06T12:00:00.000Z');
 
-const createSession = (
+function createSession(
   provider: DiscoveredSession['provider'],
   modifiedAt: string,
   sizeBytes: number,
-): DiscoveredSession => ({
-  id: `${provider}-${modifiedAt}`,
-  provider,
-  title: `${provider} session`,
-  slug: `${provider}-session`,
-  originalPath: `/tmp/${provider}.jsonl`,
-  modifiedAt: new Date(modifiedAt),
-  sizeBytes,
-  status: 'live',
-});
+): DiscoveredSession {
+  return {
+    id: `${provider}-${modifiedAt}`,
+    provider,
+    title: `${provider} session`,
+    slug: `${provider}-session`,
+    originalPath: `/tmp/${provider}.jsonl`,
+    modifiedAt: new Date(modifiedAt),
+    sizeBytes,
+    status: 'live',
+  };
+}
 
 describe('pack plan', () => {
   it('summarizes dry-run candidates without claiming cleanup', () => {

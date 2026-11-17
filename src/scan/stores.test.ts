@@ -5,8 +5,9 @@ import { describe, expect, it } from 'vitest';
 import type { DiscoveredSession, ProviderAdapter } from '@/session-model.js';
 import { discoverStoreSessions, scanStores } from './stores.js';
 
-const createWorkspace = (): Promise<string> =>
-  mkdtemp(join(tmpdir(), 'agent-session-pack-scan-stores-'));
+function createWorkspace(): Promise<string> {
+  return mkdtemp(join(tmpdir(), 'agent-session-pack-scan-stores-'));
+}
 
 describe('scanStores', () => {
   it('scans stores through provider adapters and skips unknown providers', async () => {

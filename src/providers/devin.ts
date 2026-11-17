@@ -49,7 +49,7 @@ export const devinProvider: ProviderAdapter = {
   discover: (store) => discoverDevinSessions(store.path),
 };
 
-const discoverDevinSessions = async (root: string): Promise<ReadonlyArray<DiscoveredSession>> => {
+async function discoverDevinSessions(root: string): Promise<ReadonlyArray<DiscoveredSession>> {
   const dbPath = join(root, 'sessions.db');
   const dbStat = await readStatOrNull(dbPath);
 
@@ -69,17 +69,17 @@ const discoverDevinSessions = async (root: string): Promise<ReadonlyArray<Discov
   return devinSessionSummaries.map((devinSessionSummary) =>
     readSessionFromDevin(devinSessionSummary, dbPath, dbStat.size),
   );
-};
+}
 
-const readStatOrNull = async (path: string): Promise<Stats | null> => {
+async function readStatOrNull(path: string): Promise<Stats | null> {
   try {
     return await stat(path);
   } catch {
     return null;
   }
-};
+}
 
-const readDevinSessions = async (dbPath: string): Promise<ReadonlyArray<DevinSessionSummary>> => {
+async function readDevinSessions(dbPath: string): Promise<ReadonlyArray<DevinSessionSummary>> {
   try {
     const printout = await execFileAsync('sqlite3', ['-json', dbPath, devinSessionsQuery]);
     const parsed = JSON.parse(printout.stdout) as unknown;
@@ -95,13 +95,13 @@ const readDevinSessions = async (dbPath: string): Promise<ReadonlyArray<DevinSes
   } catch {
     return [];
   }
-};
+}
 
-const readSessionFromDevin = (
+function readSessionFromDevin(
   devinSessionSummary: DevinSessionSummary,
   dbPath: string,
   dbBytes: number,
-): DiscoveredSession => {
+): DiscoveredSession {
   const isStoredSizeKnown = devinSessionSummary.sizeBytes > 0;
   const sizeBytes = isStoredSizeKnown ? devinSessionSummary.sizeBytes : dbBytes;
 
@@ -116,24 +116,26 @@ const readSessionFromDevin = (
     sizeBytes,
     status: 'live',
   };
-};
+}
 
-const readSessionFromDatabaseSnapshot = (
+function readSessionFromDatabaseSnapshot(
   dbPath: string,
   dbBytes: number,
   modifiedAt: Date,
-): DiscoveredSession => ({
-  id: 'sessions-db',
-  provider: 'devin',
-  title: 'Devin sessions database',
-  slug: 'devin-sessions-database',
-  originalPath: dbPath,
-  modifiedAt,
-  sizeBytes: dbBytes,
-  status: 'live',
-});
+): DiscoveredSession {
+  return {
+    id: 'sessions-db',
+    provider: 'devin',
+    title: 'Devin sessions database',
+    slug: 'devin-sessions-database',
+    originalPath: dbPath,
+    modifiedAt,
+    sizeBytes: dbBytes,
+    status: 'live',
+  };
+}
 
-const readDateFromDevinTimestamp = (timestamp: number): Date => {
+function readDateFromDevinTimestamp(timestamp: number): Date {
   const largestUnixSecondsTimestamp = 9_999_999_999;
 
   const isMillisecondTimestamp = timestamp > largestUnixSecondsTimestamp;
@@ -144,4 +146,4 @@ const readDateFromDevinTimestamp = (timestamp: number): Date => {
 
   const millisecondsPerSecond = 1000;
   return new Date(timestamp * millisecondsPerSecond);
-};
+}

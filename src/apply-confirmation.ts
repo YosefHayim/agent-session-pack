@@ -7,9 +7,9 @@ export type ApplyConfirmationRequest = {
   readonly yes: boolean | undefined;
 };
 
-export const askApplyConfirmation = async (
+export async function askApplyConfirmation(
   request: ApplyConfirmationRequest,
-): Promise<boolean | undefined> => {
+): Promise<boolean | undefined> {
   const isApplyNotRequested = request.apply !== true;
   if (isApplyNotRequested) {
     return undefined;
@@ -41,4 +41,4 @@ export const askApplyConfirmation = async (
   }
 
   return answer === true;
-};
+}

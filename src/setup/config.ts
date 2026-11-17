@@ -18,8 +18,9 @@ const SetupSettingsSchema = z.object({
 
 export type SetupSettings = z.infer<typeof SetupSettingsSchema>;
 
-export const isRestoreOnLaunchEnabled = (settings: SetupSettings | null): boolean =>
-  settings?.restoreOnLaunch === true;
+export function isRestoreOnLaunchEnabled(settings: SetupSettings | null): boolean {
+  return settings?.restoreOnLaunch === true;
+}
 
 export type ValidatedVaultPath = {
   readonly path: string;
@@ -36,7 +37,7 @@ export type WriteSetupSettingsRequest = {
   readonly config: SetupSettings;
 };
 
-export const expandHomePath = (path: string, home: string): string => {
+export function expandHomePath(path: string, home: string): string {
   const isPathEmpty = path === '~';
   if (isPathEmpty) {
     return home;
@@ -48,14 +49,15 @@ export const expandHomePath = (path: string, home: string): string => {
   }
 
   return resolve(path);
-};
+}
 
-export const createSettingsPath = (home: string): string =>
-  join(home, '.agent-session-pack', 'config.json');
+export function createSettingsPath(home: string): string {
+  return join(home, '.agent-session-pack', 'config.json');
+}
 
-export const validateVaultPath = async (
+export async function validateVaultPath(
   request: VaultPathValidationRequest,
-): Promise<ValidatedVaultPath> => {
+): Promise<ValidatedVaultPath> {
   const trimmedPath = request.inputPath.trim();
 
   const isPathEmpty = trimmedPath.length === 0;
@@ -88,9 +90,9 @@ export const validateVaultPath = async (
 
   await assertNewVaultParent(path);
   return { path };
-};
+}
 
-export const readSetupSettings = async (home: string): Promise<SetupSettings | null> => {
+export async function readSetupSettings(home: string): Promise<SetupSettings | null> {
   const settingsPath = createSettingsPath(home);
   const settingsString = await readSettingsString(settingsPath).catch(throwWrappedError);
 
@@ -101,18 +103,18 @@ export const readSetupSettings = async (home: string): Promise<SetupSettings | n
   }
 
   return SetupSettingsSchema.parse(JSON.parse(settingsString));
-};
+}
 
-export const writeSetupSettings = async (request: WriteSetupSettingsRequest): Promise<void> => {
+export async function writeSetupSettings(request: WriteSetupSettingsRequest): Promise<void> {
   const settingsPath = createSettingsPath(request.home);
   await mkdir(dirname(settingsPath), { recursive: true }).catch(throwWrappedError);
   await mkdir(request.config.vaultPath, { recursive: true }).catch(throwWrappedError);
   await writeFile(settingsPath, `${JSON.stringify(request.config, null, 2)}\n`).catch(
     throwWrappedError,
   );
-};
+}
 
-const readSettingsString = async (settingsPath: string): Promise<string | null> => {
+async function readSettingsString(settingsPath: string): Promise<string | null> {
   try {
     return await readFile(settingsPath, 'utf8');
   } catch (cause) {
@@ -124,12 +126,12 @@ const readSettingsString = async (settingsPath: string): Promise<string | null> 
 
     return throwWrappedError(cause);
   }
-};
+}
 
-const assertExistingVaultDirectory = async (request: {
+async function assertExistingVaultDirectory(request: {
   readonly path: string;
   readonly targetStat: Stats;
-}): Promise<void> => {
+}): Promise<void> {
   const isNotTargetDirectory = !request.targetStat.isDirectory();
 
   if (isNotTargetDirectory) {
@@ -137,9 +139,9 @@ const assertExistingVaultDirectory = async (request: {
   }
 
   await assertWritable(request.path);
-};
+}
 
-const assertNewVaultParent = async (path: string): Promise<void> => {
+async function assertNewVaultParent(path: string): Promise<void> {
   const parentPath = dirname(path);
   const parentStat = await readStatOptional(parentPath);
 
@@ -156,9 +158,9 @@ const assertNewVaultParent = async (path: string): Promise<void> => {
   }
 
   await assertWritable(parentPath);
-};
+}
 
-const readStatOptional = async (path: string): Promise<Stats | null> => {
+async function readStatOptional(path: string): Promise<Stats | null> {
   try {
     return await stat(path);
   } catch (cause) {
@@ -170,15 +172,15 @@ const readStatOptional = async (path: string): Promise<Stats | null> => {
 
     throw new Error(String(cause), { cause });
   }
-};
+}
 
-const assertWritable = async (path: string): Promise<void> => {
+async function assertWritable(path: string): Promise<void> {
   await access(path, constants.W_OK).catch(() => {
     throw new Error('Vault path is not writable.');
   });
-};
+}
 
-const isPathInsideOrSame = (path: string, parentPath: string): boolean => {
+function isPathInsideOrSame(path: string, parentPath: string): boolean {
   const relativePath = relative(resolve(parentPath), resolve(path));
 
   const isRelativePathEmpty = relativePath.length === 0;
@@ -192,9 +194,9 @@ const isPathInsideOrSame = (path: string, parentPath: string): boolean => {
   }
 
   return !isAbsolute(relativePath);
-};
+}
 
-const readErrorCode = (cause: unknown): string | null => {
+function readErrorCode(cause: unknown): string | null {
   const isCauseNotObject = typeof cause !== 'object' || cause === null;
   if (isCauseNotObject) {
     return null;
@@ -206,4 +208,4 @@ const readErrorCode = (cause: unknown): string | null => {
   }
 
   return String(cause.code);
-};
+}

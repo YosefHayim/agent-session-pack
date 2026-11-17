@@ -17,7 +17,7 @@ export type FirstSetupRequest = InteractiveCliRequest & {
   readonly showIntro?: boolean;
 };
 
-export const runFirstSetup = async (request: FirstSetupRequest = {}): Promise<FlowReport> => {
+export async function runFirstSetup(request: FirstSetupRequest = {}): Promise<FlowReport> {
   const prompts = request.prompts ?? clackPromptAdapter;
   const home = request.home ?? readHomeFolder();
 
@@ -115,12 +115,12 @@ export const runFirstSetup = async (request: FirstSetupRequest = {}): Promise<Fl
 
   prompts.outro(createSetupSavedCopy());
   return 'saved';
-};
+}
 
-const askProviderSelection = async (request: {
+async function askProviderSelection(request: {
   readonly inventory: ProviderInventoryReport;
   readonly prompts: PromptAdapter;
-}): Promise<ReadonlyArray<ProviderId> | undefined> => {
+}): Promise<ReadonlyArray<ProviderId> | undefined> {
   const choices = request.inventory.rows.map(createProviderPromptOption);
 
   while (true) {
@@ -142,9 +142,9 @@ const askProviderSelection = async (request: {
 
     request.prompts.note('Choose at least one provider or cancel setup.', 'No providers selected');
   }
-};
+}
 
-const askColdThreshold = async (prompts: PromptAdapter): Promise<string | undefined> => {
+async function askColdThreshold(prompts: PromptAdapter): Promise<string | undefined> {
   const choice = await prompts.select<ColdThresholdChoice>({
     message: 'When is a session considered cold?',
     options: [
@@ -178,13 +178,13 @@ const askColdThreshold = async (prompts: PromptAdapter): Promise<string | undefi
   }
 
   return custom;
-};
+}
 
-const askVaultPath = async (request: {
+async function askVaultPath(request: {
   readonly home: string;
   readonly prompts: PromptAdapter;
   readonly providers: ReadonlyArray<ProviderAdapter>;
-}): Promise<string | undefined> => {
+}): Promise<string | undefined> {
   const choice = await request.prompts.select<VaultPathChoice>({
     message: 'Where should archives be stored?',
     options: [
@@ -218,13 +218,13 @@ const askVaultPath = async (request: {
   }
 
   return askCustomVaultPath(request);
-};
+}
 
-const askCustomVaultPath = async (request: {
+async function askCustomVaultPath(request: {
   readonly home: string;
   readonly prompts: PromptAdapter;
   readonly providers: ReadonlyArray<ProviderAdapter>;
-}): Promise<string | undefined> => {
+}): Promise<string | undefined> {
   while (true) {
     const typedPath = await request.prompts.text({
       message: 'Enter vault path',
@@ -248,14 +248,14 @@ const askCustomVaultPath = async (request: {
       return validatedPath;
     }
   }
-};
+}
 
-const validateVaultPathDetails = async (request: {
+async function validateVaultPathDetails(request: {
   readonly home: string;
   readonly inputPath: string;
   readonly prompts: PromptAdapter;
   readonly providers: ReadonlyArray<ProviderAdapter>;
-}): Promise<string | undefined> => {
+}): Promise<string | undefined> {
   const providerRoots = request.providers.flatMap((provider) =>
     provider.defaultRoots(request.home),
   );
@@ -272,11 +272,11 @@ const validateVaultPathDetails = async (request: {
     request.prompts.note(validationMessage, 'Invalid vault path');
     return undefined;
   }
-};
+}
 
-const createProviderPromptOption = (
+function createProviderPromptOption(
   inventorySummary: ProviderInventoryReport['rows'][number],
-): PromptOption<ProviderId> => {
+): PromptOption<ProviderId> {
   const isCodexProvider = inventorySummary.provider === 'codex';
   if (isCodexProvider) {
     return {
@@ -345,14 +345,14 @@ const createProviderPromptOption = (
     label: inventorySummary.provider,
     hint: 'backup-only proof; native mutation disabled for safety',
   };
-};
+}
 
-const createSetupSummary = (summary: {
+function createSetupSummary(summary: {
   readonly providers: ReadonlyArray<ProviderId>;
   readonly vaultPath: string;
   readonly coldAfter: string;
-}): string =>
-  [
+}): string {
+  return [
     `Providers: ${summary.providers.join(', ')}`,
     `Vault: ${summary.vaultPath}`,
     `Cold after: ${summary.coldAfter}`,
@@ -362,9 +362,10 @@ const createSetupSummary = (summary: {
     '  - restore verified before original removal',
     '  - changed live files never overwritten',
   ].join('\n');
+}
 
-const createSetupSavedCopy = (): string =>
-  [
+function createSetupSavedCopy(): string {
+  return [
     'Setup saved.',
     '',
     'Next command:',
@@ -374,14 +375,16 @@ const createSetupSavedCopy = (): string =>
     '',
     'Then choose "Check savings" or "Pack cold sessions".',
   ].join('\n');
+}
 
-const readFirstSetupCopy = (): string =>
-  [
+function readFirstSetupCopy(): string {
+  return [
     'This setup writes Agent Session Pack config only.',
     'It does not pack, delete, or restore session files.',
   ].join('\n');
+}
 
-const validateDurationString = (duration: string | undefined): string | undefined => {
+function validateDurationString(duration: string | undefined): string | undefined {
   const isDurationMissing = duration == null;
   if (isDurationMissing) {
     return 'Use a duration such as 12h, 7d, 2w, or 30d.';
@@ -393,4 +396,4 @@ const validateDurationString = (duration: string | undefined): string | undefine
   }
 
   return 'Use a duration such as 12h, 7d, 2w, or 30d.';
-};
+}

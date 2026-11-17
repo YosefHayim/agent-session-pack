@@ -4,16 +4,18 @@ import { findSessionSelector, type SessionSelectorRequest } from './session-sele
 
 type SelectorQuery = Omit<SessionSelectorRequest, 'manifests'>;
 
-const readManifest = (
+function readManifest(
   fields: Pick<SessionManifest, 'sessionId' | 'provider' | 'title' | 'slug'>,
-): SessionManifest => ({
-  ...fields,
-  originalPath: `/sessions/${fields.sessionId}.jsonl`,
-  archivePath: `/vault/${fields.sessionId}.jsonl.zst`,
-  sourceSha256: 'sha',
-  sourceBytes: 1,
-  archivedAt: '2026-07-01T00:00:00.000Z',
-});
+): SessionManifest {
+  return {
+    ...fields,
+    originalPath: `/sessions/${fields.sessionId}.jsonl`,
+    archivePath: `/vault/${fields.sessionId}.jsonl.zst`,
+    sourceSha256: 'sha',
+    sourceBytes: 1,
+    archivedAt: '2026-07-01T00:00:00.000Z',
+  };
+}
 
 const sessionManifests: ReadonlyArray<SessionManifest> = [
   readManifest({
@@ -38,8 +40,9 @@ const sessionManifests: ReadonlyArray<SessionManifest> = [
   readManifest({ sessionId: 'abcdef', provider: 'codex', title: 'Long id', slug: 'long-id' }),
 ];
 
-const readSelection = (query: SelectorQuery) =>
-  findSessionSelector({ ...query, manifests: sessionManifests });
+function readSelection(query: SelectorQuery) {
+  return findSessionSelector({ ...query, manifests: sessionManifests });
+}
 
 describe('session selector', () => {
   it('resolves a provider-prefixed slug', () => {

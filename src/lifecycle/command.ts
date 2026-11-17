@@ -45,7 +45,7 @@ export type LifecycleFlags = {
   readonly cliEntrypoint?: string | undefined;
 };
 
-export const runLifecycleCommand = async (flags: LifecycleFlags): Promise<CommandExit> => {
+export async function runLifecycleCommand(flags: LifecycleFlags): Promise<CommandExit> {
   const home = requireHome(flags.home);
 
   const isHomeMissing = home == null;
@@ -125,14 +125,14 @@ export const runLifecycleCommand = async (flags: LifecycleFlags): Promise<Comman
     isMachineOutputRequested,
   );
   return { exitCode: 0 };
-};
+}
 
-const createLifecycleSettings = (request: {
+function createLifecycleSettings(request: {
   readonly existingConfig: SetupSettings | null;
   readonly home: string;
   readonly now: Date;
   readonly restoreOnLaunch: boolean;
-}): SetupSettings => {
+}): SetupSettings {
   const timestamp = request.now.toISOString();
   const vaultPath = request.existingConfig?.vaultPath ?? createDefaultVaultPath(request.home);
 
@@ -156,10 +156,10 @@ const createLifecycleSettings = (request: {
     restoreOnLaunch: request.restoreOnLaunch,
     restoreCacheAfter: request.existingConfig.restoreCacheAfter ?? '7d',
   };
-};
+}
 
 // The wrappers must run the script that is running now. In the build this module is bundled into dist/cli/main.js.
-const pickCliEntrypoint = (): string => {
+function pickCliEntrypoint(): string {
   const runningScriptPath = process.argv[1];
 
   const isThereNoRunningScript = runningScriptPath == null;
@@ -169,9 +169,9 @@ const pickCliEntrypoint = (): string => {
   }
 
   return runningScriptPath;
-};
+}
 
-const writeLifecycleStatus = (
+function writeLifecycleStatus(
   status: {
     readonly restoreOnLaunch: boolean;
     readonly restoreCacheAfter: string | undefined;
@@ -185,7 +185,7 @@ const writeLifecycleStatus = (
     readonly maintainCommand?: string;
   },
   isMachineOutputRequested: boolean,
-): void => {
+): void {
   if (isMachineOutputRequested) {
     process.stdout.write(
       `${JSON.stringify(
@@ -219,4 +219,4 @@ const writeLifecycleStatus = (
   ].filter((line): line is string => line != null);
 
   process.stdout.write(`${lines.join('\n')}\n`);
-};
+}

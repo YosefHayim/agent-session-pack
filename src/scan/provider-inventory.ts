@@ -33,9 +33,9 @@ export type ProviderInventoryRequest = {
   readonly now: Date;
 };
 
-export const inspectProviderInventory = async (
+export async function inspectProviderInventory(
   request: ProviderInventoryRequest,
-): Promise<ProviderInventoryReport> => {
+): Promise<ProviderInventoryReport> {
   const inventorySummaries: ProviderInventorySummary[] = [];
   const cutoffTime = request.now.getTime() - request.olderThanMs;
 
@@ -57,7 +57,7 @@ export const inspectProviderInventory = async (
   }
 
   return { rows: inventorySummaries };
-};
+}
 
 type ProviderRootDiscovery = {
   readonly roots: ReadonlyArray<string>;
@@ -70,10 +70,10 @@ type RootDiscovery = {
   readonly sessions: ReadonlyArray<DiscoveredSession>;
 };
 
-const discoverProviderRoots = async (request: {
+async function discoverProviderRoots(request: {
   readonly home: string;
   readonly provider: ProviderAdapter;
-}): Promise<ProviderRootDiscovery> => {
+}): Promise<ProviderRootDiscovery> {
   const roots = request.provider.defaultRoots(request.home);
   const discoveredRoots: Array<RootDiscovery | null> = [];
 
@@ -92,12 +92,12 @@ const discoverProviderRoots = async (request: {
     existingRoots: existingRoots.map((root) => root.root),
     sessions: existingRoots.flatMap((root) => root.sessions),
   };
-};
+}
 
-const discoverProviderRoot = async (request: {
+async function discoverProviderRoot(request: {
   readonly provider: ProviderAdapter;
   readonly root: string;
-}): Promise<RootDiscovery | null> => {
+}): Promise<RootDiscovery | null> {
   const isRootPresent = await isPathPresent(request.root);
 
   const isRootAbsent = !isRootPresent;
@@ -115,14 +115,14 @@ const discoverProviderRoot = async (request: {
     root: request.root,
     sessions,
   };
-};
+}
 
-const createInventorySummary = (request: {
+function createInventorySummary(request: {
   readonly cutoffTime: number;
   readonly paths: ReadonlyArray<string>;
   readonly provider: ProviderAdapter;
   readonly sessions: ReadonlyArray<DiscoveredSession>;
-}): ProviderInventorySummary => {
+}): ProviderInventorySummary {
   const isNothingToScan = request.paths.length === 0 || request.sessions.length === 0;
   if (isNothingToScan) {
     const isRequestSessionsEmpty = request.sessions.length === 0;
@@ -172,7 +172,8 @@ const createInventorySummary = (request: {
     paths: request.paths,
     status: 'ready',
   };
-};
+}
 
-const isRootDiscovery = (discovery: RootDiscovery | null): discovery is RootDiscovery =>
-  discovery != null;
+function isRootDiscovery(discovery: RootDiscovery | null): discovery is RootDiscovery {
+  return discovery != null;
+}

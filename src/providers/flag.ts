@@ -1,7 +1,7 @@
 import { type ProviderAdapter, type ProviderId, ProviderIdSchema } from '@/session-model.js';
 import { allProviders } from './all-providers.js';
 
-export const parseOptionalProvider = (provider: string | undefined): ProviderId | undefined => {
+export function parseOptionalProvider(provider: string | undefined): ProviderId | undefined {
   const isProviderMissing = provider == null;
   if (isProviderMissing) {
     return undefined;
@@ -11,17 +11,17 @@ export const parseOptionalProvider = (provider: string | undefined): ProviderId 
   const isProviderKnown = providerReply.success;
 
   return isProviderKnown ? providerReply.data : undefined;
-};
+}
 
 export interface ProviderSelection {
   readonly providers: ReadonlyArray<ProviderAdapter>;
   readonly isProviderUnknown: boolean;
 }
 
-export const selectProviders = (
+export function selectProviders(
   provider: string | undefined,
   providersOverride?: ReadonlyArray<ProviderAdapter>,
-): ProviderSelection => {
+): ProviderSelection {
   const hasProvidersOverride = providersOverride != null;
   if (hasProvidersOverride) {
     return { providers: providersOverride, isProviderUnknown: false };
@@ -44,4 +44,4 @@ export const selectProviders = (
 
   const providersForId = allProviders.filter((adapter) => adapter.id === providerId);
   return { providers: providersForId, isProviderUnknown };
-};
+}

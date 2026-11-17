@@ -3,10 +3,10 @@ export type SizeBoundSession = {
   readonly sizeBytes: number;
 };
 
-export const selectNewestSessionWithinSize = <Session extends SizeBoundSession>(
+export function selectNewestSessionWithinSize<Session extends SizeBoundSession>(
   sessions: ReadonlyArray<Session>,
   maxSizeBytes: number,
-): Session | undefined => {
+): Session | undefined {
   const eligibleSessions = sessions.filter((session) => session.sizeBytes <= maxSizeBytes);
 
   const hasEligibleSessions = eligibleSessions.length > 0;
@@ -15,11 +15,11 @@ export const selectNewestSessionWithinSize = <Session extends SizeBoundSession>(
   }
 
   return selectSmallestSession(sessions);
-};
+}
 
-const selectNewestSession = <Session extends { readonly modifiedAt: Date }>(
+function selectNewestSession<Session extends { readonly modifiedAt: Date }>(
   sessions: ReadonlyArray<Session>,
-): Session | undefined => {
+): Session | undefined {
   const [firstSession, ...remainingSessions] = sessions;
 
   const isFirstSessionMissing = firstSession == null;
@@ -35,11 +35,11 @@ const selectNewestSession = <Session extends { readonly modifiedAt: Date }>(
 
     return selected;
   }, firstSession);
-};
+}
 
-const selectSmallestSession = <Session extends { readonly sizeBytes: number }>(
+function selectSmallestSession<Session extends { readonly sizeBytes: number }>(
   sessions: ReadonlyArray<Session>,
-): Session | undefined => {
+): Session | undefined {
   const [firstSession, ...remainingSessions] = sessions;
 
   const isFirstSessionMissing = firstSession == null;
@@ -55,4 +55,4 @@ const selectSmallestSession = <Session extends { readonly sizeBytes: number }>(
 
     return selected;
   }, firstSession);
-};
+}

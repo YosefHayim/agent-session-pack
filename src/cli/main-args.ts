@@ -16,7 +16,7 @@ const commandFlagAliases: Readonly<Record<string, string>> = {
   '--unpack': 'unpack',
 };
 
-export const rewriteCommandFlagAliases = (argv: ReadonlyArray<string>): ReadonlyArray<string> => {
+export function rewriteCommandFlagAliases(argv: ReadonlyArray<string>): ReadonlyArray<string> {
   const [runtimePath, entrypointPath, firstArg, ...remainingArgumentList] = argv;
 
   const isInvocationIncomplete = runtimePath == null || entrypointPath == null || firstArg == null;
@@ -37,4 +37,4 @@ export const rewriteCommandFlagAliases = (argv: ReadonlyArray<string>): Readonly
   }
 
   return [runtimePath, entrypointPath, aliasedCommand, ...remainingArgumentList];
-};
+}

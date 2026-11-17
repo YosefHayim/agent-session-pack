@@ -65,7 +65,7 @@ type MaintainFlags = {
   readonly vaultPath?: string | undefined;
 };
 
-const runMaintainCommand = async (flags: MaintainFlags): Promise<CommandExit> => {
+async function runMaintainCommand(flags: MaintainFlags): Promise<CommandExit> {
   const home = requireHome(flags.home);
 
   const isHomeMissing = home == null;
@@ -133,4 +133,4 @@ const runMaintainCommand = async (flags: MaintainFlags): Promise<CommandExit> =>
     ].join('\n'),
   );
   return { exitCode: 0 };
-};
+}

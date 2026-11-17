@@ -58,9 +58,7 @@ export type VerifiedArchive = {
   readonly sourceKind: SessionOriginKind;
 };
 
-export const writeVerifiedArchive = async (
-  request: ArchiveWriteRequest,
-): Promise<VerifiedArchive> => {
+export async function writeVerifiedArchive(request: ArchiveWriteRequest): Promise<VerifiedArchive> {
   const originKind = await findOriginKind(request.sourcePath, request.sourceKind);
 
   const isDirectoryOrigin = originKind === 'directory';
@@ -70,17 +68,17 @@ export const writeVerifiedArchive = async (
   }
 
   return writeVerifiedFileArchive(request);
-};
+}
 
-export const removeOriginalSession = async (path: string): Promise<void> => {
+export async function removeOriginalSession(path: string): Promise<void> {
   const pathStat = await stat(path).catch(throwWrappedError);
   await rm(path, {
     force: false,
     recursive: pathStat.isDirectory(),
   }).catch(throwWrappedError);
-};
+}
 
-const writeVerifiedFileArchive = async (request: ArchiveWriteRequest): Promise<VerifiedArchive> => {
+async function writeVerifiedFileArchive(request: ArchiveWriteRequest): Promise<VerifiedArchive> {
   await ensureParentDirectory(request.archivePath);
   await ensureParentDirectory(request.restoredPath);
 
@@ -126,11 +124,11 @@ const writeVerifiedFileArchive = async (request: ArchiveWriteRequest): Promise<V
     removedOriginal: request.apply,
     sourceKind: 'file',
   };
-};
+}
 
-const writeVerifiedDirectoryArchive = async (
+async function writeVerifiedDirectoryArchive(
   request: ArchiveWriteRequest,
-): Promise<VerifiedArchive> => {
+): Promise<VerifiedArchive> {
   await ensureParentDirectory(request.archivePath);
   await ensureDirectory(request.restoredPath);
   await removePath(request.restoredPath);
@@ -191,7 +189,7 @@ const writeVerifiedDirectoryArchive = async (
     removedOriginal: request.apply,
     sourceKind: 'directory',
   };
-};
+}
 
 export type DirectoryRestoreRequest = {
   readonly sessionId: string;
@@ -202,7 +200,7 @@ export type DirectoryRestoreRequest = {
   readonly compression: CompressionAdapter;
 };
 
-export const restoreDirectoryArchive = async (request: DirectoryRestoreRequest): Promise<void> => {
+export async function restoreDirectoryArchive(request: DirectoryRestoreRequest): Promise<void> {
   await ensureParentDirectory(request.restoredPath);
   await removePath(request.restoredPath);
   await ensureParentDirectory(request.originalPath);
@@ -244,22 +242,22 @@ export const restoreDirectoryArchive = async (request: DirectoryRestoreRequest):
       restoredSha256: originalSha256,
     });
   }
-};
+}
 
-const throwVerificationMismatch = (mismatch: {
+function throwVerificationMismatch(mismatch: {
   readonly sessionId: string;
   readonly sourceSha256: string;
   readonly restoredSha256: string;
-}): never => {
+}): never {
   throw new Error(
     `Archive verification failed for session ${mismatch.sessionId}: source ${mismatch.sourceSha256} does not match restored ${mismatch.restoredSha256}`,
   );
-};
+}
 
-const createTarArchive = async (request: {
+async function createTarArchive(request: {
   readonly sourcePath: string;
   readonly tarPath: string;
-}): Promise<void> => {
+}): Promise<void> {
   await mkdir(dirname(request.tarPath), { recursive: true }).catch(throwWrappedError);
   const createTarArgumentList = [
     '-c',
@@ -270,12 +268,12 @@ const createTarArchive = async (request: {
     basename(request.sourcePath),
   ];
   await execFileAsync(TAR_BINARY, createTarArgumentList).catch(throwWrappedError);
-};
+}
 
-const extractTarArchive = async (request: {
+async function extractTarArchive(request: {
   readonly tarPath: string;
   readonly destinationPath: string;
-}): Promise<void> => {
+}): Promise<void> {
   const parent = dirname(request.destinationPath);
   const leaf = basename(request.destinationPath);
   const extractRoot = join(parent, `.extract-${leaf}`);
@@ -309,18 +307,18 @@ const extractTarArchive = async (request: {
   await rm(request.destinationPath, { recursive: true, force: true }).catch(throwWrappedError);
   await movePath(extractedPath, request.destinationPath);
   await rm(extractRoot, { recursive: true, force: true }).catch(throwWrappedError);
-};
+}
 
-const isRenameFailing = async (originPath: string, destinationPath: string): Promise<boolean> => {
+async function isRenameFailing(originPath: string, destinationPath: string): Promise<boolean> {
   try {
     await rename(originPath, destinationPath);
     return false;
   } catch {
     return true;
   }
-};
+}
 
-const movePath = async (originPath: string, destinationPath: string): Promise<void> => {
+async function movePath(originPath: string, destinationPath: string): Promise<void> {
   await mkdir(dirname(destinationPath), { recursive: true }).catch(throwWrappedError);
   await rm(destinationPath, { recursive: true, force: true }).catch(throwWrappedError);
 
@@ -331,4 +329,4 @@ const movePath = async (originPath: string, destinationPath: string): Promise<vo
     await cp(originPath, destinationPath, { recursive: true }).catch(throwWrappedError);
     await rm(originPath, { recursive: true, force: true }).catch(throwWrappedError);
   }
-};
+}

@@ -6,19 +6,21 @@ import { copyCompression, writeColdSession } from '@/archive/fixtures.js';
 import { runPackCommand } from '@/pack/command.js';
 import { runUnpackCommand } from './unpack-command.js';
 
-const createWorkspace = (): Promise<string> =>
-  mkdtemp(join(tmpdir(), 'agent-session-pack-unpack-command-'));
+function createWorkspace(): Promise<string> {
+  return mkdtemp(join(tmpdir(), 'agent-session-pack-unpack-command-'));
+}
 
-const createColdCodexSession = (
+function createColdCodexSession(
   home: string,
-): Promise<{ readonly path: string; readonly content: string }> =>
-  writeColdSession({
+): Promise<{ readonly path: string; readonly content: string }> {
+  return writeColdSession({
     home,
     relativeDir: join('.codex', 'sessions', '2026', '06', '01'),
     fileName: 'session-old.jsonl',
     content: '{"type":"user","text":"pack every provider"}\n',
     modifiedAt: new Date('2026-06-01T12:00:00.000Z'),
   });
+}
 
 describe('unpackCommand', () => {
   const originalHome = process.env.HOME;

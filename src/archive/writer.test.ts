@@ -21,8 +21,9 @@ const corruptCompression: CompressionAdapter = {
   decompress: ({ restoredPath }) => writeFile(restoredPath, 'corrupt'),
 };
 
-const createWorkspace = (): Promise<string> =>
-  mkdtemp(join(tmpdir(), 'agent-session-pack-archive-writer-'));
+function createWorkspace(): Promise<string> {
+  return mkdtemp(join(tmpdir(), 'agent-session-pack-archive-writer-'));
+}
 
 describe('archiveWriter', () => {
   it('removes original session files and directories after verification', async () => {

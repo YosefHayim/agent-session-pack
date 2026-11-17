@@ -22,7 +22,7 @@ export const kimiProvider: ProviderAdapter = {
     }),
 };
 
-const readKimiSessionTitle = async (directory: string): Promise<string> => {
+async function readKimiSessionTitle(directory: string): Promise<string> {
   const kimiSessionDocument = await readDocumentFile(join(directory, 'state.json'));
 
   const isKimiSessionDocumentMissing =
@@ -39,4 +39,4 @@ const readKimiSessionTitle = async (directory: string): Promise<string> => {
   }
 
   return basename(directory);
-};
+}

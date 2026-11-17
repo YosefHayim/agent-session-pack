@@ -25,13 +25,13 @@ export type WatchSessionStubsRequest = {
   readonly onEvent?: (event: SessionWatchEvent) => void;
 };
 
-export const watchSessionStubs = async (request: WatchSessionStubsRequest): Promise<void> => {
+export async function watchSessionStubs(request: WatchSessionStubsRequest): Promise<void> {
   const compression = request.compression ?? createZstdCompression();
   const pollIntervalMs = request.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS;
   const watchers = new Map<string, ReturnType<typeof watch>>();
   const restoringPaths = new Set<string>();
 
-  const refreshWatchers = (manifests: ReadonlyArray<SessionManifest>): void => {
+  function refreshWatchers(manifests: ReadonlyArray<SessionManifest>): void {
     const activePaths = new Set<string>();
 
     for (const manifest of manifests) {
@@ -65,12 +65,12 @@ export const watchSessionStubs = async (request: WatchSessionStubsRequest): Prom
         watchers.delete(path);
       }
     }
-  };
+  }
 
-  const materializeIfNeeded = async (
+  async function materializeIfNeeded(
     manifest: SessionManifest,
     forceFromFsEvent: boolean,
-  ): Promise<void> => {
+  ): Promise<void> {
     const originKind = manifest.sourceKind ?? 'file';
 
     const isPathArchivedStub = await isArchivedStubPath(manifest.originalPath, originKind);
@@ -125,7 +125,7 @@ export const watchSessionStubs = async (request: WatchSessionStubsRequest): Prom
     } finally {
       restoringPaths.delete(manifest.originalPath);
     }
-  };
+  }
 
   while (!request.shouldStop()) {
     const manifests = await listVaultSessionManifests(request.vaultPath);
@@ -147,4 +147,4 @@ export const watchSessionStubs = async (request: WatchSessionStubsRequest): Prom
   for (const watcher of watchers.values()) {
     watcher.close();
   }
-};
+}

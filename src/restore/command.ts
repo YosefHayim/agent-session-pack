@@ -54,7 +54,7 @@ export type RestoreFlags = {
   readonly vaultPath?: string | undefined;
 };
 
-export const runRestoreCommand = async (flags: RestoreFlags): Promise<CommandExit> => {
+export async function runRestoreCommand(flags: RestoreFlags): Promise<CommandExit> {
   const home = requireHome(flags.home);
 
   const isHomeMissing = home == null;
@@ -103,12 +103,12 @@ export const runRestoreCommand = async (flags: RestoreFlags): Promise<CommandExi
 
   writeRestorePrintout(report, flags.json === true);
   return { exitCode: restoreExitCode(report) };
-};
+}
 
-const writeRestorePrintout = (
+function writeRestorePrintout(
   report: EnsureRestoredReport,
   isMachineOutputRequested: boolean,
-): void => {
+): void {
   if (isMachineOutputRequested) {
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
     return;
@@ -127,9 +127,9 @@ const writeRestorePrintout = (
   ].filter((line): line is string => line != null);
 
   process.stdout.write(`${lines.join('\n')}\n`);
-};
+}
 
-const restoreExitCode = (report: EnsureRestoredReport): number => {
+function restoreExitCode(report: EnsureRestoredReport): number {
   const isRestoreSuccessful = report.status === 'restored' || report.status === 'already-present';
   if (isRestoreSuccessful) {
     return 0;
@@ -145,4 +145,4 @@ const restoreExitCode = (report: EnsureRestoredReport): number => {
   }
 
   return 1;
-};
+}

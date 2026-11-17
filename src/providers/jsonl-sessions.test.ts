@@ -5,8 +5,9 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { claudeCodeProvider, codexProvider } from '@/providers/all-providers.js';
 
-const createWorkspace = (): Promise<string> =>
-  mkdtemp(join(tmpdir(), 'agent-session-pack-jsonl-sessions-'));
+function createWorkspace(): Promise<string> {
+  return mkdtemp(join(tmpdir(), 'agent-session-pack-jsonl-sessions-'));
+}
 
 describe('jsonlSessions', () => {
   it('discovers Codex JSONL sessions under the store root', async () => {

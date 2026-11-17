@@ -43,9 +43,9 @@ export type EnsureSessionRestoredRequest = {
   readonly backupOnlyProviders?: ReadonlyArray<ProviderId>;
 };
 
-export const ensureSessionRestored = async (
+export async function ensureSessionRestored(
   request: EnsureSessionRestoredRequest,
-): Promise<EnsureRestoredReport> => {
+): Promise<EnsureRestoredReport> {
   const isLifecycleDisabled = request.requireLifecycleEnabled && !request.restoreOnLaunchEnabled;
 
   if (isLifecycleDisabled) {
@@ -141,9 +141,9 @@ export const ensureSessionRestored = async (
     archivePath: manifest.archivePath,
     reason: ensureRestoredReason(exit),
   };
-};
+}
 
-const ensureRestoredReason = (status: RestoreExit): string | undefined => {
+function ensureRestoredReason(status: RestoreExit): string | undefined {
   const isStatusConflict = status === 'conflict';
   if (isStatusConflict) {
     return 'live file differs from manifest hash; not overwritten';
@@ -155,4 +155,4 @@ const ensureRestoredReason = (status: RestoreExit): string | undefined => {
   }
 
   return undefined;
-};
+}

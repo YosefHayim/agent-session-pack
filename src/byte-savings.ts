@@ -3,10 +3,11 @@ import type { DiscoveredSession } from './session-model.js';
 const WHOLE_PERCENT = 100;
 const SAVED_PERCENT_DECIMAL_PLACES = 1;
 
-export const sumSessionBytes = (sessions: ReadonlyArray<DiscoveredSession>): number =>
-  sessions.reduce((totalBytes, session) => totalBytes + session.sizeBytes, 0);
+export function sumSessionBytes(sessions: ReadonlyArray<DiscoveredSession>): number {
+  return sessions.reduce((totalBytes, session) => totalBytes + session.sizeBytes, 0);
+}
 
-export const calculateSavedPercent = (originBytes: number, archiveBytes: number): number => {
+export function calculateSavedPercent(originBytes: number, archiveBytes: number): number {
   const isOriginEmpty = originBytes === 0;
   if (isOriginEmpty) {
     return 0;
@@ -17,4 +18,4 @@ export const calculateSavedPercent = (originBytes: number, archiveBytes: number)
       SAVED_PERCENT_DECIMAL_PLACES,
     ),
   );
-};
+}

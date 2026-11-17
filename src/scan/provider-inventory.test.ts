@@ -9,20 +9,17 @@ import { inspectProviderInventory } from './provider-inventory.js';
 const now = new Date('2026-07-06T12:00:00.000Z');
 const olderThanMs = 7 * 24 * 60 * 60 * 1000;
 
-const createWorkspace = (): Promise<string> =>
-  mkdtemp(join(tmpdir(), 'agent-session-pack-inventory-'));
+function createWorkspace(): Promise<string> {
+  return mkdtemp(join(tmpdir(), 'agent-session-pack-inventory-'));
+}
 
-const writeSession = async (
-  path: string,
-  sessionJsonl: string,
-  modifiedAt: Date,
-): Promise<number> => {
+async function writeSession(path: string, sessionJsonl: string, modifiedAt: Date): Promise<number> {
   await mkdir(join(path, '..'), { recursive: true });
   await writeFile(path, sessionJsonl);
   await utimes(path, modifiedAt, modifiedAt);
 
   return Buffer.byteLength(sessionJsonl, 'utf8');
-};
+}
 
 describe('provider inventory', () => {
   it('classifies archive provider sessions into cold candidates and guarded recent sessions', async () => {

@@ -5,7 +5,7 @@ export interface GuideFlags {
   readonly json?: boolean;
 }
 
-export const runGuideCommand = async (flags: GuideFlags): Promise<CommandExit> => {
+export async function runGuideCommand(flags: GuideFlags): Promise<CommandExit> {
   const isMachineOutputRequested = flags.json === true;
 
   if (isMachineOutputRequested) {
@@ -15,7 +15,7 @@ export const runGuideCommand = async (flags: GuideFlags): Promise<CommandExit> =
 
   process.stdout.write(`${createHumanAgentGuide()}\n`);
   return { exitCode: 0 };
-};
+}
 
 export const guideCommand = defineCommand({
   meta: {
@@ -153,8 +153,8 @@ const agentGuide: AgentGuide = {
   ],
 };
 
-export const createHumanAgentGuide = (): string =>
-  [
+export function createHumanAgentGuide(): string {
+  return [
     'Agent-first quickstart',
     '',
     'Rules',
@@ -184,5 +184,8 @@ export const createHumanAgentGuide = (): string =>
     'agent-session-pack <command> --help',
     'agent-session-pack guide --json',
   ].join('\n');
+}
 
-export const createStructuredAgentGuide = (): string => `${JSON.stringify(agentGuide, null, 2)}\n`;
+export function createStructuredAgentGuide(): string {
+  return `${JSON.stringify(agentGuide, null, 2)}\n`;
+}

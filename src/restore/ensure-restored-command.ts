@@ -48,9 +48,7 @@ export type EnsureRestoredFlags = {
   readonly vaultPath?: string | undefined;
 };
 
-export const runEnsureRestoredCommand = async (
-  flags: EnsureRestoredFlags,
-): Promise<CommandExit> => {
+export async function runEnsureRestoredCommand(flags: EnsureRestoredFlags): Promise<CommandExit> {
   const home = requireHome(flags.home);
 
   const isHomeMissing = home == null;
@@ -94,12 +92,12 @@ export const runEnsureRestoredCommand = async (
 
   writeEnsureRestoredPrintout(report, flags.json === true);
   return { exitCode: ensureRestoredExitCode(report) };
-};
+}
 
-const writeEnsureRestoredPrintout = (
+function writeEnsureRestoredPrintout(
   report: EnsureRestoredReport,
   isMachineOutputRequested: boolean,
-): void => {
+): void {
   if (isMachineOutputRequested) {
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
     return;
@@ -119,9 +117,9 @@ const writeEnsureRestoredPrintout = (
   ].filter((line): line is string => line != null);
 
   process.stdout.write(`${lines.join('\n')}\n`);
-};
+}
 
-const ensureRestoredExitCode = (report: EnsureRestoredReport): number => {
+function ensureRestoredExitCode(report: EnsureRestoredReport): number {
   const isReportStatusRestoredOrAlreadyPresent =
     report.status === 'restored' || report.status === 'already-present';
   if (isReportStatusRestoredOrAlreadyPresent) {
@@ -147,4 +145,4 @@ const ensureRestoredExitCode = (report: EnsureRestoredReport): number => {
   }
 
   return 1;
-};
+}

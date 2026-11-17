@@ -10,8 +10,9 @@ import {
   slugifyTitle,
 } from './session-discovery.js';
 
-const createWorkspace = (): Promise<string> =>
-  mkdtemp(join(tmpdir(), 'agent-session-pack-session-discovery-'));
+function createWorkspace(): Promise<string> {
+  return mkdtemp(join(tmpdir(), 'agent-session-pack-session-discovery-'));
+}
 
 describe('sessionDiscovery', () => {
   it('slugifies titles and falls back for empty or punctuation-only input', () => {

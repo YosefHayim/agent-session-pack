@@ -1,10 +1,12 @@
-export const describeTouched = (touched: boolean): string => (touched ? 'yes' : 'no');
+export function describeTouched(touched: boolean): string {
+  return touched ? 'yes' : 'no';
+}
 
-export const describeStatus = (status: string, reason: string | undefined): string => {
+export function describeStatus(status: string, reason: string | undefined): string {
   const isReasonMissing = reason == null;
   if (isReasonMissing) {
     return status;
   }
 
   return `${status} (${reason})`;
-};
+}

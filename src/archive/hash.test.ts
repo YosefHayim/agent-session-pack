@@ -5,8 +5,9 @@ import { describe, expect, it } from 'vitest';
 import { writeSessionDirectory } from './fixtures.js';
 import { readSha256Directory, readSha256File, readSha256Path } from './hash.js';
 
-const createWorkspace = (): Promise<string> =>
-  mkdtemp(join(tmpdir(), 'agent-session-pack-archive-hash-'));
+function createWorkspace(): Promise<string> {
+  return mkdtemp(join(tmpdir(), 'agent-session-pack-archive-hash-'));
+}
 
 describe('archiveHash', () => {
   it('hashes files and directories through sha256Path', async () => {

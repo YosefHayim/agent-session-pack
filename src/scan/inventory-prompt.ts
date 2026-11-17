@@ -14,10 +14,10 @@ export type InventorySpinnerRequest = {
   readonly stopMessage: string;
 };
 
-export const loadInventoryWithSpinner = (
+export function loadInventoryWithSpinner(
   request: InventorySpinnerRequest,
-): Promise<ProviderInventoryReport> =>
-  runWithSpinner({
+): Promise<ProviderInventoryReport> {
+  return runWithSpinner({
     prompts: request.prompts,
     startMessage: request.startMessage,
     stopMessage: request.stopMessage,
@@ -29,8 +29,9 @@ export const loadInventoryWithSpinner = (
         now: request.now,
       }),
   });
+}
 
-export const createProviderInventoryTable = (report: ProviderInventoryReport): string => {
+export function createProviderInventoryTable(report: ProviderInventoryReport): string {
   const isReportSummariesEmpty = report.rows.length === 0;
   if (isReportSummariesEmpty) {
     return 'No provider stores found.';
@@ -40,11 +41,11 @@ export const createProviderInventoryTable = (report: ProviderInventoryReport): s
     'Provider   Mode         Sessions   Cold   Guarded recent   Size       Path',
     ...report.rows.map(createProviderInventorySummary),
   ].join('\n');
-};
+}
 
-const createProviderInventorySummary = (
+function createProviderInventorySummary(
   inventorySummary: ProviderInventoryReport['rows'][number],
-): string => {
+): string {
   const provider = inventorySummary.provider.padEnd(10);
   const mode = inventorySummary.mode.padEnd(12);
   const sessions = String(inventorySummary.sessions).padStart(8);
@@ -54,4 +55,4 @@ const createProviderInventorySummary = (
   const path = inventorySummary.paths.join(', ');
 
   return `${provider} ${mode} ${sessions}   ${cold}   ${guarded}   ${size} ${path}`;
-};
+}

@@ -8,7 +8,9 @@ import { devinProvider } from './devin.js';
 
 const execFileAsync = promisify(execFile);
 
-const createWorkspace = (): Promise<string> => mkdtemp(join(tmpdir(), 'agent-session-pack-devin-'));
+function createWorkspace(): Promise<string> {
+  return mkdtemp(join(tmpdir(), 'agent-session-pack-devin-'));
+}
 
 describe('Devin provider discovery', () => {
   it('discovers sessions from the Devin SQLite store without reading credentials', async () => {
@@ -38,7 +40,8 @@ describe('Devin provider discovery', () => {
   });
 });
 
-const createDevinFixtureSql = (): string => `
+function createDevinFixtureSql(): string {
+  return `
 CREATE TABLE sessions (
   id TEXT PRIMARY KEY,
   working_directory TEXT NOT NULL,
@@ -120,3 +123,4 @@ VALUES ('calm-river', 1, '{"role":"assistant","content":"done"}', 1783332100, '{
 INSERT INTO rendered_commits (session_id, sequence_number, rendered_html, created_at)
 VALUES ('calm-river', 1, '<p>summary</p>', 1783332200);
 `;
+}

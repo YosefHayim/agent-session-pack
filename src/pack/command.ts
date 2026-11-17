@@ -99,7 +99,7 @@ export type PackFlags = {
   readonly vaultPath?: string | undefined;
 };
 
-export const runPackCommand = async (flags: PackFlags): Promise<CommandExit> => {
+export async function runPackCommand(flags: PackFlags): Promise<CommandExit> {
   const isMachineOutputRequested = flags.json === true;
 
   const isMaxApplyRequested = flags.max === true && flags.apply === true;
@@ -174,7 +174,7 @@ export const runPackCommand = async (flags: PackFlags): Promise<CommandExit> => 
 
   process.stdout.write(`${createHumanPackPlan(plan, { olderThan })}\n`);
   return { exitCode: providerExitCode };
-};
+}
 
 type ArchiveReportDetails = {
   readonly report: PackSessionsReport;
@@ -182,7 +182,7 @@ type ArchiveReportDetails = {
   readonly isMachineOutputRequested: boolean;
 };
 
-const writeArchiveReport = (details: ArchiveReportDetails): void => {
+function writeArchiveReport(details: ArchiveReportDetails): void {
   const isMachineOutputRequested = details.isMachineOutputRequested;
   if (isMachineOutputRequested) {
     process.stdout.write(createStructuredPackReport(details.report));
@@ -192,9 +192,9 @@ const writeArchiveReport = (details: ArchiveReportDetails): void => {
   process.stdout.write(
     `${createHumanPackReport(details.report, { olderThan: details.olderThan })}\n`,
   );
-};
+}
 
-const canUseArchiveWorkflow = (flags: PackFlags): boolean => {
+function canUseArchiveWorkflow(flags: PackFlags): boolean {
   const isApplyRequested = flags.apply === true;
   if (isApplyRequested) {
     return true;
@@ -211,4 +211,4 @@ const canUseArchiveWorkflow = (flags: PackFlags): boolean => {
   }
 
   return false;
-};
+}

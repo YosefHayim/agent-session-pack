@@ -4,9 +4,9 @@ import type { PromptAdapter } from '@/prompt-adapter.js';
 import { runWithSpinner } from '@/spinner-task.js';
 import { runUnpackCommand } from './unpack-command.js';
 
-export const runRestoreFlow = async (
+export async function runRestoreFlow(
   request: InteractiveCliRequest & { readonly prompts: PromptAdapter },
-): Promise<CommandExit> => {
+): Promise<CommandExit> {
   const shouldPreview = await request.prompts.confirm({
     message: 'Preview archived sessions before restore?',
     initialValue: true,
@@ -53,4 +53,4 @@ export const runRestoreFlow = async (
     confirmed: true,
   });
   return applyExit;
-};
+}

@@ -7,9 +7,9 @@ export type SpinnerTaskRequest<Produced> = {
   readonly task: () => Promise<Produced>;
 };
 
-export const runWithSpinner = async <Produced>(
+export async function runWithSpinner<Produced>(
   request: SpinnerTaskRequest<Produced>,
-): Promise<Produced> => {
+): Promise<Produced> {
   const scanSpinner = request.prompts.spinner();
   scanSpinner.start(request.startMessage);
 
@@ -21,4 +21,4 @@ export const runWithSpinner = async <Produced>(
     scanSpinner.error('Operation failed.');
     throw cause;
   }
-};
+}

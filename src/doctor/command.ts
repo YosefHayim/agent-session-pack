@@ -14,7 +14,7 @@ export type DoctorFlags = {
   readonly json?: boolean | undefined;
 };
 
-export const runDoctorCommand = async (flags: DoctorFlags): Promise<CommandExit> => {
+export async function runDoctorCommand(flags: DoctorFlags): Promise<CommandExit> {
   const zstd = await checkCommand('zstd', ['--version']);
   const sqlite3 = await checkCommand('sqlite3', ['--version']);
 
@@ -27,7 +27,7 @@ export const runDoctorCommand = async (flags: DoctorFlags): Promise<CommandExit>
   process.stdout.write(`zstd: ${zstd.available ? zstd.version : 'missing'}\n`);
   process.stdout.write(`sqlite3: ${sqlite3.available ? sqlite3.version : 'missing'}\n`);
   return { exitCode: 0 };
-};
+}
 
 export const doctorCommand = defineCommand({
   meta: {
@@ -47,10 +47,10 @@ export const doctorCommand = defineCommand({
   },
 });
 
-const checkCommand = async (
+async function checkCommand(
   command: string,
   versionArgumentList: ReadonlyArray<string>,
-): Promise<CommandCheck> => {
+): Promise<CommandCheck> {
   try {
     const printout = await execFileAsync(command, [...versionArgumentList]);
 
@@ -63,4 +63,4 @@ const checkCommand = async (
       available: false,
     };
   }
-};
+}

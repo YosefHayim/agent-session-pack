@@ -6,8 +6,9 @@ import { copyCompression, createArchiveProvider, writeColdSession } from '@/arch
 import type { DiscoveredSession, ProviderAdapter } from '@/session-model.js';
 import { packProviderSessions } from './sessions.js';
 
-const createWorkspace = (): Promise<string> =>
-  mkdtemp(join(tmpdir(), 'agent-session-pack-pack-sessions-'));
+function createWorkspace(): Promise<string> {
+  return mkdtemp(join(tmpdir(), 'agent-session-pack-pack-sessions-'));
+}
 
 describe('packProviderSessions', () => {
   it('reports missing, backup-only, no-candidates, and dry-run pack rows without touching originals', async () => {

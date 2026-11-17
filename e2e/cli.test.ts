@@ -14,9 +14,10 @@ describe('CLI read-only discovery and savings proof', () => {
   let workspace: string | undefined;
 
   afterEach(async () => {
-    const hasWorkspace = workspace !== undefined;
+    const createdWorkspace = workspace;
+    const hasWorkspace = createdWorkspace !== undefined;
     if (hasWorkspace) {
-      await rm(workspace, { recursive: true, force: true });
+      await rm(createdWorkspace, { recursive: true, force: true });
     }
   });
 

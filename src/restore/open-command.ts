@@ -50,7 +50,7 @@ export type OpenFlags = {
   readonly vaultPath?: string | undefined;
 };
 
-export const runOpenCommand = async (flags: OpenFlags): Promise<CommandExit> => {
+export async function runOpenCommand(flags: OpenFlags): Promise<CommandExit> {
   const home = requireHome(flags.home);
 
   const isHomeMissing = home == null;
@@ -111,13 +111,13 @@ export const runOpenCommand = async (flags: OpenFlags): Promise<CommandExit> => 
 
   writeOpenPrintout(report, restoreOnLaunchEnabled, flags.json === true);
   return { exitCode: openExitCode(report) };
-};
+}
 
-const writeOpenPrintout = (
+function writeOpenPrintout(
   report: EnsureRestoredReport,
   restoreOnLaunchEnabled: boolean,
   isMachineOutputRequested: boolean,
-): void => {
+): void {
   const openReport = {
     ...report,
     command: 'open' as const,
@@ -142,9 +142,9 @@ const writeOpenPrintout = (
   ].filter((line): line is string => line != null);
 
   process.stdout.write(`${lines.join('\n')}\n`);
-};
+}
 
-const openExitCode = (report: EnsureRestoredReport): number => {
+function openExitCode(report: EnsureRestoredReport): number {
   const isReportStatusRestoredOrAlreadyPresent =
     report.status === 'restored' || report.status === 'already-present';
   if (isReportStatusRestoredOrAlreadyPresent) {
@@ -161,4 +161,4 @@ const openExitCode = (report: EnsureRestoredReport): number => {
   }
 
   return 1;
-};
+}

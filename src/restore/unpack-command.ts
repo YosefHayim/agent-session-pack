@@ -70,7 +70,7 @@ export type UnpackFlags = {
   readonly vaultPath?: string | undefined;
 };
 
-export const runUnpackCommand = async (flags: UnpackFlags): Promise<CommandExit> => {
+export async function runUnpackCommand(flags: UnpackFlags): Promise<CommandExit> {
   const home = requireHome(flags.home);
 
   const isHomeMissing = home == null;
@@ -102,4 +102,4 @@ export const runUnpackCommand = async (flags: UnpackFlags): Promise<CommandExit>
 
   process.stdout.write(`${createHumanUnpackReport(report)}\n`);
   return { exitCode: providerExitCode };
-};
+}

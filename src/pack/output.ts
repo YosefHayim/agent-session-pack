@@ -10,7 +10,7 @@ export type PackPlanPrintoutSettings = {
   readonly olderThan: string;
 };
 
-export const createHumanPackPlan = (plan: PackPlan, settings: PackPlanPrintoutSettings): string => {
+export function createHumanPackPlan(plan: PackPlan, settings: PackPlanPrintoutSettings): string {
   const totalBeforeBytes = plan.rows.reduce(
     (totalBytes, packPlanSummary) => totalBytes + packPlanSummary.beforeBytes,
     0,
@@ -32,15 +32,16 @@ export const createHumanPackPlan = (plan: PackPlan, settings: PackPlanPrintoutSe
     'Backup-only providers are scanned for visibility but skipped for cleanup.',
     'Re-run with --apply to pack cold sessions.',
   ].join('\n');
-};
+}
 
-export const createStructuredPackPlan = (plan: PackPlan): string =>
-  `${JSON.stringify(plan, null, 2)}\n`;
+export function createStructuredPackPlan(plan: PackPlan): string {
+  return `${JSON.stringify(plan, null, 2)}\n`;
+}
 
-export const createHumanPackReport = (
+export function createHumanPackReport(
   report: PackSessionsReport,
   settings: PackPlanPrintoutSettings,
-): string => {
+): string {
   const totals = sumPackTotals(report);
 
   return [
@@ -60,12 +61,13 @@ export const createHumanPackReport = (
     '',
     ...createThresholdPreviewBlock(report.thresholdPreviews),
   ].join('\n');
-};
+}
 
-export const createStructuredPackReport = (report: PackSessionsReport): string =>
-  `${JSON.stringify(report, null, 2)}\n`;
+export function createStructuredPackReport(report: PackSessionsReport): string {
+  return `${JSON.stringify(report, null, 2)}\n`;
+}
 
-const createPackPlanSummary = (packPlanSummary: PackPlan['rows'][number]): string => {
+function createPackPlanSummary(packPlanSummary: PackPlan['rows'][number]): string {
   const provider = packPlanSummary.provider.padEnd(10);
   const mode = packPlanSummary.mode.padEnd(12);
   const found = String(packPlanSummary.scannedSessions).padStart(5);
@@ -75,11 +77,11 @@ const createPackPlanSummary = (packPlanSummary: PackPlan['rows'][number]): strin
   const cleanup = describeBytes(packPlanSummary.cleanupBytes);
 
   return `${provider} ${mode} ${found}   ${candidates}   ${before} ${after} ${cleanup}`;
-};
+}
 
-const createThresholdPreviewBlock = (
+function createThresholdPreviewBlock(
   previews: PackPlan['thresholdPreviews'],
-): ReadonlyArray<string> => {
+): ReadonlyArray<string> {
   const isPreviewsEmpty = previews.length === 0;
   if (isPreviewsEmpty) {
     return [];
@@ -96,11 +98,9 @@ const createThresholdPreviewBlock = (
     }),
     'Tip: use --max --dry-run to preview every archive-mode session without touching files.',
   ];
-};
+}
 
-const createThresholdPreviewLabel = (
-  kind: PackPlan['thresholdPreviews'][number]['kind'],
-): string => {
+function createThresholdPreviewLabel(kind: PackPlan['thresholdPreviews'][number]['kind']): string {
   const isKindSafer = kind === 'safer';
   if (isKindSafer) {
     return 'safer';
@@ -112,29 +112,27 @@ const createThresholdPreviewLabel = (
   }
 
   return 'max preview';
-};
+}
 
-const createThresholdPreviewCommand = (preview: PackPlan['thresholdPreviews'][number]): string => {
+function createThresholdPreviewCommand(preview: PackPlan['thresholdPreviews'][number]): string {
   const isPreviewKindMax = preview.kind === 'max';
   if (isPreviewKindMax) {
     return '--max --dry-run';
   }
 
   return `--older-than ${preview.olderThan}`;
-};
+}
 
-const describeSessionCount = (sessions: number): string => {
+function describeSessionCount(sessions: number): string {
   const isSingleSession = sessions === 1;
   if (isSingleSession) {
     return '1 session';
   }
 
   return `${sessions} sessions`;
-};
+}
 
-const createPackReportSummary = (
-  packSessionSummary: PackSessionsReport['rows'][number],
-): string => {
+function createPackReportSummary(packSessionSummary: PackSessionsReport['rows'][number]): string {
   const provider = packSessionSummary.provider.padEnd(10);
   const sessions = String(packSessionSummary.foundSessions).padEnd(9);
   const mode = packSessionSummary.mode.padEnd(12);
@@ -150,11 +148,9 @@ const createPackReportSummary = (
   const touched = describeTouched(packSessionSummary.touchedOriginals).padEnd(6);
 
   return `${provider} ${sessions} ${mode} ${candidates}  ${packed}  ${before} ${archive} ${saved} ${savedPercent} ${touched} ${describeStatus(packSessionSummary.status, packSessionSummary.reason)}`;
-};
+}
 
-const sumPackTotals = (
-  report: PackSessionsReport,
-): {
+function sumPackTotals(report: PackSessionsReport): {
   readonly archiveBytes: number | undefined;
   readonly beforeBytes: number;
   readonly candidateSessions: number;
@@ -163,7 +159,7 @@ const sumPackTotals = (
   readonly savedBytes: number | undefined;
   readonly savedPercent: number | undefined;
   readonly touchedOriginals: boolean;
-} => {
+} {
   const archiveBytes = sumMaybe(
     report.rows.map((packSessionSummary) => packSessionSummary.archiveBytes),
   );
@@ -195,9 +191,9 @@ const sumPackTotals = (
       : calculateSavedPercent(beforeBytes, archiveBytes),
     touchedOriginals: report.rows.some((packSessionSummary) => packSessionSummary.touchedOriginals),
   };
-};
+}
 
-const sumMaybe = (numbers: ReadonlyArray<number | undefined>): number | undefined => {
+function sumMaybe(numbers: ReadonlyArray<number | undefined>): number | undefined {
   const hasMissingNumber = numbers.some((number) => number == null);
   if (hasMissingNumber) {
     return undefined;
@@ -210,4 +206,4 @@ const sumMaybe = (numbers: ReadonlyArray<number | undefined>): number | undefine
   }
 
   return totalBytes;
-};
+}

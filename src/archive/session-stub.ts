@@ -22,7 +22,7 @@ export type WriteArchivedStubRequest = {
   readonly sourceKind: SessionOriginKind;
 };
 
-export const writeArchivedStub = async (request: WriteArchivedStubRequest): Promise<void> => {
+export async function writeArchivedStub(request: WriteArchivedStubRequest): Promise<void> {
   const stub: ArchivedStub = {
     agentSessionPack: ARCHIVED_STUB_KIND,
     version: 1,
@@ -44,12 +44,12 @@ export const writeArchivedStub = async (request: WriteArchivedStubRequest): Prom
 
   await mkdir(dirname(request.originalPath), { recursive: true }).catch(throwWrappedError);
   await writeFile(request.originalPath, stubString, 'utf8').catch(throwWrappedError);
-};
+}
 
-export const isArchivedStubPath = async (
+export async function isArchivedStubPath(
   path: string,
   originKind: SessionOriginKind,
-): Promise<boolean> => {
+): Promise<boolean> {
   try {
     const isDirectoryOrigin = originKind === 'directory';
 
@@ -64,22 +64,22 @@ export const isArchivedStubPath = async (
   } catch {
     return false;
   }
-};
+}
 
-export const isDirectoryStubOpened = async (path: string): Promise<boolean> => {
+export async function isDirectoryStubOpened(path: string): Promise<boolean> {
   try {
     const names = await readdir(path);
     return names.some((name) => name !== STUB_MARKER_FILE);
   } catch {
     return false;
   }
-};
+}
 
-const isStubDocument = (stubString: string): boolean => {
+function isStubDocument(stubString: string): boolean {
   try {
     const parsed = JSON.parse(stubString) as { agentSessionPack?: string };
     return parsed.agentSessionPack === ARCHIVED_STUB_KIND;
   } catch {
     return false;
   }
-};
+}

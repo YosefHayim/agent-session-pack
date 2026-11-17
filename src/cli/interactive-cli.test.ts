@@ -7,8 +7,9 @@ import type { ProviderAdapter } from '@/session-model.js';
 import { runFirstSetup } from '@/setup/first-setup-flow.js';
 import { canRunInteractiveCli, createMainMenuChoices } from './interactive-cli.js';
 
-const createWorkspace = (): Promise<string> =>
-  mkdtemp(join(tmpdir(), 'agent-session-pack-interactive-'));
+function createWorkspace(): Promise<string> {
+  return mkdtemp(join(tmpdir(), 'agent-session-pack-interactive-'));
+}
 
 type RecordingPromptAdapter = PromptAdapter & {
   readonly confirms: unknown[];
@@ -25,7 +26,7 @@ type RecordingPromptAdapter = PromptAdapter & {
   readonly texts: unknown[];
 };
 
-const createPromptAdapter = (answers: ReadonlyArray<unknown>): RecordingPromptAdapter => {
+function createPromptAdapter(answers: ReadonlyArray<unknown>): RecordingPromptAdapter {
   const queue = [...answers];
   const adapter: RecordingPromptAdapter = {
     confirms: [],
@@ -68,26 +69,28 @@ const createPromptAdapter = (answers: ReadonlyArray<unknown>): RecordingPromptAd
   };
 
   return adapter;
-};
+}
 
-const createProvider = (root: string): ProviderAdapter => ({
-  id: 'codex',
-  label: 'Codex',
-  mode: 'archive',
-  defaultRoots: () => [root],
-  discover: () =>
-    Promise.resolve([
-      {
-        id: 'codex-session',
-        provider: 'codex',
-        title: 'Codex session',
-        slug: 'codex-session',
-        originalPath: join(root, 'session.jsonl'),
-        modifiedAt: new Date('2026-06-01T12:00:00.000Z'),
-        sizeBytes: 10_000,
-      },
-    ]),
-});
+function createProvider(root: string): ProviderAdapter {
+  return {
+    id: 'codex',
+    label: 'Codex',
+    mode: 'archive',
+    defaultRoots: () => [root],
+    discover: () =>
+      Promise.resolve([
+        {
+          id: 'codex-session',
+          provider: 'codex',
+          title: 'Codex session',
+          slug: 'codex-session',
+          originalPath: join(root, 'session.jsonl'),
+          modifiedAt: new Date('2026-06-01T12:00:00.000Z'),
+          sizeBytes: 10_000,
+        },
+      ]),
+  };
+}
 
 describe('interactive CLI flow', () => {
   it('runs only for bare TTY invocations', () => {

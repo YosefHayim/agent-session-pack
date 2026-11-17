@@ -9,23 +9,26 @@ import {
   writeSessionManifest,
 } from './manifest-store.js';
 
-const createWorkspace = (): Promise<string> =>
-  mkdtemp(join(tmpdir(), 'agent-session-pack-manifest-'));
+function createWorkspace(): Promise<string> {
+  return mkdtemp(join(tmpdir(), 'agent-session-pack-manifest-'));
+}
 
-const sampleManifest = (overrides: Partial<SessionManifest> = {}): SessionManifest => ({
-  sessionId: 'session-1',
-  provider: 'codex',
-  title: 'Pack cold sessions',
-  slug: 'pack-cold-sessions',
-  originalPath: '/tmp/synthetic/session-1.jsonl',
-  archivePath: '/tmp/synthetic/session-1.jsonl.zst',
-  sourceSha256: 'abc123',
-  sourceBytes: 128,
-  archiveBytes: 40,
-  archivedAt: '2026-07-06T12:00:00.000Z',
-  sourceKind: 'file',
-  ...overrides,
-});
+function sampleManifest(overrides: Partial<SessionManifest> = {}): SessionManifest {
+  return {
+    sessionId: 'session-1',
+    provider: 'codex',
+    title: 'Pack cold sessions',
+    slug: 'pack-cold-sessions',
+    originalPath: '/tmp/synthetic/session-1.jsonl',
+    archivePath: '/tmp/synthetic/session-1.jsonl.zst',
+    sourceSha256: 'abc123',
+    sourceBytes: 128,
+    archiveBytes: 40,
+    archivedAt: '2026-07-06T12:00:00.000Z',
+    sourceKind: 'file',
+    ...overrides,
+  };
+}
 
 describe('manifestStore', () => {
   it('writes and reads a session manifest with optional fields', async () => {

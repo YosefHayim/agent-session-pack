@@ -53,7 +53,7 @@ export const mainCommand = defineCommand({
 });
 
 // citty 0.2.2 drops a subcommand's run result, so the named subcommand is run here.
-const pickPlainSubCommand = (subCommandName: string): CommandDef => {
+function pickPlainSubCommand(subCommandName: string): CommandDef {
   const subCommandReply = subCommands[subCommandName];
 
   const isNotPlainCommand =
@@ -64,14 +64,14 @@ const pickPlainSubCommand = (subCommandName: string): CommandDef => {
   }
 
   return subCommandReply;
-};
+}
 
 interface UsageTarget {
   readonly command: CommandDef;
   readonly parent: CommandDef | undefined;
 }
 
-const pickUsageTarget = (argumentList: string[]): UsageTarget => {
+function pickUsageTarget(argumentList: string[]): UsageTarget {
   const subCommandName = argumentList.find((argument) => Object.hasOwn(subCommands, argument));
 
   const isThereNoSubCommandName = subCommandName == null;
@@ -83,10 +83,11 @@ const pickUsageTarget = (argumentList: string[]): UsageTarget => {
   const subCommandDefinition = pickPlainSubCommand(subCommandName);
 
   return { command: subCommandDefinition, parent: mainCommand };
-};
+}
 
-const isCommandExit = (candidate: unknown): candidate is CommandExit =>
-  typeof candidate === 'object' && candidate !== null && 'exitCode' in candidate;
+function isCommandExit(candidate: unknown): candidate is CommandExit {
+  return typeof candidate === 'object' && candidate !== null && 'exitCode' in candidate;
+}
 
 interface SubCommandInvocation {
   readonly name: string;
@@ -94,7 +95,7 @@ interface SubCommandInvocation {
 }
 
 // The first word that is not a flag names the command; with none, the default command runs.
-const readSubCommandInvocation = (argumentList: string[]): SubCommandInvocation => {
+function readSubCommandInvocation(argumentList: string[]): SubCommandInvocation {
   const firstWordIndex = argumentList.findIndex((argument) => !argument.startsWith('-'));
 
   const isThereNoWord = firstWordIndex === -1;
@@ -107,9 +108,9 @@ const readSubCommandInvocation = (argumentList: string[]): SubCommandInvocation 
     name: argumentList[firstWordIndex],
     rawArgs: argumentList.slice(firstWordIndex + 1),
   };
-};
+}
 
-const runCli = async (argumentList: string[]): Promise<CommandExit> => {
+async function runCli(argumentList: string[]): Promise<CommandExit> {
   const isHelpRequest = argumentList.includes('--help') || argumentList.includes('-h');
   const isVersionRequest =
     argumentList.length === 1 && (argumentList[0] === '--version' || argumentList[0] === '-v');
@@ -147,9 +148,9 @@ const runCli = async (argumentList: string[]): Promise<CommandExit> => {
   }
 
   return commandReport;
-};
+}
 
-const runEntrypoint = async (argumentList: string[]): Promise<CommandExit> => {
+async function runEntrypoint(argumentList: string[]): Promise<CommandExit> {
   const isInteractiveRun = canRunInteractiveCli({
     argv: process.argv,
     stdinIsTty: process.stdin.isTTY === true,
@@ -161,9 +162,9 @@ const runEntrypoint = async (argumentList: string[]): Promise<CommandExit> => {
   }
 
   return runCli(argumentList);
-};
+}
 
-const reportCliError = async (error: unknown, argumentList: string[]): Promise<CommandExit> => {
+async function reportCliError(error: unknown, argumentList: string[]): Promise<CommandExit> {
   const isUsageError = error instanceof Error && error.name === 'CLIError';
 
   if (isUsageError) {
@@ -175,15 +176,15 @@ const reportCliError = async (error: unknown, argumentList: string[]): Promise<C
 
   console.error(error, '\n');
   return { exitCode: 1 };
-};
+}
 
-const runEntrypointReportingErrors = async (argumentList: string[]): Promise<CommandExit> => {
+async function runEntrypointReportingErrors(argumentList: string[]): Promise<CommandExit> {
   try {
     return await runEntrypoint(argumentList);
   } catch (error) {
     return reportCliError(error, argumentList);
   }
-};
+}
 
 const entrypointPath = process.argv[1];
 

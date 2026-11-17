@@ -25,7 +25,7 @@ export const grokProvider: ProviderAdapter = {
   },
 };
 
-const readActiveGrokSessionIds = async (path: string): Promise<ReadonlySet<string>> => {
+async function readActiveGrokSessionIds(path: string): Promise<ReadonlySet<string>> {
   try {
     const fileString = await readFile(path, 'utf8');
     const parsed = JSON.parse(fileString) as unknown;
@@ -52,9 +52,9 @@ const readActiveGrokSessionIds = async (path: string): Promise<ReadonlySet<strin
   } catch {
     return new Set();
   }
-};
+}
 
-const readGrokSessionTitle = async (directory: string): Promise<string> => {
+async function readGrokSessionTitle(directory: string): Promise<string> {
   const summary = await readDocumentFile(join(directory, 'summary.json'));
 
   const isSummaryMissing = typeof summary !== 'object' || summary === null;
@@ -90,4 +90,4 @@ const readGrokSessionTitle = async (directory: string): Promise<string> => {
   }
 
   return basename(directory);
-};
+}

@@ -3,7 +3,7 @@ import type { ScanReport } from './stores.js';
 
 const MAX_TITLE_PREVIEW_LENGTH = 96;
 
-export const createHumanScan = (report: ScanReport): string => {
+export function createHumanScan(report: ScanReport): string {
   const isReportSessionsEmpty = report.sessions.length === 0;
   if (isReportSessionsEmpty) {
     return 'No sessions found.';
@@ -17,13 +17,13 @@ export const createHumanScan = (report: ScanReport): string => {
     'Provider   Date         Size       Status   Name   Path',
     ...sessionLines,
   ].join('\n');
-};
+}
 
-export const writeHumanScan = (report: ScanReport): void => {
+export function writeHumanScan(report: ScanReport): void {
   console.log(createHumanScan(report));
-};
+}
 
-const createSessionLine = (session: DiscoveredSession): string => {
+function createSessionLine(session: DiscoveredSession): string {
   const provider = session.provider.padEnd(10);
   const isoDateLength = 10;
   const date = session.modifiedAt.toISOString().slice(0, isoDateLength);
@@ -32,18 +32,18 @@ const createSessionLine = (session: DiscoveredSession): string => {
   const title = createTitlePreview(session.title);
 
   return `${provider} ${date}   ${size} ${status} ${title}   ${session.originalPath}`;
-};
+}
 
-const describeSessionStatus = (session: DiscoveredSession): string => {
+function describeSessionStatus(session: DiscoveredSession): string {
   const isSessionStatusKnown = session.status != null;
   if (isSessionStatusKnown) {
     return session.status;
   }
 
   return 'live';
-};
+}
 
-const createTitlePreview = (title: string): string => {
+function createTitlePreview(title: string): string {
   const singleLineTitle = title.replace(/\s+/g, ' ').trim();
 
   const isTitleShortEnough = singleLineTitle.length <= MAX_TITLE_PREVIEW_LENGTH;
@@ -52,10 +52,12 @@ const createTitlePreview = (title: string): string => {
   }
 
   return `${singleLineTitle.slice(0, MAX_TITLE_PREVIEW_LENGTH - 3)}...`;
-};
+}
 
-const createStructuredScan = (report: ScanReport): string => `${JSON.stringify(report, null, 2)}\n`;
+function createStructuredScan(report: ScanReport): string {
+  return `${JSON.stringify(report, null, 2)}\n`;
+}
 
-export const writeStructuredScan = (report: ScanReport): void => {
+export function writeStructuredScan(report: ScanReport): void {
   process.stdout.write(createStructuredScan(report));
-};
+}

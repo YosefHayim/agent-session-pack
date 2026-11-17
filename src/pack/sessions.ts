@@ -21,6 +21,8 @@ import type {
 } from '@/session-model.js';
 import { createPackThresholdPreviews, type PackThresholdPreview } from './plan.js';
 
+const BACKUP_ONLY_LABEL = 'backup-only';
+
 type PackSessionStatus = 'backup-only' | 'dry-run' | 'missing' | 'no-candidates' | 'packed';
 
 interface PackSessionSummary {
@@ -64,6 +66,10 @@ export async function packProviderSessions(
   const packableSessions: DiscoveredSession[] = [];
   const cutoffTime = request.now.getTime() - request.olderThanMs;
 
+  function isColdSession(session: DiscoveredSession): boolean {
+    return session.modifiedAt.getTime() < cutoffTime;
+  }
+
   for (const provider of request.providers) {
     const sessions = await discoverExistingProviderSessions({
       home: request.home,
@@ -76,7 +82,7 @@ export async function packProviderSessions(
       continue;
     }
 
-    const isProviderModeBackupOnly = provider.mode === 'backup-only';
+    const isProviderModeBackupOnly = provider.mode === BACKUP_ONLY_LABEL;
     if (isProviderModeBackupOnly) {
       packSessionSummaries.push(createBackupOnlyPackSummary(provider, sessions.length));
       continue;
@@ -84,7 +90,7 @@ export async function packProviderSessions(
 
     packableSessions.push(...sessions);
 
-    const candidates = sessions.filter((session) => session.modifiedAt.getTime() < cutoffTime);
+    const candidates = sessions.filter(isColdSession);
 
     const isCandidatesEmpty = candidates.length === 0;
     if (isCandidatesEmpty) {
@@ -133,7 +139,7 @@ export async function packProviderSessions(
 async function discoverExistingProviderSessions(request: {
   readonly home: string;
   readonly provider: ProviderAdapter;
-}): Promise<ReadonlyArray<DiscoveredSession> | undefined> {
+}): Promise<ReadonlyArray<DiscoveredSession> | null> {
   const roots = request.provider.defaultRoots(request.home);
   const sessions: DiscoveredSession[] = [];
   let existingRoots = 0;
@@ -142,7 +148,6 @@ async function discoverExistingProviderSessions(request: {
     const doesRootExist = await isPathPresent(root);
 
     const isRootAbsent = !doesRootExist;
-
     if (isRootAbsent) {
       continue;
     }
@@ -156,9 +161,8 @@ async function discoverExistingProviderSessions(request: {
   }
 
   const hasNoExistingRoot = existingRoots === 0;
-
   if (hasNoExistingRoot) {
-    return undefined;
+    return null;
   }
 
   return sessions;
@@ -260,8 +264,8 @@ function createBackupOnlyPackSummary(
     savedBytes: undefined,
     savedPercent: undefined,
     touchedOriginals: false,
-    status: 'backup-only',
-    reason: 'backup-only provider is not mutated',
+    status: BACKUP_ONLY_LABEL,
+    reason: `${BACKUP_ONLY_LABEL} provider is not mutated`,
   };
 }
 

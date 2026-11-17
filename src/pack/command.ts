@@ -14,8 +14,18 @@ import {
   createStructuredPackPlan,
   createStructuredPackReport,
 } from './output.js';
-import { createPackPlan, DEFAULT_COLD_AFTER, parseDurationMs } from './plan.js';
+import {
+  createPackPlan,
+  DEFAULT_COLD_AFTER,
+  type PackPlanRequest,
+  parseDurationMs,
+} from './plan.js';
 import { type PackSessionsReport, packProviderSessions } from './sessions.js';
+
+const BOOLEAN_ARGUMENT_TYPE = 'boolean' as const;
+const STRING_ARGUMENT_TYPE = 'string' as const;
+const LINE_BREAK = '\n';
+const USAGE_EXIT_CODE = 2;
 
 export const packCommand = defineCommand({
   meta: {
@@ -24,41 +34,42 @@ export const packCommand = defineCommand({
   },
   args: {
     provider: {
-      type: 'string',
+      type: STRING_ARGUMENT_TYPE,
       description:
         'Provider id: codex, claude, kiro, grok, kimi, opencode, gemini, cursor, or devin.',
     },
     'older-than': {
-      type: 'string',
+      type: STRING_ARGUMENT_TYPE,
       description: 'Cold threshold such as 7d, 2w, 30d, or 12h.',
     },
     'dry-run': {
-      type: 'boolean',
+      type: BOOLEAN_ARGUMENT_TYPE,
       description: 'Preview changes without removing originals.',
     },
     'all-providers': {
-      type: 'boolean',
+      type: BOOLEAN_ARGUMENT_TYPE,
       description: 'Discover every supported provider store on this machine.',
     },
     max: {
-      type: 'boolean',
+      type: BOOLEAN_ARGUMENT_TYPE,
       description: 'Preview every archive-mode session candidate. Dry-run only.',
     },
     apply: {
-      type: 'boolean',
+      type: BOOLEAN_ARGUMENT_TYPE,
       description: 'Apply archive/remove workflow after verification.',
     },
     yes: {
-      type: 'boolean',
+      type: BOOLEAN_ARGUMENT_TYPE,
       description: 'Confirm apply mode without an interactive prompt.',
     },
     json: {
-      type: 'boolean',
+      type: BOOLEAN_ARGUMENT_TYPE,
       description: 'Write stable JSON output.',
     },
   },
   run: async ({ args }) => {
     const isMaxApplyRequested = args.max === true && args.apply === true;
+
     const confirmed = isMaxApplyRequested
       ? false
       : await askApplyConfirmation({
@@ -106,8 +117,8 @@ export async function runPackCommand(flags: PackFlags): Promise<CommandExit> {
 
   if (isMaxApplyRequested) {
     process.stderr.write('Refusing --max with --apply. Use --max as a dry-run preview only.\n');
-    process.stderr.write('\n');
-    return { exitCode: 2 };
+    process.stderr.write(LINE_BREAK);
+    return { exitCode: USAGE_EXIT_CODE };
   }
 
   const home = requireHome(flags.home);
@@ -122,17 +133,19 @@ export async function runPackCommand(flags: PackFlags): Promise<CommandExit> {
 
   if (isApplyUnconfirmed) {
     process.stderr.write('Cancelled. Re-run with --apply and confirm with y to pack sessions.\n');
-    process.stderr.write('\n');
-    return { exitCode: 2 };
+    process.stderr.write(LINE_BREAK);
+    return { exitCode: USAGE_EXIT_CODE };
   }
 
   const isMaxRequested = flags.max === true;
   const olderThan = isMaxRequested ? '0h' : (flags.olderThan ?? DEFAULT_COLD_AFTER);
   const olderThanMs = parseDurationMs(olderThan);
   const { providers, isProviderUnknown } = selectProviders(flags.provider, flags.providers);
-  const providerExitCode = isProviderUnknown ? 2 : 0;
+  const providerExitCode = isProviderUnknown ? USAGE_EXIT_CODE : 0;
 
-  if (canUseArchiveWorkflow(flags)) {
+  const isArchiveWorkflowUsable = canUseArchiveWorkflow(flags);
+
+  if (isArchiveWorkflowUsable) {
     const report = await packProviderSessions({
       home,
       vaultPath: flags.vaultPath ?? createDefaultVaultPath(home),
@@ -148,9 +161,15 @@ export async function runPackCommand(flags: PackFlags): Promise<CommandExit> {
     return { exitCode: providerExitCode };
   }
 
-  const stores = providers.flatMap((provider) =>
-    provider.defaultRoots(home).map((path): SessionStore => ({ provider: provider.id, path })),
-  );
+  function listProviderStores(provider: ProviderAdapter): ReadonlyArray<SessionStore> {
+    function createProviderStore(path: string): SessionStore {
+      return { provider: provider.id, path };
+    }
+
+    return provider.defaultRoots(home).map(createProviderStore);
+  }
+
+  const stores = providers.flatMap(listProviderStores);
   const report = await scanStores({
     providers,
     stores,
@@ -160,11 +179,7 @@ export async function runPackCommand(flags: PackFlags): Promise<CommandExit> {
     olderThan,
     olderThanMs,
     sessions: report.sessions,
-    providers: providers.map((provider) => ({
-      id: provider.id,
-      label: provider.label,
-      mode: provider.mode,
-    })),
+    providers: providers.map(describePlanProvider),
   });
 
   if (isMachineOutputRequested) {
@@ -174,6 +189,14 @@ export async function runPackCommand(flags: PackFlags): Promise<CommandExit> {
 
   process.stdout.write(`${createHumanPackPlan(plan, { olderThan })}\n`);
   return { exitCode: providerExitCode };
+}
+
+function describePlanProvider(provider: ProviderAdapter): PackPlanRequest['providers'][number] {
+  return {
+    id: provider.id,
+    label: provider.label,
+    mode: provider.mode,
+  };
 }
 
 interface ArchiveReportDetails {

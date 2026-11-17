@@ -12,14 +12,14 @@ const WRAPPER_PROVIDERS: ReadonlyArray<string> = [
   'kiro',
 ];
 
-export type InstallLifecycleWrappersRequest = {
+export interface InstallLifecycleWrappersRequest {
   readonly vaultPath: string;
   readonly cliEntrypoint: string;
-};
+}
 
-export const installLifecycleWrappers = async (
+export async function installLifecycleWrappers(
   request: InstallLifecycleWrappersRequest,
-): Promise<string> => {
+): Promise<string> {
   const binPath = createWrappersBinPath(request.vaultPath);
 
   try {
@@ -29,9 +29,9 @@ export const installLifecycleWrappers = async (
   } catch (cause) {
     throw new Error(String(cause), { cause });
   }
-};
+}
 
-const writeProviderWrappers = async (binPath: string, cliEntrypoint: string): Promise<void> => {
+async function writeProviderWrappers(binPath: string, cliEntrypoint: string): Promise<void> {
   for (const provider of WRAPPER_PROVIDERS) {
     const wrapperPath = join(binPath, provider);
     const script = createWrapperScript({
@@ -42,9 +42,9 @@ const writeProviderWrappers = async (binPath: string, cliEntrypoint: string): Pr
     await writeFile(wrapperPath, script, { encoding: 'utf8' });
     await chmod(wrapperPath, 0o755);
   }
-};
+}
 
-export const uninstallLifecycleWrappers = async (vaultPath: string): Promise<void> => {
+export async function uninstallLifecycleWrappers(vaultPath: string): Promise<void> {
   const binPath = createWrappersBinPath(vaultPath);
 
   try {
@@ -59,9 +59,9 @@ export const uninstallLifecycleWrappers = async (vaultPath: string): Promise<voi
   } catch (cause) {
     throw new Error(String(cause), { cause });
   }
-};
+}
 
-const listWrapperNames = async (binPath: string): Promise<string[]> => {
+async function listWrapperNames(binPath: string): Promise<string[]> {
   try {
     return await readdir(binPath);
   } catch (cause) {
@@ -72,13 +72,14 @@ const listWrapperNames = async (binPath: string): Promise<string[]> => {
 
     throw cause;
   }
-};
+}
 
-const createWrapperScript = (request: {
+function createWrapperScript(request: {
   readonly provider: string;
   readonly cliEntrypoint: string;
   readonly binPath: string;
-}): string => `#!/usr/bin/env bash
+}): string {
+  return `#!/usr/bin/env bash
 # agent-session-pack lifecycle wrapper for ${request.provider}
 # Preflight-restores packed sessions, then execs the real provider binary.
 set -euo pipefail
@@ -119,9 +120,13 @@ fi
 
 exec "$REAL_BIN" "$@"
 `;
+}
 
-const isEnoent = (cause: unknown): boolean =>
-  typeof cause === 'object' &&
-  cause !== null &&
-  'code' in cause &&
-  (cause as { code?: string }).code === 'ENOENT';
+function isEnoent(cause: unknown): boolean {
+  return (
+    typeof cause === 'object' &&
+    cause !== null &&
+    'code' in cause &&
+    (cause as { code?: string }).code === 'ENOENT'
+  );
+}

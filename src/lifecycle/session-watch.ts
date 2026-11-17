@@ -9,29 +9,29 @@ import type { ProviderId } from '@/session-model.js';
 
 export const DEFAULT_POLL_INTERVAL_MS = 750;
 
-export type SessionWatchEvent = {
+export interface SessionWatchEvent {
   readonly sessionId: string;
   readonly provider: ProviderId;
   readonly status: string;
   readonly originalPath: string;
-};
+}
 
-export type WatchSessionStubsRequest = {
+export interface WatchSessionStubsRequest {
   readonly vaultPath: string;
   readonly provider: ProviderId | undefined;
   readonly compression?: CompressionAdapter;
   readonly pollIntervalMs?: number;
   readonly shouldStop: () => boolean;
   readonly onEvent?: (event: SessionWatchEvent) => void;
-};
+}
 
-export const watchSessionStubs = async (request: WatchSessionStubsRequest): Promise<void> => {
+export async function watchSessionStubs(request: WatchSessionStubsRequest): Promise<void> {
   const compression = request.compression ?? createZstdCompression();
   const pollIntervalMs = request.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS;
   const watchers = new Map<string, ReturnType<typeof watch>>();
   const restoringPaths = new Set<string>();
 
-  const refreshWatchers = (manifests: ReadonlyArray<SessionManifest>): void => {
+  function refreshWatchers(manifests: ReadonlyArray<SessionManifest>): void {
     const activePaths = new Set<string>();
 
     for (const manifest of manifests) {
@@ -65,15 +65,16 @@ export const watchSessionStubs = async (request: WatchSessionStubsRequest): Prom
         watchers.delete(path);
       }
     }
-  };
+  }
 
-  const materializeIfNeeded = async (
+  async function materializeIfNeeded(
     manifest: SessionManifest,
     forceFromFsEvent: boolean,
-  ): Promise<void> => {
+  ): Promise<void> {
     const originKind = manifest.sourceKind ?? 'file';
 
     const isPathArchivedStub = await isArchivedStubPath(manifest.originalPath, originKind);
+
     const isNotStub = !isPathArchivedStub;
 
     if (isNotStub) {
@@ -83,6 +84,7 @@ export const watchSessionStubs = async (request: WatchSessionStubsRequest): Prom
     const isDirectoryStubCheckNeeded = !forceFromFsEvent && originKind === 'directory';
     const isStubOpenedWhenChecked =
       isDirectoryStubCheckNeeded && (await isDirectoryStubOpened(manifest.originalPath));
+
     const isDirectoryStubClosed = isDirectoryStubCheckNeeded && !isStubOpenedWhenChecked;
 
     if (isDirectoryStubClosed) {
@@ -123,7 +125,7 @@ export const watchSessionStubs = async (request: WatchSessionStubsRequest): Prom
     } finally {
       restoringPaths.delete(manifest.originalPath);
     }
-  };
+  }
 
   while (!request.shouldStop()) {
     const manifests = await listVaultSessionManifests(request.vaultPath);
@@ -145,4 +147,4 @@ export const watchSessionStubs = async (request: WatchSessionStubsRequest): Prom
   for (const watcher of watchers.values()) {
     watcher.close();
   }
-};
+}

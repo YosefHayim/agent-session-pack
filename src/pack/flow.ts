@@ -10,9 +10,9 @@ import type { ProviderInventoryReport } from '@/scan/provider-inventory.js';
 import { runPackCommand } from './command.js';
 import { DEFAULT_COLD_AFTER, DEFAULT_COLD_AFTER_MS } from './plan.js';
 
-export const runPackFlow = async (
+export async function runPackFlow(
   request: InteractiveCliRequest & { readonly prompts: PromptAdapter },
-): Promise<CommandExit> => {
+): Promise<CommandExit> {
   const home = request.home ?? readHomeFolder();
 
   const isHomeMissing = home == null;
@@ -77,9 +77,9 @@ export const runPackFlow = async (
     confirmed: true,
   });
   return applyExit;
-};
+}
 
-const createPackApplyQuestion = (inventory: ProviderInventoryReport, home: string): string => {
+function createPackApplyQuestion(inventory: ProviderInventoryReport, home: string): string {
   const candidateSessions = inventory.rows.reduce(
     (totalSessions, inventorySummary) => totalSessions + inventorySummary.coldSessions,
     0,
@@ -102,4 +102,4 @@ const createPackApplyQuestion = (inventory: ProviderInventoryReport, home: strin
     `Candidate size: ${describeBytes(candidateBytes)}`,
     'Original files are removed only after archive write, restore verification, and manifest write.',
   ].join('\n');
-};
+}

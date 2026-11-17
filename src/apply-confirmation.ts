@@ -1,15 +1,15 @@
 import { confirm, isCancel } from '@clack/prompts';
 
-export type ApplyConfirmationRequest = {
+export interface ApplyConfirmationRequest {
   readonly action: string;
   readonly apply: boolean | undefined;
   readonly json: boolean | undefined;
   readonly yes: boolean | undefined;
-};
+}
 
-export const askApplyConfirmation = async (
+export async function askApplyConfirmation(
   request: ApplyConfirmationRequest,
-): Promise<boolean | undefined> => {
+): Promise<boolean | undefined> {
   const isApplyNotRequested = request.apply !== true;
   if (isApplyNotRequested) {
     return undefined;
@@ -41,4 +41,4 @@ export const askApplyConfirmation = async (
   }
 
   return answer === true;
-};
+}

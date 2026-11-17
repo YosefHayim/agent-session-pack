@@ -6,15 +6,15 @@ import {
   slugifyTitle,
 } from './session-discovery.js';
 
-export type JsonlProviderDiscoverySettings = {
+export interface JsonlProviderDiscoverySettings {
   readonly provider: ProviderId;
   readonly store: SessionStore;
   readonly excludePathParts: ReadonlyArray<string>;
-};
+}
 
-export const discoverJsonlProviderSessions = async (
+export async function discoverJsonlProviderSessions(
   settings: JsonlProviderDiscoverySettings,
-): Promise<ReadonlyArray<DiscoveredSession>> => {
+): Promise<ReadonlyArray<DiscoveredSession>> {
   const files = await collectJsonlSessions(settings.store.path, {
     excludePathParts: settings.excludePathParts,
   });
@@ -34,22 +34,24 @@ export const discoverJsonlProviderSessions = async (
   }
 
   return sessions;
-};
+}
 
-const readSessionFromFile = (file: {
+function readSessionFromFile(file: {
   readonly provider: ProviderId;
   readonly path: string;
   readonly title: string;
   readonly sizeBytes: number;
   readonly modifiedAt: Date;
-}): DiscoveredSession => ({
-  id: readSessionIdFromPath(file.path),
-  provider: file.provider,
-  title: file.title,
-  slug: slugifyTitle(file.title),
-  originalPath: file.path,
-  modifiedAt: file.modifiedAt,
-  sizeBytes: file.sizeBytes,
-  sourceKind: 'file',
-  status: 'live',
-});
+}): DiscoveredSession {
+  return {
+    id: readSessionIdFromPath(file.path),
+    provider: file.provider,
+    title: file.title,
+    slug: slugifyTitle(file.title),
+    originalPath: file.path,
+    modifiedAt: file.modifiedAt,
+    sizeBytes: file.sizeBytes,
+    sourceKind: 'file',
+    status: 'live',
+  };
+}

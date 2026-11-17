@@ -20,19 +20,16 @@ const SessionManifestSchema = z.object({
 
 export type SessionManifest = z.infer<typeof SessionManifestSchema>;
 
-export const writeSessionManifest = async (
-  path: string,
-  manifest: SessionManifest,
-): Promise<void> => {
+export async function writeSessionManifest(path: string, manifest: SessionManifest): Promise<void> {
   try {
     await mkdir(dirname(path), { recursive: true });
     await writeFile(path, `${JSON.stringify(manifest, null, 2)}\n`);
   } catch (error) {
     throw new Error(`Could not write session manifest ${path}`, { cause: error });
   }
-};
+}
 
-export const readSessionManifest = async (path: string): Promise<SessionManifest> => {
+export async function readSessionManifest(path: string): Promise<SessionManifest> {
   try {
     const manifestString = await readFile(path, 'utf8');
     const manifestDocument: unknown = JSON.parse(manifestString);
@@ -40,14 +37,15 @@ export const readSessionManifest = async (path: string): Promise<SessionManifest
   } catch (error) {
     throw new Error(`Could not read session manifest ${path}`, { cause: error });
   }
-};
+}
 
-export const listSessionManifestPaths = (root: string): Promise<ReadonlyArray<string>> =>
-  collectManifestPaths(root);
+export function listSessionManifestPaths(root: string): Promise<ReadonlyArray<string>> {
+  return collectManifestPaths(root);
+}
 
-export const listVaultSessionManifests = async (
+export async function listVaultSessionManifests(
   vaultPath: string,
-): Promise<ReadonlyArray<SessionManifest>> => {
+): Promise<ReadonlyArray<SessionManifest>> {
   const manifestPaths = await listSessionManifestPaths(join(vaultPath, 'manifests'));
   const manifests: SessionManifest[] = [];
 
@@ -57,9 +55,9 @@ export const listVaultSessionManifests = async (
   }
 
   return manifests;
-};
+}
 
-const collectManifestPaths = async (root: string): Promise<ReadonlyArray<string>> => {
+async function collectManifestPaths(root: string): Promise<ReadonlyArray<string>> {
   const dirents = await readDirectoryDirents(root);
   const paths: string[] = [];
 
@@ -86,4 +84,4 @@ const collectManifestPaths = async (root: string): Promise<ReadonlyArray<string>
   }
 
   return paths;
-};
+}

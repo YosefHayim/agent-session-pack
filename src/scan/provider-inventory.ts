@@ -9,7 +9,7 @@ import type {
 
 type ProviderInventoryStatus = 'backup-only' | 'missing' | 'ready';
 
-type ProviderInventorySummary = {
+interface ProviderInventorySummary {
   readonly provider: ProviderId;
   readonly label: string;
   readonly mode: ProviderMode;
@@ -20,22 +20,22 @@ type ProviderInventorySummary = {
   readonly candidateBytes: number;
   readonly paths: ReadonlyArray<string>;
   readonly status: ProviderInventoryStatus;
-};
+}
 
-export type ProviderInventoryReport = {
+export interface ProviderInventoryReport {
   readonly rows: ReadonlyArray<ProviderInventorySummary>;
-};
+}
 
-export type ProviderInventoryRequest = {
+export interface ProviderInventoryRequest {
   readonly home: string;
   readonly providers: ReadonlyArray<ProviderAdapter>;
   readonly olderThanMs: number;
   readonly now: Date;
-};
+}
 
-export const inspectProviderInventory = async (
+export async function inspectProviderInventory(
   request: ProviderInventoryRequest,
-): Promise<ProviderInventoryReport> => {
+): Promise<ProviderInventoryReport> {
   const inventorySummaries: ProviderInventorySummary[] = [];
   const cutoffTime = request.now.getTime() - request.olderThanMs;
 
@@ -57,23 +57,23 @@ export const inspectProviderInventory = async (
   }
 
   return { rows: inventorySummaries };
-};
+}
 
-type ProviderRootDiscovery = {
+interface ProviderRootDiscovery {
   readonly roots: ReadonlyArray<string>;
   readonly existingRoots: ReadonlyArray<string>;
   readonly sessions: ReadonlyArray<DiscoveredSession>;
-};
+}
 
-type RootDiscovery = {
+interface RootDiscovery {
   readonly root: string;
   readonly sessions: ReadonlyArray<DiscoveredSession>;
-};
+}
 
-const discoverProviderRoots = async (request: {
+async function discoverProviderRoots(request: {
   readonly home: string;
   readonly provider: ProviderAdapter;
-}): Promise<ProviderRootDiscovery> => {
+}): Promise<ProviderRootDiscovery> {
   const roots = request.provider.defaultRoots(request.home);
   const discoveredRoots: Array<RootDiscovery | null> = [];
 
@@ -92,13 +92,14 @@ const discoverProviderRoots = async (request: {
     existingRoots: existingRoots.map((root) => root.root),
     sessions: existingRoots.flatMap((root) => root.sessions),
   };
-};
+}
 
-const discoverProviderRoot = async (request: {
+async function discoverProviderRoot(request: {
   readonly provider: ProviderAdapter;
   readonly root: string;
-}): Promise<RootDiscovery | null> => {
+}): Promise<RootDiscovery | null> {
   const isRootPresent = await isPathPresent(request.root);
+
   const isRootAbsent = !isRootPresent;
 
   if (isRootAbsent) {
@@ -114,14 +115,14 @@ const discoverProviderRoot = async (request: {
     root: request.root,
     sessions,
   };
-};
+}
 
-const createInventorySummary = (request: {
+function createInventorySummary(request: {
   readonly cutoffTime: number;
   readonly paths: ReadonlyArray<string>;
   readonly provider: ProviderAdapter;
   readonly sessions: ReadonlyArray<DiscoveredSession>;
-}): ProviderInventorySummary => {
+}): ProviderInventorySummary {
   const isNothingToScan = request.paths.length === 0 || request.sessions.length === 0;
   if (isNothingToScan) {
     const isRequestSessionsEmpty = request.sessions.length === 0;
@@ -171,7 +172,8 @@ const createInventorySummary = (request: {
     paths: request.paths,
     status: 'ready',
   };
-};
+}
 
-const isRootDiscovery = (discovery: RootDiscovery | null): discovery is RootDiscovery =>
-  discovery != null;
+function isRootDiscovery(discovery: RootDiscovery | null): discovery is RootDiscovery {
+  return discovery != null;
+}

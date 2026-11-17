@@ -5,19 +5,21 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { copyCompression, writeColdSession } from '@/archive/fixtures.js';
 import { runPackCommand } from './command.js';
 
-const createWorkspace = (): Promise<string> =>
-  mkdtemp(join(tmpdir(), 'agent-session-pack-pack-command-'));
+function createWorkspace(): Promise<string> {
+  return mkdtemp(join(tmpdir(), 'agent-session-pack-pack-command-'));
+}
 
-const createColdCodexSession = (
+function createColdCodexSession(
   home: string,
-): Promise<{ readonly path: string; readonly content: string }> =>
-  writeColdSession({
+): Promise<{ readonly path: string; readonly content: string }> {
+  return writeColdSession({
     home,
     relativeDir: join('.codex', 'sessions', '2026', '06', '01'),
     fileName: 'session-old.jsonl',
     content: '{"type":"user","text":"pack every provider"}\n',
     modifiedAt: new Date('2026-06-01T12:00:00.000Z'),
   });
+}
 
 describe('packCommand', () => {
   const originalHome = process.env.HOME;

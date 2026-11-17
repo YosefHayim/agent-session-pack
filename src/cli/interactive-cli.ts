@@ -11,62 +11,62 @@ import { runWithSpinner } from '@/spinner-task.js';
 
 type MainMenuAction = 'doctor' | 'exit' | 'pack' | 'restore' | 'review' | 'savings' | 'setup';
 
-export type InteractiveCliDetectionRequest = {
+export interface InteractiveCliDetectionRequest {
   readonly argv: ReadonlyArray<string>;
   readonly stdinIsTty: boolean;
   readonly stdoutIsTty: boolean;
-};
+}
 
-export const canRunInteractiveCli = (request: InteractiveCliDetectionRequest): boolean => {
+export function canRunInteractiveCli(request: InteractiveCliDetectionRequest): boolean {
   const isNotInteractiveTerminal = !request.stdinIsTty || !request.stdoutIsTty;
   if (isNotInteractiveTerminal) {
     return false;
   }
 
   return request.argv.length <= 2;
-};
+}
 
-export const createMainMenuChoices = (): ReadonlyArray<PromptOption<MainMenuAction>> => [
-  {
-    value: 'setup',
-    label: 'First setup',
-    hint: 'choose providers, vault path, cold threshold, and safety defaults',
-  },
-  {
-    value: 'savings',
-    label: 'Check savings',
-    hint: 'copy-only proof; shows what you could save without touching sessions',
-  },
-  {
-    value: 'review',
-    label: 'Review sessions',
-    hint: 'scan all providers; show dates, paths, size, cold/active status',
-  },
-  {
-    value: 'pack',
-    label: 'Pack cold sessions',
-    hint: 'dry-run first; apply only after verified archive + confirmation',
-  },
-  {
-    value: 'restore',
-    label: 'Restore sessions',
-    hint: 'unpack archived sessions back to native provider paths',
-  },
-  {
-    value: 'doctor',
-    label: 'Doctor',
-    hint: 'check zstd, sqlite, provider roots, vault health, and config',
-  },
-  {
-    value: 'exit',
-    label: 'Exit',
-    hint: 'leave without changing files',
-  },
-];
+export function createMainMenuChoices(): ReadonlyArray<PromptOption<MainMenuAction>> {
+  return [
+    {
+      value: 'setup',
+      label: 'First setup',
+      hint: 'choose providers, vault path, cold threshold, and safety defaults',
+    },
+    {
+      value: 'savings',
+      label: 'Check savings',
+      hint: 'copy-only proof; shows what you could save without touching sessions',
+    },
+    {
+      value: 'review',
+      label: 'Review sessions',
+      hint: 'scan all providers; show dates, paths, size, cold/active status',
+    },
+    {
+      value: 'pack',
+      label: 'Pack cold sessions',
+      hint: 'dry-run first; apply only after verified archive + confirmation',
+    },
+    {
+      value: 'restore',
+      label: 'Restore sessions',
+      hint: 'unpack archived sessions back to native provider paths',
+    },
+    {
+      value: 'doctor',
+      label: 'Doctor',
+      hint: 'check zstd, sqlite, provider roots, vault health, and config',
+    },
+    {
+      value: 'exit',
+      label: 'Exit',
+      hint: 'leave without changing files',
+    },
+  ];
+}
 
-export const runInteractiveCli = async (
-  request: InteractiveCliRequest = {},
-): Promise<CommandExit> => {
+export async function runInteractiveCli(request: InteractiveCliRequest = {}): Promise<CommandExit> {
   const prompts = request.prompts ?? clackPromptAdapter;
   prompts.intro('Agent Session Pack');
   prompts.note(readFirstScreenCopy());
@@ -87,14 +87,14 @@ export const runInteractiveCli = async (
     action,
     prompts,
   });
-};
+}
 
-const runInteractiveAction = async (
+async function runInteractiveAction(
   request: InteractiveCliRequest & {
     readonly action: MainMenuAction;
     readonly prompts: PromptAdapter;
   },
-): Promise<CommandExit> => {
+): Promise<CommandExit> {
   const isSetupRequested = request.action === 'setup';
   if (isSetupRequested) {
     await runFirstSetup({
@@ -132,10 +132,10 @@ const runInteractiveAction = async (
   }
 
   return runDoctorCommand({});
-};
+}
 
-const readFirstScreenCopy = (): string =>
-  [
+function readFirstScreenCopy(): string {
+  return [
     'Compress old local AI-agent sessions without breaking resume.',
     '',
     'How it works:',
@@ -147,3 +147,4 @@ const readFirstScreenCopy = (): string =>
     '',
     'No daemon. No background deletion. Cursor and Devin stay backup-only for now. Grok/Kimi pack whole session directories.',
   ].join('\n');
+}

@@ -37,15 +37,15 @@ export interface DiscoveredSession {
   readonly savedPercent?: number;
 }
 
-export type SessionStore = {
+export interface SessionStore {
   readonly provider: ProviderId;
   readonly path: string;
-};
+}
 
-export type ProviderAdapter = {
+export interface ProviderAdapter {
   readonly id: ProviderId;
   readonly label: string;
   readonly mode: ProviderMode;
   readonly defaultRoots: (home: string) => ReadonlyArray<string>;
   readonly discover: (store: SessionStore) => Promise<ReadonlyArray<DiscoveredSession>>;
-};
+}

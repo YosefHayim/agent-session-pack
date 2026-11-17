@@ -7,8 +7,9 @@ import { packProviderSessions } from '@/pack/sessions.js';
 import type { DiscoveredSession, ProviderAdapter } from '@/session-model.js';
 import { ensureSessionRestored } from './ensure-restored.js';
 
-const createWorkspace = (): Promise<string> =>
-  mkdtemp(join(tmpdir(), 'agent-session-pack-ensure-restored-'));
+function createWorkspace(): Promise<string> {
+  return mkdtemp(join(tmpdir(), 'agent-session-pack-ensure-restored-'));
+}
 
 describe('ensureSessionRestored', () => {
   it('ensures one archived session is restored with lifecycle enabled and refuses conflicts', async () => {

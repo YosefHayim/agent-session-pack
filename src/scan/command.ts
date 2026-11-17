@@ -16,7 +16,7 @@ export interface ScanFlags {
   readonly json?: boolean;
 }
 
-export const runScanCommand = async (flags: ScanFlags): Promise<CommandExit> => {
+export async function runScanCommand(flags: ScanFlags): Promise<CommandExit> {
   const home = requireHome();
 
   const isHomeMissing = home == null;
@@ -44,7 +44,7 @@ export const runScanCommand = async (flags: ScanFlags): Promise<CommandExit> => 
 
   writeHumanScan(report);
   return { exitCode: providerExitCode };
-};
+}
 
 export const scanCommand = defineCommand({
   meta: {
@@ -93,9 +93,9 @@ export const listCommand = defineCommand({
   },
 });
 
-export const runReviewSessions = async (
+export async function runReviewSessions(
   request: InteractiveCliRequest & { readonly prompts: PromptAdapter },
-): Promise<CommandExit> => {
+): Promise<CommandExit> {
   const home = request.home ?? readHomeFolder();
 
   const isHomeMissing = home == null;
@@ -116,4 +116,4 @@ export const runReviewSessions = async (
 
   request.prompts.note(createProviderInventoryTable(inventory), 'Provider sessions');
   return runScanCommand({});
-};
+}

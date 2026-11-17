@@ -37,7 +37,7 @@ export const preflightCommand = defineCommand({
   },
 });
 
-export type PreflightFlags = {
+export interface PreflightFlags {
   readonly json: boolean | undefined;
   readonly provider: string | undefined;
   readonly passthroughArgv: ReadonlyArray<string>;
@@ -45,9 +45,9 @@ export type PreflightFlags = {
   readonly home?: string | undefined;
   readonly now?: Date | undefined;
   readonly vaultPath?: string | undefined;
-};
+}
 
-export const runPreflightCommand = async (flags: PreflightFlags): Promise<CommandExit> => {
+export async function runPreflightCommand(flags: PreflightFlags): Promise<CommandExit> {
   const home = requireHome(flags.home);
 
   const isHomeMissing = home == null;
@@ -144,9 +144,9 @@ export const runPreflightCommand = async (flags: PreflightFlags): Promise<Comman
     isMachineOutputRequested,
   );
   return { exitCode: 0 };
-};
+}
 
-const extractPassthroughArgv = (argumentList: ReadonlyArray<string>): ReadonlyArray<string> => {
+function extractPassthroughArgv(argumentList: ReadonlyArray<string>): ReadonlyArray<string> {
   const separatorIndex = argumentList.indexOf('--');
 
   const isSeparatorNotFound = separatorIndex === -1;
@@ -162,9 +162,9 @@ const extractPassthroughArgv = (argumentList: ReadonlyArray<string>): ReadonlyAr
   }
 
   return argumentList.slice(separatorIndex + 1);
-};
+}
 
-const parseProvider = (provider: string | undefined): ProviderId | undefined => {
+function parseProvider(provider: string | undefined): ProviderId | undefined {
   const isProviderMissing = provider == null;
   if (isProviderMissing) {
     return undefined;
@@ -178,9 +178,9 @@ const parseProvider = (provider: string | undefined): ProviderId | undefined => 
   }
 
   return providerReply.data;
-};
+}
 
-const writePreflightPrintout = (
+function writePreflightPrintout(
   payload: {
     readonly command: 'preflight';
     readonly provider: ProviderId;
@@ -190,7 +190,7 @@ const writePreflightPrintout = (
     readonly reason: string | undefined;
   },
   isMachineOutputRequested: boolean,
-): void => {
+): void {
   if (isMachineOutputRequested) {
     process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
     return;
@@ -209,4 +209,4 @@ const writePreflightPrintout = (
   ].filter((line): line is string => line != null);
 
   process.stdout.write(`${lines.join('\n')}\n`);
-};
+}

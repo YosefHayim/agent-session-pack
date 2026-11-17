@@ -45,7 +45,7 @@ export const watchCommand = defineCommand({
   },
 });
 
-type WatchFlags = {
+interface WatchFlags {
   readonly provider: string | undefined;
   readonly json: boolean | undefined;
   readonly pollMs: string | undefined;
@@ -53,9 +53,9 @@ type WatchFlags = {
   readonly compression?: CompressionAdapter | undefined;
   readonly home?: string | undefined;
   readonly vaultPath?: string | undefined;
-};
+}
 
-const runWatchCommand = async (flags: WatchFlags): Promise<CommandExit> => {
+async function runWatchCommand(flags: WatchFlags): Promise<CommandExit> {
   const home = requireHome(flags.home);
 
   const isHomeMissing = home == null;
@@ -84,6 +84,7 @@ const runWatchCommand = async (flags: WatchFlags): Promise<CommandExit> => {
   // Watch runs even when restore on launch is off; wrappers enable lifecycle first.
   const hasExecCommand = flags.execArgv.length > 0;
   const [command, ...commandArgumentList] = flags.execArgv;
+
   const isExecCommandMissing = hasExecCommand && command == null;
   if (isExecCommandMissing) {
     process.stderr.write('Missing command after -- for watch --exec.\n');
@@ -101,21 +102,21 @@ const runWatchCommand = async (flags: WatchFlags): Promise<CommandExit> => {
       stop = true;
     });
   } else {
-    const requestWatchStop = (): void => {
+    function requestWatchStop(): void {
       stop = true;
-    };
+    }
     process.once('SIGINT', requestWatchStop);
     process.once('SIGTERM', requestWatchStop);
   }
 
-  const writeWatchEvent = (event: SessionWatchEvent): void => {
+  function writeWatchEvent(event: SessionWatchEvent): void {
     if (isMachineOutputRequested) {
       process.stdout.write(`${JSON.stringify({ command: 'watch', ...event })}\n`);
       return;
     }
 
     process.stderr.write(`watch: ${event.provider}/${event.sessionId} → ${event.status}\n`);
-  };
+  }
 
   const isHumanWatchWithoutExec = !isMachineOutputRequested && flags.execArgv.length === 0;
   if (isHumanWatchWithoutExec) {
@@ -135,9 +136,9 @@ const runWatchCommand = async (flags: WatchFlags): Promise<CommandExit> => {
   });
 
   return { exitCode: childExitCode ?? 0 };
-};
+}
 
-const extractExecArgumentList = (argumentList: ReadonlyArray<string>): ReadonlyArray<string> => {
+function extractExecArgumentList(argumentList: ReadonlyArray<string>): ReadonlyArray<string> {
   const separator = argumentList.indexOf('--');
 
   const isSeparatorNotFound = separator === -1;
@@ -146,9 +147,9 @@ const extractExecArgumentList = (argumentList: ReadonlyArray<string>): ReadonlyA
   }
 
   return argumentList.slice(separator + 1);
-};
+}
 
-const parsePollMs = (millisecondsString: string | undefined): number => {
+function parsePollMs(millisecondsString: string | undefined): number {
   const isMillisecondsStringMissing = millisecondsString == null;
   if (isMillisecondsStringMissing) {
     return DEFAULT_POLL_INTERVAL_MS;
@@ -157,6 +158,7 @@ const parsePollMs = (millisecondsString: string | undefined): number => {
   const parsed = Number(millisecondsString);
 
   const minimumPollIntervalMilliseconds = 100;
+
   const isPollIntervalInvalid =
     !Number.isFinite(parsed) || parsed < minimumPollIntervalMilliseconds;
   if (isPollIntervalInvalid) {
@@ -164,4 +166,4 @@ const parsePollMs = (millisecondsString: string | undefined): number => {
   }
 
   return Math.floor(parsed);
-};
+}

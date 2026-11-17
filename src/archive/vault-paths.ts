@@ -2,13 +2,15 @@ import { join } from 'node:path';
 import type { DiscoveredSession, SessionOriginKind } from '@/session-model.js';
 import type { SessionManifest } from './manifest-store.js';
 
-export const createDefaultVaultPath = (home: string): string => join(home, '.agent-session-pack');
+export function createDefaultVaultPath(home: string): string {
+  return join(home, '.agent-session-pack');
+}
 
-export const archivePathForSession = (
+export function archivePathForSession(
   vaultPath: string,
   session: DiscoveredSession,
   originKind: SessionOriginKind,
-): string => {
+): string {
   const isOriginDirectory = originKind === 'directory';
   const extension = isOriginDirectory ? 'tar.zst' : 'jsonl.zst';
   return join(
@@ -17,29 +19,35 @@ export const archivePathForSession = (
     session.provider,
     `${createSafePathSegment(session.id)}.${extension}`,
   );
-};
+}
 
-export const createSessionManifestPath = (vaultPath: string, session: DiscoveredSession): string =>
-  join(vaultPath, 'manifests', session.provider, `${createSafePathSegment(session.id)}.json`);
+export function createSessionManifestPath(vaultPath: string, session: DiscoveredSession): string {
+  return join(
+    vaultPath,
+    'manifests',
+    session.provider,
+    `${createSafePathSegment(session.id)}.json`,
+  );
+}
 
-export const createSessionVerificationPath = (
+export function createSessionVerificationPath(
   vaultPath: string,
   session: DiscoveredSession,
   originKind: SessionOriginKind,
-): string => {
+): string {
   const isOriginDirectory = originKind === 'directory';
   if (isOriginDirectory) {
     return join(vaultPath, 'verify', session.provider, createSafePathSegment(session.id));
   }
 
   return join(vaultPath, 'verify', session.provider, `${createSafePathSegment(session.id)}.jsonl`);
-};
+}
 
-export const restorePathForManifest = (
+export function restorePathForManifest(
   vaultPath: string,
   manifest: SessionManifest,
   originKind: SessionOriginKind,
-): string => {
+): string {
   const isOriginDirectory = originKind === 'directory';
   if (isOriginDirectory) {
     return join(vaultPath, 'restore', manifest.provider, createSafePathSegment(manifest.sessionId));
@@ -51,9 +59,9 @@ export const restorePathForManifest = (
     manifest.provider,
     `${createSafePathSegment(manifest.sessionId)}.jsonl`,
   );
-};
+}
 
-const createSafePathSegment = (unsafeSegment: string): string => {
+function createSafePathSegment(unsafeSegment: string): string {
   const segment = unsafeSegment
     .toLowerCase()
     .replace(/[^a-z0-9._-]+/g, '-')
@@ -65,4 +73,4 @@ const createSafePathSegment = (unsafeSegment: string): string => {
   }
 
   return segment;
-};
+}

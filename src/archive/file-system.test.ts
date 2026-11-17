@@ -5,8 +5,9 @@ import { describe, expect, it } from 'vitest';
 import { measureOriginBytes } from './file-system.js';
 import { writeSessionDirectory } from './fixtures.js';
 
-const createWorkspace = (): Promise<string> =>
-  mkdtemp(join(tmpdir(), 'agent-session-pack-archive-file-system-'));
+function createWorkspace(): Promise<string> {
+  return mkdtemp(join(tmpdir(), 'agent-session-pack-archive-file-system-'));
+}
 
 describe('archiveFileSystem', () => {
   it('measures source bytes for a single file and a directory tree', async () => {

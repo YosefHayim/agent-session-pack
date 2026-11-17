@@ -4,7 +4,9 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { expandHomePath, validateVaultPath, writeSetupSettings } from './config.js';
 
-const createWorkspace = (): Promise<string> => mkdtemp(join(tmpdir(), 'agent-session-pack-setup-'));
+function createWorkspace(): Promise<string> {
+  return mkdtemp(join(tmpdir(), 'agent-session-pack-setup-'));
+}
 
 describe('setup config vault paths', () => {
   it('expands home paths and accepts a new vault below a writable parent', async () => {

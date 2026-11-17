@@ -12,8 +12,9 @@ import { packProviderSessions } from '@/pack/sessions.js';
 import type { DiscoveredSession, ProviderAdapter } from '@/session-model.js';
 import { unpackProviderSessions } from './unpack-sessions.js';
 
-const createWorkspace = (): Promise<string> =>
-  mkdtemp(join(tmpdir(), 'agent-session-pack-unpack-sessions-'));
+function createWorkspace(): Promise<string> {
+  return mkdtemp(join(tmpdir(), 'agent-session-pack-unpack-sessions-'));
+}
 
 describe('unpackProviderSessions', () => {
   it('reports unpack dry-run and no-archives rows without restoring originals', async () => {

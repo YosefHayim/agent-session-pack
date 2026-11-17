@@ -10,7 +10,7 @@ const homeNotSetStderrMessage = [
 export const HOME_NOT_SET_CANCEL_MESSAGE =
   'HOME is not set. Agent Session Pack needs HOME to resolve vault and config paths (default ~/.agent-session-pack). Set HOME in your shell, or see .env.example. No files changed.';
 
-export const requireHome = (homeOverride?: string): string | null => {
+export function requireHome(homeOverride?: string): string | null {
   const home = homeOverride ?? readHomeFolder();
 
   const isHomeMissing = home == null;
@@ -20,7 +20,7 @@ export const requireHome = (homeOverride?: string): string | null => {
   }
 
   return home;
-};
+}
 
 export function readHomeFolder(): string | undefined {
   return process.env.HOME;

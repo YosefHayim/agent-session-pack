@@ -3,24 +3,24 @@ import { type ProviderId, ProviderIdSchema } from '@/session-model.js';
 
 export type SelectorMode = 'exact' | 'fuzzy';
 
-export type SessionSelectorRequest = {
+export interface SessionSelectorRequest {
   readonly selector: string;
   readonly provider: ProviderId | undefined;
   readonly manifests: ReadonlyArray<SessionManifest>;
   readonly match: SelectorMode;
-};
+}
 
 export type SessionSelection =
   | { readonly status: 'found'; readonly manifest: SessionManifest }
   | { readonly status: 'not-found' }
   | { readonly status: 'ambiguous'; readonly candidates: ReadonlyArray<SessionManifest> };
 
-type ParsedSelector = {
+interface ParsedSelector {
   readonly provider: ProviderId | undefined;
   readonly query: string;
-};
+}
 
-export const findSessionSelector = (request: SessionSelectorRequest): SessionSelection => {
+export function findSessionSelector(request: SessionSelectorRequest): SessionSelection {
   const parsed = parseSelector(request.selector);
   const provider = request.provider ?? parsed.provider;
   const candidates = request.manifests.filter(
@@ -39,12 +39,13 @@ export const findSessionSelector = (request: SessionSelectorRequest): SessionSel
   }
 
   return { status: 'found', manifest: hits[0] };
-};
+}
 
-const isProviderId = (candidate: string): candidate is ProviderId =>
-  ProviderIdSchema.safeParse(candidate).success;
+function isProviderId(candidate: string): candidate is ProviderId {
+  return ProviderIdSchema.safeParse(candidate).success;
+}
 
-const parseSelector = (selector: string): ParsedSelector => {
+function parseSelector(selector: string): ParsedSelector {
   const trimmedSelector = selector.trim();
   const separatorIndex = trimmedSelector.indexOf(':');
   const prefix = trimmedSelector.slice(0, separatorIndex).toLowerCase();
@@ -65,13 +66,13 @@ const parseSelector = (selector: string): ParsedSelector => {
       .trim()
       .toLowerCase(),
   };
-};
+}
 
-const listMatchingManifests = (
+function listMatchingManifests(
   query: string,
   candidates: ReadonlyArray<SessionManifest>,
   hit: SelectorMode,
-): ReadonlyArray<SessionManifest> => {
+): ReadonlyArray<SessionManifest> {
   const isQueryEmpty = query.length === 0;
   if (isQueryEmpty) {
     return [];
@@ -106,4 +107,4 @@ const listMatchingManifests = (
         (word) => manifest.slug.includes(word) || manifest.title.toLowerCase().includes(word),
       ),
   );
-};
+}

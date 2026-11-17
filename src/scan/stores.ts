@@ -10,7 +10,7 @@ export interface ScanReport {
   readonly sessions: ReadonlyArray<DiscoveredSession>;
 }
 
-export const scanStores = async (request: ScanRequest): Promise<ScanReport> => {
+export async function scanStores(request: ScanRequest): Promise<ScanReport> {
   const sessions: DiscoveredSession[] = [];
 
   for (const store of request.stores) {
@@ -27,13 +27,14 @@ export const scanStores = async (request: ScanRequest): Promise<ScanReport> => {
   }
 
   return { sessions };
-};
+}
 
-export const discoverStoreSessions = async (
+export async function discoverStoreSessions(
   provider: ProviderAdapter,
   store: SessionStore,
-): Promise<ReadonlyArray<DiscoveredSession>> => {
+): Promise<ReadonlyArray<DiscoveredSession>> {
   const isStorePresent = await isPathPresent(store.path);
+
   const isStoreAbsent = !isStorePresent;
 
   if (isStoreAbsent) {
@@ -44,6 +45,7 @@ export const discoverStoreSessions = async (
     return await provider.discover(store);
   } catch (discoveryError) {
     const isStorePresentAfterFailure = await isPathPresent(store.path);
+
     const isStoreAbsentAfterFailure = !isStorePresentAfterFailure;
 
     if (isStoreAbsentAfterFailure) {
@@ -52,4 +54,4 @@ export const discoverStoreSessions = async (
 
     throw discoveryError;
   }
-};
+}

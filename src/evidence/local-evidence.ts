@@ -52,9 +52,9 @@ export interface LocalEvidenceRequest {
   readonly providers: ReadonlyArray<ProviderAdapter>;
 }
 
-export const runLocalEvidence = async (
+export async function runLocalEvidence(
   request: LocalEvidenceRequest,
-): Promise<LocalEvidenceReport> => {
+): Promise<LocalEvidenceReport> {
   const compression = createZstdCompression();
   const evidence: ProviderEvidence[] = [];
 
@@ -145,12 +145,12 @@ export const runLocalEvidence = async (
     workRoot: request.workRoot,
     evidence,
   };
-};
+}
 
-const discoverProviderSessions = async (
+async function discoverProviderSessions(
   provider: ProviderAdapter,
   roots: ReadonlyArray<string>,
-): Promise<ReadonlyArray<DiscoveredSession>> => {
+): Promise<ReadonlyArray<DiscoveredSession>> {
   const discovered: DiscoveredSession[] = [];
 
   for (const root of roots) {
@@ -162,9 +162,9 @@ const discoverProviderSessions = async (
   }
 
   return discovered;
-};
+}
 
-const createTitlePreview = (title: string): string => {
+function createTitlePreview(title: string): string {
   const singleLineTitle = title.replace(/\s+/g, ' ').trim();
 
   const isTitleShortEnough = singleLineTitle.length <= MAX_TITLE_PREVIEW_LENGTH;
@@ -173,4 +173,4 @@ const createTitlePreview = (title: string): string => {
   }
 
   return `${singleLineTitle.slice(0, MAX_TITLE_PREVIEW_LENGTH - 3)}...`;
-};
+}

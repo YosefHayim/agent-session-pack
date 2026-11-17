@@ -4,7 +4,7 @@ import type { LocalEvidenceReport, ProviderEvidence } from './local-evidence.js'
 
 const MISSING_LABEL = '-';
 
-export const createHumanEvidenceReport = (report: LocalEvidenceReport): string => {
+export function createHumanEvidenceReport(report: LocalEvidenceReport): string {
   const isReportEvidenceEmpty = report.evidence.length === 0;
   if (isReportEvidenceEmpty) {
     return [
@@ -48,12 +48,13 @@ export const createHumanEvidenceReport = (report: LocalEvidenceReport): string =
     `Original sessions touched: ${touchedOriginals ? 'yes' : 'no'}`,
     `Work root: ${report.workRoot}`,
   ].join('\n');
-};
+}
 
-export const createStructuredEvidenceReport = (report: LocalEvidenceReport): string =>
-  `${JSON.stringify(report, null, 2)}\n`;
+export function createStructuredEvidenceReport(report: LocalEvidenceReport): string {
+  return `${JSON.stringify(report, null, 2)}\n`;
+}
 
-const createEvidenceLine = (providerEvidence: ProviderEvidence): string => {
+function createEvidenceLine(providerEvidence: ProviderEvidence): string {
   const provider = providerEvidence.provider.padEnd(13);
   const foundSessions = String(providerEvidence.foundSessions).padEnd(11);
   const sampledOrigins = String(providerEvidence.sampledSources).padEnd(8);
@@ -65,24 +66,28 @@ const createEvidenceLine = (providerEvidence: ProviderEvidence): string => {
   const touched = providerEvidence.originalTouched ? 'yes' : 'no';
 
   return `${provider} ${foundSessions} ${sampledOrigins} ${mode} ${before} ${after} ${saved} ${exact} ${touched}`;
-};
+}
 
-const sumEvidenceBytes = (
+function sumEvidenceBytes(
   evidence: ReadonlyArray<ProviderEvidence>,
   key: 'archiveBytes' | 'sourceBytes',
-): number =>
-  evidence.reduce((totalBytes, providerEvidence) => totalBytes + (providerEvidence[key] ?? 0), 0);
+): number {
+  return evidence.reduce(
+    (totalBytes, providerEvidence) => totalBytes + (providerEvidence[key] ?? 0),
+    0,
+  );
+}
 
-const describeSampledBytes = (bytes: number, sampledOrigins: number): string => {
+function describeSampledBytes(bytes: number, sampledOrigins: number): string {
   const isNothingSampled = sampledOrigins === 0;
   return isNothingSampled ? MISSING_LABEL : describeBytes(bytes);
-};
+}
 
-const describeByteExact = (byteExact: boolean | undefined): string => {
+function describeByteExact(byteExact: boolean | undefined): string {
   const isByteExactMissing = byteExact == null;
   if (isByteExactMissing) {
     return MISSING_LABEL;
   }
 
   return byteExact ? 'yes' : 'no';
-};
+}

@@ -7,15 +7,15 @@ import { copyCompression } from '@/archive/fixtures.js';
 import { writeSessionManifest } from '@/archive/manifest-store.js';
 import { runRestoreCommand } from './command.js';
 
-type ArchivedSessionRequest = {
+interface ArchivedSessionRequest {
   readonly home: string;
   readonly sessionId: string;
   readonly title: string;
-};
+}
 
-const writeArchivedSession = async (
+async function writeArchivedSession(
   request: ArchivedSessionRequest,
-): Promise<{ readonly originalPath: string; readonly content: string }> => {
+): Promise<{ readonly originalPath: string; readonly content: string }> {
   const vaultPath = join(request.home, '.agent-session-pack');
   const originalPath = join(request.home, '.codex', 'sessions', `${request.sessionId}.jsonl`);
   const archivePath = join(vaultPath, 'archives', 'codex', `${request.sessionId}.jsonl.zst`);
@@ -38,7 +38,7 @@ const writeArchivedSession = async (
   });
 
   return { originalPath, content: sessionJsonl };
-};
+}
 
 describe('restore command', () => {
   const stdoutWrites: string[] = [];

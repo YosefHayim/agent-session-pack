@@ -6,26 +6,26 @@ import { basename, extname, join } from 'node:path';
 const titleSearchLimitBytes = 1024 * 1024;
 const titleReadHighWaterMarkBytes = 64 * 1024;
 
-export type JsonlSessionFile = {
+export interface JsonlSessionFile {
   readonly path: string;
   readonly sizeBytes: number;
   readonly modifiedAt: Date;
-};
+}
 
-export type DirectorySessionFile = {
+export interface DirectorySessionFile {
   readonly path: string;
   readonly sizeBytes: number;
   readonly modifiedAt: Date;
-};
+}
 
-export type CollectJsonlSettings = {
+export interface CollectJsonlSettings {
   readonly excludePathParts: ReadonlyArray<string>;
-};
+}
 
-export const collectJsonlSessions = async (
+export async function collectJsonlSessions(
   root: string,
   settings: CollectJsonlSettings,
-): Promise<ReadonlyArray<JsonlSessionFile>> => {
+): Promise<ReadonlyArray<JsonlSessionFile>> {
   const dirents = await readdir(root, { withFileTypes: true });
   const files: JsonlSessionFile[] = [];
 
@@ -62,14 +62,14 @@ export const collectJsonlSessions = async (
   }
 
   return files;
-};
+}
 
-export const measureDirectorySession = async (path: string): Promise<DirectorySessionFile> => {
+export async function measureDirectorySession(path: string): Promise<DirectorySessionFile> {
   const rootStat = await stat(path);
   let sizeBytes = 0;
   let modifiedAt = rootStat.mtime;
 
-  const walk = async (directory: string): Promise<void> => {
+  async function walk(directory: string): Promise<void> {
     const dirents = await readdir(directory, { withFileTypes: true });
 
     for (const dirent of dirents) {
@@ -94,7 +94,7 @@ export const measureDirectorySession = async (path: string): Promise<DirectorySe
         modifiedAt = fileStat.mtime;
       }
     }
-  };
+  }
 
   await walk(path);
 
@@ -103,9 +103,9 @@ export const measureDirectorySession = async (path: string): Promise<DirectorySe
     sizeBytes,
     modifiedAt,
   };
-};
+}
 
-export const slugifyTitle = (title: string): string => {
+export function slugifyTitle(title: string): string {
   const slug = title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
@@ -117,9 +117,9 @@ export const slugifyTitle = (title: string): string => {
   }
 
   return slug;
-};
+}
 
-export const readSessionIdFromPath = (path: string): string => {
+export function readSessionIdFromPath(path: string): string {
   const fileName = basename(path, extname(path));
   const idHit = fileName.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
 
@@ -129,11 +129,13 @@ export const readSessionIdFromPath = (path: string): string => {
   }
 
   return fileName;
-};
+}
 
-export const readSessionTitle = (path: string): Promise<string> => readSessionTitleFromFile(path);
+export function readSessionTitle(path: string): Promise<string> {
+  return readSessionTitleFromFile(path);
+}
 
-const readSessionTitleFromFile = async (path: string): Promise<string> => {
+async function readSessionTitleFromFile(path: string): Promise<string> {
   let carry = '';
   let bytesRead = 0;
   const stream = createReadStream(path, {
@@ -170,20 +172,21 @@ const readSessionTitleFromFile = async (path: string): Promise<string> => {
   }
 
   return basename(path, extname(path));
-};
+}
 
-const streamChunkToString = (chunk: string | Buffer): string => {
+function streamChunkToString(chunk: string | Buffer): string {
   const isChunkTypeString = typeof chunk === 'string';
   if (isChunkTypeString) {
     return chunk;
   }
 
   return chunk.toString('utf8');
-};
+}
 
-const readTitleFromDelimitedLines = (
-  fileString: string,
-): { readonly title: string; readonly rest: string } => {
+function readTitleFromDelimitedLines(fileString: string): {
+  readonly title: string;
+  readonly rest: string;
+} {
   const lines = fileString.split(/\r?\n/);
   const rest = lines.pop();
 
@@ -211,9 +214,9 @@ const readTitleFromDelimitedLines = (
     title: '',
     rest,
   };
-};
+}
 
-const readTitleFromJsonlLine = (line: string): string => {
+function readTitleFromJsonlLine(line: string): string {
   try {
     const event = JSON.parse(line) as {
       readonly type?: unknown;
@@ -248,4 +251,4 @@ const readTitleFromJsonlLine = (line: string): string => {
   } catch {
     return '';
   }
-};
+}

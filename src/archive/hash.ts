@@ -6,13 +6,14 @@ import { throwWrappedError } from '@/rethrow-as-error.js';
 import type { SessionOriginKind } from '@/session-model.js';
 import { findOriginKind } from './file-system.js';
 
-export const readSha256File = (path: string): Promise<string> =>
-  hashFile(path).catch(throwWrappedError);
+export function readSha256File(path: string): Promise<string> {
+  return hashFile(path).catch(throwWrappedError);
+}
 
-export const readSha256Path = async (
+export async function readSha256Path(
   path: string,
   originKind?: SessionOriginKind,
-): Promise<string> => {
+): Promise<string> {
   const kind = await findOriginKind(path, originKind);
 
   const isDirectoryOrigin = kind === 'directory';
@@ -22,15 +23,16 @@ export const readSha256Path = async (
   }
 
   return readSha256File(path);
-};
+}
 
-export const readSha256Directory = (path: string): Promise<string> =>
-  hashDirectoryTree(path).catch(throwWrappedError);
+export function readSha256Directory(path: string): Promise<string> {
+  return hashDirectoryTree(path).catch(throwWrappedError);
+}
 
-const hashDirectoryTree = async (root: string): Promise<string> => {
+async function hashDirectoryTree(root: string): Promise<string> {
   const files: string[] = [];
 
-  const walk = async (directory: string): Promise<void> => {
+  async function walk(directory: string): Promise<void> {
     const dirents = await readdir(directory, { withFileTypes: true });
     const sorted = [...dirents].sort((left, right) => left.name.localeCompare(right.name));
 
@@ -50,7 +52,7 @@ const hashDirectoryTree = async (root: string): Promise<string> => {
 
       files.push(childPath);
     }
-  };
+  }
 
   await walk(root);
 
@@ -66,13 +68,14 @@ const hashDirectoryTree = async (root: string): Promise<string> => {
   }
 
   return treeHash.digest('hex');
-};
+}
 
-const hashFile = (path: string): Promise<string> =>
-  new Promise((fulfill, reject) => {
+function hashFile(path: string): Promise<string> {
+  return new Promise((fulfill, reject) => {
     const hash = createHash('sha256');
     createReadStream(path)
       .on('data', (chunk) => hash.update(chunk))
       .on('error', reject)
       .on('end', () => fulfill(hash.digest('hex')));
   });
+}

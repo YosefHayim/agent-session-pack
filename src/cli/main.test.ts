@@ -10,13 +10,13 @@ interface PackageManifest {
   readonly version: string;
 }
 
-const readPackageManifest = async (): Promise<PackageManifest> => {
+async function readPackageManifest(): Promise<PackageManifest> {
   const testDirectory = dirname(fileURLToPath(import.meta.url));
   const packagePath = join(testDirectory, '..', '..', 'package.json');
   const packageManifest = JSON.parse(await readFile(packagePath, 'utf8')) as PackageManifest;
 
   return packageManifest;
-};
+}
 
 describe('main command metadata', () => {
   it('uses the package version in CLI help output', async () => {
@@ -29,14 +29,14 @@ describe('main command metadata', () => {
 
 describe('CLI entrypoint detection', () => {
   it('accepts npm bin symlinks that resolve to the built module path', () => {
-    const realpath = (path: string): string => {
+    function realpath(path: string): string {
       const isInstalledBinPath = path === '/prefix/bin/agent-session-pack';
       if (isInstalledBinPath) {
         return '/package/dist/cli/main.js';
       }
 
       return path;
-    };
+    }
 
     expect(
       isCliEntrypoint('/prefix/bin/agent-session-pack', '/package/dist/cli/main.js', realpath),

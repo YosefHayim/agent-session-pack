@@ -8,20 +8,22 @@ export const copyCompression: CompressionAdapter = {
   decompress: ({ archivePath, restoredPath }) => copyFile(archivePath, restoredPath),
 };
 
-export type ArchiveProviderRequest = {
+export interface ArchiveProviderRequest {
   readonly id: ProviderAdapter['id'];
   readonly mode: ProviderAdapter['mode'];
   readonly rootRelative: string;
   readonly discover: ProviderAdapter['discover'];
-};
+}
 
-export const createArchiveProvider = (request: ArchiveProviderRequest): ProviderAdapter => ({
-  id: request.id,
-  label: request.id,
-  mode: request.mode,
-  defaultRoots: (home) => [join(home, request.rootRelative)],
-  discover: request.discover,
-});
+export function createArchiveProvider(request: ArchiveProviderRequest): ProviderAdapter {
+  return {
+    id: request.id,
+    label: request.id,
+    mode: request.mode,
+    defaultRoots: (home) => [join(home, request.rootRelative)],
+    discover: request.discover,
+  };
+}
 
 export interface WriteColdSessionDetails {
   home: string;
@@ -31,13 +33,13 @@ export interface WriteColdSessionDetails {
   modifiedAt: Date;
 }
 
-export const writeColdSession = async ({
+export async function writeColdSession({
   home,
   relativeDir,
   fileName,
   content: sessionJsonl,
   modifiedAt,
-}: WriteColdSessionDetails): Promise<{ readonly path: string; readonly content: string }> => {
+}: WriteColdSessionDetails): Promise<{ readonly path: string; readonly content: string }> {
   const sessionDir = join(home, relativeDir);
   const sessionPath = join(sessionDir, fileName);
   await mkdir(sessionDir, { recursive: true });
@@ -47,13 +49,13 @@ export const writeColdSession = async ({
     path: sessionPath,
     content: sessionJsonl,
   };
-};
+}
 
-export const writeSessionDirectory = async (root: string): Promise<string> => {
+export async function writeSessionDirectory(root: string): Promise<string> {
   const originPath = join(root, 'session-dir');
   await mkdir(join(originPath, 'nested'), { recursive: true });
   await writeFile(join(originPath, 'summary.json'), '{"title":"dir session"}\n');
   await writeFile(join(originPath, 'updates.jsonl'), '{"type":"user","text":"hello"}\n');
   await writeFile(join(originPath, 'nested', 'call.log'), 'log-bytes\n');
   return originPath;
-};
+}

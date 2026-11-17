@@ -23,7 +23,7 @@ import { createPackThresholdPreviews, type PackThresholdPreview } from './plan.j
 
 type PackSessionStatus = 'backup-only' | 'dry-run' | 'missing' | 'no-candidates' | 'packed';
 
-type PackSessionSummary = {
+interface PackSessionSummary {
   readonly provider: ProviderId;
   readonly mode: ProviderMode;
   readonly foundSessions: number;
@@ -36,17 +36,17 @@ type PackSessionSummary = {
   readonly touchedOriginals: boolean;
   readonly status: PackSessionStatus;
   readonly reason: string | undefined;
-};
+}
 
-export type PackSessionsReport = {
+export interface PackSessionsReport {
   readonly command: 'pack';
   readonly apply: boolean;
   readonly vaultPath: string;
   readonly rows: ReadonlyArray<PackSessionSummary>;
   readonly thresholdPreviews: ReadonlyArray<PackThresholdPreview>;
-};
+}
 
-export type PackProviderSessionsRequest = {
+export interface PackProviderSessionsRequest {
   readonly home: string;
   readonly vaultPath: string;
   readonly providers: ReadonlyArray<ProviderAdapter>;
@@ -55,11 +55,11 @@ export type PackProviderSessionsRequest = {
   readonly now: Date;
   readonly apply: boolean;
   readonly compression: CompressionAdapter;
-};
+}
 
-export const packProviderSessions = async (
+export async function packProviderSessions(
   request: PackProviderSessionsRequest,
-): Promise<PackSessionsReport> => {
+): Promise<PackSessionsReport> {
   const packSessionSummaries: PackSessionSummary[] = [];
   const packableSessions: DiscoveredSession[] = [];
   const cutoffTime = request.now.getTime() - request.olderThanMs;
@@ -128,18 +128,19 @@ export const packProviderSessions = async (
       sessions: packableSessions,
     }),
   };
-};
+}
 
-const discoverExistingProviderSessions = async (request: {
+async function discoverExistingProviderSessions(request: {
   readonly home: string;
   readonly provider: ProviderAdapter;
-}): Promise<ReadonlyArray<DiscoveredSession> | undefined> => {
+}): Promise<ReadonlyArray<DiscoveredSession> | undefined> {
   const roots = request.provider.defaultRoots(request.home);
   const sessions: DiscoveredSession[] = [];
   let existingRoots = 0;
 
   for (const root of roots) {
     const doesRootExist = await isPathPresent(root);
+
     const isRootAbsent = !doesRootExist;
 
     if (isRootAbsent) {
@@ -161,9 +162,9 @@ const discoverExistingProviderSessions = async (request: {
   }
 
   return sessions;
-};
+}
 
-const archiveCandidateSessions = async (request: {
+async function archiveCandidateSessions(request: {
   readonly candidates: ReadonlyArray<DiscoveredSession>;
   readonly compression: CompressionAdapter;
   readonly now: Date;
@@ -172,7 +173,7 @@ const archiveCandidateSessions = async (request: {
   readonly archiveBytes: number;
   readonly beforeBytes: number;
   readonly packedSessions: number;
-}> => {
+}> {
   let archiveBytes = 0;
   let beforeBytes = 0;
   let packedSessions = 0;
@@ -225,98 +226,109 @@ const archiveCandidateSessions = async (request: {
     beforeBytes,
     packedSessions,
   };
-};
+}
 
-const createMissingPackSummary = (provider: ProviderAdapter): PackSessionSummary => ({
-  provider: provider.id,
-  mode: provider.mode,
-  foundSessions: 0,
-  candidateSessions: 0,
-  packedSessions: 0,
-  beforeBytes: 0,
-  archiveBytes: undefined,
-  savedBytes: undefined,
-  savedPercent: undefined,
-  touchedOriginals: false,
-  status: 'missing',
-  reason: 'provider store not found',
-});
+function createMissingPackSummary(provider: ProviderAdapter): PackSessionSummary {
+  return {
+    provider: provider.id,
+    mode: provider.mode,
+    foundSessions: 0,
+    candidateSessions: 0,
+    packedSessions: 0,
+    beforeBytes: 0,
+    archiveBytes: undefined,
+    savedBytes: undefined,
+    savedPercent: undefined,
+    touchedOriginals: false,
+    status: 'missing',
+    reason: 'provider store not found',
+  };
+}
 
-const createBackupOnlyPackSummary = (
+function createBackupOnlyPackSummary(
   provider: ProviderAdapter,
   foundSessions: number,
-): PackSessionSummary => ({
-  provider: provider.id,
-  mode: provider.mode,
-  foundSessions,
-  candidateSessions: 0,
-  packedSessions: 0,
-  beforeBytes: 0,
-  archiveBytes: undefined,
-  savedBytes: undefined,
-  savedPercent: undefined,
-  touchedOriginals: false,
-  status: 'backup-only',
-  reason: 'backup-only provider is not mutated',
-});
+): PackSessionSummary {
+  return {
+    provider: provider.id,
+    mode: provider.mode,
+    foundSessions,
+    candidateSessions: 0,
+    packedSessions: 0,
+    beforeBytes: 0,
+    archiveBytes: undefined,
+    savedBytes: undefined,
+    savedPercent: undefined,
+    touchedOriginals: false,
+    status: 'backup-only',
+    reason: 'backup-only provider is not mutated',
+  };
+}
 
-const createNoCandidatesPackSummary = (
+function createNoCandidatesPackSummary(
   provider: ProviderAdapter,
   foundSessions: number,
-): PackSessionSummary => ({
-  provider: provider.id,
-  mode: provider.mode,
-  foundSessions,
-  candidateSessions: 0,
-  packedSessions: 0,
-  beforeBytes: 0,
-  archiveBytes: undefined,
-  savedBytes: undefined,
-  savedPercent: undefined,
-  touchedOriginals: false,
-  status: 'no-candidates',
-  reason: 'no sessions older than threshold',
-});
+): PackSessionSummary {
+  return {
+    provider: provider.id,
+    mode: provider.mode,
+    foundSessions,
+    candidateSessions: 0,
+    packedSessions: 0,
+    beforeBytes: 0,
+    archiveBytes: undefined,
+    savedBytes: undefined,
+    savedPercent: undefined,
+    touchedOriginals: false,
+    status: 'no-candidates',
+    reason: 'no sessions older than threshold',
+  };
+}
 
-const createDryRunPackSummary = (
+function createDryRunPackSummary(
   provider: ProviderAdapter,
   foundSessions: number,
   candidates: ReadonlyArray<DiscoveredSession>,
-): PackSessionSummary => ({
-  provider: provider.id,
-  mode: provider.mode,
-  foundSessions,
-  candidateSessions: candidates.length,
-  packedSessions: 0,
-  beforeBytes: sumSessionBytes(candidates),
-  archiveBytes: undefined,
-  savedBytes: undefined,
-  savedPercent: undefined,
-  touchedOriginals: false,
-  status: 'dry-run',
-  reason: '--apply required to write archives',
-});
+): PackSessionSummary {
+  return {
+    provider: provider.id,
+    mode: provider.mode,
+    foundSessions,
+    candidateSessions: candidates.length,
+    packedSessions: 0,
+    beforeBytes: sumSessionBytes(candidates),
+    archiveBytes: undefined,
+    savedBytes: undefined,
+    savedPercent: undefined,
+    touchedOriginals: false,
+    status: 'dry-run',
+    reason: '--apply required to write archives',
+  };
+}
 
-const createPackedSummary = (request: {
+function createPackedSummary(request: {
   readonly provider: ProviderAdapter;
   readonly foundSessions: number;
   readonly packedSessions: number;
   readonly beforeBytes: number;
   readonly archiveBytes: number;
-}): PackSessionSummary => ({
-  provider: request.provider.id,
-  mode: request.provider.mode,
-  foundSessions: request.foundSessions,
-  candidateSessions: request.packedSessions,
-  packedSessions: request.packedSessions,
-  beforeBytes: request.beforeBytes,
-  archiveBytes: request.archiveBytes,
-  savedBytes: request.beforeBytes - request.archiveBytes,
-  savedPercent: calculateSavedPercent(request.beforeBytes, request.archiveBytes),
-  touchedOriginals: request.packedSessions > 0,
-  status: 'packed',
-  reason: undefined,
-});
+}): PackSessionSummary {
+  return {
+    provider: request.provider.id,
+    mode: request.provider.mode,
+    foundSessions: request.foundSessions,
+    candidateSessions: request.packedSessions,
+    packedSessions: request.packedSessions,
+    beforeBytes: request.beforeBytes,
+    archiveBytes: request.archiveBytes,
+    savedBytes: request.beforeBytes - request.archiveBytes,
+    savedPercent: calculateSavedPercent(request.beforeBytes, request.archiveBytes),
+    touchedOriginals: request.packedSessions > 0,
+    status: 'packed',
+    reason: undefined,
+  };
+}
 
-const readSessionOriginKind = (session: DiscoveredSession): SessionOriginKind =>
-  session.sourceKind ?? 'file';
+function readSessionOriginKind(session: DiscoveredSession): SessionOriginKind {
+  return session.sourceKind ?? 'file';
+}

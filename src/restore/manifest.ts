@@ -13,13 +13,13 @@ import type { SessionOriginKind } from '@/session-model.js';
 
 export type RestoreExit = 'already-present' | 'conflict' | 'restored';
 
-export type RestoreManifestRequest = {
+export interface RestoreManifestRequest {
   readonly compression: CompressionAdapter;
   readonly manifest: SessionManifest;
   readonly vaultPath: string;
-};
+}
 
-export const restoreManifest = async (request: RestoreManifestRequest): Promise<RestoreExit> => {
+export async function restoreManifest(request: RestoreManifestRequest): Promise<RestoreExit> {
   const originKind = readManifestOriginKind(request.manifest);
 
   const liveExit = await findLiveExitWhenPresent(request.manifest, originKind);
@@ -80,12 +80,12 @@ export const restoreManifest = async (request: RestoreManifestRequest): Promise<
   await removePath(restoredPath);
 
   return 'restored';
-};
+}
 
-const findLiveExitWhenPresent = async (
+async function findLiveExitWhenPresent(
   manifest: SessionManifest,
   originKind: SessionOriginKind,
-): Promise<RestoreExit | null> => {
+): Promise<RestoreExit | null> {
   const isOriginalPresent = await isPathPresent(manifest.originalPath);
 
   const isOriginalAbsent = !isOriginalPresent;
@@ -105,13 +105,13 @@ const findLiveExitWhenPresent = async (
   }
 
   return liveExit;
-};
+}
 
-const findLiveOriginalExit = async (request: {
+async function findLiveOriginalExit(request: {
   readonly originalPath: string;
   readonly sourceKind: SessionOriginKind;
   readonly sourceSha256: string;
-}): Promise<RestoreExit | 'continue-restore'> => {
+}): Promise<RestoreExit | 'continue-restore'> {
   const isStub = await isArchivedStubPath(request.originalPath, request.sourceKind);
 
   if (isStub) {
@@ -128,16 +128,18 @@ const findLiveOriginalExit = async (request: {
   }
 
   return 'conflict';
-};
+}
 
-const createVerificationError = (mismatch: {
+function createVerificationError(mismatch: {
   readonly sessionId: string;
   readonly sourceSha256: string;
   readonly restoredSha256: string;
-}): Error =>
-  new Error(
+}): Error {
+  return new Error(
     `Archive verification failed for session ${mismatch.sessionId}: source ${mismatch.sourceSha256} does not match restored ${mismatch.restoredSha256}`,
   );
+}
 
-const readManifestOriginKind = (manifest: SessionManifest): SessionOriginKind =>
-  manifest.sourceKind ?? 'file';
+function readManifestOriginKind(manifest: SessionManifest): SessionOriginKind {
+  return manifest.sourceKind ?? 'file';
+}

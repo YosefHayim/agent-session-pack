@@ -2,25 +2,25 @@ import { appendFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { ProviderId } from '@/session-model.js';
 
-type SessionAccessEvent = {
+interface SessionAccessEvent {
   readonly provider: ProviderId;
   readonly sessionId: string;
   readonly accessedAt: string;
-};
+}
 
-export type SaveSessionAccessRequest = {
+export interface SaveSessionAccessRequest {
   readonly vaultPath: string;
   readonly provider: ProviderId;
   readonly sessionId: string;
   readonly accessedAt: Date;
-};
+}
 
-export type SessionHotCheckRequest = {
+export interface SessionHotCheckRequest {
   readonly events: ReadonlyArray<SessionAccessEvent>;
   readonly provider: ProviderId;
   readonly sessionId: string;
   readonly sinceMs: number;
-};
+}
 
 const sessionIdPattern =
   /\b([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{26,})\b/gi;
@@ -34,12 +34,15 @@ const knownSessionFlagNames = new Set([
   '--id',
 ]);
 
-export const createWrappersBinPath = (vaultPath: string): string => join(vaultPath, 'bin');
+export function createWrappersBinPath(vaultPath: string): string {
+  return join(vaultPath, 'bin');
+}
 
-export const createAccessLogPath = (vaultPath: string): string =>
-  join(vaultPath, 'access-log.jsonl');
+export function createAccessLogPath(vaultPath: string): string {
+  return join(vaultPath, 'access-log.jsonl');
+}
 
-export const extractSessionIdsFromArgv = (argv: ReadonlyArray<string>): ReadonlyArray<string> => {
+export function extractSessionIdsFromArgv(argv: ReadonlyArray<string>): ReadonlyArray<string> {
   const found = new Set<string>();
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -68,9 +71,9 @@ export const extractSessionIdsFromArgv = (argv: ReadonlyArray<string>): Readonly
   }
 
   return [...found];
-};
+}
 
-export const saveSessionAccess = async (request: SaveSessionAccessRequest): Promise<void> => {
+export async function saveSessionAccess(request: SaveSessionAccessRequest): Promise<void> {
   const path = createAccessLogPath(request.vaultPath);
   const event: SessionAccessEvent = {
     provider: request.provider,
@@ -84,21 +87,18 @@ export const saveSessionAccess = async (request: SaveSessionAccessRequest): Prom
   } catch (cause) {
     throw new Error(String(cause), { cause });
   }
-};
+}
 
-export const isSessionAccessedSince = (request: SessionHotCheckRequest): boolean =>
-  request.events.some(
+export function isSessionAccessedSince(request: SessionHotCheckRequest): boolean {
+  return request.events.some(
     (event) =>
       event.provider === request.provider &&
       event.sessionId === request.sessionId &&
       Date.parse(event.accessedAt) >= request.sinceMs,
   );
+}
 
-const tryTakeFlagSessionId = (
-  found: Set<string>,
-  arg: string,
-  next: string | undefined,
-): boolean => {
+function tryTakeFlagSessionId(found: Set<string>, arg: string, next: string | undefined): boolean {
   const isUnknownFlag = !knownSessionFlagNames.has(arg);
   if (isUnknownFlag) {
     return false;
@@ -110,9 +110,9 @@ const tryTakeFlagSessionId = (
   }
 
   return true;
-};
+}
 
-const tryTakeInlineSessionId = (found: Set<string>, arg: string): boolean => {
+function tryTakeInlineSessionId(found: Set<string>, arg: string): boolean {
   const inline = arg.match(/^--(?:session|session-id|resume|id)=(.+)$/i);
   const inlineId = inline?.[1];
 
@@ -123,9 +123,9 @@ const tryTakeInlineSessionId = (found: Set<string>, arg: string): boolean => {
 
   found.add(inlineId);
   return true;
-};
+}
 
-const addUuidHits = (found: Set<string>, arg: string): void => {
+function addUuidHits(found: Set<string>, arg: string): void {
   for (const hit of arg.matchAll(sessionIdPattern)) {
     const matchedId = hit[1];
 
@@ -134,9 +134,9 @@ const addUuidHits = (found: Set<string>, arg: string): void => {
       found.add(matchedId);
     }
   }
-};
+}
 
-const isNoiseToken = (token: string): boolean => {
+function isNoiseToken(token: string): boolean {
   const lower = token.toLowerCase();
   return (
     lower === 'true' ||
@@ -151,4 +151,4 @@ const isNoiseToken = (token: string): boolean => {
     lower.endsWith('.ts') ||
     lower.endsWith('.js')
   );
-};
+}

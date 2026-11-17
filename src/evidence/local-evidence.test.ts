@@ -5,8 +5,9 @@ import { describe, expect, it } from 'vitest';
 import type { ProviderAdapter } from '@/session-model.js';
 import { runLocalEvidence } from './local-evidence.js';
 
-const createWorkspace = (): Promise<string> =>
-  mkdtemp(join(tmpdir(), 'agent-session-pack-local-evidence-'));
+function createWorkspace(): Promise<string> {
+  return mkdtemp(join(tmpdir(), 'agent-session-pack-local-evidence-'));
+}
 
 describe('local evidence', () => {
   it('retains discovery counts when every source is too large to sample', async () => {

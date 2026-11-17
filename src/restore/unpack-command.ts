@@ -57,7 +57,7 @@ export const unpackCommand = defineCommand({
   },
 });
 
-export type UnpackFlags = {
+export interface UnpackFlags {
   readonly allProviders: boolean | undefined;
   readonly apply: boolean | undefined;
   readonly json: boolean | undefined;
@@ -68,9 +68,9 @@ export type UnpackFlags = {
   readonly home?: string | undefined;
   readonly providers?: ReadonlyArray<ProviderAdapter> | undefined;
   readonly vaultPath?: string | undefined;
-};
+}
 
-export const runUnpackCommand = async (flags: UnpackFlags): Promise<CommandExit> => {
+export async function runUnpackCommand(flags: UnpackFlags): Promise<CommandExit> {
   const home = requireHome(flags.home);
 
   const isHomeMissing = home == null;
@@ -102,4 +102,4 @@ export const runUnpackCommand = async (flags: UnpackFlags): Promise<CommandExit>
 
   process.stdout.write(`${createHumanUnpackReport(report)}\n`);
   return { exitCode: providerExitCode };
-};
+}

@@ -13,13 +13,13 @@ type EnsureRestoredStatus =
   | 'missing-archive'
   | 'restored';
 
-type SelectorCandidate = {
+interface SelectorCandidate {
   readonly provider: ProviderId;
   readonly sessionId: string;
   readonly title: string;
-};
+}
 
-export type EnsureRestoredReport = {
+export interface EnsureRestoredReport {
   readonly command: 'ensure-restored' | 'restore';
   readonly status: EnsureRestoredStatus;
   readonly restoreOnLaunchEnabled: boolean;
@@ -29,9 +29,9 @@ export type EnsureRestoredReport = {
   readonly archivePath: string | undefined;
   readonly reason: string | undefined;
   readonly candidates?: ReadonlyArray<SelectorCandidate>;
-};
+}
 
-export type EnsureSessionRestoredRequest = {
+export interface EnsureSessionRestoredRequest {
   readonly command: 'ensure-restored' | 'restore';
   readonly vaultPath: string;
   readonly selector: string;
@@ -41,11 +41,11 @@ export type EnsureSessionRestoredRequest = {
   readonly restoreOnLaunchEnabled: boolean;
   readonly requireLifecycleEnabled: boolean;
   readonly backupOnlyProviders?: ReadonlyArray<ProviderId>;
-};
+}
 
-export const ensureSessionRestored = async (
+export async function ensureSessionRestored(
   request: EnsureSessionRestoredRequest,
-): Promise<EnsureRestoredReport> => {
+): Promise<EnsureRestoredReport> {
   const isLifecycleDisabled = request.requireLifecycleEnabled && !request.restoreOnLaunchEnabled;
 
   if (isLifecycleDisabled) {
@@ -141,9 +141,9 @@ export const ensureSessionRestored = async (
     archivePath: manifest.archivePath,
     reason: ensureRestoredReason(exit),
   };
-};
+}
 
-const ensureRestoredReason = (status: RestoreExit): string | undefined => {
+function ensureRestoredReason(status: RestoreExit): string | undefined {
   const isStatusConflict = status === 'conflict';
   if (isStatusConflict) {
     return 'live file differs from manifest hash; not overwritten';
@@ -155,4 +155,4 @@ const ensureRestoredReason = (status: RestoreExit): string | undefined => {
   }
 
   return undefined;
-};
+}

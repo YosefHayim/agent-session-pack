@@ -6,7 +6,7 @@ import { restoreManifest } from './manifest.js';
 
 type UnpackSessionStatus = 'already-present' | 'conflict' | 'dry-run' | 'no-archives' | 'restored';
 
-type UnpackSessionSummary = {
+interface UnpackSessionSummary {
   readonly provider: ProviderId;
   readonly archivedSessions: number;
   readonly restoredSessions: number;
@@ -18,25 +18,25 @@ type UnpackSessionSummary = {
   readonly touchedOriginals: boolean;
   readonly status: UnpackSessionStatus;
   readonly reason: string | undefined;
-};
+}
 
-export type UnpackSessionsReport = {
+export interface UnpackSessionsReport {
   readonly command: 'unpack';
   readonly apply: boolean;
   readonly vaultPath: string;
   readonly rows: ReadonlyArray<UnpackSessionSummary>;
-};
+}
 
-export type UnpackProviderSessionsRequest = {
+export interface UnpackProviderSessionsRequest {
   readonly vaultPath: string;
   readonly providers: ReadonlyArray<ProviderAdapter>;
   readonly apply: boolean;
   readonly compression: CompressionAdapter;
-};
+}
 
-export const unpackProviderSessions = async (
+export async function unpackProviderSessions(
   request: UnpackProviderSessionsRequest,
-): Promise<UnpackSessionsReport> => {
+): Promise<UnpackSessionsReport> {
   const manifests = await listVaultSessionManifests(request.vaultPath);
   const unpackSessionSummaries: UnpackSessionSummary[] = [];
 
@@ -88,9 +88,9 @@ export const unpackProviderSessions = async (
     vaultPath: request.vaultPath,
     rows: unpackSessionSummaries,
   };
-};
+}
 
-const restoreProviderManifests = async (request: {
+async function restoreProviderManifests(request: {
   readonly compression: CompressionAdapter;
   readonly manifests: ReadonlyArray<SessionManifest>;
   readonly vaultPath: string;
@@ -99,7 +99,7 @@ const restoreProviderManifests = async (request: {
   readonly conflictSessions: number;
   readonly restoredBytes: number;
   readonly restoredSessions: number;
-}> => {
+}> {
   let alreadyPresentSessions = 0;
   let conflictSessions = 0;
   let restoredBytes = 0;
@@ -134,9 +134,9 @@ const restoreProviderManifests = async (request: {
     restoredBytes,
     restoredSessions,
   };
-};
+}
 
-const sumArchiveBytes = async (manifests: ReadonlyArray<SessionManifest>): Promise<number> => {
+async function sumArchiveBytes(manifests: ReadonlyArray<SessionManifest>): Promise<number> {
   let archiveBytes = 0;
 
   for (const manifest of manifests) {
@@ -145,9 +145,9 @@ const sumArchiveBytes = async (manifests: ReadonlyArray<SessionManifest>): Promi
   }
 
   return archiveBytes;
-};
+}
 
-const archiveBytesForManifest = async (manifest: SessionManifest): Promise<number> => {
+async function archiveBytesForManifest(manifest: SessionManifest): Promise<number> {
   const knownArchiveBytes = manifest.archiveBytes;
 
   const isArchiveBytesKnown = knownArchiveBytes != null;
@@ -158,45 +158,49 @@ const archiveBytesForManifest = async (manifest: SessionManifest): Promise<numbe
 
   const archiveStats = await readStatPath(manifest.archivePath);
   return archiveStats.size;
-};
+}
 
-const createNoArchivesUnpackSummary = (provider: ProviderId): UnpackSessionSummary => ({
-  provider,
-  archivedSessions: 0,
-  restoredSessions: 0,
-  alreadyPresentSessions: 0,
-  conflictSessions: 0,
-  beforeBytes: 0,
-  archiveBytes: 0,
-  restoredBytes: 0,
-  touchedOriginals: false,
-  status: 'no-archives',
-  reason: 'no manifests found in vault',
-});
+function createNoArchivesUnpackSummary(provider: ProviderId): UnpackSessionSummary {
+  return {
+    provider,
+    archivedSessions: 0,
+    restoredSessions: 0,
+    alreadyPresentSessions: 0,
+    conflictSessions: 0,
+    beforeBytes: 0,
+    archiveBytes: 0,
+    restoredBytes: 0,
+    touchedOriginals: false,
+    status: 'no-archives',
+    reason: 'no manifests found in vault',
+  };
+}
 
-const createDryRunUnpackSummary = (
+function createDryRunUnpackSummary(
   provider: ProviderId,
   manifests: ReadonlyArray<SessionManifest>,
   archiveBytes: number,
-): UnpackSessionSummary => ({
-  provider,
-  archivedSessions: manifests.length,
-  restoredSessions: 0,
-  alreadyPresentSessions: 0,
-  conflictSessions: 0,
-  beforeBytes: sumManifestOriginBytes(manifests),
-  archiveBytes,
-  restoredBytes: 0,
-  touchedOriginals: false,
-  status: 'dry-run',
-  reason: '--apply required to restore originals',
-});
+): UnpackSessionSummary {
+  return {
+    provider,
+    archivedSessions: manifests.length,
+    restoredSessions: 0,
+    alreadyPresentSessions: 0,
+    conflictSessions: 0,
+    beforeBytes: sumManifestOriginBytes(manifests),
+    archiveBytes,
+    restoredBytes: 0,
+    touchedOriginals: false,
+    status: 'dry-run',
+    reason: '--apply required to restore originals',
+  };
+}
 
-const readUnpackStatus = (restored: {
+function readUnpackStatus(restored: {
   readonly alreadyPresentSessions: number;
   readonly conflictSessions: number;
   readonly restoredSessions: number;
-}): UnpackSessionStatus => {
+}): UnpackSessionStatus {
   const hasConflictSessions = restored.conflictSessions > 0;
   if (hasConflictSessions) {
     return 'conflict';
@@ -208,7 +212,8 @@ const readUnpackStatus = (restored: {
   }
 
   return 'already-present';
-};
+}
 
-const sumManifestOriginBytes = (manifests: ReadonlyArray<SessionManifest>): number =>
-  manifests.reduce((totalBytes, manifest) => totalBytes + manifest.sourceBytes, 0);
+function sumManifestOriginBytes(manifests: ReadonlyArray<SessionManifest>): number {
+  return manifests.reduce((totalBytes, manifest) => totalBytes + manifest.sourceBytes, 0);
+}

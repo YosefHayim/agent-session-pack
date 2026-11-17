@@ -9,21 +9,21 @@ export const DEFAULT_COLD_AFTER = '7d';
 
 export const DEFAULT_COLD_AFTER_MS = MILLISECONDS_PER_WEEK;
 
-type PackPlanProvider = {
+interface PackPlanProvider {
   readonly id: ProviderId;
   readonly label: string;
   readonly mode: ProviderMode;
-};
+}
 
-export type PackPlanRequest = {
+export interface PackPlanRequest {
   readonly now: Date;
   readonly olderThan: string;
   readonly olderThanMs: number;
   readonly sessions: ReadonlyArray<DiscoveredSession>;
   readonly providers: ReadonlyArray<PackPlanProvider>;
-};
+}
 
-type PackPlanSummary = {
+interface PackPlanSummary {
   readonly provider: ProviderId;
   readonly mode: ProviderMode;
   readonly scannedSessions: number;
@@ -32,30 +32,30 @@ type PackPlanSummary = {
   readonly afterDryRunBytes: number;
   readonly cleanupBytes: number;
   readonly applySupport: 'backup-only' | 'ready';
-};
+}
 
-export type PackPlan = {
+export interface PackPlan {
   readonly rows: ReadonlyArray<PackPlanSummary>;
   readonly thresholdPreviews: ReadonlyArray<PackThresholdPreview>;
-};
+}
 
 type PackThresholdPreviewKind = 'broader' | 'max' | 'safer';
 
-export type PackThresholdPreview = {
+export interface PackThresholdPreview {
   readonly kind: PackThresholdPreviewKind;
   readonly olderThan: string;
   readonly candidateSessions: number;
   readonly beforeBytes: number;
-};
+}
 
-export type PackThresholdPreviewRequest = {
+export interface PackThresholdPreviewRequest {
   readonly now: Date;
   readonly olderThan: string;
   readonly olderThanMs: number;
   readonly sessions: ReadonlyArray<DiscoveredSession>;
-};
+}
 
-export const createPackPlan = (request: PackPlanRequest): PackPlan => {
+export function createPackPlan(request: PackPlanRequest): PackPlan {
   const cutoffTime = request.now.getTime() - request.olderThanMs;
   const packableProviderIds = request.providers
     .filter((provider) => provider.mode === 'archive')
@@ -107,11 +107,11 @@ export const createPackPlan = (request: PackPlanRequest): PackPlan => {
       sessions: packableSessions,
     }),
   };
-};
+}
 
-export const createPackThresholdPreviews = (
+export function createPackThresholdPreviews(
   request: PackThresholdPreviewRequest,
-): ReadonlyArray<PackThresholdPreview> => {
+): ReadonlyArray<PackThresholdPreview> {
   const duration = parseDuration(request.olderThan);
 
   const isDurationZeroOrUnset = duration == null || duration.value === 0;
@@ -153,16 +153,16 @@ export const createPackThresholdPreviews = (
       sessions: request.sessions,
     }),
   ];
-};
+}
 
 type DurationUnit = 'd' | 'h' | 'w';
 
-type Duration = {
+interface Duration {
   readonly value: number;
   readonly unit: DurationUnit;
-};
+}
 
-export const parseDurationMs = (duration: string): number => {
+export function parseDurationMs(duration: string): number {
   const parsed = parseDuration(duration);
 
   const isParsedMissing = parsed == null;
@@ -171,15 +171,15 @@ export const parseDurationMs = (duration: string): number => {
   }
 
   return convertDurationToMilliseconds(parsed);
-};
+}
 
-const createThresholdPreview = (request: {
+function createThresholdPreview(request: {
   readonly kind: PackThresholdPreviewKind;
   readonly olderThan: string;
   readonly olderThanMs: number;
   readonly now: Date;
   readonly sessions: ReadonlyArray<DiscoveredSession>;
-}): PackThresholdPreview => {
+}): PackThresholdPreview {
   const cutoffTime = request.now.getTime() - request.olderThanMs;
   const candidates = request.sessions.filter(
     (session) => session.modifiedAt.getTime() < cutoffTime,
@@ -191,9 +191,9 @@ const createThresholdPreview = (request: {
     candidateSessions: candidates.length,
     beforeBytes: sumSessionBytes(candidates),
   };
-};
+}
 
-const parseDuration = (duration: string): Duration | null => {
+function parseDuration(duration: string): Duration | null {
   const durationParts = duration.match(/^(\d+)(h|d|w)$/);
   const knownUnits: ReadonlyArray<DurationUnit> = ['h', 'd', 'w'];
   const unit = knownUnits.find((knownUnit) => knownUnit === durationParts?.[2]);
@@ -207,14 +207,16 @@ const parseDuration = (duration: string): Duration | null => {
     value: Number(durationParts[1]),
     unit,
   };
-};
+}
 
-const multiplyDuration = (duration: Duration, factor: number): Duration => ({
-  value: duration.value * factor,
-  unit: duration.unit,
-});
+function multiplyDuration(duration: Duration, factor: number): Duration {
+  return {
+    value: duration.value * factor,
+    unit: duration.unit,
+  };
+}
 
-const halveDuration = (duration: Duration): Duration => {
+function halveDuration(duration: Duration): Duration {
   const isDurationInHours = duration.unit === 'h';
   if (isDurationInHours) {
     return {
@@ -245,9 +247,9 @@ const halveDuration = (duration: Duration): Duration => {
     value: Math.floor(duration.value / 2),
     unit: duration.unit,
   };
-};
+}
 
-const convertDurationToMilliseconds = (duration: Duration): number => {
+function convertDurationToMilliseconds(duration: Duration): number {
   const isDurationInHours = duration.unit === 'h';
   if (isDurationInHours) {
     return duration.value * MILLISECONDS_PER_HOUR;
@@ -259,6 +261,8 @@ const convertDurationToMilliseconds = (duration: Duration): number => {
   }
 
   return duration.value * MILLISECONDS_PER_DAY;
-};
+}
 
-const describeDuration = (duration: Duration): string => `${duration.value}${duration.unit}`;
+function describeDuration(duration: Duration): string {
+  return `${duration.value}${duration.unit}`;
+}

@@ -6,12 +6,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { listCommand } from '@/scan/command.js';
 import { runScanCommand, scanCommand } from './command.js';
 
-const createWorkspace = (): Promise<string> =>
-  mkdtemp(join(tmpdir(), 'agent-session-pack-scan-cmd-'));
+function createWorkspace(): Promise<string> {
+  return mkdtemp(join(tmpdir(), 'agent-session-pack-scan-cmd-'));
+}
 
-const writeCodexSession = async (
+async function writeCodexSession(
   home: string,
-): Promise<{ readonly path: string; readonly content: string }> => {
+): Promise<{ readonly path: string; readonly content: string }> {
   const sessionDir = join(home, '.codex', 'sessions', '2026', '06', '01');
   const sessionPath = join(sessionDir, 'session-old.jsonl');
   const sessionJsonl = '{"type":"user","text":"scan command fixture"}\n';
@@ -22,7 +23,7 @@ const writeCodexSession = async (
   await utimes(sessionPath, modifiedAt, modifiedAt);
 
   return { path: sessionPath, content: sessionJsonl };
-};
+}
 
 describe('scan command', () => {
   const originalHome = process.env.HOME;

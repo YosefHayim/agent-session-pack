@@ -5,8 +5,9 @@ import { describe, expect, it } from 'vitest';
 import { grokProvider } from './grok.js';
 import { kimiProvider } from './kimi.js';
 
-const createWorkspace = (): Promise<string> =>
-  mkdtemp(join(tmpdir(), 'agent-session-pack-directory-sessions-'));
+function createWorkspace(): Promise<string> {
+  return mkdtemp(join(tmpdir(), 'agent-session-pack-directory-sessions-'));
+}
 
 describe('directorySessions', () => {
   it('discovers Grok multi-file session directories and skips active sessions', async () => {

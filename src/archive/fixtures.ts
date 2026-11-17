@@ -3,9 +3,20 @@ import { join } from 'node:path';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import type { ProviderAdapter } from '@/session-model.js';
 
+function copyOriginToArchive(request: { sourcePath: string; archivePath: string }): Promise<void> {
+  return copyFile(request.sourcePath, request.archivePath);
+}
+
+function copyArchiveToRestored(request: {
+  archivePath: string;
+  restoredPath: string;
+}): Promise<void> {
+  return copyFile(request.archivePath, request.restoredPath);
+}
+
 export const copyCompression: CompressionAdapter = {
-  compress: ({ sourcePath: originPath, archivePath }) => copyFile(originPath, archivePath),
-  decompress: ({ archivePath, restoredPath }) => copyFile(archivePath, restoredPath),
+  compress: copyOriginToArchive,
+  decompress: copyArchiveToRestored,
 };
 
 export interface ArchiveProviderRequest {
@@ -16,11 +27,15 @@ export interface ArchiveProviderRequest {
 }
 
 export function createArchiveProvider(request: ArchiveProviderRequest): ProviderAdapter {
+  function listDefaultRoots(home: string): string[] {
+    return [join(home, request.rootRelative)];
+  }
+
   return {
     id: request.id,
     label: request.id,
     mode: request.mode,
-    defaultRoots: (home) => [join(home, request.rootRelative)],
+    defaultRoots: listDefaultRoots,
     discover: request.discover,
   };
 }
@@ -45,6 +60,7 @@ export async function writeColdSession({
   await mkdir(sessionDir, { recursive: true });
   await writeFile(sessionPath, sessionJsonl);
   await utimes(sessionPath, modifiedAt, modifiedAt);
+
   return {
     path: sessionPath,
     content: sessionJsonl,

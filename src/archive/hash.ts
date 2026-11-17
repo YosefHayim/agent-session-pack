@@ -1,13 +1,24 @@
 import { createHash } from 'node:crypto';
-import { createReadStream } from 'node:fs';
+import { createReadStream, type Dirent } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
-import { throwWrappedError } from '@/rethrow-as-error.js';
 import type { SessionOriginKind } from '@/session-model.js';
 import { findOriginKind } from './file-system.js';
 
-export function readSha256File(path: string): Promise<string> {
-  return hashFile(path).catch(throwWrappedError);
+const SHA256_ALGORITHM = 'sha256';
+
+const HEX_ENCODING = 'hex';
+
+function compareDirentNames(left: Dirent, right: Dirent): number {
+  return left.name.localeCompare(right.name);
+}
+
+export async function readSha256File(path: string): Promise<string> {
+  try {
+    return await hashFile(path);
+  } catch (error) {
+    throw new Error(String(error), { cause: error });
+  }
 }
 
 export async function readSha256Path(
@@ -25,8 +36,12 @@ export async function readSha256Path(
   return readSha256File(path);
 }
 
-export function readSha256Directory(path: string): Promise<string> {
-  return hashDirectoryTree(path).catch(throwWrappedError);
+export async function readSha256Directory(path: string): Promise<string> {
+  try {
+    return await hashDirectoryTree(path);
+  } catch (error) {
+    throw new Error(String(error), { cause: error });
+  }
 }
 
 async function hashDirectoryTree(root: string): Promise<string> {
@@ -34,7 +49,7 @@ async function hashDirectoryTree(root: string): Promise<string> {
 
   async function walk(directory: string): Promise<void> {
     const dirents = await readdir(directory, { withFileTypes: true });
-    const sorted = [...dirents].sort((left, right) => left.name.localeCompare(right.name));
+    const sorted = [...dirents].sort(compareDirentNames);
 
     for (const dirent of sorted) {
       const childPath = join(directory, dirent.name);
@@ -56,7 +71,7 @@ async function hashDirectoryTree(root: string): Promise<string> {
 
   await walk(root);
 
-  const treeHash = createHash('sha256');
+  const treeHash = createHash(SHA256_ALGORITHM);
 
   for (const filePath of files) {
     const relativePath = relative(root, filePath).split(sep).join('/');
@@ -67,15 +82,23 @@ async function hashDirectoryTree(root: string): Promise<string> {
     treeHash.update('\n');
   }
 
-  return treeHash.digest('hex');
+  return treeHash.digest(HEX_ENCODING);
 }
 
 function hashFile(path: string): Promise<string> {
-  return new Promise((fulfill, reject) => {
-    const hash = createHash('sha256');
-    createReadStream(path)
-      .on('data', (chunk) => hash.update(chunk))
-      .on('error', reject)
-      .on('end', () => fulfill(hash.digest('hex')));
-  });
+  const hash = createHash(SHA256_ALGORITHM);
+
+  function addChunk(chunk: Buffer | string): void {
+    hash.update(chunk);
+  }
+
+  function waitForDigest(fulfill: (digest: string) => void, reject: (error: Error) => void): void {
+    function fulfillWithDigest(): void {
+      fulfill(hash.digest(HEX_ENCODING));
+    }
+
+    createReadStream(path).on('data', addChunk).on('error', reject).on('end', fulfillWithDigest);
+  }
+
+  return new Promise(waitForDigest);
 }

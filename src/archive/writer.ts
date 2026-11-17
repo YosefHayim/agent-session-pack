@@ -1,8 +1,8 @@
 import { execFile } from 'node:child_process';
-import { cp, mkdir, readdir, rename, rm, stat } from 'node:fs/promises';
+import type { Dirent } from 'node:fs';
+import { cp, readdir, rename, rm, stat } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';
 import { promisify } from 'node:util';
-import { throwWrappedError } from '@/rethrow-as-error.js';
 import type { SessionOriginKind } from '@/session-model.js';
 import {
   ensureDirectory,
@@ -15,6 +15,8 @@ import {
 import { readSha256Directory, readSha256File } from './hash.js';
 
 const TAR_BINARY = 'tar';
+
+const TAR_EXTENSION = '.tar';
 
 const TAR_FILE_FLAG = '-f';
 
@@ -71,11 +73,15 @@ export async function writeVerifiedArchive(request: ArchiveWriteRequest): Promis
 }
 
 export async function removeOriginalSession(path: string): Promise<void> {
-  const pathStat = await stat(path).catch(throwWrappedError);
-  await rm(path, {
-    force: false,
-    recursive: pathStat.isDirectory(),
-  }).catch(throwWrappedError);
+  try {
+    const pathStat = await stat(path);
+    await rm(path, {
+      force: false,
+      recursive: pathStat.isDirectory(),
+    });
+  } catch (error) {
+    throw new Error(String(error), { cause: error });
+  }
 }
 
 async function writeVerifiedFileArchive(request: ArchiveWriteRequest): Promise<VerifiedArchive> {
@@ -136,8 +142,8 @@ async function writeVerifiedDirectoryArchive(
 
   const originBytes = await readDirectorySizeBytes(request.sourcePath);
   const originSha256 = await readSha256Directory(request.sourcePath);
-  const tarPath = `${request.archivePath}.tar`;
-  const restoredTarPath = `${request.restoredPath}.tar`;
+  const tarPath = `${request.archivePath}${TAR_EXTENSION}`;
+  const restoredTarPath = `${request.restoredPath}${TAR_EXTENSION}`;
 
   await createTarArchive({
     sourcePath: request.sourcePath,
@@ -206,7 +212,7 @@ export async function restoreDirectoryArchive(request: DirectoryRestoreRequest):
   await ensureParentDirectory(request.originalPath);
   await removePath(request.originalPath);
 
-  const restoredTarPath = `${request.restoredPath}.tar`;
+  const restoredTarPath = `${request.restoredPath}${TAR_EXTENSION}`;
   await request.compression.decompress({
     archivePath: request.archivePath,
     restoredPath: restoredTarPath,
@@ -258,7 +264,8 @@ async function createTarArchive(request: {
   readonly sourcePath: string;
   readonly tarPath: string;
 }): Promise<void> {
-  await mkdir(dirname(request.tarPath), { recursive: true }).catch(throwWrappedError);
+  await ensureParentDirectory(request.tarPath);
+
   const createTarArgumentList = [
     '-c',
     TAR_FILE_FLAG,
@@ -267,7 +274,12 @@ async function createTarArchive(request: {
     dirname(request.sourcePath),
     basename(request.sourcePath),
   ];
-  await execFileAsync(TAR_BINARY, createTarArgumentList).catch(throwWrappedError);
+
+  try {
+    await execFileAsync(TAR_BINARY, createTarArgumentList);
+  } catch (error) {
+    throw new Error(String(error), { cause: error });
+  }
 }
 
 async function extractTarArchive(request: {
@@ -278,10 +290,10 @@ async function extractTarArchive(request: {
   const leaf = basename(request.destinationPath);
   const extractRoot = join(parent, `.extract-${leaf}`);
 
-  await mkdir(parent, { recursive: true }).catch(throwWrappedError);
-  await rm(request.destinationPath, { recursive: true, force: true }).catch(throwWrappedError);
-  await rm(extractRoot, { recursive: true, force: true }).catch(throwWrappedError);
-  await mkdir(extractRoot, { recursive: true }).catch(throwWrappedError);
+  await ensureDirectory(parent);
+  await removePath(request.destinationPath);
+  await removePath(extractRoot);
+  await ensureDirectory(extractRoot);
 
   const extractTarArgumentList = [
     '-x',
@@ -290,23 +302,40 @@ async function extractTarArchive(request: {
     TAR_CHANGE_DIR_FLAG,
     extractRoot,
   ];
-  await execFileAsync(TAR_BINARY, extractTarArgumentList).catch(throwWrappedError);
 
-  const extractedDirents = await readdir(extractRoot, { withFileTypes: true }).catch(
-    throwWrappedError,
-  );
+  try {
+    await execFileAsync(TAR_BINARY, extractTarArgumentList);
+  } catch (error) {
+    throw new Error(String(error), { cause: error });
+  }
+
+  const extractedDirents = await readExtractedDirents(extractRoot);
   const onlyChild = extractedDirents[0];
 
-  const isNotSingleChild = extractedDirents.length !== 1 || onlyChild == null;
+  const singleChildMessage = `expected one top-level entry in tar archive: ${request.tarPath}`;
+  const hasWrongChildCount = extractedDirents.length !== 1;
+  const hasNoChild = onlyChild == null;
 
-  if (isNotSingleChild) {
-    throw new Error(`expected one top-level entry in tar archive: ${request.tarPath}`);
+  if (hasWrongChildCount) {
+    throw new Error(singleChildMessage);
+  }
+
+  if (hasNoChild) {
+    throw new Error(singleChildMessage);
   }
 
   const extractedPath = join(extractRoot, onlyChild.name);
-  await rm(request.destinationPath, { recursive: true, force: true }).catch(throwWrappedError);
+  await removePath(request.destinationPath);
   await movePath(extractedPath, request.destinationPath);
-  await rm(extractRoot, { recursive: true, force: true }).catch(throwWrappedError);
+  await removePath(extractRoot);
+}
+
+async function readExtractedDirents(extractRoot: string): Promise<Dirent[]> {
+  try {
+    return await readdir(extractRoot, { withFileTypes: true });
+  } catch (error) {
+    throw new Error(String(error), { cause: error });
+  }
 }
 
 async function isRenameFailing(originPath: string, destinationPath: string): Promise<boolean> {
@@ -319,14 +348,19 @@ async function isRenameFailing(originPath: string, destinationPath: string): Pro
 }
 
 async function movePath(originPath: string, destinationPath: string): Promise<void> {
-  await mkdir(dirname(destinationPath), { recursive: true }).catch(throwWrappedError);
-  await rm(destinationPath, { recursive: true, force: true }).catch(throwWrappedError);
+  await ensureParentDirectory(destinationPath);
+  await removePath(destinationPath);
 
   // A rename fails across devices, so copy and delete the source instead.
   const isRenameFailed = await isRenameFailing(originPath, destinationPath);
 
   if (isRenameFailed) {
-    await cp(originPath, destinationPath, { recursive: true }).catch(throwWrappedError);
-    await rm(originPath, { recursive: true, force: true }).catch(throwWrappedError);
+    try {
+      await cp(originPath, destinationPath, { recursive: true });
+    } catch (error) {
+      throw new Error(String(error), { cause: error });
+    }
+
+    await removePath(originPath);
   }
 }

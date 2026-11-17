@@ -1,5 +1,5 @@
 import { join } from 'node:path';
-import type { ProviderAdapter } from '@/session-model.js';
+import type { ProviderAdapter, SessionStore } from '@/session-model.js';
 import { devinProvider } from './devin.js';
 import { discoverDirectoryProviderSessions } from './directory-sessions.js';
 import { grokProvider } from './grok.js';
@@ -144,3 +144,18 @@ export const allProviders: ReadonlyArray<ProviderAdapter> = [
   cursorProvider,
   devinProvider,
 ];
+
+export function listDefaultSessionStores(
+  providers: ReadonlyArray<ProviderAdapter>,
+  home: string,
+): SessionStore[] {
+  const stores: SessionStore[] = [];
+
+  for (const provider of providers) {
+    for (const path of provider.defaultRoots(home)) {
+      stores.push({ provider: provider.id, path });
+    }
+  }
+
+  return stores;
+}

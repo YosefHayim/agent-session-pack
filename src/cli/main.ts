@@ -114,11 +114,11 @@ interface SubCommandInvocation {
   readonly rawArgs: string[];
 }
 
-// The first word that is not a flag names the command; with none, the default command runs.
 function isNotFlag(argument: string): boolean {
   return !argument.startsWith('-');
 }
 
+// The first word that is not a flag names the command; with none, the default command runs.
 function readSubCommandInvocation(argumentList: string[]): SubCommandInvocation {
   const firstWordIndex = argumentList.findIndex(isNotFlag);
 

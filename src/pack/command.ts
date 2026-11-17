@@ -5,9 +5,10 @@ import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
 import type { CommandExit } from '@/command-outcome.js';
 import { requireHome } from '@/environment.js';
+import { listDefaultSessionStores } from '@/providers/all-providers.js';
 import { selectProviders } from '@/providers/flag.js';
 import { scanStores } from '@/scan/stores.js';
-import type { ProviderAdapter, SessionStore } from '@/session-model.js';
+import type { ProviderAdapter } from '@/session-model.js';
 import {
   createHumanPackPlan,
   createHumanPackReport,
@@ -22,8 +23,6 @@ import {
 } from './plan.js';
 import { type PackSessionsReport, packProviderSessions } from './sessions.js';
 
-const BOOLEAN_ARGUMENT_TYPE = 'boolean' as const;
-const STRING_ARGUMENT_TYPE = 'string' as const;
 const LINE_BREAK = '\n';
 const USAGE_EXIT_CODE = 2;
 
@@ -34,36 +33,36 @@ export const packCommand = defineCommand({
   },
   args: {
     provider: {
-      type: STRING_ARGUMENT_TYPE,
+      type: 'string',
       description:
         'Provider id: codex, claude, kiro, grok, kimi, opencode, gemini, cursor, or devin.',
     },
     'older-than': {
-      type: STRING_ARGUMENT_TYPE,
+      type: 'string',
       description: 'Cold threshold such as 7d, 2w, 30d, or 12h.',
     },
     'dry-run': {
-      type: BOOLEAN_ARGUMENT_TYPE,
+      type: 'boolean',
       description: 'Preview changes without removing originals.',
     },
     'all-providers': {
-      type: BOOLEAN_ARGUMENT_TYPE,
+      type: 'boolean',
       description: 'Discover every supported provider store on this machine.',
     },
     max: {
-      type: BOOLEAN_ARGUMENT_TYPE,
+      type: 'boolean',
       description: 'Preview every archive-mode session candidate. Dry-run only.',
     },
     apply: {
-      type: BOOLEAN_ARGUMENT_TYPE,
+      type: 'boolean',
       description: 'Apply archive/remove workflow after verification.',
     },
     yes: {
-      type: BOOLEAN_ARGUMENT_TYPE,
+      type: 'boolean',
       description: 'Confirm apply mode without an interactive prompt.',
     },
     json: {
-      type: BOOLEAN_ARGUMENT_TYPE,
+      type: 'boolean',
       description: 'Write stable JSON output.',
     },
   },
@@ -161,15 +160,7 @@ export async function runPackCommand(flags: PackFlags): Promise<CommandExit> {
     return { exitCode: providerExitCode };
   }
 
-  function listProviderStores(provider: ProviderAdapter): ReadonlyArray<SessionStore> {
-    function createProviderStore(path: string): SessionStore {
-      return { provider: provider.id, path };
-    }
-
-    return provider.defaultRoots(home).map(createProviderStore);
-  }
-
-  const stores = providers.flatMap(listProviderStores);
+  const stores = listDefaultSessionStores(providers, home);
   const report = await scanStores({
     providers,
     stores,

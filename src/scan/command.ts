@@ -4,9 +4,8 @@ import { HOME_NOT_SET_CANCEL_MESSAGE, readHomeFolder, requireHome } from '@/envi
 import type { InteractiveCliRequest } from '@/interactive-cli-request.js';
 import { DEFAULT_COLD_AFTER_MS } from '@/pack/plan.js';
 import type { PromptAdapter } from '@/prompt-adapter.js';
-import { allProviders } from '@/providers/all-providers.js';
+import { allProviders, listDefaultSessionStores } from '@/providers/all-providers.js';
 import { selectProviders } from '@/providers/flag.js';
-import type { ProviderAdapter, SessionStore } from '@/session-model.js';
 import { createProviderInventoryTable, loadInventoryWithSpinner } from './inventory-prompt.js';
 import { writeHumanScan, writeStructuredScan } from './output.js';
 import { scanStores } from './stores.js';
@@ -31,15 +30,7 @@ export async function runScanCommand(flags: ScanFlags): Promise<CommandExit> {
   const { providers, isProviderUnknown } = selectProviders(flags.provider);
   const providerExitCode = isProviderUnknown ? UNKNOWN_PROVIDER_EXIT_CODE : 0;
 
-  function listProviderStores(provider: ProviderAdapter): SessionStore[] {
-    function createStore(path: string): SessionStore {
-      return { provider: provider.id, path };
-    }
-
-    return provider.defaultRoots(home).map(createStore);
-  }
-
-  const stores = providers.flatMap(listProviderStores);
+  const stores = listDefaultSessionStores(providers, home);
   const report = await scanStores({
     providers,
     stores,

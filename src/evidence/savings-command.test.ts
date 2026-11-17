@@ -2,6 +2,7 @@ import { mkdir, mkdtemp, rm, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createEvidenceWorkRoot } from '@/evidence/savings-command.js';
 import { checkCommand, runSavingsCommand, savingsCommand } from './savings-command.js';
 
 const createWorkspace = (): Promise<string> =>
@@ -147,5 +148,13 @@ describe('savings command', () => {
       provider: { type: 'string' },
       json: { type: 'boolean' },
     });
+  });
+});
+
+describe('evidence work root', () => {
+  it('uses a run-specific directory to avoid parallel command collisions', () => {
+    expect(createEvidenceWorkRoot('/repo', '12345')).toBe(
+      join('/repo', '.vault-test', 'evidence-local', '12345'),
+    );
   });
 });

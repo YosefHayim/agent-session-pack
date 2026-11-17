@@ -5,7 +5,7 @@ import type { InteractiveCliRequest } from '@/interactive-cli-request.js';
 import { runPackFlow } from '@/pack/flow.js';
 import { clackPromptAdapter, type PromptAdapter, type PromptOption } from '@/prompt-adapter.js';
 import { runRestoreFlow } from '@/restore/flow.js';
-import { runReviewSessions } from '@/scan/review-flow.js';
+import { runReviewSessions } from '@/scan/command.js';
 import { runFirstSetup } from '@/setup/first-setup-flow.js';
 import { runWithSpinner } from '@/spinner-task.js';
 

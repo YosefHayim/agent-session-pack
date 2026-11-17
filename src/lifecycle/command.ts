@@ -1,7 +1,7 @@
 import { defineCommand } from 'citty';
 import { createDefaultVaultPath } from '@/archive/vault-paths.js';
 import type { CommandExit } from '@/command-outcome.js';
-import { requireHome } from '@/home-env.js';
+import { requireHome } from '@/environment.js';
 import { DEFAULT_COLD_AFTER } from '@/pack/plan.js';
 import {
   isRestoreOnLaunchEnabled,

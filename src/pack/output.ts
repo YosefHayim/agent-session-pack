@@ -6,9 +6,9 @@ import type { PackSessionsReport } from './sessions.js';
 
 const PENDING_LABEL = 'pending';
 
-export type PackPlanPrintoutSettings = {
+export interface PackPlanPrintoutSettings {
   readonly olderThan: string;
-};
+}
 
 export function createHumanPackPlan(plan: PackPlan, settings: PackPlanPrintoutSettings): string {
   const totalBeforeBytes = plan.rows.reduce(

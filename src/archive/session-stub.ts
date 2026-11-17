@@ -7,20 +7,20 @@ export const ARCHIVED_STUB_KIND = 'agent-session-pack-archived-stub' as const;
 
 const STUB_MARKER_FILE = '.agent-session-pack-archived.json';
 
-type ArchivedStub = {
+interface ArchivedStub {
   readonly agentSessionPack: typeof ARCHIVED_STUB_KIND;
   readonly version: 1;
   readonly sessionId: string;
   readonly provider: string;
   readonly sourceKind: SessionOriginKind;
-};
+}
 
-export type WriteArchivedStubRequest = {
+export interface WriteArchivedStubRequest {
   readonly originalPath: string;
   readonly sessionId: string;
   readonly provider: ProviderId;
   readonly sourceKind: SessionOriginKind;
-};
+}
 
 export async function writeArchivedStub(request: WriteArchivedStubRequest): Promise<void> {
   const stub: ArchivedStub = {

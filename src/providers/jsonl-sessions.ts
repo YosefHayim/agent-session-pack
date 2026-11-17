@@ -6,11 +6,11 @@ import {
   slugifyTitle,
 } from './session-discovery.js';
 
-export type JsonlProviderDiscoverySettings = {
+export interface JsonlProviderDiscoverySettings {
   readonly provider: ProviderId;
   readonly store: SessionStore;
   readonly excludePathParts: ReadonlyArray<string>;
-};
+}
 
 export async function discoverJsonlProviderSessions(
   settings: JsonlProviderDiscoverySettings,

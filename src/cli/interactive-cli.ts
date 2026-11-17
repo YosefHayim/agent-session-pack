@@ -11,11 +11,11 @@ import { runWithSpinner } from '@/spinner-task.js';
 
 type MainMenuAction = 'doctor' | 'exit' | 'pack' | 'restore' | 'review' | 'savings' | 'setup';
 
-export type InteractiveCliDetectionRequest = {
+export interface InteractiveCliDetectionRequest {
   readonly argv: ReadonlyArray<string>;
   readonly stdinIsTty: boolean;
   readonly stdoutIsTty: boolean;
-};
+}
 
 export function canRunInteractiveCli(request: InteractiveCliDetectionRequest): boolean {
   const isNotInteractiveTerminal = !request.stdinIsTty || !request.stdoutIsTty;

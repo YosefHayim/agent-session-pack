@@ -13,11 +13,11 @@ import type { SessionOriginKind } from '@/session-model.js';
 
 export type RestoreExit = 'already-present' | 'conflict' | 'restored';
 
-export type RestoreManifestRequest = {
+export interface RestoreManifestRequest {
   readonly compression: CompressionAdapter;
   readonly manifest: SessionManifest;
   readonly vaultPath: string;
-};
+}
 
 export async function restoreManifest(request: RestoreManifestRequest): Promise<RestoreExit> {
   const originKind = readManifestOriginKind(request.manifest);

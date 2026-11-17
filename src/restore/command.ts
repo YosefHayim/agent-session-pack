@@ -44,7 +44,7 @@ export const restoreCommand = defineCommand({
   },
 });
 
-export type RestoreFlags = {
+export interface RestoreFlags {
   readonly json: boolean | undefined;
   readonly provider: string | undefined;
   readonly selector: string | undefined;
@@ -52,7 +52,7 @@ export type RestoreFlags = {
   readonly compression?: CompressionAdapter | undefined;
   readonly home?: string | undefined;
   readonly vaultPath?: string | undefined;
-};
+}
 
 export async function runRestoreCommand(flags: RestoreFlags): Promise<CommandExit> {
   const home = requireHome(flags.home);

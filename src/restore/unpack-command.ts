@@ -57,7 +57,7 @@ export const unpackCommand = defineCommand({
   },
 });
 
-export type UnpackFlags = {
+export interface UnpackFlags {
   readonly allProviders: boolean | undefined;
   readonly apply: boolean | undefined;
   readonly json: boolean | undefined;
@@ -68,7 +68,7 @@ export type UnpackFlags = {
   readonly home?: string | undefined;
   readonly providers?: ReadonlyArray<ProviderAdapter> | undefined;
   readonly vaultPath?: string | undefined;
-};
+}
 
 export async function runUnpackCommand(flags: UnpackFlags): Promise<CommandExit> {
   const home = requireHome(flags.home);

@@ -5,14 +5,14 @@ import type { CommandExit } from '@/command-outcome.js';
 
 const execFileAsync = promisify(execFile);
 
-type CommandCheck = {
+interface CommandCheck {
   readonly available: boolean;
   readonly version?: string;
-};
+}
 
-export type DoctorFlags = {
+export interface DoctorFlags {
   readonly json?: boolean | undefined;
-};
+}
 
 export async function runDoctorCommand(flags: DoctorFlags): Promise<CommandExit> {
   const zstd = await checkCommand('zstd', ['--version']);

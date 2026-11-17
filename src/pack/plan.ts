@@ -9,21 +9,21 @@ export const DEFAULT_COLD_AFTER = '7d';
 
 export const DEFAULT_COLD_AFTER_MS = MILLISECONDS_PER_WEEK;
 
-type PackPlanProvider = {
+interface PackPlanProvider {
   readonly id: ProviderId;
   readonly label: string;
   readonly mode: ProviderMode;
-};
+}
 
-export type PackPlanRequest = {
+export interface PackPlanRequest {
   readonly now: Date;
   readonly olderThan: string;
   readonly olderThanMs: number;
   readonly sessions: ReadonlyArray<DiscoveredSession>;
   readonly providers: ReadonlyArray<PackPlanProvider>;
-};
+}
 
-type PackPlanSummary = {
+interface PackPlanSummary {
   readonly provider: ProviderId;
   readonly mode: ProviderMode;
   readonly scannedSessions: number;
@@ -32,28 +32,28 @@ type PackPlanSummary = {
   readonly afterDryRunBytes: number;
   readonly cleanupBytes: number;
   readonly applySupport: 'backup-only' | 'ready';
-};
+}
 
-export type PackPlan = {
+export interface PackPlan {
   readonly rows: ReadonlyArray<PackPlanSummary>;
   readonly thresholdPreviews: ReadonlyArray<PackThresholdPreview>;
-};
+}
 
 type PackThresholdPreviewKind = 'broader' | 'max' | 'safer';
 
-export type PackThresholdPreview = {
+export interface PackThresholdPreview {
   readonly kind: PackThresholdPreviewKind;
   readonly olderThan: string;
   readonly candidateSessions: number;
   readonly beforeBytes: number;
-};
+}
 
-export type PackThresholdPreviewRequest = {
+export interface PackThresholdPreviewRequest {
   readonly now: Date;
   readonly olderThan: string;
   readonly olderThanMs: number;
   readonly sessions: ReadonlyArray<DiscoveredSession>;
-};
+}
 
 export function createPackPlan(request: PackPlanRequest): PackPlan {
   const cutoffTime = request.now.getTime() - request.olderThanMs;
@@ -157,10 +157,10 @@ export function createPackThresholdPreviews(
 
 type DurationUnit = 'd' | 'h' | 'w';
 
-type Duration = {
+interface Duration {
   readonly value: number;
   readonly unit: DurationUnit;
-};
+}
 
 export function parseDurationMs(duration: string): number {
   const parsed = parseDuration(duration);

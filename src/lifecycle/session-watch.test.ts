@@ -32,10 +32,10 @@ vi.mock('node:fs', async (importOriginal) => {
   };
 });
 
-type WatchRun = {
+interface WatchRun {
   readonly events: string[];
   readonly stop: () => Promise<void>;
-};
+}
 
 async function writeArchivedCodexStub(
   home: string,

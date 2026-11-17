@@ -37,13 +37,13 @@ export const guideCommand = defineCommand({
 
 const ONE_OFF_PREFIX = 'npx --yes agent-session-pack';
 
-type AgentGuideStep = {
+interface AgentGuideStep {
   readonly id: string;
   readonly purpose: string;
   readonly command: string;
-};
+}
 
-type AgentGuide = {
+interface AgentGuide {
   readonly name: 'agent-session-pack';
   readonly mode: 'agent-guide';
   readonly summary: string;
@@ -72,7 +72,7 @@ type AgentGuide = {
   };
   readonly providers: ReadonlyArray<string>;
   readonly notes: ReadonlyArray<string>;
-};
+}
 
 const RECOMMENDED_FLOW: ReadonlyArray<AgentGuideStep> = [
   {

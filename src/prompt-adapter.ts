@@ -12,14 +12,14 @@ import {
   text,
 } from '@clack/prompts';
 
-export type PromptOption<Choice extends string> = {
+export interface PromptOption<Choice extends string> {
   readonly value: Choice;
   readonly label: string;
   readonly hint?: string;
   readonly disabled?: boolean;
-};
+}
 
-export type PromptAdapter = {
+export interface PromptAdapter {
   intro: (title?: string) => void;
   note: (message?: string, title?: string) => void;
   outro: (message?: string) => void;
@@ -49,7 +49,7 @@ export type PromptAdapter = {
     readonly initialValue?: boolean;
   }) => Promise<boolean | symbol>;
   spinner: () => SpinnerResult;
-};
+}
 
 export const clackPromptAdapter: PromptAdapter = {
   cancel,

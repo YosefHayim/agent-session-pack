@@ -1,11 +1,11 @@
 import type { PromptAdapter } from './prompt-adapter.js';
 
-export type SpinnerTaskRequest<Produced> = {
+export interface SpinnerTaskRequest<Produced> {
   readonly prompts: PromptAdapter;
   readonly startMessage: string;
   readonly stopMessage: string;
   readonly task: () => Promise<Produced>;
-};
+}
 
 export async function runWithSpinner<Produced>(
   request: SpinnerTaskRequest<Produced>,

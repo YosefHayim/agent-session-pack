@@ -45,7 +45,7 @@ export const watchCommand = defineCommand({
   },
 });
 
-type WatchFlags = {
+interface WatchFlags {
   readonly provider: string | undefined;
   readonly json: boolean | undefined;
   readonly pollMs: string | undefined;
@@ -53,7 +53,7 @@ type WatchFlags = {
   readonly compression?: CompressionAdapter | undefined;
   readonly home?: string | undefined;
   readonly vaultPath?: string | undefined;
-};
+}
 
 async function runWatchCommand(flags: WatchFlags): Promise<CommandExit> {
   const home = requireHome(flags.home);

@@ -6,7 +6,7 @@ import { restoreManifest } from './manifest.js';
 
 type UnpackSessionStatus = 'already-present' | 'conflict' | 'dry-run' | 'no-archives' | 'restored';
 
-type UnpackSessionSummary = {
+interface UnpackSessionSummary {
   readonly provider: ProviderId;
   readonly archivedSessions: number;
   readonly restoredSessions: number;
@@ -18,21 +18,21 @@ type UnpackSessionSummary = {
   readonly touchedOriginals: boolean;
   readonly status: UnpackSessionStatus;
   readonly reason: string | undefined;
-};
+}
 
-export type UnpackSessionsReport = {
+export interface UnpackSessionsReport {
   readonly command: 'unpack';
   readonly apply: boolean;
   readonly vaultPath: string;
   readonly rows: ReadonlyArray<UnpackSessionSummary>;
-};
+}
 
-export type UnpackProviderSessionsRequest = {
+export interface UnpackProviderSessionsRequest {
   readonly vaultPath: string;
   readonly providers: ReadonlyArray<ProviderAdapter>;
   readonly apply: boolean;
   readonly compression: CompressionAdapter;
-};
+}
 
 export async function unpackProviderSessions(
   request: UnpackProviderSessionsRequest,

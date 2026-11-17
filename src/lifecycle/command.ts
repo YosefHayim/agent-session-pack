@@ -37,13 +37,13 @@ export const lifecycleCommand = defineCommand({
   },
 });
 
-export type LifecycleFlags = {
+export interface LifecycleFlags {
   readonly action: string | undefined;
   readonly json: boolean | undefined;
   readonly home?: string | undefined;
   readonly now?: Date | undefined;
   readonly cliEntrypoint?: string | undefined;
-};
+}
 
 export async function runLifecycleCommand(flags: LifecycleFlags): Promise<CommandExit> {
   const home = requireHome(flags.home);

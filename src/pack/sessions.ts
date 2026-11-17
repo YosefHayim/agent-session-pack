@@ -23,7 +23,7 @@ import { createPackThresholdPreviews, type PackThresholdPreview } from './plan.j
 
 type PackSessionStatus = 'backup-only' | 'dry-run' | 'missing' | 'no-candidates' | 'packed';
 
-type PackSessionSummary = {
+interface PackSessionSummary {
   readonly provider: ProviderId;
   readonly mode: ProviderMode;
   readonly foundSessions: number;
@@ -36,17 +36,17 @@ type PackSessionSummary = {
   readonly touchedOriginals: boolean;
   readonly status: PackSessionStatus;
   readonly reason: string | undefined;
-};
+}
 
-export type PackSessionsReport = {
+export interface PackSessionsReport {
   readonly command: 'pack';
   readonly apply: boolean;
   readonly vaultPath: string;
   readonly rows: ReadonlyArray<PackSessionSummary>;
   readonly thresholdPreviews: ReadonlyArray<PackThresholdPreview>;
-};
+}
 
-export type PackProviderSessionsRequest = {
+export interface PackProviderSessionsRequest {
   readonly home: string;
   readonly vaultPath: string;
   readonly providers: ReadonlyArray<ProviderAdapter>;
@@ -55,7 +55,7 @@ export type PackProviderSessionsRequest = {
   readonly now: Date;
   readonly apply: boolean;
   readonly compression: CompressionAdapter;
-};
+}
 
 export async function packProviderSessions(
   request: PackProviderSessionsRequest,

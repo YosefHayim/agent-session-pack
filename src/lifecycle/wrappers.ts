@@ -12,10 +12,10 @@ const WRAPPER_PROVIDERS: ReadonlyArray<string> = [
   'kiro',
 ];
 
-export type InstallLifecycleWrappersRequest = {
+export interface InstallLifecycleWrappersRequest {
   readonly vaultPath: string;
   readonly cliEntrypoint: string;
-};
+}
 
 export async function installLifecycleWrappers(
   request: InstallLifecycleWrappersRequest,

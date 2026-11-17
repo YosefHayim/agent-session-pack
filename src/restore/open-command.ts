@@ -40,7 +40,7 @@ export const openCommand = defineCommand({
   },
 });
 
-export type OpenFlags = {
+export interface OpenFlags {
   readonly json: boolean | undefined;
   readonly provider: string | undefined;
   readonly session: string | undefined;
@@ -48,7 +48,7 @@ export type OpenFlags = {
   readonly home?: string | undefined;
   readonly now?: Date | undefined;
   readonly vaultPath?: string | undefined;
-};
+}
 
 export async function runOpenCommand(flags: OpenFlags): Promise<CommandExit> {
   const home = requireHome(flags.home);

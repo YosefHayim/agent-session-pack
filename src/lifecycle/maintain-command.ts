@@ -53,7 +53,7 @@ export const maintainCommand = defineCommand({
   },
 });
 
-type MaintainFlags = {
+interface MaintainFlags {
   readonly apply: boolean | undefined;
   readonly confirmed?: boolean | undefined;
   readonly dryRun: boolean | undefined;
@@ -63,7 +63,7 @@ type MaintainFlags = {
   readonly home?: string | undefined;
   readonly now?: Date | undefined;
   readonly vaultPath?: string | undefined;
-};
+}
 
 async function runMaintainCommand(flags: MaintainFlags): Promise<CommandExit> {
   const home = requireHome(flags.home);

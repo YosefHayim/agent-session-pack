@@ -82,7 +82,7 @@ export const packCommand = defineCommand({
   },
 });
 
-export type PackFlags = {
+export interface PackFlags {
   readonly allProviders: boolean | undefined;
   readonly provider: string | undefined;
   readonly max?: boolean | undefined;
@@ -97,7 +97,7 @@ export type PackFlags = {
   readonly now?: Date | undefined;
   readonly providers?: ReadonlyArray<ProviderAdapter> | undefined;
   readonly vaultPath?: string | undefined;
-};
+}
 
 export async function runPackCommand(flags: PackFlags): Promise<CommandExit> {
   const isMachineOutputRequested = flags.json === true;
@@ -176,11 +176,11 @@ export async function runPackCommand(flags: PackFlags): Promise<CommandExit> {
   return { exitCode: providerExitCode };
 }
 
-type ArchiveReportDetails = {
+interface ArchiveReportDetails {
   readonly report: PackSessionsReport;
   readonly olderThan: string;
   readonly isMachineOutputRequested: boolean;
-};
+}
 
 function writeArchiveReport(details: ArchiveReportDetails): void {
   const isMachineOutputRequested = details.isMachineOutputRequested;

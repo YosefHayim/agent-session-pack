@@ -22,22 +22,22 @@ const TAR_CHANGE_DIR_FLAG = '-C';
 
 const execFileAsync = promisify(execFile);
 
-type CompressionRequest = {
+interface CompressionRequest {
   readonly sourcePath: string;
   readonly archivePath: string;
-};
+}
 
-type DecompressionRequest = {
+interface DecompressionRequest {
   readonly archivePath: string;
   readonly restoredPath: string;
-};
+}
 
-export type CompressionAdapter = {
+export interface CompressionAdapter {
   readonly compress: (request: CompressionRequest) => Promise<void>;
   readonly decompress: (request: DecompressionRequest) => Promise<void>;
-};
+}
 
-export type ArchiveWriteRequest = {
+export interface ArchiveWriteRequest {
   readonly sessionId: string;
   readonly sourcePath: string;
   readonly archivePath: string;
@@ -45,9 +45,9 @@ export type ArchiveWriteRequest = {
   readonly apply: boolean;
   readonly compression: CompressionAdapter;
   readonly sourceKind?: SessionOriginKind;
-};
+}
 
-export type VerifiedArchive = {
+export interface VerifiedArchive {
   readonly sessionId: string;
   readonly archivePath: string;
   readonly sourceSha256: string;
@@ -56,7 +56,7 @@ export type VerifiedArchive = {
   readonly archiveBytes: number;
   readonly removedOriginal: boolean;
   readonly sourceKind: SessionOriginKind;
-};
+}
 
 export async function writeVerifiedArchive(request: ArchiveWriteRequest): Promise<VerifiedArchive> {
   const originKind = await findOriginKind(request.sourcePath, request.sourceKind);
@@ -191,14 +191,14 @@ async function writeVerifiedDirectoryArchive(
   };
 }
 
-export type DirectoryRestoreRequest = {
+export interface DirectoryRestoreRequest {
   readonly sessionId: string;
   readonly archivePath: string;
   readonly restoredPath: string;
   readonly originalPath: string;
   readonly expectedSha256: string;
   readonly compression: CompressionAdapter;
-};
+}
 
 export async function restoreDirectoryArchive(request: DirectoryRestoreRequest): Promise<void> {
   await ensureParentDirectory(request.restoredPath);

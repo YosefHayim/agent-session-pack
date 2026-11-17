@@ -39,14 +39,14 @@ export const ensureRestoredCommand = defineCommand({
   },
 });
 
-export type EnsureRestoredFlags = {
+export interface EnsureRestoredFlags {
   readonly json: boolean | undefined;
   readonly provider: string | undefined;
   readonly session: string | undefined;
   readonly compression?: CompressionAdapter | undefined;
   readonly home?: string | undefined;
   readonly vaultPath?: string | undefined;
-};
+}
 
 export async function runEnsureRestoredCommand(flags: EnsureRestoredFlags): Promise<CommandExit> {
   const home = requireHome(flags.home);

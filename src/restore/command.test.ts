@@ -7,11 +7,11 @@ import { copyCompression } from '@/archive/fixtures.js';
 import { writeSessionManifest } from '@/archive/manifest-store.js';
 import { runRestoreCommand } from './command.js';
 
-type ArchivedSessionRequest = {
+interface ArchivedSessionRequest {
   readonly home: string;
   readonly sessionId: string;
   readonly title: string;
-};
+}
 
 async function writeArchivedSession(
   request: ArchivedSessionRequest,

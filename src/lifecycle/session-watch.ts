@@ -9,21 +9,21 @@ import type { ProviderId } from '@/session-model.js';
 
 export const DEFAULT_POLL_INTERVAL_MS = 750;
 
-export type SessionWatchEvent = {
+export interface SessionWatchEvent {
   readonly sessionId: string;
   readonly provider: ProviderId;
   readonly status: string;
   readonly originalPath: string;
-};
+}
 
-export type WatchSessionStubsRequest = {
+export interface WatchSessionStubsRequest {
   readonly vaultPath: string;
   readonly provider: ProviderId | undefined;
   readonly compression?: CompressionAdapter;
   readonly pollIntervalMs?: number;
   readonly shouldStop: () => boolean;
   readonly onEvent?: (event: SessionWatchEvent) => void;
-};
+}
 
 export async function watchSessionStubs(request: WatchSessionStubsRequest): Promise<void> {
   const compression = request.compression ?? createZstdCompression();

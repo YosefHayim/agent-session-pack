@@ -8,12 +8,12 @@ export const copyCompression: CompressionAdapter = {
   decompress: ({ archivePath, restoredPath }) => copyFile(archivePath, restoredPath),
 };
 
-export type ArchiveProviderRequest = {
+export interface ArchiveProviderRequest {
   readonly id: ProviderAdapter['id'];
   readonly mode: ProviderAdapter['mode'];
   readonly rootRelative: string;
   readonly discover: ProviderAdapter['discover'];
-};
+}
 
 export function createArchiveProvider(request: ArchiveProviderRequest): ProviderAdapter {
   return {

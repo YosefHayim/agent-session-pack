@@ -37,7 +37,7 @@ export const preflightCommand = defineCommand({
   },
 });
 
-export type PreflightFlags = {
+export interface PreflightFlags {
   readonly json: boolean | undefined;
   readonly provider: string | undefined;
   readonly passthroughArgv: ReadonlyArray<string>;
@@ -45,7 +45,7 @@ export type PreflightFlags = {
   readonly home?: string | undefined;
   readonly now?: Date | undefined;
   readonly vaultPath?: string | undefined;
-};
+}
 
 export async function runPreflightCommand(flags: PreflightFlags): Promise<CommandExit> {
   const home = requireHome(flags.home);

@@ -2,25 +2,25 @@ import { appendFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { ProviderId } from '@/session-model.js';
 
-type SessionAccessEvent = {
+interface SessionAccessEvent {
   readonly provider: ProviderId;
   readonly sessionId: string;
   readonly accessedAt: string;
-};
+}
 
-export type SaveSessionAccessRequest = {
+export interface SaveSessionAccessRequest {
   readonly vaultPath: string;
   readonly provider: ProviderId;
   readonly sessionId: string;
   readonly accessedAt: Date;
-};
+}
 
-export type SessionHotCheckRequest = {
+export interface SessionHotCheckRequest {
   readonly events: ReadonlyArray<SessionAccessEvent>;
   readonly provider: ProviderId;
   readonly sessionId: string;
   readonly sinceMs: number;
-};
+}
 
 const sessionIdPattern =
   /\b([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{26,})\b/gi;

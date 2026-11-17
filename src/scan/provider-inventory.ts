@@ -9,7 +9,7 @@ import type {
 
 type ProviderInventoryStatus = 'backup-only' | 'missing' | 'ready';
 
-type ProviderInventorySummary = {
+interface ProviderInventorySummary {
   readonly provider: ProviderId;
   readonly label: string;
   readonly mode: ProviderMode;
@@ -20,18 +20,18 @@ type ProviderInventorySummary = {
   readonly candidateBytes: number;
   readonly paths: ReadonlyArray<string>;
   readonly status: ProviderInventoryStatus;
-};
+}
 
-export type ProviderInventoryReport = {
+export interface ProviderInventoryReport {
   readonly rows: ReadonlyArray<ProviderInventorySummary>;
-};
+}
 
-export type ProviderInventoryRequest = {
+export interface ProviderInventoryRequest {
   readonly home: string;
   readonly providers: ReadonlyArray<ProviderAdapter>;
   readonly olderThanMs: number;
   readonly now: Date;
-};
+}
 
 export async function inspectProviderInventory(
   request: ProviderInventoryRequest,
@@ -59,16 +59,16 @@ export async function inspectProviderInventory(
   return { rows: inventorySummaries };
 }
 
-type ProviderRootDiscovery = {
+interface ProviderRootDiscovery {
   readonly roots: ReadonlyArray<string>;
   readonly existingRoots: ReadonlyArray<string>;
   readonly sessions: ReadonlyArray<DiscoveredSession>;
-};
+}
 
-type RootDiscovery = {
+interface RootDiscovery {
   readonly root: string;
   readonly sessions: ReadonlyArray<DiscoveredSession>;
-};
+}
 
 async function discoverProviderRoots(request: {
   readonly home: string;

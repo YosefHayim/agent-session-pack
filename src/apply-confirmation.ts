@@ -1,11 +1,11 @@
 import { confirm, isCancel } from '@clack/prompts';
 
-export type ApplyConfirmationRequest = {
+export interface ApplyConfirmationRequest {
   readonly action: string;
   readonly apply: boolean | undefined;
   readonly json: boolean | undefined;
   readonly yes: boolean | undefined;
-};
+}
 
 export async function askApplyConfirmation(
   request: ApplyConfirmationRequest,

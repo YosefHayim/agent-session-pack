@@ -3,22 +3,22 @@ import { type ProviderId, ProviderIdSchema } from '@/session-model.js';
 
 export type SelectorMode = 'exact' | 'fuzzy';
 
-export type SessionSelectorRequest = {
+export interface SessionSelectorRequest {
   readonly selector: string;
   readonly provider: ProviderId | undefined;
   readonly manifests: ReadonlyArray<SessionManifest>;
   readonly match: SelectorMode;
-};
+}
 
 export type SessionSelection =
   | { readonly status: 'found'; readonly manifest: SessionManifest }
   | { readonly status: 'not-found' }
   | { readonly status: 'ambiguous'; readonly candidates: ReadonlyArray<SessionManifest> };
 
-type ParsedSelector = {
+interface ParsedSelector {
   readonly provider: ProviderId | undefined;
   readonly query: string;
-};
+}
 
 export function findSessionSelector(request: SessionSelectorRequest): SessionSelection {
   const parsed = parseSelector(request.selector);

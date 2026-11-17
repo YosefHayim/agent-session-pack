@@ -4,7 +4,7 @@ import type { ProviderAdapter } from '@/session-model.js';
 import { runWithSpinner } from '@/spinner-task.js';
 import { inspectProviderInventory, type ProviderInventoryReport } from './provider-inventory.js';
 
-export type InventorySpinnerRequest = {
+export interface InventorySpinnerRequest {
   readonly home: string;
   readonly now: Date;
   readonly olderThanMs: number;
@@ -12,7 +12,7 @@ export type InventorySpinnerRequest = {
   readonly providers: ReadonlyArray<ProviderAdapter>;
   readonly startMessage: string;
   readonly stopMessage: string;
-};
+}
 
 export function loadInventoryWithSpinner(
   request: InventorySpinnerRequest,

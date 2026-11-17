@@ -6,7 +6,7 @@ import { measureDirectorySession, slugifyTitle } from './session-discovery.js';
 
 type DirectorySessionMarkers = ReadonlyArray<string>;
 
-export type DirectoryProviderDiscoverySettings = {
+export interface DirectoryProviderDiscoverySettings {
   readonly provider: ProviderId;
   readonly store: SessionStore;
   readonly markers: DirectorySessionMarkers;
@@ -15,7 +15,7 @@ export type DirectoryProviderDiscoverySettings = {
   readonly activeSessionIds?: ReadonlySet<string>;
   readonly titleFromDirectory?: (path: string) => Promise<string>;
   readonly sessionIdFromDirectory?: (path: string) => string;
-};
+}
 
 export async function discoverDirectoryProviderSessions(
   settings: DirectoryProviderDiscoverySettings,

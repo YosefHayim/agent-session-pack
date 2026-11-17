@@ -1,7 +1,7 @@
-export type SizeBoundSession = {
+export interface SizeBoundSession {
   readonly modifiedAt: Date;
   readonly sizeBytes: number;
-};
+}
 
 export function selectNewestSessionWithinSize<Session extends SizeBoundSession>(
   sessions: ReadonlyArray<Session>,

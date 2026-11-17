@@ -22,20 +22,20 @@ export function isRestoreOnLaunchEnabled(settings: SetupSettings | null): boolea
   return settings?.restoreOnLaunch === true;
 }
 
-export type ValidatedVaultPath = {
+export interface ValidatedVaultPath {
   readonly path: string;
-};
+}
 
-export type VaultPathValidationRequest = {
+export interface VaultPathValidationRequest {
   readonly home: string;
   readonly inputPath: string;
   readonly providerRoots: ReadonlyArray<string>;
-};
+}
 
-export type WriteSetupSettingsRequest = {
+export interface WriteSetupSettingsRequest {
   readonly home: string;
   readonly config: SetupSettings;
-};
+}
 
 export function expandHomePath(path: string, home: string): string {
   const isPathEmpty = path === '~';

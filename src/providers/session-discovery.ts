@@ -6,21 +6,21 @@ import { basename, extname, join } from 'node:path';
 const titleSearchLimitBytes = 1024 * 1024;
 const titleReadHighWaterMarkBytes = 64 * 1024;
 
-export type JsonlSessionFile = {
+export interface JsonlSessionFile {
   readonly path: string;
   readonly sizeBytes: number;
   readonly modifiedAt: Date;
-};
+}
 
-export type DirectorySessionFile = {
+export interface DirectorySessionFile {
   readonly path: string;
   readonly sizeBytes: number;
   readonly modifiedAt: Date;
-};
+}
 
-export type CollectJsonlSettings = {
+export interface CollectJsonlSettings {
   readonly excludePathParts: ReadonlyArray<string>;
-};
+}
 
 export async function collectJsonlSessions(
   root: string,

@@ -21,9 +21,9 @@ async function readPackageManifest(): Promise<PackageManifest> {
 describe('main command metadata', () => {
   it('uses the package version in CLI help output', async () => {
     const packageManifest = await readPackageManifest();
-    const helpOutput = await renderUsage(mainCommand);
+    const renderedUsage = await renderUsage(mainCommand);
 
-    expect(helpOutput).toContain(packageManifest.version);
+    expect(renderedUsage).toContain(packageManifest.version);
   });
 });
 

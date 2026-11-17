@@ -18,13 +18,16 @@ async function runZstd(argumentList: string[]): Promise<void> {
 }
 
 export function createZstdCompression(): CompressionAdapter {
-  async function compress(request: { sourcePath: string; archivePath: string }): Promise<void> {
+  async function compress(request: {
+    uncompressedPath: string;
+    archivePath: string;
+  }): Promise<void> {
     const compressArgumentList = [
       '-9',
       '--long=27',
       ZSTD_QUIET_FLAG,
       ZSTD_FORCE_FLAG,
-      request.sourcePath,
+      request.uncompressedPath,
       ZSTD_TARGET_FILE_FLAG,
       request.archivePath,
     ];

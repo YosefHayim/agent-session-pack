@@ -20,8 +20,8 @@ export async function askApplyConfirmation(
     return true;
   }
 
-  const isMachineOutputRequested = request.json === true;
-  if (isMachineOutputRequested) {
+  const isMachineReadableRequested = request.json === true;
+  if (isMachineReadableRequested) {
     return false;
   }
 

@@ -19,8 +19,8 @@ export async function runDoctorCommand(flags: DoctorFlags): Promise<CommandExit>
   const zstd = await checkCommand('zstd', VERSION_ARGUMENT_LIST);
   const sqlite3 = await checkCommand('sqlite3', VERSION_ARGUMENT_LIST);
 
-  const isMachineOutputRequested = flags.json === true;
-  if (isMachineOutputRequested) {
+  const isMachineReadableRequested = flags.json === true;
+  if (isMachineReadableRequested) {
     process.stdout.write(`${JSON.stringify({ sqlite3, zstd })}\n`);
     return { exitCode: 0 };
   }

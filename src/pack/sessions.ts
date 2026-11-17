@@ -189,7 +189,7 @@ async function archiveCandidateSessions(request: {
     const manifestPath = createSessionManifestPath(request.vaultPath, session);
     const archived = await writeVerifiedArchive({
       sessionId: session.id,
-      sourcePath: session.originalPath,
+      sessionPath: session.originalPath,
       archivePath,
       restoredPath,
       apply: false,

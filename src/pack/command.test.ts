@@ -11,12 +11,12 @@ function createWorkspace(): Promise<string> {
 
 function createColdCodexSession(
   home: string,
-): Promise<{ readonly path: string; readonly content: string }> {
+): Promise<{ readonly path: string; readonly sessionJsonl: string }> {
   return writeColdSession({
     home,
     relativeDir: join('.codex', 'sessions', '2026', '06', '01'),
     fileName: 'session-old.jsonl',
-    content: '{"type":"user","text":"pack every provider"}\n',
+    sessionJsonl: '{"type":"user","text":"pack every provider"}\n',
     modifiedAt: new Date('2026-06-01T12:00:00.000Z'),
   });
 }

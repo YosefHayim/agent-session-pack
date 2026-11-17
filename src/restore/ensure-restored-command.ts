@@ -116,9 +116,9 @@ function isPresentLine(line: string | null): line is string {
 
 function writeEnsureRestoredPrintout(
   report: EnsureRestoredReport,
-  isMachineOutputRequested: boolean,
+  isMachineReadableRequested: boolean,
 ): void {
-  if (isMachineOutputRequested) {
+  if (isMachineReadableRequested) {
     process.stdout.write(`${JSON.stringify(report, null, JSON_INDENT_SPACES)}\n`);
     return;
   }

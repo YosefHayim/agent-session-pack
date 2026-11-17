@@ -107,7 +107,7 @@ export async function runLocalEvidence(
 
     const verified = await writeVerifiedArchive({
       sessionId: selected.id,
-      sourcePath: fixturePath,
+      sessionPath: fixturePath,
       archivePath,
       restoredPath,
       apply: false,

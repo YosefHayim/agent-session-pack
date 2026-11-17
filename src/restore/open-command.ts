@@ -140,7 +140,7 @@ function isPresentLine(line: string | null): line is string {
 function writeOpenPrintout(
   report: EnsureRestoredReport,
   restoreOnLaunchEnabled: boolean,
-  isMachineOutputRequested: boolean,
+  isMachineReadableRequested: boolean,
 ): void {
   const openReport = {
     ...report,
@@ -148,7 +148,7 @@ function writeOpenPrintout(
     restoreOnLaunchEnabled,
   };
 
-  if (isMachineOutputRequested) {
+  if (isMachineReadableRequested) {
     process.stdout.write(`${JSON.stringify(openReport, null, JSON_INDENT_SPACES)}\n`);
     return;
   }

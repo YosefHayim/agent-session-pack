@@ -103,7 +103,7 @@ describe('unpackProviderSessions', () => {
       home,
       relativeDir: join('.codex', 'sessions', '2026', '06', '01'),
       fileName: 'apply-session.jsonl',
-      content: sessionJsonl,
+      sessionJsonl,
       modifiedAt: coldModifiedAt,
     });
 

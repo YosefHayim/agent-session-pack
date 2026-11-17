@@ -6,9 +6,9 @@ export interface GuideFlags {
 }
 
 export async function runGuideCommand(flags: GuideFlags): Promise<CommandExit> {
-  const isMachineOutputRequested = flags.json === true;
+  const isMachineReadableRequested = flags.json === true;
 
-  if (isMachineOutputRequested) {
+  if (isMachineReadableRequested) {
     process.stdout.write(createStructuredAgentGuide());
     return { exitCode: 0 };
   }

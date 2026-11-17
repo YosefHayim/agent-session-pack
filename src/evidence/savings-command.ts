@@ -32,8 +32,8 @@ export async function runSavingsCommand(flags: SavingsFlags): Promise<CommandExi
     providers,
   });
 
-  const isMachineOutputRequested = flags.json === true;
-  if (isMachineOutputRequested) {
+  const isMachineReadableRequested = flags.json === true;
+  if (isMachineReadableRequested) {
     process.stdout.write(createStructuredEvidenceReport(report));
     return { exitCode: providerExitCode };
   }

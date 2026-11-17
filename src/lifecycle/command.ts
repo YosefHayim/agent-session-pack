@@ -75,7 +75,7 @@ export async function runLifecycleCommand(flags: LifecycleFlags): Promise<Comman
   const vaultPath = existingSettings?.vaultPath ?? createDefaultVaultPath(home);
   const wrappersBin = createWrappersBinPath(vaultPath);
   const cliEntrypoint = flags.cliEntrypoint ?? pickCliEntrypoint();
-  const isMachineOutputRequested = flags.json === true;
+  const isMachineReadableRequested = flags.json === true;
 
   const isActionStatus = action === 'status';
   if (isActionStatus) {
@@ -91,7 +91,7 @@ export async function runLifecycleCommand(flags: LifecycleFlags): Promise<Comman
         openCommand: OPEN_COMMAND_HINT,
         maintainCommand: 'agent-session-pack maintain --dry-run --json',
       },
-      isMachineOutputRequested,
+      isMachineReadableRequested,
     );
     return { exitCode: 0 };
   }
@@ -131,7 +131,7 @@ export async function runLifecycleCommand(flags: LifecycleFlags): Promise<Comman
       openCommand: OPEN_COMMAND_HINT,
       maintainCommand: 'agent-session-pack maintain --apply --yes --json',
     },
-    isMachineOutputRequested,
+    isMachineReadableRequested,
   );
   return { exitCode: 0 };
 }
@@ -197,9 +197,9 @@ function writeLifecycleStatus(
     readonly openCommand?: string;
     readonly maintainCommand?: string;
   },
-  isMachineOutputRequested: boolean,
+  isMachineReadableRequested: boolean,
 ): void {
-  if (isMachineOutputRequested) {
+  if (isMachineReadableRequested) {
     process.stdout.write(
       `${JSON.stringify(
         {

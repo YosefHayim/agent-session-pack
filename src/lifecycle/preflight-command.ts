@@ -3,7 +3,7 @@ import { createDefaultVaultPath } from '@/archive/vault-paths.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
 import type { CommandExit } from '@/command-outcome.js';
-import { requireHome } from '@/home-env.js';
+import { requireHome } from '@/environment.js';
 import { type EnsureRestoredReport, ensureSessionRestored } from '@/restore/ensure-restored.js';
 import { type ProviderId, ProviderIdSchema } from '@/session-model.js';
 import { isRestoreOnLaunchEnabled, readSetupSettings } from '@/setup/config.js';

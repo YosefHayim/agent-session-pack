@@ -4,7 +4,7 @@ import { createDefaultVaultPath } from '@/archive/vault-paths.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import { createZstdCompression } from '@/archive/zstd-compression.js';
 import type { CommandExit } from '@/command-outcome.js';
-import { requireHome } from '@/home-env.js';
+import { requireHome } from '@/environment.js';
 import { createHumanPackReport } from '@/pack/output.js';
 import { DEFAULT_COLD_AFTER, parseDurationMs } from '@/pack/plan.js';
 import { packProviderSessions } from '@/pack/sessions.js';

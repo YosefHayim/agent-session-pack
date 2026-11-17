@@ -1,10 +1,10 @@
+import { join } from 'node:path';
 import { defineCommand } from 'citty';
 import type { CommandExit } from '@/command-outcome.js';
-import { requireHome } from '@/home-env.js';
+import { requireHome } from '@/environment.js';
 import { selectProviders } from '@/providers/flag.js';
 import { runLocalEvidence } from './local-evidence.js';
 import { createHumanEvidenceReport, createStructuredEvidenceReport } from './output.js';
-import { createEvidenceWorkRoot } from './work-root.js';
 
 export interface SavingsFlags {
   readonly provider?: string;
@@ -88,3 +88,6 @@ export const checkCommand = defineCommand({
     });
   },
 });
+
+export const createEvidenceWorkRoot = (cwd: string, runId: string): string =>
+  join(cwd, '.vault-test', 'evidence-local', runId);

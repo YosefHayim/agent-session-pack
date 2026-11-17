@@ -1,4 +1,4 @@
-import { HOME_NOT_SET_CANCEL_MESSAGE } from '@/home-env.js';
+import { HOME_NOT_SET_CANCEL_MESSAGE, readHomeFolder } from '@/environment.js';
 import type { InteractiveCliRequest } from '@/interactive-cli-request.js';
 import { DEFAULT_COLD_AFTER, DEFAULT_COLD_AFTER_MS } from '@/pack/plan.js';
 import type { PromptAdapter } from '@/prompt-adapter.js';
@@ -19,7 +19,7 @@ export type FirstSetupRequest = InteractiveCliRequest & {
 
 export const runFirstSetup = async (request: FirstSetupRequest = {}): Promise<FlowReport> => {
   const prompts = request.prompts ?? clackPromptAdapter;
-  const home = request.home ?? process.env.HOME;
+  const home = request.home ?? readHomeFolder();
 
   const isHomeMissing = home == null;
   if (isHomeMissing) {

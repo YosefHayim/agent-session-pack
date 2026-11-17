@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { codexProvider } from '@/providers/codex.js';
+import { codexProvider } from '@/providers/all-providers.js';
 import type { ProviderAdapter } from '@/session-model.js';
 import { inspectProviderInventory } from './provider-inventory.js';
 

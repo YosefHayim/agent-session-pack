@@ -3,8 +3,7 @@ import { mkdir, mkdtemp, truncate, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { claudeCodeProvider } from './claude-code.js';
-import { codexProvider } from './codex.js';
+import { claudeCodeProvider, codexProvider } from '@/providers/all-providers.js';
 
 const createWorkspace = (): Promise<string> =>
   mkdtemp(join(tmpdir(), 'agent-session-pack-jsonl-sessions-'));

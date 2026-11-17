@@ -1,3 +1,4 @@
+import { realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { type CommandDef, defineCommand, runCommand, type SubCommandsDef, showUsage } from 'citty';
 import type { CommandExit } from '@/command-outcome.js';
@@ -13,13 +14,11 @@ import { restoreCommand } from '@/restore/command.js';
 import { ensureRestoredCommand } from '@/restore/ensure-restored-command.js';
 import { openCommand } from '@/restore/open-command.js';
 import { unpackCommand } from '@/restore/unpack-command.js';
-import { scanCommand } from '@/scan/command.js';
-import { listCommand } from '@/scan/list-command.js';
+import { listCommand, scanCommand } from '@/scan/command.js';
 import { initCommand } from '@/setup/init-command.js';
 import packageJson from '../../package.json' with { type: 'json' };
 import { canRunInteractiveCli, runInteractiveCli } from './interactive-cli.js';
 import { rewriteCommandFlagAliases } from './main-args.js';
-import { isCliEntrypoint } from './main-entrypoint.js';
 
 const subCommands: SubCommandsDef = {
   check: checkCommand,
@@ -193,4 +192,19 @@ if (isCliEntrypoint(entrypointPath, modulePath)) {
 
   const commandExit = await runEntrypointReportingErrors(process.argv.slice(2));
   process.exitCode = commandExit.exitCode;
+}
+
+export type RealpathFunction = (path: string) => string;
+
+export function isCliEntrypoint(
+  entrypointPath: string | undefined,
+  modulePath: string,
+  realpath: RealpathFunction = realpathSync,
+): boolean {
+  const isEntrypointPathMissing = entrypointPath == null;
+  if (isEntrypointPathMissing) {
+    return false;
+  }
+
+  return realpath(entrypointPath) === realpath(modulePath);
 }

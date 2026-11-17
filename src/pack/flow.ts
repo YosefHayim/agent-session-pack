@@ -1,7 +1,7 @@
 import { createDefaultVaultPath } from '@/archive/vault-paths.js';
 import { describeBytes } from '@/byte-format.js';
 import type { CommandExit } from '@/command-outcome.js';
-import { HOME_NOT_SET_CANCEL_MESSAGE } from '@/home-env.js';
+import { HOME_NOT_SET_CANCEL_MESSAGE, readHomeFolder } from '@/environment.js';
 import type { InteractiveCliRequest } from '@/interactive-cli-request.js';
 import type { PromptAdapter } from '@/prompt-adapter.js';
 import { allProviders } from '@/providers/all-providers.js';
@@ -13,7 +13,7 @@ import { DEFAULT_COLD_AFTER, DEFAULT_COLD_AFTER_MS } from './plan.js';
 export const runPackFlow = async (
   request: InteractiveCliRequest & { readonly prompts: PromptAdapter },
 ): Promise<CommandExit> => {
-  const home = request.home ?? process.env.HOME;
+  const home = request.home ?? readHomeFolder();
 
   const isHomeMissing = home == null;
   if (isHomeMissing) {

@@ -1,4 +1,4 @@
-import { listVaultSessionManifests } from '@/archive/manifest-store.js';
+import { listVaultSessionManifests, type SessionManifest } from '@/archive/manifest-store.js';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import type { ProviderId } from '@/session-model.js';
 import { type RestoreExit, restoreManifest } from './manifest.js';
@@ -43,11 +43,24 @@ export interface EnsureSessionRestoredRequest {
   readonly backupOnlyProviders?: ReadonlyArray<ProviderId>;
 }
 
+function toSelectorCandidate(manifest: SessionManifest): SelectorCandidate {
+  return {
+    provider: manifest.provider,
+    sessionId: manifest.sessionId,
+    title: manifest.title,
+  };
+}
+
+function toProviderSessionSelector(candidate: SelectorCandidate): string {
+  return `${candidate.provider}:${candidate.sessionId}`;
+}
+
 export async function ensureSessionRestored(
   request: EnsureSessionRestoredRequest,
 ): Promise<EnsureRestoredReport> {
-  const isLifecycleDisabled = request.requireLifecycleEnabled && !request.restoreOnLaunchEnabled;
-
+  const isLifecycleRequired = request.requireLifecycleEnabled;
+  const isRestoreOnLaunchOff = !request.restoreOnLaunchEnabled;
+  const isLifecycleDisabled = isLifecycleRequired && isRestoreOnLaunchOff;
   if (isLifecycleDisabled) {
     return {
       command: request.command,
@@ -72,14 +85,8 @@ export async function ensureSessionRestored(
 
   const isSelectionStatusAmbiguous = selection.status === 'ambiguous';
   if (isSelectionStatusAmbiguous) {
-    const candidates = selection.candidates.map((manifest) => ({
-      provider: manifest.provider,
-      sessionId: manifest.sessionId,
-      title: manifest.title,
-    }));
-    const candidateSelectors = candidates
-      .map((candidate) => `${candidate.provider}:${candidate.sessionId}`)
-      .join(', ');
+    const candidates = selection.candidates.map(toSelectorCandidate);
+    const candidateSelectors = candidates.map(toProviderSessionSelector).join(', ');
 
     return {
       command: request.command,
@@ -139,11 +146,11 @@ export async function ensureSessionRestored(
     sessionId: manifest.sessionId,
     originalPath: manifest.originalPath,
     archivePath: manifest.archivePath,
-    reason: ensureRestoredReason(exit),
+    reason: ensureRestoredReason(exit) ?? undefined,
   };
 }
 
-function ensureRestoredReason(status: RestoreExit): string | undefined {
+function ensureRestoredReason(status: RestoreExit): string | null {
   const isStatusConflict = status === 'conflict';
   if (isStatusConflict) {
     return 'live file differs from manifest hash; not overwritten';
@@ -154,5 +161,5 @@ function ensureRestoredReason(status: RestoreExit): string | undefined {
     return 'native session already matches archive';
   }
 
-  return undefined;
+  return null;
 }

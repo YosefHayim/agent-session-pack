@@ -41,7 +41,11 @@ export async function unpackProviderSessions(
   const unpackSessionSummaries: UnpackSessionSummary[] = [];
 
   for (const provider of request.providers) {
-    const providerManifests = manifests.filter((manifest) => manifest.provider === provider.id);
+    function isProviderManifest(manifest: SessionManifest): boolean {
+      return manifest.provider === provider.id;
+    }
+
+    const providerManifests = manifests.filter(isProviderManifest);
 
     const isProviderManifestsEmpty = providerManifests.length === 0;
     if (isProviderManifestsEmpty) {
@@ -151,7 +155,6 @@ async function archiveBytesForManifest(manifest: SessionManifest): Promise<numbe
   const knownArchiveBytes = manifest.archiveBytes;
 
   const isArchiveBytesKnown = knownArchiveBytes != null;
-
   if (isArchiveBytesKnown) {
     return knownArchiveBytes;
   }
@@ -215,5 +218,9 @@ function readUnpackStatus(restored: {
 }
 
 function sumManifestOriginBytes(manifests: ReadonlyArray<SessionManifest>): number {
-  return manifests.reduce((totalBytes, manifest) => totalBytes + manifest.sourceBytes, 0);
+  function addManifestSourceBytes(totalBytes: number, manifest: SessionManifest): number {
+    return totalBytes + manifest.sourceBytes;
+  }
+
+  return manifests.reduce(addManifestSourceBytes, 0);
 }

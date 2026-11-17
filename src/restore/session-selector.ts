@@ -1,6 +1,8 @@
 import type { SessionManifest } from '@/archive/manifest-store.js';
 import { type ProviderId, ProviderIdSchema } from '@/session-model.js';
 
+const SEPARATOR_NOT_FOUND = -1;
+
 export type SelectorMode = 'exact' | 'fuzzy';
 
 export interface SessionSelectorRequest {
@@ -23,9 +25,17 @@ interface ParsedSelector {
 export function findSessionSelector(request: SessionSelectorRequest): SessionSelection {
   const parsed = parseSelector(request.selector);
   const provider = request.provider ?? parsed.provider;
-  const candidates = request.manifests.filter(
-    (manifest) => provider == null || manifest.provider === provider,
-  );
+
+  function isRequestedProvider(manifest: SessionManifest): boolean {
+    const isAnyProviderAllowed = provider == null;
+    if (isAnyProviderAllowed) {
+      return true;
+    }
+
+    return manifest.provider === provider;
+  }
+
+  const candidates = request.manifests.filter(isRequestedProvider);
   const hits = listMatchingManifests(parsed.query, candidates, request.match);
   const isNoHit = hits.length === 0;
   const isAmbiguous = hits.length > 1;
@@ -50,13 +60,19 @@ function parseSelector(selector: string): ParsedSelector {
   const separatorIndex = trimmedSelector.indexOf(':');
   const prefix = trimmedSelector.slice(0, separatorIndex).toLowerCase();
 
-  const isNotPrefixProvider = separatorIndex === -1 || !isProviderId(prefix);
+  const plainSelector = {
+    provider: undefined,
+    query: trimmedSelector.toLowerCase(),
+  };
 
-  if (isNotPrefixProvider) {
-    return {
-      provider: undefined,
-      query: trimmedSelector.toLowerCase(),
-    };
+  const isSeparatorMissing = separatorIndex === SEPARATOR_NOT_FOUND;
+  if (isSeparatorMissing) {
+    return plainSelector;
+  }
+
+  const isPrefixNotProvider = !isProviderId(prefix);
+  if (isPrefixNotProvider) {
+    return plainSelector;
   }
 
   return {
@@ -71,40 +87,64 @@ function parseSelector(selector: string): ParsedSelector {
 function listMatchingManifests(
   query: string,
   candidates: ReadonlyArray<SessionManifest>,
-  hit: SelectorMode,
+  selectorMode: SelectorMode,
 ): ReadonlyArray<SessionManifest> {
   const isQueryEmpty = query.length === 0;
   if (isQueryEmpty) {
     return [];
   }
 
-  const exactHits = candidates.filter((manifest) =>
-    [manifest.sessionId, manifest.slug, manifest.title].some(
-      (name) => name.toLowerCase() === query,
-    ),
-  );
+  function isExactNameHit(manifest: SessionManifest): boolean {
+    function isQueryName(name: string): boolean {
+      return name.toLowerCase() === query;
+    }
 
-  const hasExactHit = exactHits.length > 0 || hit === 'exact';
+    return [manifest.sessionId, manifest.slug, manifest.title].some(isQueryName);
+  }
+
+  const exactHits = candidates.filter(isExactNameHit);
+
+  const hasAnyExactHit = exactHits.length > 0;
+  const isExactModeRequested = selectorMode === 'exact';
+  const hasExactHit = hasAnyExactHit || isExactModeRequested;
   if (hasExactHit) {
     return exactHits;
   }
 
-  const idPrefixHits = candidates.filter((manifest) =>
-    manifest.sessionId.toLowerCase().startsWith(query),
-  );
+  function isIdPrefixHit(manifest: SessionManifest): boolean {
+    return manifest.sessionId.toLowerCase().startsWith(query);
+  }
+
+  const idPrefixHits = candidates.filter(isIdPrefixHit);
 
   const hasIdPrefixHit = idPrefixHits.length > 0;
   if (hasIdPrefixHit) {
     return idPrefixHits;
   }
 
-  const words = query.split(/[^a-z0-9]+/).filter((word) => word.length > 0);
+  // Splits the query on every run of characters that are not lowercase letters or digits.
+  const nonAlphanumericRun = /[^a-z0-9]+/;
 
-  return candidates.filter(
-    (manifest) =>
-      words.length > 0 &&
-      words.every(
-        (word) => manifest.slug.includes(word) || manifest.title.toLowerCase().includes(word),
-      ),
-  );
+  function isNonEmptyWord(word: string): boolean {
+    return word.length > 0;
+  }
+
+  const words = query.split(nonAlphanumericRun).filter(isNonEmptyWord);
+
+  const hasNoWords = words.length === 0;
+  if (hasNoWords) {
+    return [];
+  }
+
+  function matchesEveryWord(manifest: SessionManifest): boolean {
+    function matchesWord(word: string): boolean {
+      const isInSlug = manifest.slug.includes(word);
+      const isInTitle = manifest.title.toLowerCase().includes(word);
+      return isInSlug || isInTitle;
+    }
+
+    return words.every(matchesWord);
+  }
+
+  return candidates.filter(matchesEveryWord);
 }

@@ -11,6 +11,13 @@ import { packProviderSessions } from '@/pack/sessions.js';
 import { allProviders } from '@/providers/all-providers.js';
 import { isRestoreOnLaunchEnabled, readSetupSettings } from '@/setup/config.js';
 
+const USAGE_ERROR_EXIT_CODE = 2;
+const JSON_INDENT_SPACES = 2;
+
+function isArchiveProvider(provider: { readonly mode: string }): boolean {
+  return provider.mode === 'archive';
+}
+
 export const maintainCommand = defineCommand({
   meta: {
     name: 'maintain',
@@ -83,20 +90,22 @@ async function runMaintainCommand(flags: MaintainFlags): Promise<CommandExit> {
     return { exitCode: 1 };
   }
 
-  const isApplyUnconfirmed = flags.apply === true && flags.confirmed !== true;
+  const isApplyRequested = flags.apply === true;
+  const isConfirmationMissing = flags.confirmed !== true;
+
+  const isApplyUnconfirmed = isApplyRequested && isConfirmationMissing;
   if (isApplyUnconfirmed) {
     process.stderr.write(
       'Cancelled. Re-run with --apply and confirm with y (or --yes) to pack cold sessions.\n',
     );
-    return { exitCode: 2 };
+    return { exitCode: USAGE_ERROR_EXIT_CODE };
   }
 
   const olderThan = setupSettings?.coldAfter ?? DEFAULT_COLD_AFTER;
   const coldAfter = olderThan.trim().toLowerCase();
   const olderThanMs = parseDurationMs(coldAfter);
   const vaultPath = flags.vaultPath ?? setupSettings?.vaultPath ?? createDefaultVaultPath(home);
-  const apply = flags.apply === true;
-  const archiveProviders = allProviders.filter((provider) => provider.mode === 'archive');
+  const archiveProviders = allProviders.filter(isArchiveProvider);
 
   const report = await packProviderSessions({
     home,
@@ -105,7 +114,7 @@ async function runMaintainCommand(flags: MaintainFlags): Promise<CommandExit> {
     olderThan,
     olderThanMs,
     now: flags.now ?? new Date(),
-    apply,
+    apply: isApplyRequested,
     compression: flags.compression ?? createZstdCompression(),
   });
 
@@ -120,15 +129,17 @@ async function runMaintainCommand(flags: MaintainFlags): Promise<CommandExit> {
           pack: report,
         },
         null,
-        2,
+        JSON_INDENT_SPACES,
       )}\n`,
     );
     return { exitCode: 0 };
   }
 
+  const packMode = isApplyRequested ? 'apply' : 'dry-run';
+
   process.stdout.write(
     [
-      `maintain: cold pack (${apply ? 'apply' : 'dry-run'}) olderThan=${olderThan}`,
+      `maintain: cold pack (${packMode}) olderThan=${olderThan}`,
       createHumanPackReport(report, { olderThan }),
     ].join('\n'),
   );

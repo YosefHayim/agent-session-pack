@@ -13,6 +13,8 @@ import {
   watchSessionStubs,
 } from './session-watch.js';
 
+const USAGE_ERROR_EXIT_CODE = 2;
+
 export const watchCommand = defineCommand({
   meta: {
     name: 'watch',
@@ -65,10 +67,13 @@ async function runWatchCommand(flags: WatchFlags): Promise<CommandExit> {
 
   const provider = parseOptionalProvider(flags.provider);
 
-  const isProviderNotFound = flags.provider != null && provider == null;
+  const isProviderFlagGiven = flags.provider != null;
+  const isProviderUnparsed = provider == null;
+
+  const isProviderNotFound = isProviderFlagGiven && isProviderUnparsed;
   if (isProviderNotFound) {
     process.stderr.write(`Unknown provider: ${flags.provider}\n`);
-    return { exitCode: 2 };
+    return { exitCode: USAGE_ERROR_EXIT_CODE };
   }
 
   const setupSettings = await readSetupSettings(home);
@@ -78,7 +83,7 @@ async function runWatchCommand(flags: WatchFlags): Promise<CommandExit> {
   const compression = flags.compression ?? createZstdCompression();
   const isMachineOutputRequested = flags.json === true;
 
-  let childExitCode: number | undefined;
+  let childExitCode: number | null = null;
   let stop = false;
 
   // Watch runs even when restore on launch is off; wrappers enable lifecycle first.
@@ -88,7 +93,7 @@ async function runWatchCommand(flags: WatchFlags): Promise<CommandExit> {
   const isExecCommandMissing = hasExecCommand && command == null;
   if (isExecCommandMissing) {
     process.stderr.write('Missing command after -- for watch --exec.\n');
-    return { exitCode: 2 };
+    return { exitCode: USAGE_ERROR_EXIT_CODE };
   }
 
   if (hasExecCommand) {
@@ -97,10 +102,12 @@ async function runWatchCommand(flags: WatchFlags): Promise<CommandExit> {
       env: process.env,
     });
 
-    child.on('exit', (code) => {
+    function recordChildExit(code: number | null): void {
       childExitCode = code ?? 0;
       stop = true;
-    });
+    }
+
+    child.on('exit', recordChildExit);
   } else {
     function requestWatchStop(): void {
       stop = true;
@@ -118,7 +125,10 @@ async function runWatchCommand(flags: WatchFlags): Promise<CommandExit> {
     process.stderr.write(`watch: ${event.provider}/${event.sessionId} → ${event.status}\n`);
   }
 
-  const isHumanWatchWithoutExec = !isMachineOutputRequested && flags.execArgv.length === 0;
+  const isHumanOutput = !isMachineOutputRequested;
+  const isExecCommandAbsent = !hasExecCommand;
+
+  const isHumanWatchWithoutExec = isHumanOutput && isExecCommandAbsent;
   if (isHumanWatchWithoutExec) {
     const isProviderMissing = provider == null;
     process.stderr.write(
@@ -126,12 +136,16 @@ async function runWatchCommand(flags: WatchFlags): Promise<CommandExit> {
     );
   }
 
+  function isWatchStopped(): boolean {
+    return stop;
+  }
+
   await watchSessionStubs({
     vaultPath,
     provider,
     compression,
     pollIntervalMs,
-    shouldStop: () => stop,
+    shouldStop: isWatchStopped,
     onEvent: writeWatchEvent,
   });
 
@@ -155,15 +169,17 @@ function parsePollMs(millisecondsString: string | undefined): number {
     return DEFAULT_POLL_INTERVAL_MS;
   }
 
-  const parsed = Number(millisecondsString);
+  const parsedMilliseconds = Number(millisecondsString);
 
   const minimumPollIntervalMilliseconds = 100;
 
-  const isPollIntervalInvalid =
-    !Number.isFinite(parsed) || parsed < minimumPollIntervalMilliseconds;
+  const isPollIntervalNotFinite = !Number.isFinite(parsedMilliseconds);
+  const isPollIntervalTooShort = parsedMilliseconds < minimumPollIntervalMilliseconds;
+
+  const isPollIntervalInvalid = isPollIntervalNotFinite || isPollIntervalTooShort;
   if (isPollIntervalInvalid) {
     return DEFAULT_POLL_INTERVAL_MS;
   }
 
-  return Math.floor(parsed);
+  return Math.floor(parsedMilliseconds);
 }

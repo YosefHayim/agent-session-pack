@@ -22,6 +22,7 @@ export interface SessionHotCheckRequest {
   readonly sinceMs: number;
 }
 
+// Catches a UUID or a long hex id standing alone in an argument.
 const sessionIdPattern =
   /\b([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{26,})\b/gi;
 
@@ -33,6 +34,12 @@ const knownSessionFlagNames = new Set([
   '-s',
   '--id',
 ]);
+
+// Catches --session=, --session-id=, --resume= or --id= and captures the id after the equals sign.
+const inlineSessionFlagPattern = /^--(?:session|session-id|resume|id)=(.+)$/i;
+
+const NOISE_TOKENS = new Set(['true', 'false', 'json', 'apply', 'yes', 'resume', 'session']);
+const NOISE_SUFFIXES = ['.json', '.jsonl', '.ts', '.js'];
 
 export function createWrappersBinPath(vaultPath: string): string {
   return join(vaultPath, 'bin');
@@ -84,18 +91,21 @@ export async function saveSessionAccess(request: SaveSessionAccessRequest): Prom
   try {
     await mkdir(request.vaultPath, { recursive: true });
     await appendFile(path, `${JSON.stringify(event)}\n`);
-  } catch (cause) {
-    throw new Error(String(cause), { cause });
+  } catch (error) {
+    throw new Error(String(error), { cause: error });
   }
 }
 
 export function isSessionAccessedSince(request: SessionHotCheckRequest): boolean {
-  return request.events.some(
-    (event) =>
-      event.provider === request.provider &&
-      event.sessionId === request.sessionId &&
-      Date.parse(event.accessedAt) >= request.sinceMs,
-  );
+  function isMatchingRecentEvent(event: SessionAccessEvent): boolean {
+    const isSameProvider = event.provider === request.provider;
+    const isSameSession = event.sessionId === request.sessionId;
+    const isRecent = Date.parse(event.accessedAt) >= request.sinceMs;
+
+    return isSameProvider && isSameSession && isRecent;
+  }
+
+  return request.events.some(isMatchingRecentEvent);
 }
 
 function tryTakeFlagSessionId(found: Set<string>, arg: string, next: string | undefined): boolean {
@@ -104,7 +114,15 @@ function tryTakeFlagSessionId(found: Set<string>, arg: string, next: string | un
     return false;
   }
 
-  const isSessionIdCandidate = next != null && !next.startsWith('-') && !isNoiseToken(next);
+  const isNextMissing = next == null;
+  if (isNextMissing) {
+    return true;
+  }
+
+  const isNextFlag = next.startsWith('-');
+  const isNextNoise = isNoiseToken(next);
+
+  const isSessionIdCandidate = !isNextFlag && !isNextNoise;
   if (isSessionIdCandidate) {
     found.add(next);
   }
@@ -113,11 +131,16 @@ function tryTakeFlagSessionId(found: Set<string>, arg: string, next: string | un
 }
 
 function tryTakeInlineSessionId(found: Set<string>, arg: string): boolean {
-  const inline = arg.match(/^--(?:session|session-id|resume|id)=(.+)$/i);
-  const inlineId = inline?.[1];
+  const inlineFlagMatch = arg.match(inlineSessionFlagPattern);
+  const inlineId = inlineFlagMatch?.[1];
 
-  const isInlineIdUnusable = inlineId == null || isNoiseToken(inlineId);
-  if (isInlineIdUnusable) {
+  const isInlineIdMissing = inlineId == null;
+  if (isInlineIdMissing) {
+    return false;
+  }
+
+  const isInlineIdNoise = isNoiseToken(inlineId);
+  if (isInlineIdNoise) {
     return false;
   }
 
@@ -137,18 +160,13 @@ function addUuidHits(found: Set<string>, arg: string): void {
 }
 
 function isNoiseToken(token: string): boolean {
-  const lower = token.toLowerCase();
-  return (
-    lower === 'true' ||
-    lower === 'false' ||
-    lower === 'json' ||
-    lower === 'apply' ||
-    lower === 'yes' ||
-    lower === 'resume' ||
-    lower === 'session' ||
-    lower.endsWith('.json') ||
-    lower.endsWith('.jsonl') ||
-    lower.endsWith('.ts') ||
-    lower.endsWith('.js')
-  );
+  const lowerToken = token.toLowerCase();
+
+  function endsWithNoiseSuffix(suffix: string): boolean {
+    return lowerToken.endsWith(suffix);
+  }
+
+  const isNoiseWord = NOISE_TOKENS.has(lowerToken);
+
+  return isNoiseWord || NOISE_SUFFIXES.some(endsWithNoiseSuffix);
 }

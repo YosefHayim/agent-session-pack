@@ -14,7 +14,11 @@ export async function scanStores(request: ScanRequest): Promise<ScanReport> {
   const sessions: DiscoveredSession[] = [];
 
   for (const store of request.stores) {
-    const provider = request.providers.find((adapter) => adapter.id === store.provider);
+    function isProviderOfStore(adapter: ProviderAdapter): boolean {
+      return adapter.id === store.provider;
+    }
+
+    const provider = request.providers.find(isProviderOfStore);
 
     const isProviderMissing = provider == null;
 

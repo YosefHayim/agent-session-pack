@@ -17,22 +17,26 @@ export interface InventorySpinnerRequest {
 export function loadInventoryWithSpinner(
   request: InventorySpinnerRequest,
 ): Promise<ProviderInventoryReport> {
+  function inspectInventory(): Promise<ProviderInventoryReport> {
+    return inspectProviderInventory({
+      home: request.home,
+      providers: request.providers,
+      olderThanMs: request.olderThanMs,
+      now: request.now,
+    });
+  }
+
   return runWithSpinner({
     prompts: request.prompts,
     startMessage: request.startMessage,
     stopMessage: request.stopMessage,
-    task: () =>
-      inspectProviderInventory({
-        home: request.home,
-        providers: request.providers,
-        olderThanMs: request.olderThanMs,
-        now: request.now,
-      }),
+    task: inspectInventory,
   });
 }
 
 export function createProviderInventoryTable(report: ProviderInventoryReport): string {
   const isReportSummariesEmpty = report.rows.length === 0;
+
   if (isReportSummariesEmpty) {
     return 'No provider stores found.';
   }

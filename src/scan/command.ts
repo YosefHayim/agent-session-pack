@@ -6,10 +6,13 @@ import { DEFAULT_COLD_AFTER_MS } from '@/pack/plan.js';
 import type { PromptAdapter } from '@/prompt-adapter.js';
 import { allProviders } from '@/providers/all-providers.js';
 import { selectProviders } from '@/providers/flag.js';
-import type { SessionStore } from '@/session-model.js';
+import type { ProviderAdapter, SessionStore } from '@/session-model.js';
 import { createProviderInventoryTable, loadInventoryWithSpinner } from './inventory-prompt.js';
 import { writeHumanScan, writeStructuredScan } from './output.js';
 import { scanStores } from './stores.js';
+
+const HOME_MISSING_EXIT_CODE = 1;
+const UNKNOWN_PROVIDER_EXIT_CODE = 2;
 
 export interface ScanFlags {
   readonly provider?: string;
@@ -22,14 +25,21 @@ export async function runScanCommand(flags: ScanFlags): Promise<CommandExit> {
   const isHomeMissing = home == null;
 
   if (isHomeMissing) {
-    return { exitCode: 1 };
+    return { exitCode: HOME_MISSING_EXIT_CODE };
   }
 
   const { providers, isProviderUnknown } = selectProviders(flags.provider);
-  const providerExitCode = isProviderUnknown ? 2 : 0;
-  const stores = providers.flatMap((provider) =>
-    provider.defaultRoots(home).map((path): SessionStore => ({ provider: provider.id, path })),
-  );
+  const providerExitCode = isProviderUnknown ? UNKNOWN_PROVIDER_EXIT_CODE : 0;
+
+  function listProviderStores(provider: ProviderAdapter): SessionStore[] {
+    function createStore(path: string): SessionStore {
+      return { provider: provider.id, path };
+    }
+
+    return provider.defaultRoots(home).map(createStore);
+  }
+
+  const stores = providers.flatMap(listProviderStores);
   const report = await scanStores({
     providers,
     stores,
@@ -44,6 +54,17 @@ export async function runScanCommand(flags: ScanFlags): Promise<CommandExit> {
 
   writeHumanScan(report);
   return { exitCode: providerExitCode };
+}
+
+function runScanFromArgs({
+  args,
+}: {
+  readonly args: { readonly provider?: string; readonly json?: boolean };
+}): Promise<CommandExit> {
+  return runScanCommand({
+    provider: args.provider,
+    json: args.json,
+  });
 }
 
 export const scanCommand = defineCommand({
@@ -63,13 +84,13 @@ export const scanCommand = defineCommand({
       description: 'Write stable JSON output.',
     },
   },
-  run: async ({ args }) => {
-    return runScanCommand({
-      provider: args.provider,
-      json: args.json,
-    });
-  },
+  run: runScanFromArgs,
 });
+
+function writeNoIndexedSessions(): CommandExit {
+  process.stdout.write('No indexed sessions yet. Run agent-session-pack scan first.\n');
+  return { exitCode: 0 };
+}
 
 export const listCommand = defineCommand({
   meta: {
@@ -87,10 +108,7 @@ export const listCommand = defineCommand({
       description: 'Write stable JSON output.',
     },
   },
-  run: () => {
-    process.stdout.write('No indexed sessions yet. Run agent-session-pack scan first.\n');
-    return { exitCode: 0 };
-  },
+  run: writeNoIndexedSessions,
 });
 
 export async function runReviewSessions(
@@ -99,6 +117,7 @@ export async function runReviewSessions(
   const home = request.home ?? readHomeFolder();
 
   const isHomeMissing = home == null;
+
   if (isHomeMissing) {
     request.prompts.cancel(HOME_NOT_SET_CANCEL_MESSAGE);
     return { exitCode: 0 };

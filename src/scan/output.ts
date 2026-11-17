@@ -2,9 +2,11 @@ import type { DiscoveredSession } from '@/session-model.js';
 import type { ScanReport } from './stores.js';
 
 const MAX_TITLE_PREVIEW_LENGTH = 96;
+const TITLE_ELLIPSIS = '...';
 
 export function createHumanScan(report: ScanReport): string {
   const isReportSessionsEmpty = report.sessions.length === 0;
+
   if (isReportSessionsEmpty) {
     return 'No sessions found.';
   }
@@ -36,6 +38,7 @@ function createSessionLine(session: DiscoveredSession): string {
 
 function describeSessionStatus(session: DiscoveredSession): string {
   const isSessionStatusKnown = session.status != null;
+
   if (isSessionStatusKnown) {
     return session.status;
   }
@@ -44,6 +47,7 @@ function describeSessionStatus(session: DiscoveredSession): string {
 }
 
 function createTitlePreview(title: string): string {
+  // Matches any run of whitespace, including newlines.
   const singleLineTitle = title.replace(/\s+/g, ' ').trim();
 
   const isTitleShortEnough = singleLineTitle.length <= MAX_TITLE_PREVIEW_LENGTH;
@@ -51,7 +55,7 @@ function createTitlePreview(title: string): string {
     return singleLineTitle;
   }
 
-  return `${singleLineTitle.slice(0, MAX_TITLE_PREVIEW_LENGTH - 3)}...`;
+  return `${singleLineTitle.slice(0, MAX_TITLE_PREVIEW_LENGTH - TITLE_ELLIPSIS.length)}${TITLE_ELLIPSIS}`;
 }
 
 function createStructuredScan(report: ScanReport): string {

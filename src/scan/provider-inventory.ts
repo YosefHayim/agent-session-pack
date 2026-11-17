@@ -89,8 +89,8 @@ async function discoverProviderRoots(request: {
 
   return {
     roots,
-    existingRoots: existingRoots.map((root) => root.root),
-    sessions: existingRoots.flatMap((root) => root.sessions),
+    existingRoots: existingRoots.map(getRootPath),
+    sessions: existingRoots.flatMap(getRootSessions),
   };
 }
 
@@ -117,48 +117,54 @@ async function discoverProviderRoot(request: {
   };
 }
 
-function createInventorySummary(request: {
+interface InventorySummaryRequest {
   readonly cutoffTime: number;
   readonly paths: ReadonlyArray<string>;
   readonly provider: ProviderAdapter;
   readonly sessions: ReadonlyArray<DiscoveredSession>;
-}): ProviderInventorySummary {
-  const isNothingToScan = request.paths.length === 0 || request.sessions.length === 0;
-  if (isNothingToScan) {
-    const isRequestSessionsEmpty = request.sessions.length === 0;
-    return {
-      provider: request.provider.id,
-      label: request.provider.label,
-      mode: request.provider.mode,
-      sessions: request.sessions.length,
-      coldSessions: 0,
-      guardedRecentSessions: 0,
-      totalBytes: sumSessionBytes(request.sessions),
-      candidateBytes: 0,
-      paths: request.paths,
-      status: isRequestSessionsEmpty ? 'missing' : 'ready',
-    };
+}
+
+function createUncountedInventorySummary(
+  request: InventorySummaryRequest,
+  status: ProviderInventoryStatus,
+): ProviderInventorySummary {
+  return {
+    provider: request.provider.id,
+    label: request.provider.label,
+    mode: request.provider.mode,
+    sessions: request.sessions.length,
+    coldSessions: 0,
+    guardedRecentSessions: 0,
+    totalBytes: sumSessionBytes(request.sessions),
+    candidateBytes: 0,
+    paths: request.paths,
+    status,
+  };
+}
+
+function createInventorySummary(request: InventorySummaryRequest): ProviderInventorySummary {
+  const isPathsEmpty = request.paths.length === 0;
+  const isSessionsEmpty = request.sessions.length === 0;
+
+  if (isPathsEmpty) {
+    return createUncountedInventorySummary(request, isSessionsEmpty ? 'missing' : 'ready');
+  }
+
+  if (isSessionsEmpty) {
+    return createUncountedInventorySummary(request, 'missing');
   }
 
   const isProviderModeBackupOnly = request.provider.mode === 'backup-only';
+
   if (isProviderModeBackupOnly) {
-    return {
-      provider: request.provider.id,
-      label: request.provider.label,
-      mode: request.provider.mode,
-      sessions: request.sessions.length,
-      coldSessions: 0,
-      guardedRecentSessions: 0,
-      totalBytes: sumSessionBytes(request.sessions),
-      candidateBytes: 0,
-      paths: request.paths,
-      status: 'backup-only',
-    };
+    return createUncountedInventorySummary(request, 'backup-only');
   }
 
-  const coldSessions = request.sessions.filter(
-    (session) => session.modifiedAt.getTime() < request.cutoffTime,
-  );
+  function isColdSession(session: DiscoveredSession): boolean {
+    return session.modifiedAt.getTime() < request.cutoffTime;
+  }
+
+  const coldSessions = request.sessions.filter(isColdSession);
 
   return {
     provider: request.provider.id,
@@ -172,6 +178,14 @@ function createInventorySummary(request: {
     paths: request.paths,
     status: 'ready',
   };
+}
+
+function getRootPath(discovery: RootDiscovery): string {
+  return discovery.root;
+}
+
+function getRootSessions(discovery: RootDiscovery): ReadonlyArray<DiscoveredSession> {
+  return discovery.sessions;
 }
 
 function isRootDiscovery(discovery: RootDiscovery | null): discovery is RootDiscovery {

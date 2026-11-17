@@ -15,7 +15,7 @@ interface ArchivedSessionRequest {
 
 async function writeArchivedSession(
   request: ArchivedSessionRequest,
-): Promise<{ readonly originalPath: string; readonly content: string }> {
+): Promise<{ readonly originalPath: string; readonly sessionJsonl: string }> {
   const vaultPath = join(request.home, '.agent-session-pack');
   const originalPath = join(request.home, '.codex', 'sessions', `${request.sessionId}.jsonl`);
   const archivePath = join(vaultPath, 'archives', 'codex', `${request.sessionId}.jsonl.zst`);
@@ -37,7 +37,7 @@ async function writeArchivedSession(
     sourceKind: 'file',
   });
 
-  return { originalPath, content: sessionJsonl };
+  return { originalPath, sessionJsonl };
 }
 
 describe('restore command', () => {
@@ -102,7 +102,7 @@ describe('restore command', () => {
       sessionId: 'cold',
       provider: 'codex',
     });
-    await expect(readFile(session.originalPath, 'utf8')).resolves.toBe(session.content);
+    await expect(readFile(session.originalPath, 'utf8')).resolves.toBe(session.sessionJsonl);
     await rm(home, { recursive: true, force: true });
   });
 
@@ -129,7 +129,9 @@ describe('restore command', () => {
       status: 'restored',
       sessionId: 'cold-a1',
     });
-    await expect(readFile(pageSession.originalPath, 'utf8')).resolves.toBe(pageSession.content);
+    await expect(readFile(pageSession.originalPath, 'utf8')).resolves.toBe(
+      pageSession.sessionJsonl,
+    );
     await rm(home, { recursive: true, force: true });
   });
 

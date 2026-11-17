@@ -13,8 +13,8 @@ interface InitFlags {
 }
 
 async function runInitCommand({ args }: { readonly args: InitFlags }): Promise<CommandExit> {
-  const isMachineOutputRequested = args.json === true;
-  if (isMachineOutputRequested) {
+  const isMachineReadableRequested = args.json === true;
+  if (isMachineReadableRequested) {
     process.stdout.write(
       `${JSON.stringify({
         vaultPath: DEFAULT_VAULT_PATH,

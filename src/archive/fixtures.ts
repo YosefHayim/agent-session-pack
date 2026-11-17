@@ -3,8 +3,11 @@ import { join } from 'node:path';
 import type { CompressionAdapter } from '@/archive/writer.js';
 import type { ProviderAdapter } from '@/session-model.js';
 
-function copyOriginToArchive(request: { sourcePath: string; archivePath: string }): Promise<void> {
-  return copyFile(request.sourcePath, request.archivePath);
+function copyOriginToArchive(request: {
+  uncompressedPath: string;
+  archivePath: string;
+}): Promise<void> {
+  return copyFile(request.uncompressedPath, request.archivePath);
 }
 
 function copyArchiveToRestored(request: {
@@ -44,7 +47,7 @@ export interface WriteColdSessionDetails {
   home: string;
   relativeDir: string;
   fileName: string;
-  content: string;
+  sessionJsonl: string;
   modifiedAt: Date;
 }
 
@@ -52,9 +55,9 @@ export async function writeColdSession({
   home,
   relativeDir,
   fileName,
-  content: sessionJsonl,
+  sessionJsonl,
   modifiedAt,
-}: WriteColdSessionDetails): Promise<{ readonly path: string; readonly content: string }> {
+}: WriteColdSessionDetails): Promise<{ readonly path: string; readonly sessionJsonl: string }> {
   const sessionDir = join(home, relativeDir);
   const sessionPath = join(sessionDir, fileName);
   await mkdir(sessionDir, { recursive: true });
@@ -63,7 +66,7 @@ export async function writeColdSession({
 
   return {
     path: sessionPath,
-    content: sessionJsonl,
+    sessionJsonl,
   };
 }
 

@@ -24,7 +24,7 @@ describe('zstdCompression createZstdCompression', () => {
 
     const compression = createZstdCompression();
     await compression.compress({
-      sourcePath: originPath,
+      uncompressedPath: originPath,
       archivePath,
     });
     await compression.decompress({
@@ -46,7 +46,7 @@ describe('zstdCompression createZstdCompression', () => {
 
     await expect(
       compression.compress({
-        sourcePath: missingPath,
+        uncompressedPath: missingPath,
         archivePath,
       }),
     ).rejects.toThrow(missingPath);

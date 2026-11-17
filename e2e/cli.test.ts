@@ -37,11 +37,11 @@ describe('CLI read-only discovery and savings proof', () => {
     await writeFile(secondSessionPath, secondSessionBytes);
 
     const commandEnvironment = { ...process.env, HOME: home };
-    const scanOutput = await execFileAsync(TSX_PATH, [CLI_PATH, 'scan', '--json'], {
+    const { stdout: scanStdout } = await execFileAsync(TSX_PATH, [CLI_PATH, 'scan', '--json'], {
       cwd: commandCwd,
       env: commandEnvironment,
     });
-    const scanReport = JSON.parse(scanOutput.stdout) as {
+    const scanReport = JSON.parse(scanStdout) as {
       readonly sessions: ReadonlyArray<{ readonly provider: string }>;
     };
 
@@ -52,16 +52,16 @@ describe('CLI read-only discovery and savings proof', () => {
 
     expect(scanReport.sessions.every(isCodexSession)).toBe(true);
 
-    const savingsOutput = await execFileAsync(TSX_PATH, [CLI_PATH, 'check'], {
+    const { stdout: savingsStdout } = await execFileAsync(TSX_PATH, [CLI_PATH, 'check'], {
       cwd: commandCwd,
       env: commandEnvironment,
     });
 
-    expect(savingsOutput.stdout).toContain('Discovered  Samples');
-    expect(savingsOutput.stdout).toContain('Proof bytes are not a whole-store estimate.');
-    expect(savingsOutput.stdout).toContain('codex');
-    expect(savingsOutput.stdout).toContain('2');
-    expect(savingsOutput.stdout).toContain('sample total');
+    expect(savingsStdout).toContain('Discovered  Samples');
+    expect(savingsStdout).toContain('Proof bytes are not a whole-store estimate.');
+    expect(savingsStdout).toContain('codex');
+    expect(savingsStdout).toContain('2');
+    expect(savingsStdout).toContain('sample total');
     expect(await readFile(firstSessionPath, 'utf8')).toBe(firstSessionBytes);
     expect(await readFile(secondSessionPath, 'utf8')).toBe(secondSessionBytes);
   });
@@ -69,10 +69,10 @@ describe('CLI read-only discovery and savings proof', () => {
 
 describe('CLI exit codes', () => {
   it('exits 0 when a subcommand succeeds', async () => {
-    const guideOutput = await execFileAsync(TSX_PATH, [CLI_PATH, 'guide', '--json'], {
+    const { stdout: guideStdout } = await execFileAsync(TSX_PATH, [CLI_PATH, 'guide', '--json'], {
       cwd: REPO_ROOT,
     });
-    const guideReport = JSON.parse(guideOutput.stdout) as { readonly mode: string };
+    const guideReport = JSON.parse(guideStdout) as { readonly mode: string };
 
     expect(guideReport.mode).toBe('agent-guide');
   });

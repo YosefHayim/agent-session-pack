@@ -23,21 +23,21 @@ describe('packProviderSessions', () => {
       home,
       relativeDir: join('.codex', 'sessions', '2026', '06', '01'),
       fileName: 'cold.jsonl',
-      content: '{"type":"user","text":"cold session"}\n',
+      sessionJsonl: '{"type":"user","text":"cold session"}\n',
       modifiedAt: coldModifiedAt,
     });
     const warmSession = await writeColdSession({
       home,
       relativeDir: join('.claude', 'projects', 'demo'),
       fileName: 'warm.jsonl',
-      content: '{"type":"user","text":"warm session"}\n',
+      sessionJsonl: '{"type":"user","text":"warm session"}\n',
       modifiedAt: warmModifiedAt,
     });
     const backupSession = await writeColdSession({
       home,
       relativeDir: join('.cursor', 'projects', 'demo'),
       fileName: 'backup.jsonl',
-      content: '{"type":"user","text":"backup only"}\n',
+      sessionJsonl: '{"type":"user","text":"backup only"}\n',
       modifiedAt: coldModifiedAt,
     });
 
@@ -48,7 +48,7 @@ describe('packProviderSessions', () => {
       slug: 'cold-session',
       originalPath: coldSession.path,
       modifiedAt: coldModifiedAt,
-      sizeBytes: Buffer.byteLength(coldSession.content, 'utf8'),
+      sizeBytes: Buffer.byteLength(coldSession.sessionJsonl, 'utf8'),
       sourceKind: 'file',
     };
     const warmDiscovered: DiscoveredSession = {
@@ -58,7 +58,7 @@ describe('packProviderSessions', () => {
       slug: 'warm-session',
       originalPath: warmSession.path,
       modifiedAt: warmModifiedAt,
-      sizeBytes: Buffer.byteLength(warmSession.content, 'utf8'),
+      sizeBytes: Buffer.byteLength(warmSession.sessionJsonl, 'utf8'),
       sourceKind: 'file',
     };
     const backupDiscovered: DiscoveredSession = {
@@ -68,7 +68,7 @@ describe('packProviderSessions', () => {
       slug: 'backup-only',
       originalPath: backupSession.path,
       modifiedAt: coldModifiedAt,
-      sizeBytes: Buffer.byteLength(backupSession.content, 'utf8'),
+      sizeBytes: Buffer.byteLength(backupSession.sessionJsonl, 'utf8'),
       sourceKind: 'file',
     };
 
@@ -148,9 +148,9 @@ describe('packProviderSessions', () => {
     );
     expect(report.thresholdPreviews.length).toBeGreaterThan(0);
 
-    await expect(readFile(coldSession.path, 'utf8')).resolves.toBe(coldSession.content);
-    await expect(readFile(warmSession.path, 'utf8')).resolves.toBe(warmSession.content);
-    await expect(readFile(backupSession.path, 'utf8')).resolves.toBe(backupSession.content);
+    await expect(readFile(coldSession.path, 'utf8')).resolves.toBe(coldSession.sessionJsonl);
+    await expect(readFile(warmSession.path, 'utf8')).resolves.toBe(warmSession.sessionJsonl);
+    await expect(readFile(backupSession.path, 'utf8')).resolves.toBe(backupSession.sessionJsonl);
     await expect(stat(join(vaultPath, 'archives'))).rejects.toMatchObject({ code: 'ENOENT' });
   });
 });

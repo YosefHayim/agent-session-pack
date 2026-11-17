@@ -25,7 +25,7 @@ const TAR_CHANGE_DIR_FLAG = '-C';
 const execFileAsync = promisify(execFile);
 
 interface CompressionRequest {
-  readonly sourcePath: string;
+  readonly uncompressedPath: string;
   readonly archivePath: string;
 }
 
@@ -41,7 +41,7 @@ export interface CompressionAdapter {
 
 export interface ArchiveWriteRequest {
   readonly sessionId: string;
-  readonly sourcePath: string;
+  readonly sessionPath: string;
   readonly archivePath: string;
   readonly restoredPath: string;
   readonly apply: boolean;
@@ -61,7 +61,7 @@ export interface VerifiedArchive {
 }
 
 export async function writeVerifiedArchive(request: ArchiveWriteRequest): Promise<VerifiedArchive> {
-  const originKind = await findOriginKind(request.sourcePath, request.sourceKind);
+  const originKind = await findOriginKind(request.sessionPath, request.sourceKind);
 
   const isDirectoryOrigin = originKind === 'directory';
 
@@ -88,11 +88,11 @@ async function writeVerifiedFileArchive(request: ArchiveWriteRequest): Promise<V
   await ensureParentDirectory(request.archivePath);
   await ensureParentDirectory(request.restoredPath);
 
-  const originStat = await readStatPath(request.sourcePath);
-  const originSha256 = await readSha256File(request.sourcePath);
+  const originStat = await readStatPath(request.sessionPath);
+  const originSha256 = await readSha256File(request.sessionPath);
 
   await request.compression.compress({
-    sourcePath: request.sourcePath,
+    uncompressedPath: request.sessionPath,
     archivePath: request.archivePath,
   });
   await request.compression.decompress({
@@ -117,7 +117,7 @@ async function writeVerifiedFileArchive(request: ArchiveWriteRequest): Promise<V
   const isRemovalRequested = request.apply === true;
 
   if (isRemovalRequested) {
-    await removeOriginalSession(request.sourcePath);
+    await removeOriginalSession(request.sessionPath);
   }
 
   return {
@@ -140,17 +140,17 @@ async function writeVerifiedDirectoryArchive(
   await removePath(request.restoredPath);
   await ensureParentDirectory(request.restoredPath);
 
-  const originBytes = await readDirectorySizeBytes(request.sourcePath);
-  const originSha256 = await readSha256Directory(request.sourcePath);
+  const originBytes = await readDirectorySizeBytes(request.sessionPath);
+  const originSha256 = await readSha256Directory(request.sessionPath);
   const tarPath = `${request.archivePath}${TAR_EXTENSION}`;
   const restoredTarPath = `${request.restoredPath}${TAR_EXTENSION}`;
 
   await createTarArchive({
-    sourcePath: request.sourcePath,
+    sessionDirectoryPath: request.sessionPath,
     tarPath,
   });
   await request.compression.compress({
-    sourcePath: tarPath,
+    uncompressedPath: tarPath,
     archivePath: request.archivePath,
   });
   await request.compression.decompress({
@@ -182,7 +182,7 @@ async function writeVerifiedDirectoryArchive(
   const isRemovalRequested = request.apply === true;
 
   if (isRemovalRequested) {
-    await removeOriginalSession(request.sourcePath);
+    await removeOriginalSession(request.sessionPath);
   }
 
   return {
@@ -261,7 +261,7 @@ function throwVerificationMismatch(mismatch: {
 }
 
 async function createTarArchive(request: {
-  readonly sourcePath: string;
+  readonly sessionDirectoryPath: string;
   readonly tarPath: string;
 }): Promise<void> {
   await ensureParentDirectory(request.tarPath);
@@ -271,8 +271,8 @@ async function createTarArchive(request: {
     TAR_FILE_FLAG,
     request.tarPath,
     TAR_CHANGE_DIR_FLAG,
-    dirname(request.sourcePath),
-    basename(request.sourcePath),
+    dirname(request.sessionDirectoryPath),
+    basename(request.sessionDirectoryPath),
   ];
 
   try {

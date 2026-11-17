@@ -12,7 +12,7 @@ function createWorkspace(): Promise<string> {
 
 async function writeCodexSession(
   home: string,
-): Promise<{ readonly path: string; readonly content: string }> {
+): Promise<{ readonly path: string; readonly sessionJsonl: string }> {
   const sessionDir = join(home, '.codex', 'sessions', '2026', '06', '01');
   const sessionPath = join(sessionDir, 'session-old.jsonl');
   const sessionJsonl = '{"type":"user","text":"scan command fixture"}\n';
@@ -22,7 +22,7 @@ async function writeCodexSession(
   await writeFile(sessionPath, sessionJsonl);
   await utimes(sessionPath, modifiedAt, modifiedAt);
 
-  return { path: sessionPath, content: sessionJsonl };
+  return { path: sessionPath, sessionJsonl };
 }
 
 describe('scan command', () => {

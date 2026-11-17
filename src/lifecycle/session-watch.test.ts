@@ -37,9 +37,11 @@ interface WatchRun {
   readonly stop: () => Promise<void>;
 }
 
-async function writeArchivedCodexStub(
-  home: string,
-): Promise<{ readonly vaultPath: string; readonly filePath: string; readonly content: string }> {
+async function writeArchivedCodexStub(home: string): Promise<{
+  readonly vaultPath: string;
+  readonly filePath: string;
+  readonly sessionJsonl: string;
+}> {
   const vaultPath = join(home, '.agent-session-pack');
   const filePath = join(home, '.codex', 'sessions', 'cold.jsonl');
   const archivePath = join(vaultPath, 'archives', 'codex', 'cold.jsonl.zst');
@@ -68,7 +70,7 @@ async function writeArchivedCodexStub(
     sourceKind: 'file',
   });
 
-  return { vaultPath, filePath, content: sessionJsonl };
+  return { vaultPath, filePath, sessionJsonl };
 }
 
 function startCodexWatch(vaultPath: string, compression: CompressionAdapter): WatchRun {
@@ -122,7 +124,7 @@ describe('sessionWatch', () => {
     await watchRun.stop();
 
     expect(watchRun.events).toContain('restored');
-    await expect(readFile(session.filePath, 'utf8')).resolves.toBe(session.content);
+    await expect(readFile(session.filePath, 'utf8')).resolves.toBe(session.sessionJsonl);
   });
 
   it('restores once when several fs events arrive for the same stub', async () => {
@@ -148,6 +150,6 @@ describe('sessionWatch', () => {
     expect(stubListener).toBeDefined();
     expect(decompressedPaths).toHaveLength(1);
     expect(watchRun.events).toEqual(['restored']);
-    await expect(readFile(session.filePath, 'utf8')).resolves.toBe(session.content);
+    await expect(readFile(session.filePath, 'utf8')).resolves.toBe(session.sessionJsonl);
   });
 });

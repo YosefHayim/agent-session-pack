@@ -11,8 +11,11 @@ import {
   writeVerifiedArchive,
 } from './writer.js';
 
-function copyOriginToArchive(request: { sourcePath: string; archivePath: string }): Promise<void> {
-  return copyFile(request.sourcePath, request.archivePath);
+function copyOriginToArchive(request: {
+  uncompressedPath: string;
+  archivePath: string;
+}): Promise<void> {
+  return copyFile(request.uncompressedPath, request.archivePath);
 }
 
 function writeNotTarPayload(request: { restoredPath: string }): Promise<void> {
@@ -68,7 +71,7 @@ describe('archiveWriter', () => {
 
     const archive = await writeVerifiedArchive({
       sessionId: 'dir-restore-1',
-      sourcePath: originPath,
+      sessionPath: originPath,
       archivePath,
       restoredPath: verifyPath,
       apply: false,
@@ -101,7 +104,7 @@ describe('archiveWriter', () => {
 
     const archive = await writeVerifiedArchive({
       sessionId: 'dir-restore-2',
-      sourcePath: originPath,
+      sessionPath: originPath,
       archivePath,
       restoredPath: verifyPath,
       apply: false,
@@ -130,7 +133,7 @@ describe('archiveWriter', () => {
     await expect(
       writeVerifiedArchive({
         sessionId: 'missing-source',
-        sourcePath: missingPath,
+        sessionPath: missingPath,
         archivePath,
         restoredPath,
         apply: false,
@@ -148,7 +151,7 @@ describe('archiveWriter', () => {
     await expect(
       writeVerifiedArchive({
         sessionId: 'corrupt-dir',
-        sourcePath: originPath,
+        sessionPath: originPath,
         archivePath,
         restoredPath,
         apply: false,
@@ -168,7 +171,7 @@ describe('archiveWriter', () => {
 
     const archive = await writeVerifiedArchive({
       sessionId: 'auto-dir',
-      sourcePath: originPath,
+      sessionPath: originPath,
       archivePath,
       restoredPath,
       apply: false,
@@ -195,7 +198,7 @@ describe('archive round trip', () => {
 
     const archive = await writeVerifiedArchive({
       sessionId: 'session-1',
-      sourcePath: originPath,
+      sessionPath: originPath,
       archivePath,
       restoredPath,
       apply: false,
@@ -218,7 +221,7 @@ describe('archive round trip', () => {
 
     const archive = await writeVerifiedArchive({
       sessionId: 'session-2',
-      sourcePath: originPath,
+      sessionPath: originPath,
       archivePath,
       restoredPath,
       apply: true,
@@ -241,7 +244,7 @@ describe('archive round trip', () => {
     await expect(
       writeVerifiedArchive({
         sessionId: 'session-3',
-        sourcePath: originPath,
+        sessionPath: originPath,
         archivePath,
         restoredPath,
         apply: true,
@@ -264,7 +267,7 @@ describe('archive round trip', () => {
     const originSha256 = await readSha256Directory(originPath);
     const archive = await writeVerifiedArchive({
       sessionId: 'session-dir-1',
-      sourcePath: originPath,
+      sessionPath: originPath,
       archivePath,
       restoredPath,
       apply: false,
@@ -291,7 +294,7 @@ describe('archive round trip', () => {
 
     const archive = await writeVerifiedArchive({
       sessionId: 'session-dir-2',
-      sourcePath: originPath,
+      sessionPath: originPath,
       archivePath,
       restoredPath,
       apply: true,

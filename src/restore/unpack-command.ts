@@ -100,8 +100,8 @@ export async function runUnpackCommand(flags: UnpackFlags): Promise<CommandExit>
     compression: flags.compression ?? createZstdCompression(),
   });
 
-  const isMachineOutputRequested = flags.json === true;
-  if (isMachineOutputRequested) {
+  const isMachineReadableRequested = flags.json === true;
+  if (isMachineReadableRequested) {
     process.stdout.write(`${JSON.stringify(report, null, JSON_INDENT_SPACES)}\n`);
     return { exitCode: providerExitCode };
   }

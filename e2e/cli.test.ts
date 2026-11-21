@@ -1,22 +1,56 @@
-import { execFile } from 'node:child_process';
+import { type ExecFileException, execFile } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { promisify } from 'node:util';
 import { afterEach, describe, expect, it } from 'vitest';
 
-const execFileAsync = promisify(execFile);
 const REPO_ROOT = process.cwd();
-const CLI_PATH = join(REPO_ROOT, 'src', 'cli', 'main.ts');
+const CLI_PATH = join(REPO_ROOT, 'src', 'cli.ts');
+const TSCONFIG_PATH = join(REPO_ROOT, 'tsconfig.json');
 const TSX_PATH = join(REPO_ROOT, 'node_modules', '.bin', 'tsx');
+
+interface CommandPrintout {
+  readonly stdout: string;
+  readonly stderr: string;
+}
+
+function runCli(
+  argumentList: ReadonlyArray<string>,
+  cwd: string,
+  commandEnvironment?: NodeJS.ProcessEnv,
+): Promise<CommandPrintout> {
+  const commandArguments = ['--tsconfig', TSCONFIG_PATH, CLI_PATH, ...argumentList];
+
+  function runCommand(
+    succeed: (printout: CommandPrintout) => void,
+    fail: (error: ExecFileException) => void,
+  ): void {
+    function finishCommand(error: ExecFileException | null, stdout: string, stderr: string): void {
+      if (error != null) {
+        fail(error);
+        return;
+      }
+
+      succeed({ stdout, stderr });
+    }
+
+    execFile(
+      TSX_PATH,
+      commandArguments,
+      { cwd, encoding: 'utf8', env: commandEnvironment },
+      finishCommand,
+    );
+  }
+
+  return new Promise(runCommand);
+}
 
 describe('CLI read-only discovery and savings proof', () => {
   let workspace: string | undefined;
 
   afterEach(async () => {
     const createdWorkspace = workspace;
-    const hasWorkspace = createdWorkspace !== undefined;
-    if (hasWorkspace) {
+    if (createdWorkspace != null) {
       await rm(createdWorkspace, { recursive: true, force: true });
     }
   });
@@ -36,26 +70,24 @@ describe('CLI read-only discovery and savings proof', () => {
     await writeFile(firstSessionPath, firstSessionBytes);
     await writeFile(secondSessionPath, secondSessionBytes);
 
-    const commandEnvironment = { ...process.env, HOME: home };
-    const { stdout: scanStdout } = await execFileAsync(TSX_PATH, [CLI_PATH, 'scan', '--json'], {
-      cwd: commandCwd,
-      env: commandEnvironment,
-    });
+    const commandEnvironment = {
+      ...process.env,
+      // biome-ignore lint/style/useNamingConvention: this is the environment variable name
+      HOME: home,
+    };
+    const { stdout: scanStdout } = await runCli(['scan', '--json'], commandCwd, commandEnvironment);
     const scanReport = JSON.parse(scanStdout) as {
       readonly sessions: ReadonlyArray<{ readonly provider: string }>;
     };
 
     expect(scanReport.sessions).toHaveLength(2);
     function isCodexSession(session: { readonly provider: string }): boolean {
-      return session.provider === 'codex';
+      return session.provider == 'codex';
     }
 
     expect(scanReport.sessions.every(isCodexSession)).toBe(true);
 
-    const { stdout: savingsStdout } = await execFileAsync(TSX_PATH, [CLI_PATH, 'check'], {
-      cwd: commandCwd,
-      env: commandEnvironment,
-    });
+    const { stdout: savingsStdout } = await runCli(['check'], commandCwd, commandEnvironment);
 
     expect(savingsStdout).toContain('Discovered  Samples');
     expect(savingsStdout).toContain('Proof bytes are not a whole-store estimate.');
@@ -69,17 +101,13 @@ describe('CLI read-only discovery and savings proof', () => {
 
 describe('CLI exit codes', () => {
   it('exits 0 when a subcommand succeeds', async () => {
-    const { stdout: guideStdout } = await execFileAsync(TSX_PATH, [CLI_PATH, 'guide', '--json'], {
-      cwd: REPO_ROOT,
-    });
+    const { stdout: guideStdout } = await runCli(['guide', '--json'], REPO_ROOT);
     const guideReport = JSON.parse(guideStdout) as { readonly mode: string };
 
     expect(guideReport.mode).toBe('agent-guide');
   });
 
   it('exits 2 for an unknown command', async () => {
-    await expect(
-      execFileAsync(TSX_PATH, [CLI_PATH, 'no-such-command'], { cwd: REPO_ROOT }),
-    ).rejects.toMatchObject({ code: 2 });
+    await expect(runCli(['no-such-command'], REPO_ROOT)).rejects.toMatchObject({ code: 2 });
   });
 });

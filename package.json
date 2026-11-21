@@ -48,31 +48,28 @@
   "type": "module",
   "packageManager": "pnpm@10.34.9",
   "bin": {
-    "agent-session-pack": "dist/cli/main.js"
+    "agent-session-pack": "dist/cli.js"
   },
   "files": [
     "dist",
-    "README.md",
-    "llms.txt",
-    "LICENSE",
-    "examples"
+    "README.md"
   ],
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
-    "dev": "tsx watch src/cli/main.ts",
-    "dev:guide": "tsx src/cli/main.ts guide",
-    "dev:savings": "tsx src/cli/main.ts savings",
-    "prod": "pnpm build && node dist/cli/main.js",
-    "build": "tsup",
-    "test": "vitest run",
-    "test:watch": "vitest watch",
-    "test:e2e": "vitest run --config vitest.e2e.config.ts",
+    "dev": "tsx watch src/cli.ts",
+    "dev:guide": "tsx src/cli.ts guide",
+    "dev:savings": "tsx src/cli.ts savings",
+    "prod": "npm run build && node dist/cli.js",
+    "build": "tsc && node --input-type=module -e \"import { readdir, rm } from 'node:fs/promises'; import { join } from 'node:path'; async function removeEmittedTests(directory) { const dirents = await readdir(directory, { withFileTypes: true }); for (const dirent of dirents) { const filePath = join(directory, dirent.name); if (dirent.isDirectory()) { await removeEmittedTests(filePath); continue; } const isEmittedTest = dirent.name.endsWith('.test.js') || dirent.name.endsWith('.test.js.map'); if (isEmittedTest) await rm(filePath); } } await removeEmittedTests('dist');\"",
+    "test": "vitest run --project unit",
+    "test:watch": "vitest watch --project unit",
+    "test:e2e": "vitest run --project e2e",
     "typecheck": "tsc --noEmit",
-    "lint": "biome check . && knip",
+    "lint": "biome check .",
     "lint:fix": "biome check --write .",
-    "check": "turbo run lint typecheck test build --output-logs=errors-only",
+    "check": "biome check . && tsc --noEmit && vitest run --project unit && npm run build",
     "prepare": "husky"
   },
   "engines": {
@@ -83,16 +80,7 @@
     "@types/node": "24.19.2",
     "@typescript/native": "npm:typescript@7.0.2",
     "husky": "9.1.7",
-    "knip": "6.44.2",
-    "tsup": "9.0.0",
     "tsx": "4.23.15",
-    "turbo": "2.11.10",
-    "typescript": "npm:@typescript/typescript6@6.0.2",
     "vitest": "5.1.0"
-  },
-  "dependencies": {
-    "@clack/prompts": "1.9.0",
-    "citty": "0.2.2",
-    "zod": "4.6.7"
   }
 }

@@ -6,10 +6,14 @@ on:
       - main
     paths-ignore:
       - "**/*.md"
-  workflow_dispatch: null
+  workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   check:
@@ -17,8 +21,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Install zstd and sqlite3 for the archive reader and Devin provider tests
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install zstd and sqlite3
         run: sudo apt-get update && sudo apt-get install -y zstd sqlite3
       - name: Setup workspace
         uses: ./.github/actions/setup

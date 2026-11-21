@@ -13,7 +13,8 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # A second run must not cancel the push that proves main.
+  cancel-in-progress: false
 
 jobs:
   check:

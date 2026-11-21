@@ -19,40 +19,29 @@ Agent Session Pack is a CLI-only TypeScript tool for reducing local disk usage f
 
 ## Conventions
 
-- Use `citty` for commands and argument parsing.
-- Use `@clack/prompts` only for TTY interaction.
+- Use Node `util.parseArgs` for commands and argument parsing.
+- Use Node `readline` only for TTY questions.
 - Use stable JSON output for agents and compact tables for humans.
 
 ## Repo Layout
 
 ```text
 src/
-  cli/           # binary entry, argv routing, interactive menu
-  archive/       # zstd archives, hashes, manifests, vault paths, stubs, test fixtures
-  doctor/
-  evidence/
-  guide/
-  lifecycle/
-  pack/
-  restore/
-  scan/
-  setup/
-  providers/     # read-only native store discovery per agent
-  *.ts           # helpers used by two or more job folders: session model, byte format, prompts
-  **/*.test.ts   # unit tests colocated next to source
-e2e/             # end-to-end CLI tests, run by pnpm test:e2e
-examples/hello-world/
+  prompts.ts     # TTY questions. Commands import this, so it stays out of cli.ts
+  providers.ts   # read-only native store discovery
+  archive.ts     # home, exit type, bytes, vault, zstd, hash, manifest, fixtures
+  pack.ts        # cold plan and pack. Deletes originals only after a verified archive
+  restore.ts     # unpack and restore-on-open
+  scan.ts        # inventory and savings evidence
+  setup.ts       # first-run settings
+  lifecycle.ts   # wrappers, pack-on-exit, maintain, preflight
+  cli.ts         # binary entry. Emits dist/cli.js
+  *.test.ts      # unit tests next to the file they cover
+e2e/             # end-to-end CLI tests, run by npm run test:e2e
 .github/workflows/
 ```
 
-Imports point one way: `cli` -> job folders -> `providers` -> `src/*.ts` helpers.
-
-## Canonical Docs
-
-Root guidance stays compact. Deeper detail lives in dedicated files:
-
-- `PROJECT.md`: purpose, direction, non-goals.
-- `CONTEXT.md` and `LANGUAGE.md`: domain model and vocabulary.
+`cli.ts` calls the commands. `archive.ts` is the shared bottom and does not import pack, scan, or setup. `providers.ts` does not import `archive.ts`. `scan.ts` and `pack.ts` import each other. `restore.ts` and `lifecycle.ts` import each other. Use relative specifiers that end in `.js`. The published bin is plain `tsc` output.
 
 ## Validation
 
@@ -62,4 +51,4 @@ Run before claiming work is complete:
 pnpm check
 ```
 
-`pnpm check` runs lint, typecheck, test and build through Turborepo. Public CI runs test and build on pushes to `main`. A pre-commit hook runs Biome on staged files; a new worktree needs `pnpm install` before its first commit.
+`pnpm check` runs lint, typecheck, test and build. Public CI runs test and build on pushes to `main` with `pnpm install --frozen-lockfile`. A pre-commit hook runs Biome on staged files. Commit `pnpm-lock.yaml`. A new worktree needs `pnpm install` before its first commit.

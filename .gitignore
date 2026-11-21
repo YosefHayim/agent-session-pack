@@ -1,9 +1,12 @@
 # dependencies
 node_modules/
 
+# other package managers. This repo commits pnpm-lock.yaml.
+package-lock.json
+yarn.lock
+
 # build
 dist/
-.turbo/
 
 # env
 .env

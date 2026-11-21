@@ -1,2 +1,0 @@
-{"type":"user","message":{"content":"Design safe archive restore"}}
-{"type":"assistant","message":{"content":"Verify the restored bytes before removing originals."}}

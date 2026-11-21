@@ -1,15 +1,18 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "NodeNext",
-    "skipLibCheck": true,
+    "lib": ["ES2022"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "types": ["node"],
+    "strict": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "skipLibCheck": true,
+    "rootDir": "src",
     "outDir": "dist",
-    "declaration": true,
-    "resolveJsonModule": true,
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    "sourceMap": true
   },
-  "include": ["src/**/*.ts", "e2e/**/*.ts", "*.config.ts", "*.config.js"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["dist"]
 }

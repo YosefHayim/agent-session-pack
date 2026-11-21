@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.6.6/schema.json",
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -25,8 +25,19 @@
   "linter": {
     "enabled": true,
     "rules": {
+      "preset": "recommended",
+      "suspicious": {
+        "noDoubleEquals": "off"
+      },
       "style": {
         "noNonNullAssertion": "error",
+        "useFilenamingConvention": {
+          "level": "error",
+          "options": {
+            "filenameCases": ["kebab-case"]
+          }
+        },
+        "useNamingConvention": "error",
         "useConsistentTypeDefinitions": {
           "level": "error",
           "options": {
